@@ -898,13 +898,22 @@ function showEmptyState(msg) {
 // ── Inicialização ──
 (function() {
   console.log('[Blue3 Relatorio] init. B3D:', !!localStorage.getItem('B3D'));
-  var raw = localStorage.getItem('B3D');
-  if (!raw) { showEmptyState(); return; }
-  if (Blue3_runPipeline()) renderPage();
+  if (typeof Blue3_init === 'function') {
+    Blue3_init(function(ok) {
+      if (ok) renderPage();
+      else showEmptyState();
+    });
+  } else {
+    var raw = localStorage.getItem('B3D');
+    if (!raw) { showEmptyState(); return; }
+    if (Blue3_runPipeline()) renderPage();
+  }
 })();
 
-window.b3OnCSVLoaded = function() {
-  if (Blue3_runPipeline()) renderPage();
+window.b3OnCSVLoaded = function(rows) {
+  if (typeof Blue3_runPipeline === 'function') {
+    if (Blue3_runPipeline(rows)) renderPage();
+  }
 };
 
 // ── Simulador ──
