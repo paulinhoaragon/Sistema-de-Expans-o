@@ -494,13 +494,29 @@ function getB3Users() {
 function b3Login() {
   var l = document.getElementById('b3u').value.trim();
   var p = document.getElementById('b3p').value;
-  var u = getB3Users().find(function(x){ return x.l === l && x.p === p; });
-  if (!u) { document.getElementById('b3err').classList.add('show'); return; }
-  document.getElementById('b3err').classList.remove('show');
-  B3CU = u;
-  document.getElementById('b3lo').style.display = 'none';
-  if (u.mc) { document.getElementById('b3-pw-modal').style.display = 'flex'; return; }
-  b3Start();
+  var errEl = document.getElementById('b3err');
+  errEl.classList.remove('show');
+  if (typeof blue3Login === 'function') {
+    blue3Login(l + (l.indexOf('@') < 0 ? '@blue3.com.br' : ''), p, function(ok, u) {
+      if (!ok) {
+        var local = getB3Users().find(function(x){ return x.l===l && x.p===p; });
+        if (!local) { errEl.classList.add('show'); return; }
+        B3CU = local;
+      } else {
+        B3CU = {id:u.id||'', n:u.nome||l, l:l, p:p, r:u.perfil||'viewer', mc:(u.perfil==='hunter')};
+      }
+      document.getElementById('b3lo').style.display = 'none';
+      if (B3CU.mc) { document.getElementById('b3-pw-modal').style.display = 'flex'; return; }
+      b3Start();
+    });
+  } else {
+    var u = getB3Users().find(function(x){ return x.l===l && x.p===p; });
+    if (!u) { errEl.classList.add('show'); return; }
+    B3CU = u;
+    document.getElementById('b3lo').style.display = 'none';
+    if (u.mc) { document.getElementById('b3-pw-modal').style.display = 'flex'; return; }
+    b3Start();
+  }
 }
 
 function b3Start() {
@@ -627,22 +643,38 @@ function b3ImportCSV(input) {
 }
 
 function updateCSVStatus() {
-  var raw = localStorage.getItem('B3D');
   var dot = document.getElementById('csv-dot');
   var label = document.getElementById('csv-label');
   if (!dot || !label) return;
-  if (raw) {
-    try {
-      var rows = JSON.parse(raw);
-      dot.className = 'ok';
-      label.textContent = rows.length + ' candidatos carregados';
-    } catch(e) {
-      dot.className = '';
-      label.textContent = 'Erro nos dados';
-    }
+  // Verificar Supabase primeiro
+  if (typeof supaFetch === 'function') {
+    supaFetch('candidatos?select=count', {prefer:'return=representation'})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var count = Array.isArray(d) ? d.length : 0;
+        // Também verificar via HEAD para pegar o count real
+        return supaFetch('candidatos?select=id&limit=1', {prefer:'count=exact'});
+      })
+      .then(function(r){
+        var count = r.headers.get('content-range');
+        if (count) {
+          var total = count.split('/')[1];
+          dot.className = 'ok';
+          label.textContent = total + ' candidatos no Supabase';
+        } else {
+          var raw = localStorage.getItem('B3D');
+          if (raw) { try { var rows=JSON.parse(raw); dot.className='ok'; label.textContent=rows.length+' candidatos (local)'; } catch(e){} }
+        }
+      })
+      .catch(function(){
+        var raw = localStorage.getItem('B3D');
+        if (raw) { try { var rows=JSON.parse(raw); dot.className='ok'; label.textContent=rows.length+' candidatos carregados'; } catch(e){ dot.className=''; label.textContent='Erro nos dados'; } }
+        else { dot.className=''; label.textContent='Sem dados carregados'; }
+      });
   } else {
-    dot.className = '';
-    label.textContent = 'Sem dados carregados';
+    var raw = localStorage.getItem('B3D');
+    if (raw) { try { var rows=JSON.parse(raw); dot.className='ok'; label.textContent=rows.length+' candidatos carregados'; } catch(e){ dot.className=''; label.textContent='Erro nos dados'; } }
+    else { dot.className=''; label.textContent='Sem dados carregados'; }
   }
 }
 
