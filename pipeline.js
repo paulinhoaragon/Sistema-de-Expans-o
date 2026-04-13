@@ -5,7 +5,7 @@
  */
 
 var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
-var SUPA_KEY = 'sb_publishable_m4pgWOuDEQghiA2w4_axzg_HccJZxDS';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
 
 window.Blue3Data  = null;
 window.Blue3Ready = false;
