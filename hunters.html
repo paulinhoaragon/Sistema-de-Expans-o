@@ -190,16 +190,23 @@ function safeChart(id, cfg) {
 
 /** Estado vazio padrão */
 function showEmptyState(msg) {
-  var el = document.getElementById('content') || document.body;
+  // Tentar view-ov primeiro, depois content, depois body
+  var el = document.getElementById('view-ov') 
+        || document.getElementById('content') 
+        || document.body;
   el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;'
-    + 'justify-content:center;height:60vh;gap:16px;">'
-    + '<div style="font-size:48px;">📊</div>'
-    + '<div style="font-size:16px;font-weight:600;color:var(--t1);">Sem dados carregados</div>'
-    + '<div style="font-size:13px;color:var(--t3);">'
-    + (msg || 'Acesse a tela inicial e faça o upload do CSV para continuar.')
+    + 'justify-content:center;min-height:60vh;gap:16px;padding:40px;text-align:center;">'
+    + '<div style="font-size:48px">👥</div>'
+    + '<div style="font-size:16px;font-weight:600;color:var(--t1)">Sem dados carregados</div>'
+    + '<div style="font-size:13px;color:var(--t3);max-width:320px">'
+    + (msg || 'Faça o upload do CSV na tela inicial para ver os hunters.')
     + '</div>'
-    + '<a href="index.html" style="padding:10px 24px;background:var(--cobalt);color:#fff;'
-    + 'border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">Ir para a home</a>'
+    + '<label style="padding:10px 24px;background:var(--cobalt);color:#fff;border-radius:8px;'
+    + 'font-size:13px;font-weight:600;cursor:pointer;display:inline-block;">'
+    + 'Upload CSV aqui'
+    + '<input type="file" accept=".csv" style="display:none" onchange="inlineImportCSV(this)">'
+    + '</label>'
+    + '<a href="index.html" style="font-size:12px;color:var(--t3);">ou ir para a home</a>'
     + '</div>';
 }
 
@@ -747,10 +754,79 @@ function showEmptyState(msg) {
 }
 
 // Inicialização via DOMContentLoaded — garante que tudo está pronto
+
+function inlineImportCSV(input) {
+  var file = input.files[0]; if (!file) return;
+  var rd = new FileReader();
+  rd.onload = function(e) {
+    try {
+      var text = e.target.result;
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      var lines = text.split('\n').filter(function(l){ return l.trim(); });
+      var sep = lines[0].indexOf(';') > -1 ? ';' : ',';
+      var h = lines[0].split(sep).map(function(x){ return x.trim().replace(/^\uFEFF/,'').replace(/^"|"$/g,''); });
+      var rows = [];
+      for (var i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        var v = lines[i].split(sep), o = {};
+        h.forEach(function(hh,j){ o[hh]=(v[j]||'').trim().replace(/^"|"$/g,''); });
+        var st = (o['Status']||'').trim();
+        if (o['Candidato'] && (st==='Trabalhando'||st==='Contratado(a)')) rows.push(o);
+      }
+      if (!rows.length) { alert('Nenhum candidato válido no CSV.'); return; }
+      localStorage.setItem('B3D', JSON.stringify(rows));
+      alert('✅ ' + rows.length + ' candidatos carregados!');
+      if (Blue3_runPipeline()) renderPage();
+    } catch(err) { alert('Erro: ' + err.message); }
+    input.value = '';
+  };
+  rd.readAsText(file, 'UTF-8');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   var raw = localStorage.getItem('B3D');
-  if (!raw) { showEmptyState(); return; }
-  if (Blue3_runPipeline()) renderPage();
+  
+  // Diagnóstico visual — aparece na tela se algo falhar
+  function showDiag(msg, isError) {
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9999;'
+      + 'padding:12px 18px;border-radius:10px;font-size:13px;font-family:sans-serif;'
+      + 'max-width:380px;box-shadow:0 4px 20px rgba(0,0,0,.3);'
+      + (isError ? 'background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5;'
+                 : 'background:#DCFCE7;color:#166534;border:1px solid #86EFAC;');
+    d.innerHTML = msg;
+    document.body.appendChild(d);
+    setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); }, 8000);
+  }
+
+  if (!raw) {
+    showEmptyState('CSV não carregado. <a href="index.html" style="color:var(--cobalt);font-weight:700;">Ir para a home</a> e faça o upload do CSV.');
+    showDiag('❌ <b>Sem dados.</b> Acesse a home e faça o upload do CSV para carregar os hunters.', true);
+    return;
+  }
+  
+  var rows;
+  try { rows = JSON.parse(raw); } catch(e) {
+    showDiag('❌ Dados corrompidos no localStorage. Faça o upload do CSV novamente.', true);
+    return;
+  }
+  
+  showDiag('✅ CSV encontrado: ' + rows.length + ' linhas. Carregando hunters...', false);
+  
+  var ok = Blue3_runPipeline();
+  if (!ok) {
+    showDiag('❌ Pipeline falhou. Verifique o formato do CSV.', true);
+    return;
+  }
+  
+  var D = window.Blue3Data;
+  if (!D || !D.hunters || !D.hunters.length) {
+    showDiag('❌ Nenhum hunter encontrado nos dados.', true);
+    return;
+  }
+  
+  showDiag('✅ ' + D.hunters.length + ' hunters · ' + D.candidatos.length + ' candidatos carregados!', false);
+  renderPage();
 });
 
 window.b3OnCSVLoaded = function() {
