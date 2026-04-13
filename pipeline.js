@@ -72,58 +72,68 @@ function blue3Login(email, senha, callback){
 
 // ── Salvar CSV no Supabase ──
 function blue3SaveCSV(rows, onDone){
-  // 1. Apagar todos os registros anteriores
-  supaFetch('candidatos?id=gte.0', {method:'DELETE'})
-    .then(function(){
-      // 2. Inserir novos registros em lotes de 50
-      var lotes=[], tam=50;
-      for(var i=0;i<rows.length;i+=tam) lotes.push(rows.slice(i,i+tam));
-      var idx=0;
-      function insertNext(){
-        if(idx>=lotes.length){
-          localStorage.setItem('B3D',JSON.stringify(rows)); // fallback local
-          if(onDone)onDone(true,rows.length);
-          return;
-        }
-        var lote=lotes[idx++].map(function(r){
-          return{
-            candidato: (r['Candidato']||'').trim(),
-            senioridade:(r['Senioridade']||'').trim(),
-            origem:    (r['Origem']||'').trim(),
-            filial:    (r['Filial']||'').trim(),
-            hunter:    (r['Hunter']||'').trim(),
-            sign_in:   pn(r['Sign in']),
-            piso:      pn(r['Piso']),
-            periodo:   Math.round(parseFloat(String(r['Período']||'12').replace(',','.'))||12),
-            total_captacao_mm: Math.round(pn(r['Total Captação (MM)'])/1e6),
-            total_comp:pn(r['Total Comp.']),
-            data_contratacao:(r['Data de Contratação']||null)||null,
-            status:    (r['Status']||'').trim(),
-            mou:       (r['MOU']||'').trim(),
-            prev_inicio:(r['Prev. Inicio']||null)||null,
-            ancord:    (r['Ancord']||'').trim(),
-            coparticipacao:pn(r['Detalhe Coparticipação']),
-            trigger1_tri:pn(r['Trigger 1 Tri']),
-            trigger1:  pn(r['Trigger 1']),
-            trigger2:  pn(r['Trigger 2']),
-            trigger3:  pn(r['Trigger 3']),
-            trigger4:  pn(r['Trigger 4'])
-          };
-        });
-        supaFetch('candidatos',{method:'POST',body:lote,prefer:'return=minimal'})
-          .then(insertNext)
-          .catch(function(){
-            // Fallback só localStorage
-            localStorage.setItem('B3D',JSON.stringify(rows));
-            if(onDone)onDone(true,rows.length);
-          });
+  // Salvar localStorage SEMPRE (garantia offline)
+  localStorage.setItem('B3D', JSON.stringify(rows));
+
+  var headers = {
+    'apikey':        SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY,
+    'Content-Type':  'application/json',
+    'Prefer':        'return=minimal'
+  };
+
+  // DELETE todos os registros existentes
+  fetch(SUPA_URL + '/rest/v1/candidatos?id=gte.0', {method:'DELETE', headers:headers})
+  .catch(function(){ return {ok:true}; })
+  .then(function(){
+    // INSERT em lotes de 50
+    var lotes=[], tam=50;
+    for(var i=0;i<rows.length;i+=tam) lotes.push(rows.slice(i,i+tam));
+    var idx=0, erros=0;
+
+    function insertNext(){
+      if(idx>=lotes.length){
+        if(erros>0) console.warn('[Blue3] '+erros+' lotes com erro no Supabase');
+        if(onDone) onDone(true, rows.length);
+        return;
       }
-      insertNext();
-    })
-    .catch(function(){
-      localStorage.setItem('B3D',JSON.stringify(rows));
-      if(onDone)onDone(true,rows.length);
-    });
+      var lote=lotes[idx++].map(function(r){
+        return{
+          candidato:        (r['Candidato']||'').trim(),
+          senioridade:      (r['Senioridade']||'').trim(),
+          origem:           (r['Origem']||'').trim(),
+          filial:           (r['Filial']||'').trim(),
+          hunter:           (r['Hunter']||'').trim(),
+          sign_in:          pn(r['Sign in']),
+          piso:             pn(r['Piso']),
+          periodo:          Math.round(parseFloat(String(r['Período']||'12').replace(',','.'))||12),
+          total_captacao_mm:Math.round(pn(r['Total Captação (MM)'])/1e6),
+          total_comp:       pn(r['Total Comp.']),
+          data_contratacao: (r['Data de Contratação']||'').trim()||null,
+          status:           (r['Status']||'').trim(),
+          mou:              (r['MOU']||'').trim(),
+          prev_inicio:      (r['Prev. Inicio']||'').trim()||null,
+          ancord:           (r['Ancord']||'').trim(),
+          coparticipacao:   pn(r['Detalhe Coparticipação']),
+          trigger1_tri:     pn(r['Trigger 1 Tri']),
+          trigger1:         pn(r['Trigger 1']),
+          trigger2:         pn(r['Trigger 2']),
+          trigger3:         pn(r['Trigger 3']),
+          trigger4:         pn(r['Trigger 4'])
+        };
+      });
+      fetch(SUPA_URL+'/rest/v1/candidatos',{method:'POST',headers:headers,body:JSON.stringify(lote)})
+      .then(function(r){
+        if(!r.ok){
+          r.text().then(function(t){ console.error('[Blue3] INSERT erro '+r.status+':',t); });
+          erros++;
+        }
+        insertNext();
+      })
+      .catch(function(err){ console.error('[Blue3] INSERT falhou:',err); erros++; insertNext(); });
+    }
+    insertNext();
+  });
 }
 
 // ── Carregar dados do Supabase ──
