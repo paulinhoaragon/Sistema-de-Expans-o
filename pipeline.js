@@ -245,12 +245,16 @@ function Blue3_huntersPerformance(){
   });
 }
 
-function Blue3_pipelineStrategic(){
-  window.Blue3Data.pipeline=[{n:'Pedro',i:'XP - Plus Investimentos',p:'',a:275},{n:'Eduardo',i:'XP - Fatorial',p:'',a:40},{n:'Isabela',i:'BTG - Jobin',p:'',a:80},{n:'Marco Ratton',i:'XP - Santé',p:'',a:34},{n:'Daniel Lima',i:'BTG - AUVP',p:'',a:20},{n:'Carla Proença',i:'BTG - Origem Capital',p:'',a:26},{n:'Leandro',i:'XP - Quaestor',p:'',a:180}];
+function Blue3_pipelineStrategic() {
+  // Dados já carregados em window.Blue3Data._pipeline e ._pipelineNeg
+  // pelo Blue3_init via Supabase
+  window.Blue3Data.pipeline    = window.Blue3Data._pipeline    || [];
+  window.Blue3Data.pipelineNeg = window.Blue3Data._pipelineNeg || [];
 }
 
-function Blue3_maPipeline(){
-  window.Blue3Data.ma=[{n:'All Investimentos',p:'nan',a:3.5,s:'Deal'},{n:'Norte Investimentos',p:'nan',a:0.56,s:'Proposta Apresentada'},{n:'Ibbra Planejamento Financeiro',p:'nan',a:0.6,s:'Prospecção'},{n:'Petropolis Investimentos',p:'nan',a:4.5,s:'NDA'},{n:'Olimpo Investimentos',p:'nan',a:3.5,s:'NDA'},{n:'Arcani Investimentos',p:'nan',a:1.8,s:'Prospecção'},{n:'Choice Investimentos',p:'nan',a:3.1,s:'Prospecção'},{n:'Liberta Investimentos',p:'nan',a:7.5,s:'Documentação Valuation'}];
+function Blue3_maPipeline() {
+  // Dados já carregados em window.Blue3Data._ma pelo Blue3_init via Supabase
+  window.Blue3Data.ma = window.Blue3Data._ma || [];
 }
 
 // ── Upload CSV ──
@@ -287,6 +291,43 @@ function b3ImportCSV(input){
 }
 
 // ── Pipeline principal ──
+
+function blue3SavePipelines(contratados, negociacao, ma){
+  var headers = {
+    'apikey':        SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY,
+    'Content-Type':  'application/json',
+    'Prefer':        'return=minimal'
+  };
+
+  // Salvar Pipeline Estratégico
+  fetch(SUPA_URL+'/rest/v1/pipeline_estrategico?id=gte.0',{method:'DELETE',headers:headers})
+  .catch(function(){})
+  .then(function(){
+    var rows = contratados.map(function(r){
+      return{nome:r.n,praca:r.p,instituicao:r.i,auc_mm:r.a,tipo:'Contratado'};
+    }).concat(negociacao.map(function(r){
+      return{nome:r.n,praca:r.p,instituicao:r.i,auc_mm:r.a,tipo:'Negociação'};
+    }));
+    if(!rows.length) return;
+    return fetch(SUPA_URL+'/rest/v1/pipeline_estrategico',
+      {method:'POST',headers:headers,body:JSON.stringify(rows)});
+  })
+  .catch(function(e){console.error('[Blue3] Pipeline Estratégico save erro:',e);});
+
+  // Salvar M&A
+  fetch(SUPA_URL+'/rest/v1/ma_pipeline?id=gte.0',{method:'DELETE',headers:headers})
+  .catch(function(){})
+  .then(function(){
+    var rows = ma.map(function(r){
+      return{nome:r.n,praca:r.p,auc_b:r.a,status:r.s};
+    });
+    if(!rows.length) return;
+    return fetch(SUPA_URL+'/rest/v1/ma_pipeline',
+      {method:'POST',headers:headers,body:JSON.stringify(rows)});
+  })
+  .catch(function(e){console.error('[Blue3] M&A save erro:',e);});
+}
 function Blue3_runPipeline(rows){
   window.Blue3Ready=false;
   window.Blue3Data={candidatos:[],financeiros:[],paybacks:[],hunters:[],pipeline:[],ma:[],resumoGeral:{},_rawRows:rows||[]};
@@ -308,26 +349,48 @@ function Blue3_runPipeline(rows){
 
 // ── Inicializar a partir do Supabase ──
 function Blue3_init(callback){
+  // Carregar candidatos, M&A e Pipeline em paralelo
+  var resultCand=[], resultMA=[], resultPE=[];
+  var done=0;
+  function check(){
+    done++;
+    if(done<3) return;
+    // Pipeline Estratégico — separar Contratados e Negociação
+    window.Blue3Data._pipeline    = resultPE.filter(function(r){return r.tipo==='Contratado';});
+    window.Blue3Data._pipelineNeg = resultPE.filter(function(r){return r.tipo==='Negociação';});
+    window.Blue3Data._ma          = resultMA;
+    var ok = Blue3_runPipeline(resultCand);
+    if(callback) callback(ok, resultCand.length);
+  }
+
+  // 1. Candidatos
   blue3LoadData(function(rows){
-    if(!rows||!rows.length){
-      // Supabase vazio — tentar localStorage
-      var local=localStorage.getItem('B3D');
-      if(local){
-        try{
-          var lr=JSON.parse(local);
-          if(lr&&lr.length){
-            var ok2=Blue3_runPipeline(lr);
-            if(callback)callback(ok2,lr.length);
-            return;
-          }
-        }catch(ex){}
-      }
-      if(callback)callback(false,0);
-      return;
-    }
-    var ok=Blue3_runPipeline(rows);
-    if(callback)callback(ok,rows.length);
+    resultCand = rows;
+    check();
   });
+
+  // 2. M&A
+  supaFetch('ma_pipeline?order=id.asc', {prefer:'return=representation'})
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    resultMA = (rows||[]).map(function(r){
+      return {n:r.nome||'', p:r.praca||'', a:parseFloat(r.auc_b)||0, s:r.status||''};
+    });
+    check();
+  })
+  .catch(function(){ resultMA=[]; check(); });
+
+  // 3. Pipeline Estratégico
+  supaFetch('pipeline_estrategico?order=id.asc', {prefer:'return=representation'})
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    resultPE = (rows||[]).map(function(r){
+      return {n:r.nome||'', p:r.praca||'', i:r.instituicao||'',
+              a:parseFloat(r.auc_mm)||0, tipo:r.tipo||'Contratado'};
+    });
+    check();
+  })
+  .catch(function(){ resultPE=[]; check(); });
 }
 
 window.b3OnCSVLoaded=function(rows){
