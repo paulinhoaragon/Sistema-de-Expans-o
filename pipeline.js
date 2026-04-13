@@ -245,15 +245,12 @@ function Blue3_huntersPerformance(){
   });
 }
 
-function Blue3_pipelineStrategic() {
-  // Dados já carregados em window.Blue3Data._pipeline e ._pipelineNeg
-  // pelo Blue3_init via Supabase
+function Blue3_pipelineStrategic(){
   window.Blue3Data.pipeline    = window.Blue3Data._pipeline    || [];
   window.Blue3Data.pipelineNeg = window.Blue3Data._pipelineNeg || [];
 }
 
-function Blue3_maPipeline() {
-  // Dados já carregados em window.Blue3Data._ma pelo Blue3_init via Supabase
+function Blue3_maPipeline(){
   window.Blue3Data.ma = window.Blue3Data._ma || [];
 }
 
@@ -349,13 +346,12 @@ function Blue3_runPipeline(rows){
 
 // ── Inicializar a partir do Supabase ──
 function Blue3_init(callback){
-  // Carregar candidatos, M&A e Pipeline em paralelo
-  var resultCand=[], resultMA=[], resultPE=[];
-  var done=0;
-  function check(){
+  var resultCand=[], resultMA=[], resultPE=[], done=0;
+
+  function finish(){
     done++;
-    if(done<3) return;
-    // Pipeline Estratégico — separar Contratados e Negociação
+    if(done < 3) return;
+    window.Blue3Data = window.Blue3Data || {};
     window.Blue3Data._pipeline    = resultPE.filter(function(r){return r.tipo==='Contratado';});
     window.Blue3Data._pipelineNeg = resultPE.filter(function(r){return r.tipo==='Negociação';});
     window.Blue3Data._ma          = resultMA;
@@ -363,34 +359,31 @@ function Blue3_init(callback){
     if(callback) callback(ok, resultCand.length);
   }
 
-  // 1. Candidatos
-  blue3LoadData(function(rows){
-    resultCand = rows;
-    check();
-  });
+  // Candidatos
+  blue3LoadData(function(rows){ resultCand=rows||[]; finish(); });
 
-  // 2. M&A
-  supaFetch('ma_pipeline?order=id.asc', {prefer:'return=representation'})
+  // M&A
+  supaFetch('ma_pipeline?order=id.asc',{prefer:'return=representation'})
   .then(function(r){return r.json();})
   .then(function(rows){
-    resultMA = (rows||[]).map(function(r){
-      return {n:r.nome||'', p:r.praca||'', a:parseFloat(r.auc_b)||0, s:r.status||''};
+    resultMA=(rows||[]).map(function(r){
+      return{n:r.nome||'',p:r.praca||'',a:parseFloat(r.auc_b)||0,s:r.status||''};
     });
-    check();
+    finish();
   })
-  .catch(function(){ resultMA=[]; check(); });
+  .catch(function(){ resultMA=[]; finish(); });
 
-  // 3. Pipeline Estratégico
-  supaFetch('pipeline_estrategico?order=id.asc', {prefer:'return=representation'})
+  // Pipeline Estratégico
+  supaFetch('pipeline_estrategico?order=id.asc',{prefer:'return=representation'})
   .then(function(r){return r.json();})
   .then(function(rows){
-    resultPE = (rows||[]).map(function(r){
-      return {n:r.nome||'', p:r.praca||'', i:r.instituicao||'',
-              a:parseFloat(r.auc_mm)||0, tipo:r.tipo||'Contratado'};
+    resultPE=(rows||[]).map(function(r){
+      return{n:r.nome||'',p:r.praca||'',i:r.instituicao||'',
+             a:parseFloat(r.auc_mm)||0,tipo:r.tipo||'Contratado'};
     });
-    check();
+    finish();
   })
-  .catch(function(){ resultPE=[]; check(); });
+  .catch(function(){ resultPE=[]; finish(); });
 }
 
 window.b3OnCSVLoaded=function(rows){
