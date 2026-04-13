@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Blue3 · Projeção de Caixa</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="pipeline.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0A0F1E;--cobalt:#1A3BAD;--cobalt-gl:#4A70F5;
+  --canvas:#F4F6FB;--surface:#fff;--rule:#E2E6F2;
+  --t1:#0A0F1E;--t2:#3A4268;--t3:#7A82A8;--t4:#A8B0CC;
+  --g:#16A34A;--am:#B45309;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:14px;-webkit-font-smoothing:antialiased}
+
+/* COVER */
+.cover{background:var(--ink);min-height:130px;position:relative;overflow:hidden}
+.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:52px 52px}
+.cgl{position:absolute;top:-60px;right:-40px;width:400px;height:400px;background:radial-gradient(ellipse,rgba(41,82,227,.18) 0%,transparent 65%)}
+.cover-in{position:relative;max-width:1100px;margin:0 auto;padding:20px 28px 16px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px}
+.b3w{font-size:17px;font-weight:600;color:#fff}.b3w em{font-style:normal;color:var(--cobalt-gl)}
+.ct{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:#fff}
+.cs{font-size:11px;color:rgba(255,255,255,.4);margin-top:3px}
+.cover-rule{height:1px;background:linear-gradient(90deg,transparent,rgba(74,112,245,.4),transparent)}
+.page{max-width:1100px;margin:0 auto;padding:20px 28px 60px}
+
+/* KPI ROW */
+.krow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+@media(max-width:800px){.krow{grid-template-columns:repeat(2,1fr)}}
+.kc{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:13px 15px}
+.kl{font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--t3);margin-bottom:5px}
+.kv{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--t1);line-height:1}
+.ks{font-size:10px;color:var(--t3);margin-top:3px}
+
+/* CHART-BOX */
+.chart-box{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:15px 18px;margin-bottom:18px}
+.chart-hd{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:11px}
+.chart-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)}
+.tabs{display:flex;gap:5px}
+.tab{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--rule);color:var(--t3);background:none;font-family:'DM Sans',sans-serif;transition:all .15s}
+.tab.active{background:var(--ink);border-color:var(--ink);color:#fff}
+.legend{display:flex;gap:12px;margin-bottom:11px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2)}
+.ld{width:10px;height:10px;border-radius:2px}
+.bars-wrap{overflow-x:auto}
+.bars{display:flex;align-items:flex-end;gap:4px;height:120px;min-width:fit-content}
+.bg{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:26px}
+.bw{display:flex;flex-direction:column;justify-content:flex-end;height:108px;width:22px}
+.b{width:100%;min-height:1px}.b:hover{opacity:.75}
+.bl2{font-size:8px;color:var(--t4);white-space:nowrap}
+.pk{font-size:8px;color:#92400E;font-weight:700}
+
+/* SECTION HEADER */
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:11px;padding-bottom:9px;border-bottom:1px solid var(--rule)}
+.st{font-size:13px;font-weight:600;color:var(--t1)}.ss{font-size:11px;color:var(--t3);margin-left:auto}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--rule);margin-bottom:20px}
+table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
+thead th{background:var(--ink);color:rgba(255,255,255,.5);padding:7px 10px;text-align:right;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+thead th:first-child{text-align:left}
+tbody tr{border-bottom:1px solid var(--rule)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover td{background:#F0F4FF}
+tbody tr:nth-child(even) td{background:#FAFBFE}
+tbody td{padding:7px 10px;text-align:right;color:var(--t2)}
+tbody td:first-child{text-align:left;font-weight:600;color:var(--t1)}
+tfoot td{padding:7px 10px;text-align:right;font-weight:700;background:var(--ink);color:#fff;font-size:11px}
+tfoot td:first-child{text-align:left}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.bg-g{background:#DCFCE7;color:#15803D}.bg-a{background:#FEF3C7;color:#92400E}
+.bd{width:5px;height:5px;border-radius:50%;background:currentColor}
+
+/* EMPTY STATE */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:16px;text-align:center}
+.empty a{padding:10px 24px;background:var(--cobalt);color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cg"></div><div class="cgl"></div>
+  <div class="cover-in">
+    <div><div class="b3w">BLUE<em>3</em></div></div>
+    <div>
+      <div class="ct">Projeção de Caixa</div>
+      <div class="cs" id="cf-subtitle">— assessores · 1S2026</div>
+    </div>
+  </div>
+  <div class="cover-rule"></div>
+</div>
+
+<div class="page" id="content">
+
+  <!-- KPIs -->
+  <div class="krow">
+    <div class="kc" style="border-top:3px solid #1A3BAD">
+      <div class="kl">Total Comprometido</div>
+      <div class="kv" id="kv-total">—</div>
+      <div class="ks" id="ks-total">— assessores</div>
+    </div>
+    <div class="kc" style="border-top:3px solid #16A34A">
+      <div class="kl">Ativos</div>
+      <div class="kv" id="kv-ativos">—</div>
+      <div class="ks" id="ks-ativos">— com início confirmado</div>
+    </div>
+    <div class="kc" style="border-top:3px solid #B45309">
+      <div class="kl">A Confirmar</div>
+      <div class="kv" id="kv-aconf">—</div>
+      <div class="ks" id="ks-aconf">— aguardando ANCORD</div>
+    </div>
+    <div class="kc" style="border-top:3px solid #B8962E">
+      <div class="kl">Pico de Desembolso</div>
+      <div class="kv" id="kv-pico">—</div>
+      <div class="ks" id="ks-pico">—</div>
+    </div>
+  </div>
+
+  <!-- Gráfico de barras mensal -->
+  <div class="chart-box">
+    <div class="chart-hd">
+      <div>
+        <div class="chart-title">Desembolso Mensal — Todos os Assessores</div>
+        <div style="font-size:10px;color:var(--t4);margin-top:2px">Piso + Sign-in + Triggers por mês de competência</div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="setP(12,this)">12m</button>
+        <button class="tab" onclick="setP(18,this)">18m</button>
+        <button class="tab" onclick="setP(24,this)">24m</button>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:#1A3BAD"></div>Piso</div>
+      <div class="li"><div class="ld" style="background:#B8962E"></div>Sign-in</div>
+      <div class="li"><div class="ld" style="background:#4A70F5"></div>Triggers</div>
+    </div>
+    <div class="bars-wrap"><div class="bars" id="bars"></div></div>
+  </div>
+
+  <!-- Tabela projeção mensal -->
+  <div class="sh"><div class="st">Projeção Mensal</div><div class="ss" id="plbl"></div></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Mês</th><th>Piso</th><th>Sign-in</th><th>Triggers</th><th>Total Mês</th><th>Acumulado</th></tr></thead>
+      <tbody id="tb1"></tbody>
+      <tfoot id="tf1"></tfoot>
+    </table>
+  </div>
+
+  <!-- Tabela por assessor -->
+  <div class="sh"><div class="st">Impacto por Assessor</div><div class="ss">Total comprometido por contrato</div></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="text-align:left">Assessor</th>
+          <th style="text-align:left">Filial</th>
+          <th style="text-align:left">Situação</th>
+          <th style="text-align:left">Início</th>
+          <th>Piso/Mês</th>
+          <th>Período</th>
+          <th>Piso Total</th>
+          <th>Sign-in</th>
+          <th>Triggers</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="tb2"></tbody>
+      <tfoot id="tf2"></tfoot>
+    </table>
+  </div>
+
+</div>
+
+<script>
+// ── Navegação ──
+var _N = 12;
+var _PROJ = [];
+
+// ── Formatters ──
+function fmt(v) {
+  if (!v || v === 0) return '—';
+  var a = Math.abs(v);
+  if (a >= 1e6) return 'R$ ' + (v/1e6).toFixed(2).replace('.',',') + 'MM';
+  if (a >= 1e3) return 'R$ ' + (v/1e3).toFixed(0) + 'K';
+  return 'R$ ' + v.toLocaleString('pt-BR');
+}
+
+function fmtPer(p) {
+  if (p >= 12 && p % 12 === 0) {
+    var y = p / 12;
+    return y + (y === 1 ? ' ano' : ' anos');
+  }
+  return p + 'm';
+}
+
+// ── Gerar projeção mensal a partir do Blue3Data ──
+function buildProjecao(financeiros) {
+  // Referência: Abr/2026 = mês 0
+  var REF_YEAR = 2026, REF_MONTH = 4; // Abril 2026
+
+  var meses = [];
+  for (var i = 0; i < 28; i++) {
+    var d = new Date(REF_YEAR, REF_MONTH - 1 + i, 1);
+    var label = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][d.getMonth()]
+              + '/' + d.getFullYear();
+    meses.push({ mes: label, piso: 0, signin: 0, triggers: 0, total: 0, mesIdx: i });
+  }
+
+  var TRIG_MONTHS = [3, 6, 12, 18, 24];
+
+  financeiros.forEach(function(r) {
+    // Determinar mês de início (índice relativo a Abr/2026)
+    var startIdx = null;
+
+    // Tentar usar r.inicio (data real de início)
+    if (r.inicio) {
+      var p = r.inicio.indexOf('/') > -1 ? r.inicio.split('/') : null;
+      var startDate;
+      if (p && p.length === 3) {
+        startDate = new Date(parseInt(p[2]), parseInt(p[1]) - 1, 1);
+      } else {
+        var p2 = r.inicio.split('-');
+        if (p2.length >= 2) startDate = new Date(parseInt(p2[0]), parseInt(p2[1]) - 1, 1);
+      }
+      if (startDate) {
+        startIdx = (startDate.getFullYear() - REF_YEAR) * 12 + (startDate.getMonth() - (REF_MONTH - 1));
+      }
+    }
+
+    // Se não tem início confirmado, usar dt (data contratação) como referência
+    if (startIdx === null && r.dt) {
+      var p = r.dt.indexOf('/') > -1 ? r.dt.split('/') : null;
+      var dtDate;
+      if (p && p.length === 3) {
+        dtDate = new Date(parseInt(p[2]), parseInt(p[1]) - 1, 1);
+      } else {
+        var p2 = r.dt.split('-');
+        if (p2.length >= 2) dtDate = new Date(parseInt(p2[0]), parseInt(p2[1]) - 1, 1);
+      }
+      if (dtDate) {
+        // Sem início confirmado: projetar 1 mês à frente da contratação
+        dtDate.setMonth(dtDate.getMonth() + 1);
+        startIdx = (dtDate.getFullYear() - REF_YEAR) * 12 + (dtDate.getMonth() - (REF_MONTH - 1));
+      }
+    }
+
+    if (startIdx === null) startIdx = 0;
+
+    // Sign-in: no mês de início
+    if (r.si > 0 && startIdx >= 0 && startIdx < meses.length) {
+      meses[startIdx].signin += r.si;
+    }
+
+    // Piso: mensalmente pelo período
+    for (var m = 0; m < r.periodo; m++) {
+      var idx = startIdx + m;
+      if (idx >= 0 && idx < meses.length) {
+        meses[idx].piso += r.piso;
+      }
+    }
+
+    // Triggers: nos meses correspondentes
+    var trigAmounts = r.trigs || [];
+    TRIG_MONTHS.forEach(function(tm, ti) {
+      if (trigAmounts[ti] && trigAmounts[ti] > 0) {
+        var tidx = startIdx + tm;
+        if (tidx >= 0 && tidx < meses.length) {
+          meses[tidx].triggers += trigAmounts[ti];
+        }
+      }
+    });
+  });
+
+  // Calcular totais
+  meses.forEach(function(m) {
+    m.total = m.piso + m.signin + m.triggers;
+  });
+
+  return meses;
+}
+
+// ── Render barras ──
+function rC() {
+  var d = _PROJ.slice(0, _N);
+  var mx = Math.max.apply(null, d.map(function(x){ return x.total; }));
+  var pk = d.reduce(function(a,b){ return b.total > a.total ? b : a; });
+  document.getElementById('bars').innerHTML = d.map(function(x) {
+    var hp = mx > 0 ? Math.max(2, Math.round(x.piso/mx*100)) : 2;
+    var hs = mx > 0 ? Math.max(2, Math.round(x.signin/mx*100)) : 2;
+    var ht = mx > 0 ? Math.max(2, Math.round(x.triggers/mx*100)) : 2;
+    var ip = x.mes === pk.mes;
+    return '<div class="bg">' + (ip ? '<div class="pk">▲</div>' : '')
+      + '<div class="bw">'
+      + (x.triggers > 0 ? '<div class="b" style="height:'+ht+'px;background:'+(ip?'#92400E':'#4A70F5')+'"></div>' : '')
+      + (x.signin > 0 ? '<div class="b" style="height:'+hs+'px;background:#B8962E"></div>' : '')
+      + (x.piso > 0 ? '<div class="b" style="height:'+hp+'px;background:'+(ip?'#1e3a8a':'#1A3BAD')+'"></div>' : '')
+      + '</div><div class="bl2">'+x.mes.split('/')[0]+'</div></div>';
+  }).join('');
+}
+
+// ── Render tabela projeção ──
+function rP() {
+  var d = _PROJ.slice(0, _N);
+  var pk = d.reduce(function(a,b){ return b.total > a.total ? b : a; });
+  var cum = 0, tp = 0, ts = 0, tt = 0, ta = 0;
+  document.getElementById('tb1').innerHTML = d.map(function(x) {
+    cum += x.total; tp += x.piso; ts += x.signin; tt += x.triggers; ta += x.total;
+    var ip = x.mes === pk.mes;
+    var st = ip ? ' style="background:#FEF3C7;color:#92400E;font-weight:700"' : '';
+    return '<tr><td'+st+'>'+x.mes+'</td><td'+st+'>'+fmt(x.piso)+'</td><td'+st+'>'
+      +fmt(x.signin)+'</td><td'+st+'>'+fmt(x.triggers)+'</td><td'+st+'>'+fmt(x.total)
+      +'</td><td'+st+'>'+fmt(cum)+'</td></tr>';
+  }).join('');
+  document.getElementById('tf1').innerHTML = '<tr><td>TOTAL '+_N+'M</td><td>'+fmt(tp)
+    +'</td><td>'+fmt(ts)+'</td><td>'+fmt(tt)+'</td><td>'+fmt(ta)+'</td><td>'+fmt(ta)+'</td></tr>';
+  document.getElementById('plbl').textContent = _N + ' meses · ' + d[0].mes + ' – ' + d[d.length-1].mes;
+}
+
+// ── Render tabela por assessor ──
+function rA(financeiros) {
+  var tp = 0, ts = 0, tt = 0, ta = 0;
+  var sorted = financeiros.slice().sort(function(a,b){ return (b.ativo?1:0) - (a.ativo?1:0) || b.custoTotal - a.custoTotal; });
+  document.getElementById('tb2').innerHTML = sorted.map(function(a) {
+    tp += a.pisoTotal; ts += a.si; tt += a.trigTotal; ta += a.custoTotal;
+    var badge = a.ativo
+      ? '<span class="badge bg-g"><span class="bd"></span>Ativo</span>'
+      : '<span class="badge bg-a"><span class="bd"></span>A confirmar</span>';
+    var inicio = a.inicio || '—';
+    return '<tr><td>'+a.n+'</td><td style="color:var(--t3)">'+a.p+'</td><td>'+badge+'</td>'
+      +'<td>'+inicio+'</td><td>'+fmt(a.piso)+'</td><td>'+fmtPer(a.periodo)+'</td>'
+      +'<td>'+fmt(a.pisoTotal)+'</td><td>'+fmt(a.si)+'</td><td>'+fmt(a.trigTotal)+'</td>'
+      +'<td style="font-weight:700;color:var(--cobalt)">'+fmt(a.custoTotal)+'</td></tr>';
+  }).join('');
+  document.getElementById('tf2').innerHTML = '<tr><td>TOTAL GERAL</td><td></td><td></td><td></td><td></td><td></td>'
+    +'<td>'+fmt(tp)+'</td><td>'+fmt(ts)+'</td><td>'+fmt(tt)+'</td><td>'+fmt(ta)+'</td></tr>';
+}
+
+// ── Render KPIs ──
+function renderKPIs(financeiros, proj) {
+  var total = financeiros.length;
+  var ativos = financeiros.filter(function(r){ return r.ativo; });
+  var aconf = financeiros.filter(function(r){ return !r.ativo; });
+
+  var custoTotal = financeiros.reduce(function(s,r){ return s + r.custoTotal; }, 0);
+  var custoAtivos = ativos.reduce(function(s,r){ return s + r.custoTotal; }, 0);
+  var custoAconf = aconf.reduce(function(s,r){ return s + r.custoTotal; }, 0);
+
+  // Pico
+  var pico = proj.reduce(function(a,b){ return b.total > a.total ? b : a; }, {total:0, mes:'—'});
+
+  set('kv-total', fmt(custoTotal));
+  set('ks-total', total + ' assessores');
+  set('kv-ativos', fmt(custoAtivos));
+  set('ks-ativos', ativos.length + ' com início confirmado');
+  set('kv-aconf', fmt(custoAconf));
+  set('ks-aconf', aconf.length + ' aguardando ANCORD');
+  set('kv-pico', fmt(pico.total));
+  set('ks-pico', pico.mes);
+  set('cf-subtitle', total + ' assessores · 1S2026');
+}
+
+function set(id, v) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = v;
+}
+
+// ── setP (tab selector) ──
+function setP(n, btn) {
+  _N = n;
+  document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  rC(); rP();
+}
+
+// ── renderPage principal ──
+function renderPage() {
+  if (!window.Blue3Ready) { console.warn('[Blue3] Pipeline não finalizado'); return; }
+  var D = window.Blue3Data;
+  if (!D || !D.financeiros || !D.financeiros.length) { showEmptyState(); return; }
+
+  var fin = D.financeiros;
+  _PROJ = buildProjecao(fin);
+
+  renderKPIs(fin, _PROJ);
+  rC();
+  rP();
+  rA(fin);
+}
+
+function showEmptyState(msg) {
+  document.getElementById('content').innerHTML =
+    '<div class="empty">'
+    + '<div style="font-size:48px">📊</div>'
+    + '<div style="font-size:16px;font-weight:600;color:var(--t1)">Sem dados carregados</div>'
+    + '<div style="font-size:13px;color:var(--t3)">'
+    + (msg || 'Acesse a tela inicial e faça o upload do CSV para continuar.')
+    + '</div>'
+    + '<a href="index.html">Ir para a home</a>'
+    + '</div>';
+}
+
+// ── Inicialização ──
+(function() {
+  var raw = localStorage.getItem('B3D');
+  if (!raw) { showEmptyState(); return; }
+  if (Blue3_runPipeline()) renderPage();
+})();
+
+window.b3OnCSVLoaded = function() {
+  if (Blue3_runPipeline()) renderPage();
+};
+</script>
+</body>
+</html>

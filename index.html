@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blue3 Expansão · Growth &amp; Talent Division</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0A0F1E;--ink-mid:#1C2444;--ink-light:#2D3A6B;
+  --cobalt:#1A3BAD;--cobalt-br:#2952E3;--cobalt-gl:#4A70F5;
+  --gold:#B8962E;
+  --r4:4px;--r8:8px;--r12:12px;--r16:16px;
+}
+html,body{height:100%;}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--ink);
+  color:#fff;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  overflow-x:hidden;
+}
+.bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.bg-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:56px 56px;
+}
+.bg-glow1{position:absolute;top:-120px;right:-80px;width:700px;height:700px;background:radial-gradient(ellipse,rgba(41,82,227,.22) 0%,transparent 65%);}
+.bg-glow2{position:absolute;bottom:-60px;left:-40px;width:500px;height:500px;background:radial-gradient(ellipse,rgba(184,150,46,.08) 0%,transparent 65%);}
+.bg-glow3{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:900px;height:500px;background:radial-gradient(ellipse,rgba(26,59,173,.1) 0%,transparent 60%);}
+.wrapper{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;
+  padding:48px 20px 40px;
+  flex:1;
+}
+.logo-wrap{
+  position:fixed;
+  top:28px;right:32px;
+  z-index:20;
+  display:flex;align-items:center;justify-content:center;
+}
+.logo-img{height:96px;width:auto;display:block;filter:drop-shadow(0 4px 24px rgba(41,82,227,.4));}
+.brand-sep{width:280px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);margin:0 auto 32px;}
+.division{display:flex;align-items:center;gap:14px;margin-bottom:52px;justify-content:center;}
+.div-icon{width:52px;height:52px;border-radius:14px;background:linear-gradient(140deg,var(--cobalt),var(--cobalt-br));display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,.14);box-shadow:0 4px 24px rgba(41,82,227,.35);}
+.div-icon svg{width:27px;height:27px;}
+.div-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:#fff;line-height:1.2;}
+.div-tag{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.32);margin-top:4px;}
+.headline{text-align:center;margin-bottom:52px;}
+.hl-eyebrow{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.28);margin-bottom:14px;}
+.hl-sub{font-size:15px;color:rgba(255,255,255,.4);max-width:460px;margin:0 auto;line-height:1.65;}
+
+/* ── CARDS GRID 3 colunas ── */
+.cards{
+  display:grid !important;
+  grid-template-columns:repeat(3,1fr) !important;
+  gap:14px !important;
+  width:100% !important;
+  max-width:860px !important;
+  margin:0 auto 40px auto !important;
+}
+@media(max-width:700px){.cards{grid-template-columns:1fr !important;}}
+@media(min-width:701px) and (max-width:900px){.cards{grid-template-columns:repeat(2,1fr) !important;}}
+
+.nav-card{
+  position:relative;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:16px;padding:24px 24px 20px;
+  cursor:pointer;text-decoration:none;
+  display:flex;flex-direction:column;gap:14px;
+  overflow:hidden;
+  transition:transform .25s cubic-bezier(.4,0,.2,1),border-color .25s ease,box-shadow .25s ease,background .25s ease;
+}
+.nav-card:hover{transform:translateY(-4px);border-color:rgba(74,112,245,.4);box-shadow:0 20px 60px rgba(10,15,30,.4),0 0 0 1px rgba(74,112,245,.2);background:rgba(41,82,227,.08);}
+.nav-card:active{transform:translateY(-2px);}
+.nav-card .card-bar{position:absolute;top:0;left:0;right:0;height:2px;border-radius:16px 16px 0 0;opacity:0;transition:opacity .3s ease;}
+.nav-card:hover .card-bar{opacity:1;}
+.card-exp .card-bar{background:linear-gradient(90deg,var(--cobalt-br),var(--cobalt-gl));}
+.card-sim .card-bar{background:linear-gradient(90deg,var(--gold),#e5c76b);}
+.card-cf .card-bar,.card-cf:hover{border-color:rgba(74,112,245,.4) !important;}
+.card-cf .card-bar{background:linear-gradient(90deg,#1A3BAD,#4A70F5);}
+.card-hunter .card-bar{background:linear-gradient(90deg,#4338CA,#6366F1);}
+.card-ma .card-bar{background:linear-gradient(90deg,#5B21B6,#7C3AED);}
+.card-upload .card-bar{background:linear-gradient(90deg,#78350f,#b8962e);}
+.card-admin .card-bar{background:linear-gradient(90deg,#92400E,#B8962E);}
+
+.card-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,.1);}
+.card-exp .card-icon{background:linear-gradient(140deg,var(--cobalt),var(--cobalt-br));box-shadow:0 4px 20px rgba(41,82,227,.3);}
+.card-sim .card-icon{background:linear-gradient(140deg,#7a5e18,var(--gold));box-shadow:0 4px 20px rgba(184,150,46,.3);}
+.card-cf .card-icon{background:linear-gradient(140deg,#1A3BAD,#4A70F5);box-shadow:0 4px 20px rgba(41,82,227,.3);}
+.card-hunter .card-icon{background:linear-gradient(140deg,#4338CA,#6366F1);box-shadow:0 4px 20px rgba(99,102,241,.3);}
+.card-ma .card-icon{background:linear-gradient(140deg,#5B21B6,#7C3AED);box-shadow:0 4px 20px rgba(124,58,237,.3);}
+.card-upload .card-icon{background:linear-gradient(140deg,#78350f,#b8962e);box-shadow:0 4px 20px rgba(184,150,46,.3);}
+.card-admin .card-icon{background:linear-gradient(140deg,#92400E,#B8962E);box-shadow:0 4px 20px rgba(184,150,46,.3);}
+.card-icon svg{width:24px;height:24px;}
+.card-label{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px;}
+.card-exp .card-label{color:var(--cobalt-gl);}
+.card-sim .card-label{color:var(--gold);}
+.card-cf .card-label{color:#4A70F5;}
+.card-hunter .card-label{color:#818CF8;}
+.card-ma .card-label{color:#A78BFA;}
+.card-upload .card-label{color:#D97706;}
+.card-admin .card-label{color:var(--gold);}
+.card-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:#fff;line-height:1.25;margin-bottom:6px;}
+.card-desc{font-size:12px;color:rgba(255,255,255,.42);line-height:1.5;}
+.card-cta{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;margin-top:4px;transition:gap .2s ease;}
+.card-exp .card-cta{color:var(--cobalt-gl);}
+.card-sim .card-cta{color:var(--gold);}
+.card-cf .card-cta{color:#4A70F5;}
+.card-hunter .card-cta{color:#818CF8;}
+.card-ma .card-cta{color:#A78BFA;}
+.card-upload .card-cta{color:#D97706;}
+.card-admin .card-cta{color:var(--gold);}
+.nav-card:hover .card-cta{gap:10px;}
+.card-cta svg{width:14px;height:14px;}
+.card-status{position:absolute;top:16px;right:16px;display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:20px;}
+.card-exp .card-status,.card-cf .card-status,.card-hunter .card-status,.card-ma .card-status{background:rgba(22,163,74,.12);color:#4ADE80;border:1px solid rgba(74,222,128,.15);}
+.card-sim .card-status,.card-upload .card-status,.card-admin .card-status{background:rgba(184,150,46,.12);color:#e5c76b;border:1px solid rgba(229,199,107,.15);}
+.status-dot{width:5px;height:5px;border-radius:50%;}
+.card-exp .status-dot,.card-cf .status-dot,.card-hunter .status-dot,.card-ma .status-dot{background:#4ADE80;box-shadow:0 0 6px #4ADE80;}
+.card-sim .status-dot,.card-upload .status-dot,.card-admin .status-dot{background:#e5c76b;box-shadow:0 0 6px #e5c76b;}
+
+/* ── HIDDEN ── */
+.b3-hidden{display:none!important;}
+
+/* ── FOOTER ── */
+.footer{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;}
+.footer-rule{width:220px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);margin-bottom:6px;}
+.footer-txt{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.18);}
+.footer-ver{font-size:9px;color:rgba(255,255,255,.12);letter-spacing:.06em;}
+
+/* ── LOGIN MODAL ── */
+#b3lo{position:fixed;inset:0;z-index:9999;background:#0A0F1E;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif}
+.b3lo-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:52px 52px}
+.b3lo-glow{position:absolute;top:-100px;right:-60px;width:480px;height:480px;background:radial-gradient(ellipse,rgba(41,82,227,.18) 0%,transparent 65%)}
+.b3lo-card{position:relative;z-index:1;width:100%;max-width:400px;padding:20px}
+.b3lo-brand{text-align:center;margin-bottom:28px}
+.b3lo-brow{display:inline-flex;align-items:center;gap:11px;margin-bottom:10px}
+.b3lo-lines{display:flex;flex-direction:column;gap:4px}
+.b3lo-line{background:#2952E3;border-radius:2px}
+.b3lo-line:nth-child(1){width:28px;height:3px}
+.b3lo-line:nth-child(2){width:19px;height:3px;opacity:.65}
+.b3lo-line:nth-child(3){width:11px;height:3px;opacity:.35}
+.b3lo-bname{font-size:21px;font-weight:600;color:#fff;letter-spacing:-.3px}
+.b3lo-bname em{font-style:normal;color:#4A70F5}
+.b3lo-title{font-family:'Playfair Display',serif;font-size:25px;color:#fff;font-weight:600;margin-bottom:4px}
+.b3lo-sub{font-size:12px;color:rgba(255,255,255,.35)}
+.b3lo-box{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:24px;backdrop-filter:blur(10px)}
+.b3lo-f{margin-bottom:13px}
+.b3lo-f label{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.38);margin-bottom:5px}
+.b3lo-f input{width:100%;padding:10px 13px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box}
+.b3lo-f input:focus{border-color:#4A70F5}
+.b3lo-f input::placeholder{color:rgba(255,255,255,.22)}
+.b3lo-btn{width:100%;padding:12px;background:linear-gradient(135deg,#1A3BAD,#2952E3);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer}
+.b3lo-btn:hover{background:linear-gradient(135deg,#2952E3,#4A70F5)}
+.b3lo-err{display:none;background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.3);border-radius:8px;padding:9px;font-size:12px;color:#FCA5A5;margin-top:9px;text-align:center}
+.b3lo-err.show{display:block}
+
+/* ── GESTÃO USUÁRIOS (modal interno) ── */
+#b3-admin-modal{display:none;position:fixed;inset:0;z-index:10002;background:rgba(10,15,30,.92);align-items:center;justify-content:center;}
+#b3-admin-modal.open{display:flex;}
+.admin-box{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:560px;margin:16px;max-height:90vh;overflow-y:auto;}
+.admin-box h2{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:#0A0F1E;margin-bottom:6px;}
+.admin-box .sub{font-size:12px;color:#7A82A8;margin-bottom:20px;}
+.admin-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;}
+.admin-table th{background:#F4F6FB;color:#7A82A8;padding:7px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid #E2E6F2;}
+.admin-table td{padding:7px 10px;border-bottom:1px solid #F4F6FB;color:#0A0F1E;}
+.admin-table tr:last-child td{border-bottom:none;}
+.admin-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;}
+.admin-badge.master{background:#DBEAFE;color:#1E40AF;}
+.admin-badge.paulo{background:#D1FAE5;color:#065F46;}
+.admin-badge.viewer{background:#F3F4F6;color:#6B7280;}
+.admin-action{background:none;border:1px solid #E2E6F2;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;color:#1A3BAD;font-family:'DM Sans',sans-serif;}
+.admin-action:hover{background:#EFF6FF;}
+.admin-action.danger{color:#DC2626;border-color:#FECACA;}
+.admin-action.danger:hover{background:#FEF2F2;}
+.add-user-form{background:#F4F6FB;border:1px solid #E2E6F2;border-radius:12px;padding:16px;margin-top:12px;}
+.add-user-form h3{font-size:12px;font-weight:700;color:#0A0F1E;margin-bottom:12px;letter-spacing:.04em;}
+.add-user-form input,.add-user-form select{width:100%;padding:8px 10px;border:1.5px solid #E2E6F2;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;color:#0A0F1E;background:#fff;outline:none;margin-bottom:8px;}
+.add-user-form input:focus,.add-user-form select:focus{border-color:#1A3BAD;}
+.add-user-form .row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.btn-add{background:linear-gradient(135deg,#1A3BAD,#2952E3);color:#fff;border:none;border-radius:8px;padding:10px;width:100%;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.btn-add:hover{background:linear-gradient(135deg,#2952E3,#4A70F5);}
+.admin-close{background:none;border:none;color:#7A82A8;font-size:22px;cursor:pointer;position:absolute;top:16px;right:16px;}
+
+/* ── OVERLAY PÁGINAS INTERNAS ── */
+#b3-overlay{display:none;position:fixed;inset:0;z-index:99999;background:#000;flex-direction:column;}
+.ov-bar{background:#002855;height:44px;display:flex;align-items:center;padding:0 16px;flex-shrink:0;gap:12px;}
+.ov-back{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:6px 14px;font-size:13px;cursor:pointer;font-weight:600;font-family:'DM Sans',sans-serif;}
+.ov-title{color:rgba(255,255,255,.6);font-size:11px;letter-spacing:.08em;text-transform:uppercase;}
+#b3-frame{flex:1;border:none;width:100%;background:#fff;}
+
+/* ── CSV STATUS ── */
+#csv-status{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.5);margin-top:4px;}
+#csv-dot{width:6px;height:6px;border-radius:50%;background:#6B7280;}
+#csv-dot.ok{background:#4ADE80;box-shadow:0 0 6px #4ADE80;}
+
+/* ── CHANGE PW MODAL ── */
+#b3-pw-modal{display:none;position:fixed;inset:0;z-index:10001;background:rgba(10,15,30,.9);align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+
+@media(max-width:600px){
+  .logo-img{height:76px;}
+  .div-name{font-size:13px !important;}
+  .wrapper{padding:48px 20px 40px !important;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN MODAL -->
+<div id="b3lo">
+  <div class="b3lo-bg"></div><div class="b3lo-glow"></div>
+  <div class="b3lo-card">
+    <div class="b3lo-brand">
+      <div class="b3lo-brow">
+        <div class="b3lo-lines"><div class="b3lo-line"></div><div class="b3lo-line"></div><div class="b3lo-line"></div></div>
+        <div class="b3lo-bname">BLUE<em>3</em></div>
+      </div>
+      <div class="b3lo-title">Sistema de Expansão</div>
+      <div class="b3lo-sub">Growth &amp; Talent Division · 1S 2026</div>
+    </div>
+    <div class="b3lo-box">
+      <div class="b3lo-f"><label>Usuário</label><input type="text" id="b3u" placeholder="seu.usuario" autocomplete="username"></div>
+      <div class="b3lo-f"><label>Senha</label><input type="password" id="b3p" placeholder="••••••••"></div>
+      <button class="b3lo-btn" onclick="b3Login()">Entrar</button>
+      <div class="b3lo-err" id="b3err">Usuário ou senha incorretos.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div id="b3-pw-modal">
+  <div style="background:#fff;border-radius:16px;padding:28px;width:100%;max-width:400px;margin:16px">
+    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:#0A0F1E;margin-bottom:6px">Alterar senha</div>
+    <div style="font-size:12px;color:#7A82A8;margin-bottom:20px">Por segurança, defina uma nova senha antes de continuar.</div>
+    <div style="margin-bottom:12px">
+      <label style="display:block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7A82A8;margin-bottom:5px">Nova senha</label>
+      <input type="password" id="pw-new" placeholder="Mín. 8 caracteres" oninput="checkPwModal(this.value)" style="width:100%;padding:10px 12px;border:1.5px solid #E2E6F2;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box">
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7A82A8;margin-bottom:5px">Confirmar senha</label>
+      <input type="password" id="pw-conf" placeholder="Repita a senha" style="width:100%;padding:10px 12px;border:1.5px solid #E2E6F2;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box">
+    </div>
+    <div style="background:#F0F4FF;border:1px solid #C7D2FE;border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:11px">
+      <div style="font-weight:700;color:#1A3BAD;margin-bottom:6px;font-size:9px;letter-spacing:.08em;text-transform:uppercase">Política de senha</div>
+      <div id="pm-len" style="color:#9CA3AF;margin-bottom:3px">○ Mínimo 8 caracteres</div>
+      <div id="pm-upper" style="color:#9CA3AF;margin-bottom:3px">○ Letra maiúscula</div>
+      <div id="pm-num" style="color:#9CA3AF;margin-bottom:3px">○ Número</div>
+      <div id="pm-spec" style="color:#9CA3AF">○ Caractere especial (!@#$%^&amp;*)</div>
+    </div>
+    <div id="pw-msg" style="display:none;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:12px"></div>
+    <button onclick="saveNewPw()" style="width:100%;padding:12px;background:linear-gradient(135deg,#1A3BAD,#2952E3);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer">Salvar nova senha</button>
+  </div>
+</div>
+
+<!-- GESTÃO DE USUÁRIOS MODAL -->
+<div id="b3-admin-modal">
+  <div class="admin-box" style="position:relative;">
+    <button class="admin-close" onclick="b3AdminClose()">×</button>
+    <h2>Gestão de Usuários</h2>
+    <div class="sub">Gerencie os acessos ao sistema Blue3 Expansão.</div>
+    <table class="admin-table">
+      <thead><tr><th>Nome</th><th>Login</th><th>Perfil</th><th>Ações</th></tr></thead>
+      <tbody id="admin-tbody"></tbody>
+    </table>
+    <div class="add-user-form">
+      <h3>ADICIONAR USUÁRIO</h3>
+      <div class="row">
+        <input type="text" id="add-name" placeholder="Nome completo">
+        <input type="text" id="add-login" placeholder="login (sem espaços)">
+      </div>
+      <div class="row">
+        <input type="password" id="add-pw" placeholder="Senha inicial">
+        <select id="add-role">
+          <option value="viewer">Viewer (Relatório + Simulador)</option>
+          <option value="paulo">Paulo (Tudo exceto Admin)</option>
+          <option value="master">Master (Acesso total)</option>
+        </select>
+      </div>
+      <button class="btn-add" onclick="b3AddUser()">Adicionar Usuário</button>
+    </div>
+  </div>
+</div>
+
+<!-- BACKGROUND -->
+<div class="bg-layer">
+  <div class="bg-grid"></div>
+  <div class="bg-glow1"></div>
+  <div class="bg-glow2"></div>
+  <div class="bg-glow3"></div>
+</div>
+
+<!-- LOGO -->
+<div class="logo-wrap">
+  <div>
+    <img class="logo-img" src="data:image/jpeg;base64,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" alt="Blue3 Investimentos">
+    <div style="text-align:center;margin-top:6px;">
+      <a id="b3-sair-btn" href="#" onclick="b3Logout(event)" style="display:none;font-size:10px;font-weight:600;color:rgba(255,255,255,.45);text-decoration:none;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border:1px solid rgba(255,255,255,.12);border-radius:20px;font-family:'DM Sans',sans-serif;transition:all .15s">Sair</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrapper">
+
+  <div class="brand-sep"></div>
+
+  <!-- Division identity -->
+  <div class="division">
+    <div class="div-icon">
+      <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 19L8 13L12 16.5L18.5 9" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M14.5 9H18.5V13" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="5.5" cy="5.5" r="2" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>
+        <circle cx="11" cy="3" r="1.3" fill="rgba(255,255,255,0.2)"/>
+      </svg>
+    </div>
+    <div>
+      <div class="div-name">Blue3 Expansão</div>
+      <div class="div-tag">Growth &amp; Talent Division</div>
+    </div>
+  </div>
+
+  <!-- Headline -->
+  <div class="headline">
+    <div class="hl-eyebrow">Central de operações · 2026</div>
+    <div class="hl-sub">Acesse os painéis de controle da divisão de expansão — relatório executivo e simulador de contratações.</div>
+  </div>
+
+  <!-- Navigation Cards -->
+  <div class="cards">
+
+    <!-- Relatório Executivo — sempre visível -->
+    <a class="nav-card card-exp" href="relatorio.html">
+      <div class="card-bar"></div>
+      <div class="card-status"><span class="status-dot"></span>Ativo</div>
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 20L8.5 13.5L12.5 17L19.5 9" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 9H19.5V13" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="3" width="5" height="5" rx="1.5" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/></svg>
+      </div>
+      <div>
+        <div class="card-label">Relatório executivo</div>
+        <div class="card-title">Blue3 Expansão<br>2026</div>
+        <div class="card-desc">Contratações ativas, pipeline M&A, performance de hunters e pace semestral.</div>
+      </div>
+      <div class="card-cta">Abrir painel <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </a>
+
+    <!-- Simulador — sempre visível -->
+    <a class="nav-card card-sim" href="simulador.html">
+      <div class="card-bar"></div>
+      <div class="card-status"><span class="status-dot"></span>Ativo</div>
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 7H7C5.9 7 5 7.9 5 9V17C5 18.1 5.9 19 7 19H17C18.1 19 19 18.1 19 17V15" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M13 5H19V11" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 5L11 13" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="card-label">Modelagem financeira</div>
+        <div class="card-title">Blue3<br>Simulador</div>
+        <div class="card-desc">Simule cenários de contratação, projeções de custo e retorno por perfil de assessor.</div>
+      </div>
+      <div class="card-cta">Abrir simulador <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </a>
+
+    <!-- Projeção de Caixa — restrito -->
+    <a id="b3-card-cf" class="nav-card card-cf b3-hidden" href="cashflow.html">
+      <div class="card-bar"></div>
+      <div class="card-status"><span class="status-dot"></span>Ativo</div>
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M2 7h20M6 7V5a2 2 0 012-2h8a2 2 0 012 2v2M6 12h4M6 16h3" stroke="white" stroke-width="1.8" stroke-linecap="round"/><rect x="2" y="7" width="20" height="14" rx="2" stroke="white" stroke-width="1.8"/></svg>
+      </div>
+      <div>
+        <div class="card-label">Fluxo financeiro</div>
+        <div class="card-title">Projeção<br>de Caixa</div>
+        <div class="card-desc">Desembolsos mensais, triggers por período e impacto por assessor.</div>
+      </div>
+      <div class="card-cta">Ver projeção <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </a>
+
+    <!-- Performance Hunters — restrito -->
+    <a id="b3-card-hunter" class="nav-card card-hunter b3-hidden" href="hunters.html">
+      <div class="card-bar"></div>
+      <div class="card-status"><span class="status-dot"></span>Ativo</div>
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="7" r="3" stroke="white" stroke-width="1.8"/><circle cx="17" cy="9" r="2.5" stroke="white" stroke-width="1.5" stroke-dasharray="2 1"/><path d="M3 20c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M17 14c1.657 0 3 1.343 3 3v1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 1"/></svg>
+      </div>
+      <div>
+        <div class="card-label">Equipe de recrutamento</div>
+        <div class="card-title">Performance<br>Hunters</div>
+        <div class="card-desc">Ranking de contratações, AuC captado e bônus por hunter.</div>
+      </div>
+      <div class="card-cta">Ver ranking <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </a>
+
+    <!-- Pipeline M&A — restrito -->
+    <a id="b3-card-ma" class="nav-card card-ma b3-hidden" href="ma.html">
+      <div class="card-bar"></div>
+      <div class="card-status"><span class="status-dot"></span>Ativo</div>
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M8 12H5a2 2 0 00-2 2v3a2 2 0 002 2h3a2 2 0 002-2v-3a2 2 0 00-2-2z" stroke="white" stroke-width="1.8"/><path d="M19 3h-3a2 2 0 00-2 2v3a2 2 0 002 2h3a2 2 0 002-2V5a2 2 0 00-2-2z" stroke="white" stroke-width="1.8"/><path d="M10 15.5H14M14 8.5H10" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 1"/></svg>
+      </div>
+      <div>
+        <div class="card-label">Aquisições estratégicas</div>
+        <div class="card-title">Pipeline<br>M&amp;A</div>
+        <div class="card-desc">Operações em andamento, NDA, valuation e deals em negociação.</div>
+      </div>
+      <div class="card-cta">Ver pipeline <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </a>
+
+    <!-- Upload CSV — restrito -->
+    <a id="b3-card-upload" class="nav-card card-upload b3-hidden" href="#" onclick="b3TriggerCSV(event)">
+      <div class="card-bar"></div>
+      <div class="card-status"><span class="status-dot"></span>Dados</div>
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="17 8 12 3 7 8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="3" x2="12" y2="15" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="card-label">Base de dados</div>
+        <div class="card-title">Atualizar<br>CSV</div>
+        <div class="card-desc">Importe a planilha de candidatos para atualizar todos os painéis.</div>
+        <div id="csv-status"><span id="csv-dot"></span><span id="csv-label">Sem dados carregados</span></div>
+      </div>
+      <div class="card-cta">Fazer upload <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </a>
+
+    <!-- Gestão Admin — só master -->
+    <a id="b3-card-admin" class="nav-card card-admin b3-hidden" href="#" onclick="b3AdminOpen(event)">
+      <div class="card-bar"></div>
+      <div class="card-status"><span class="status-dot"></span>Admin</div>
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="white" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <div class="card-label">Controle de acesso</div>
+        <div class="card-title">Gestão de<br>Usuários</div>
+        <div class="card-desc">Crie, edite e gerencie os acessos ao sistema Blue3.</div>
+      </div>
+      <div class="card-cta">Gerenciar <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </a>
+
+  </div>
+
+  <input type="file" id="b3-csv-input" accept=".csv" style="display:none" onchange="b3ImportCSV(this)">
+
+  <div class="footer">
+    <div class="footer-rule"></div>
+    <div class="footer-txt">Blue3 Investimentos</div>
+    <div class="footer-ver">Expansion Suite v4 · Growth & Talent Division</div>
+  </div>
+</div>
+
+<!-- OVERLAY para páginas externas (fallback, não é mais usado) -->
+<div id="b3-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:#000;flex-direction:column;">
+  <div class="ov-bar">
+    <button class="ov-back" onclick="closeOverlay()">&#8592; Voltar</button>
+    <span id="b3-overlay-title" class="ov-title"></span>
+  </div>
+  <iframe id="b3-frame" style="flex:1;border:none;width:100%;background:#fff;" sandbox="allow-scripts allow-same-origin allow-popups allow-modals"></iframe>
+</div>
+
+<script>
+// ── Estado global ──
+var B3CU = null;
+
+// ── Sessão persistente (recarregar aba sem logar de novo) ──
+(function(){
+  var s = sessionStorage.getItem('b3s');
+  if (s) {
+    try { B3CU = JSON.parse(s); } catch(e) {}
+    if (B3CU) {
+      document.getElementById('b3lo').style.display = 'none';
+      b3Start();
+    }
+  }
+})();
+
+// ── Usuários ──
+function getB3Users() {
+  var s = localStorage.getItem('b3users');
+  if (s) return JSON.parse(s);
+  return [
+    {id:'u1', n:'Master Admin', l:'master',  p:'blue3@2026',  r:'master', mc:false},
+    {id:'u2', n:'Bianca',       l:'bianca',  p:'bianca123',   r:'viewer', mc:true},
+    {id:'u3', n:'Eduarda',      l:'eduarda', p:'eduarda123',  r:'viewer', mc:true},
+    {id:'u4', n:'Paulo',        l:'paulo',   p:'paulo123',    r:'paulo',  mc:true}
+  ];
+}
+
+// ── Login ──
+function b3Login() {
+  var l = document.getElementById('b3u').value.trim();
+  var p = document.getElementById('b3p').value;
+  var u = getB3Users().find(function(x){ return x.l === l && x.p === p; });
+  if (!u) { document.getElementById('b3err').classList.add('show'); return; }
+  document.getElementById('b3err').classList.remove('show');
+  B3CU = u;
+  document.getElementById('b3lo').style.display = 'none';
+  if (u.mc) { document.getElementById('b3-pw-modal').style.display = 'flex'; return; }
+  b3Start();
+}
+
+function b3Start() {
+  sessionStorage.setItem('b3s', JSON.stringify(B3CU));
+  document.getElementById('b3-sair-btn').style.display = 'inline-block';
+  if (B3CU.r === 'master') {
+    document.getElementById('b3-card-upload').classList.remove('b3-hidden');
+    document.getElementById('b3-card-cf').classList.remove('b3-hidden');
+    document.getElementById('b3-card-hunter').classList.remove('b3-hidden');
+    document.getElementById('b3-card-ma').classList.remove('b3-hidden');
+    document.getElementById('b3-card-admin').classList.remove('b3-hidden');
+  }
+  if (B3CU.r === 'paulo') {
+    document.getElementById('b3-card-upload').classList.remove('b3-hidden');
+    document.getElementById('b3-card-cf').classList.remove('b3-hidden');
+    document.getElementById('b3-card-hunter').classList.remove('b3-hidden');
+    document.getElementById('b3-card-ma').classList.remove('b3-hidden');
+  }
+  // viewer vê apenas relatório e simulador (já visíveis por padrão)
+  updateCSVStatus();
+}
+
+function b3Logout(e) {
+  if (e) e.preventDefault();
+  B3CU = null;
+  sessionStorage.removeItem('b3s');
+  ['b3-card-upload','b3-card-cf','b3-card-hunter','b3-card-ma','b3-card-admin'].forEach(function(id){
+    document.getElementById(id).classList.add('b3-hidden');
+  });
+  document.getElementById('b3-sair-btn').style.display = 'none';
+  document.getElementById('b3lo').style.display = 'flex';
+  document.getElementById('b3u').value = '';
+  document.getElementById('b3p').value = '';
+}
+
+// ── Teclas de atalho login ──
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('b3p').addEventListener('keydown', function(e){ if(e.key==='Enter') b3Login(); });
+  document.getElementById('b3u').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('b3p').focus(); });
+});
+
+// ── Alterar senha ──
+function checkPwModal(v) {
+  var r = {
+    'pm-len':   v.length >= 8,
+    'pm-upper': /[A-Z]/.test(v),
+    'pm-num':   /[0-9]/.test(v),
+    'pm-spec':  /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(v)
+  };
+  Object.keys(r).forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) {
+      el.style.color = r[id] ? '#16A34A' : '#9CA3AF';
+      el.textContent = (r[id] ? '✓ ' : '○ ') + el.textContent.slice(2);
+    }
+  });
+  return Object.values(r).every(Boolean);
+}
+
+function saveNewPw() {
+  var np = document.getElementById('pw-new').value;
+  var cp = document.getElementById('pw-conf').value;
+  var msg = document.getElementById('pw-msg');
+  if (!checkPwModal(np)) {
+    msg.style.cssText = 'display:block;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:12px;background:#FEE2E2;color:#B91C1C';
+    msg.textContent = 'Senha não atende à política.';
+    return;
+  }
+  if (np !== cp) {
+    msg.style.cssText = 'display:block;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:12px;background:#FEE2E2;color:#B91C1C';
+    msg.textContent = 'Senhas não coincidem.';
+    return;
+  }
+  var users = getB3Users();
+  var idx = users.findIndex(function(u){ return u.l === B3CU.l; });
+  if (idx > -1) { users[idx].p = np; users[idx].mc = false; }
+  localStorage.setItem('b3users', JSON.stringify(users));
+  B3CU.p = np; B3CU.mc = false;
+  sessionStorage.setItem('b3s', JSON.stringify(B3CU));
+  document.getElementById('b3-pw-modal').style.display = 'none';
+  b3Start();
+}
+
+// ── Upload CSV ──
+function b3TriggerCSV(e) {
+  e.preventDefault();
+  document.getElementById('b3-csv-input').click();
+}
+
+function b3ImportCSV(input) {
+  var file = input.files[0]; if (!file) return;
+  var rd = new FileReader();
+  rd.onload = function(e) {
+    try {
+      var text = e.target.result;
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      var lines = text.split('\n').filter(function(l){ return l.trim(); });
+      if (lines.length < 2) { alert('CSV inválido — menos de 2 linhas.'); return; }
+      var sep = lines[0].indexOf(';') > -1 ? ';' : ',';
+      var h = lines[0].split(sep).map(function(x){
+        return x.trim().replace(/^\uFEFF/, '').replace(/^"|"$/g, '');
+      });
+      var rows = [];
+      for (var i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        var v = lines[i].split(sep), o = {};
+        h.forEach(function(hh, j){ o[hh] = (v[j]||'').trim().replace(/^"|"$/g,''); });
+        var st = (o['Status']||'').trim();
+        if (o['Candidato'] && o['Candidato'].trim() && (st === 'Trabalhando' || st === 'Contratado(a)')) {
+          rows.push(o);
+        }
+      }
+      if (!rows.length) { alert('Nenhum candidato válido encontrado.\nVerifique as colunas "Candidato" e "Status".'); return; }
+      localStorage.setItem('B3D', JSON.stringify(rows));
+      updateCSVStatus();
+      alert('✅ Base atualizada: ' + rows.length + ' candidatos carregados.');
+    } catch(err) {
+      console.error('[Blue3] Erro CSV:', err);
+      alert('Erro ao importar CSV: ' + err.message);
+    }
+    input.value = '';
+  };
+  rd.readAsText(file, 'UTF-8');
+}
+
+function updateCSVStatus() {
+  var raw = localStorage.getItem('B3D');
+  var dot = document.getElementById('csv-dot');
+  var label = document.getElementById('csv-label');
+  if (!dot || !label) return;
+  if (raw) {
+    try {
+      var rows = JSON.parse(raw);
+      dot.className = 'ok';
+      label.textContent = rows.length + ' candidatos carregados';
+    } catch(e) {
+      dot.className = '';
+      label.textContent = 'Erro nos dados';
+    }
+  } else {
+    dot.className = '';
+    label.textContent = 'Sem dados carregados';
+  }
+}
+
+// Verificar status CSV ao carregar
+updateCSVStatus();
+
+// ── Gestão de Usuários ──
+function b3AdminOpen(e) {
+  if (e) e.preventDefault();
+  b3AdminRender();
+  document.getElementById('b3-admin-modal').classList.add('open');
+}
+function b3AdminClose() {
+  document.getElementById('b3-admin-modal').classList.remove('open');
+}
+function b3AdminRender() {
+  var users = getB3Users();
+  var roleLabel = { master: 'Master', paulo: 'Paulo', viewer: 'Viewer' };
+  var html = '';
+  users.forEach(function(u) {
+    html += '<tr>'
+      + '<td>' + u.n + '</td>'
+      + '<td style="color:#7A82A8">' + u.l + '</td>'
+      + '<td><span class="admin-badge ' + u.r + '">' + (roleLabel[u.r]||u.r) + '</span></td>'
+      + '<td style="display:flex;gap:6px;">';
+    if (u.l !== 'master') {
+      html += '<button class="admin-action danger" onclick="b3DeleteUser(\'' + u.id + '\')">Remover</button>';
+      html += '<button class="admin-action" onclick="b3ResetPw(\'' + u.id + '\')">Reset senha</button>';
+    }
+    html += '</td></tr>';
+  });
+  document.getElementById('admin-tbody').innerHTML = html;
+}
+
+function b3AddUser() {
+  var n = document.getElementById('add-name').value.trim();
+  var l = document.getElementById('add-login').value.trim().toLowerCase().replace(/\s/g,'');
+  var p = document.getElementById('add-pw').value;
+  var r = document.getElementById('add-role').value;
+  if (!n || !l || !p) { alert('Preencha todos os campos.'); return; }
+  var users = getB3Users();
+  if (users.find(function(u){ return u.l === l; })) { alert('Login já existe.'); return; }
+  var newId = 'u' + Date.now();
+  users.push({ id: newId, n: n, l: l, p: p, r: r, mc: false });
+  localStorage.setItem('b3users', JSON.stringify(users));
+  document.getElementById('add-name').value = '';
+  document.getElementById('add-login').value = '';
+  document.getElementById('add-pw').value = '';
+  b3AdminRender();
+  alert('Usuário "' + n + '" adicionado com sucesso.');
+}
+
+function b3DeleteUser(id) {
+  if (!confirm('Remover este usuário?')) return;
+  var users = getB3Users().filter(function(u){ return u.id !== id; });
+  localStorage.setItem('b3users', JSON.stringify(users));
+  b3AdminRender();
+}
+
+function b3ResetPw(id) {
+  var np = prompt('Nova senha para o usuário:');
+  if (!np) return;
+  var users = getB3Users();
+  var idx = users.findIndex(function(u){ return u.id === id; });
+  if (idx > -1) { users[idx].p = np; users[idx].mc = true; }
+  localStorage.setItem('b3users', JSON.stringify(users));
+  alert('Senha redefinida. O usuário deverá alterar no próximo login.');
+}
+
+// ── Overlay legacy (compatibilidade) ──
+function closeOverlay() {
+  document.getElementById('b3-overlay').style.display = 'none';
+  document.getElementById('b3-frame').srcdoc = '';
+  document.body.style.overflow = '';
+}
+</script>
+</body>
+</html>

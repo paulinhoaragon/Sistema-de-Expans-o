@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Blue3 · Pipeline M&amp;A</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="pipeline.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#0A0F1E;--cobalt:#1A3BAD;--cobalt-gl:#4A70F5;--gold:#B8962E;--canvas:#F4F6FB;--surface:#fff;--rule:#E2E6F2;--t1:#0A0F1E;--t2:#3A4268;--t3:#7A82A8;--t4:#A8B0CC;--r8:8px;--r12:12px;--r16:16px}
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:14px;-webkit-font-smoothing:antialiased}
+.cover{background:var(--ink);min-height:140px;position:relative;overflow:hidden}
+.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:52px 52px}
+.cgl{position:absolute;top:-60px;right:-40px;width:420px;height:420px;background:radial-gradient(ellipse,rgba(41,82,227,.18) 0%,transparent 65%)}
+.cover-in{position:relative;max-width:1160px;margin:0 auto;padding:28px 44px 22px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px}
+.b3w{font-size:18px;font-weight:600;color:#fff}.b3w em{font-style:normal;color:var(--cobalt-gl)}
+.b3s{font-size:8px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.28);margin-top:2px}
+.ct{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:#fff;text-align:right}
+.cs{font-size:11px;color:rgba(255,255,255,.4);text-align:right;margin-top:3px}
+.cover-rule{height:1px;background:linear-gradient(90deg,transparent,rgba(74,112,245,.4),rgba(184,150,46,.2),transparent)}
+.page{max-width:1160px;margin:0 auto;padding:28px 44px 72px}
+.krow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+@media(max-width:800px){.krow{grid-template-columns:repeat(2,1fr)}}
+.kc{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r12);padding:14px 16px}
+.kl{font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.kv{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--t1);line-height:1}
+.ks{font-size:10px;color:var(--t3);margin-top:4px}
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--rule)}
+.sn{width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.st{font-size:14px;font-weight:700;color:var(--t1)}.ss{font-size:11px;color:var(--t3);margin-left:auto}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r16);padding:22px 26px}
+.ch{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:16px}
+.g2{display:grid;grid-template-columns:35% 65%;gap:16px;margin-bottom:24px}
+@media(max-width:900px){.g2{grid-template-columns:1fr}}
+.tbl-wrap{overflow-x:auto;border-radius:var(--r12);border:1px solid var(--rule);margin-bottom:24px}
+table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}
+thead th{background:var(--ink);color:rgba(255,255,255,.55);padding:9px 14px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+thead th:last-child{text-align:right}
+tbody tr{border-bottom:1px solid var(--rule)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover td{background:#F4F7FF}
+tbody td{padding:10px 14px;color:var(--t2)}
+tbody td:first-child{font-weight:600;color:var(--t1)}
+tbody td:last-child{text-align:right;font-weight:700}
+tfoot td{padding:9px 14px;font-weight:700;background:var(--ink);color:#fff;font-size:12px}
+tfoot td:last-child{text-align:right}
+.tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700}
+.t-deal{background:#DCFCE7;color:#15803D}
+.t-nda{background:#EEF2FD;color:#1A3BAD}
+.t-prop{background:#FEF3C7;color:#92400E}
+.t-pros{background:#F1F5F9;color:#475569}
+.t-doc{background:#FDF2F8;color:#86198F}
+.confid{display:inline-flex;align-items:center;gap:6px;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<div class="cover"><div class="cg"></div><div class="cgl"></div>
+<div class="cover-in">
+  <div><div class="b3w">BLUE<em>3</em></div><div class="b3s">Investimentos · Expansão 2026</div></div>
+  <div><div class="ct">Pipeline M&A</div><div class="cs">Confidencial · Acesso restrito</div></div>
+</div><div class="cover-rule"></div></div>
+
+<div class="page">
+  <div class="confid">🔒 Documento confidencial — restrito a Gestores e Masters</div>
+
+  <div class="krow">
+    <div class="kc" style="border-top:3px solid #7C3AED"><div class="kl">AuC Potencial Total</div><div class="kv" id="ma-total">—</div><div class="ks">pipeline consolidado</div></div>
+    <div class="kc" style="border-top:3px solid #16A34A"><div class="kl">Operações em Deal</div><div class="kv" id="ma-deal">—</div><div class="ks">AuC confirmado</div></div>
+    <div class="kc" style="border-top:3px solid #1A3BAD"><div class="kl">Em NDA</div><div class="kv" id="ma-nda">—</div><div class="ks">due diligence</div></div>
+    <div class="kc" style="border-top:3px solid #B45309"><div class="kl">Em Prospecção</div><div class="kv" id="ma-pros">—</div><div class="ks">propostas abertas</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch">Distribuição por Status</div>
+      <div style="position:relative;width:100%;height:200px"><canvas id="chartMA"></canvas></div>
+      <div id="ma-legend" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+    <div class="card">
+      <div class="ch">AuC por Operação</div>
+      <div style="position:relative;width:100%;height:200px"><canvas id="chartMABar"></canvas></div>
+    </div>
+  </div>
+
+  <div class="sh"><div class="sn">01</div><div class="st">Operações do Pipeline</div><div class="ss" id="ma-count">—</div></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Operação</th><th>Praça</th><th>Status</th><th>AuC Potencial</th></tr></thead>
+      <tbody id="ma-tbody"></tbody>
+      <tfoot><tr><td colspan="3">Total Pipeline</td><td id="ma-tfoot-total">—</td></tr></tfoot>
+    </table>
+  </div>
+</div>
+
+<script>
+// ── Dados estáticos M&A (não vêm do CSV) ──
+// Fonte: pipeline.js → Blue3_maPipeline() → window.Blue3Data.ma
+// Valores em MM (milhões)
+
+const stC = {
+  'Deal':                   '#16A34A',
+  'NDA':                    '#1A3BAD',
+  'Proposta Apresentada':   '#B45309',
+  'Prospecção':             '#94A3B8',
+  'Documentação Valuation': '#BE185D'
+};
+const stT = {
+  'Deal':                   't-deal',
+  'NDA':                    't-nda',
+  'Proposta Apresentada':   't-prop',
+  'Prospecção':             't-pros',
+  'Documentação Valuation': 't-doc'
+};
+
+var _chartMA = null, _chartMABar = null;
+
+function fmtB(v) {
+  if (v >= 1000) return 'R$ ' + (v/1000).toFixed(1).replace('.',',') + 'B';
+  if (v >= 1)    return 'R$ ' + v.toFixed(0) + 'M';
+  return 'R$ ' + (v*1000).toFixed(0) + 'M';
+}
+
+function renderPage() {
+  if (!window.Blue3Ready) { console.warn('[Blue3] Pipeline não finalizado'); return; }
+  var D = window.Blue3Data;
+  if (!D || !D.ma || !D.ma.length) { showEmptyState(); return; }
+
+  var maOps = D.ma;  // [{n, p, a (em MM), s}]
+  var total = maOps.reduce(function(s,o){ return s + o.a; }, 0);
+
+  var byStatus = {};
+  maOps.forEach(function(o){ byStatus[o.s] = (byStatus[o.s]||0) + o.a; });
+
+  // KPIs
+  set('ma-total', fmtB(total));
+  set('ma-deal',  fmtB(byStatus['Deal']||0));
+  set('ma-nda',   fmtB(byStatus['NDA']||0));
+  var pros = (byStatus['Prospecção']||0)
+           + (byStatus['Proposta Apresentada']||0)
+           + (byStatus['Documentação Valuation']||0);
+  set('ma-pros',  fmtB(pros));
+  set('ma-count', maOps.length + ' operações · 28 assessores');
+
+  // Tabela
+  document.getElementById('ma-tbody').innerHTML = maOps.map(function(o) {
+    var tagCls = stT[o.s] || 't-pros';
+    var praca = o.p === 'nan' ? '—' : o.p;
+    return '<tr><td>'+o.n+'</td><td style="color:var(--t3)">'+praca+'</td>'
+      +'<td><span class="tag '+tagCls+'">'+o.s+'</span></td>'
+      +'<td>'+fmtB(o.a)+'</td></tr>';
+  }).join('');
+  set('ma-tfoot-total', fmtB(total));
+
+  // Charts
+  if (typeof Chart === 'undefined') { setTimeout(function(){ renderCharts(maOps, byStatus); }, 200); }
+  else { renderCharts(maOps, byStatus); }
+}
+
+function renderCharts(maOps, byStatus) {
+  // Destruir charts anteriores
+  if (_chartMA)    { try { _chartMA.destroy(); }    catch(e){} }
+  if (_chartMABar) { try { _chartMABar.destroy(); } catch(e){} }
+
+  var labels = Object.keys(byStatus);
+  var values = labels.map(function(l){ return byStatus[l]; });
+  var colors = labels.map(function(l){ return stC[l] || '#94A3B8'; });
+
+  // Donut por status
+  var elDonut = document.getElementById('chartMA');
+  if (elDonut) {
+    _chartMA = new Chart(elDonut, {
+      type: 'doughnut',
+      data: { labels: labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 3, borderColor: '#fff', hoverOffset: 6 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '60%',
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function(ctx){ return ' '+fmtB(ctx.raw); } } }
+        }
+      }
+    });
+  }
+
+  // Legenda do donut
+  var leg = document.getElementById('ma-legend');
+  if (leg) {
+    leg.innerHTML = '';
+    labels.forEach(function(l, i) {
+      leg.innerHTML += '<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2)">'
+        +'<span style="width:10px;height:10px;border-radius:2px;background:'+colors[i]+';flex-shrink:0"></span>'+l+'</span>';
+    });
+  }
+
+  // Bar por operação
+  var elBar = document.getElementById('chartMABar');
+  if (elBar) {
+    _chartMABar = new Chart(elBar, {
+      type: 'bar',
+      data: {
+        labels: maOps.map(function(o){ return o.n.split(' ')[0]; }),
+        datasets: [{
+          data: maOps.map(function(o){ return o.a; }),
+          backgroundColor: maOps.map(function(o){ return stC[o.s] || '#94A3B8'; }),
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function(ctx){ return ' '+fmtB(ctx.raw); } } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: { grid: { color: 'rgba(0,0,0,.04)' }, ticks: { callback: function(v){ return fmtB(v); } } }
+        }
+      }
+    });
+  }
+}
+
+function set(id, v) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = v;
+}
+
+function showEmptyState(msg) {
+  document.getElementById('content').innerHTML =
+    '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:16px;text-align:center;">'
+    +'<div style="font-size:48px">🏢</div>'
+    +'<div style="font-size:16px;font-weight:600;color:var(--t1)">Sem dados</div>'
+    +'<div style="font-size:13px;color:var(--t3)">'+(msg||'Acesse a tela inicial e faça o upload do CSV.')+'</div>'
+    +'<a href="index.html" style="padding:10px 24px;background:var(--cobalt);color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">Ir para a home</a>'
+    +'</div>';
+}
+
+// ── Inicialização ──
+(function() {
+  var raw = localStorage.getItem('B3D');
+  if (!raw) { showEmptyState(); return; }
+  if (Blue3_runPipeline()) renderPage();
+})();
+
+window.b3OnCSVLoaded = function() {
+  if (Blue3_runPipeline()) renderPage();
+};
+</script>
+</body>
+</html>
