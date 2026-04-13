@@ -211,6 +211,7 @@ body{
   .wrapper{padding:48px 20px 40px !important;}
 }
 </style>
+<script src="pipeline.js"></script>
 </head>
 <body>
 
@@ -614,28 +615,90 @@ function b3ImportCSV(input) {
       var text = e.target.result;
       if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
       var lines = text.split('\n').filter(function(l){ return l.trim(); });
-      if (lines.length < 2) { alert('CSV inválido — menos de 2 linhas.'); return; }
+      if (lines.length < 2) { alert('CSV inválido.'); return; }
       var sep = lines[0].indexOf(';') > -1 ? ';' : ',';
       var h = lines[0].split(sep).map(function(x){
-        return x.trim().replace(/^\uFEFF/, '').replace(/^"|"$/g, '');
+        return x.trim().replace(/^\uFEFF/,'').replace(/^"|"$/g,'');
       });
       var rows = [];
       for (var i = 1; i < lines.length; i++) {
         if (!lines[i].trim()) continue;
         var v = lines[i].split(sep), o = {};
-        h.forEach(function(hh, j){ o[hh] = (v[j]||'').trim().replace(/^"|"$/g,''); });
+        h.forEach(function(hh,j){ o[hh]=(v[j]||'').trim().replace(/^"|"$/g,''); });
         var st = (o['Status']||'').trim();
-        if (o['Candidato'] && o['Candidato'].trim() && (st === 'Trabalhando' || st === 'Contratado(a)')) {
-          rows.push(o);
-        }
+        if (o['Candidato'] && (st==='Trabalhando'||st==='Contratado(a)')) rows.push(o);
       }
-      if (!rows.length) { alert('Nenhum candidato válido encontrado.\nVerifique as colunas "Candidato" e "Status".'); return; }
+      if (!rows.length) { alert('Nenhum candidato válido.'); return; }
+
+      // Salvar localStorage imediatamente
       localStorage.setItem('B3D', JSON.stringify(rows));
       updateCSVStatus();
-      alert('✅ Base atualizada: ' + rows.length + ' candidatos carregados.');
+
+      // Salvar no Supabase
+      var SURL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+      var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+      var hdrs = {
+        'apikey': SKEY,
+        'Authorization': 'Bearer ' + SKEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      };
+
+      // DELETE registros anteriores
+      fetch(SURL + '/rest/v1/candidatos?id=gte.0', {method:'DELETE', headers:hdrs})
+      .catch(function(){})
+      .then(function(){
+        // INSERT em lotes de 50
+        var lotes=[], tam=50;
+        for(var i=0;i<rows.length;i+=tam) lotes.push(rows.slice(i,i+tam));
+        var idx=0, erros=0;
+        function next(){
+          if(idx>=lotes.length){
+            if(erros===0){
+              alert('\u2705 ' + rows.length + ' candidatos salvos e sincronizados com a nuvem!');
+            } else {
+              alert('\u2705 ' + rows.length + ' candidatos salvos localmente. Verifique a conexão com a nuvem.');
+            }
+            if(window.b3OnCSVLoaded) window.b3OnCSVLoaded(rows);
+            return;
+          }
+          var lote = lotes[idx++].map(function(r){
+            function pn(v){var s=String(v||'0').replace(/R\$|\s/g,'').replace(/\./g,'').replace(',','.').trim();return parseFloat(s)||0;}
+            return{
+              candidato:        (r['Candidato']||'').trim(),
+              senioridade:      (r['Senioridade']||'').trim(),
+              origem:           (r['Origem']||'').trim(),
+              filial:           (r['Filial']||'').trim(),
+              hunter:           (r['Hunter']||'').trim(),
+              sign_in:          pn(r['Sign in']),
+              piso:             pn(r['Piso']),
+              periodo:          Math.round(parseFloat(String(r['Per\u00edodo']||'12').replace(',','.'))||12),
+              total_captacao_mm:Math.round(pn(r['Total Capta\u00e7\u00e3o (MM)'])/1e6),
+              total_comp:       pn(r['Total Comp.']),
+              data_contratacao: (r['Data de Contrata\u00e7\u00e3o']||'').trim()||null,
+              status:           (r['Status']||'').trim(),
+              mou:              (r['MOU']||'').trim(),
+              prev_inicio:      (r['Prev. Inicio']||'').trim()||null,
+              ancord:           (r['Ancord']||'').trim(),
+              coparticipacao:   pn(r['Detalhe Coparticipa\u00e7\u00e3o']),
+              trigger1_tri:     pn(r['Trigger 1 Tri']),
+              trigger1:         pn(r['Trigger 1']),
+              trigger2:         pn(r['Trigger 2']),
+              trigger3:         pn(r['Trigger 3']),
+              trigger4:         pn(r['Trigger 4'])
+            };
+          });
+          fetch(SURL+'/rest/v1/candidatos',{method:'POST',headers:hdrs,body:JSON.stringify(lote)})
+          .then(function(r){
+            if(!r.ok){ r.text().then(function(t){console.error('[Blue3] INSERT erro',r.status,t);}); erros++; }
+            next();
+          })
+          .catch(function(err){ console.error('[Blue3] INSERT falhou',err); erros++; next(); });
+        }
+        next();
+      });
     } catch(err) {
-      console.error('[Blue3] Erro CSV:', err);
-      alert('Erro ao importar CSV: ' + err.message);
+      alert('Erro: ' + err.message);
     }
     input.value = '';
   };
