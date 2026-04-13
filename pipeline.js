@@ -264,10 +264,11 @@ function b3ImportCSV(input){
         if(o['Candidato']&&(st==='Trabalhando'||st==='Contratado(a)'))rows.push(o);
       }
       if(!rows.length){alert('Nenhum candidato válido.');return;}
-      // Salvar no Supabase E localStorage
+      // Salvar no Supabase (e localStorage como fallback)
       blue3SaveCSV(rows,function(ok,count){
-        alert('✅ '+count+' candidatos carregados e sincronizados!');
+        alert('\u2705 '+count+' candidatos carregados e sincronizados com a nuvem!');
         if(window.b3OnCSVLoaded)window.b3OnCSVLoaded(rows);
+        updateCSVStatus&&updateCSVStatus();
       });
     }catch(err){alert('Erro: '+err.message);}
     input.value='';
@@ -298,6 +299,22 @@ function Blue3_runPipeline(rows){
 // ── Inicializar a partir do Supabase ──
 function Blue3_init(callback){
   blue3LoadData(function(rows){
+    if(!rows||!rows.length){
+      // Supabase vazio — tentar localStorage
+      var local=localStorage.getItem('B3D');
+      if(local){
+        try{
+          var lr=JSON.parse(local);
+          if(lr&&lr.length){
+            var ok2=Blue3_runPipeline(lr);
+            if(callback)callback(ok2,lr.length);
+            return;
+          }
+        }catch(ex){}
+      }
+      if(callback)callback(false,0);
+      return;
+    }
     var ok=Blue3_runPipeline(rows);
     if(callback)callback(ok,rows.length);
   });
