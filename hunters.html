@@ -67,7 +67,7 @@ tbody td:first-child{text-align:left;font-weight:600;color:var(--t1)}
 .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
 .bg-g{background:#DCFCE7;color:#15803D}.bg-b{background:#EEF2FD;color:#1A3BAD}.bg-a{background:#FEF3C7;color:#92400E}
 .bd{width:5px;height:5px;border-radius:50%;background:currentColor}
-</style></head>
+</style>↵<script src="pipeline.js"></script>↵</head>
 <body>
 
 <div class="cover"><div class="cg"></div><div class="cgl"></div>
@@ -724,11 +724,23 @@ function uploadCSV(input){
 
 document.addEventListener('DOMContentLoaded',function(){
   diag('Iniciando hunters...');
-  var raw=localStorage.getItem('B3D');
-  if(!raw){showEmptyState();diag('CSV nao encontrado - faca upload acima');return;}
-  var ok=Blue3_runPipeline();
-  if(ok){renderPage();}
-  else{showEmptyState('Pipeline falhou. Faca o upload do CSV novamente.');}
+  if (typeof Blue3_init === 'function') {
+    Blue3_init(function(ok) {
+      if (ok) renderPage();
+      else {
+        var raw=localStorage.getItem('B3D');
+        if(!raw){showEmptyState();diag('CSV nao encontrado - faca upload acima');return;}
+        if(Blue3_runPipeline())renderPage();
+        else showEmptyState('Pipeline falhou. Faca o upload do CSV novamente.');
+      }
+    });
+  } else {
+    var raw=localStorage.getItem('B3D');
+    if(!raw){showEmptyState();diag('CSV nao encontrado - faca upload acima');return;}
+    var ok=Blue3_runPipeline();
+    if(ok){renderPage();}
+    else{showEmptyState('Pipeline falhou. Faca o upload do CSV novamente.');}
+  }
 });
 
 window.b3OnCSVLoaded=function(){if(Blue3_runPipeline())renderPage();};
