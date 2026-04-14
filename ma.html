@@ -118,9 +118,10 @@ const stT = {
 var _chartMA = null, _chartMABar = null;
 
 function fmtB(v) {
-  if (v >= 1000) return 'R$ ' + (v/1000).toFixed(1).replace('.',',') + 'B';
-  if (v >= 1)    return 'R$ ' + v.toFixed(0) + 'M';
-  return 'R$ ' + (v*1000).toFixed(0) + 'M';
+  if (!v || v === 0) return '—';
+  if (v >= 1000) return 'R$ ' + (v/1000).toFixed(1).replace('.',',') + 'T';
+  if (v >= 1)    return 'R$ ' + v.toFixed(2).replace('.',',') + 'B';
+  return 'R$ ' + (v * 1000).toFixed(0) + 'M';
 }
 
 function renderPage() {
