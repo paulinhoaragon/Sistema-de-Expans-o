@@ -138,51 +138,56 @@ function blue3SaveCSV(rows, onDone){
 
 // ── Carregar dados do Supabase ──
 function blue3LoadData(callback){
-  supaFetch('candidatos?order=id.asc&limit=500',{prefer:'return=representation'})
-    .then(function(r){return r.json();})
-    .then(function(rows){
-      if(!rows||!rows.length){
-        // Tentar localStorage como fallback
-        var local=localStorage.getItem('B3D');
-        if(local){try{callback(JSON.parse(local));return;}catch(e){}}
-        callback([]);
-        return;
-      }
-      // Converter formato Supabase → formato B3D
-      var converted=rows.map(function(r){
-        var o={};
-        o['Candidato']=r.candidato||'';
-        o['Senioridade']=r.senioridade||'';
-        o['Origem']=r.origem||'';
-        o['Filial']=r.filial||'';
-        o['Hunter']=r.hunter||'';
-        o['Sign in']=r.sign_in||0;
-        o['Piso']=r.piso||0;
-        o['Período']=r.periodo||12;
-        o['Total Captação (MM)']=r.total_captacao_mm?r.total_captacao_mm*1e6:0;
-        o['Total Comp.']=r.total_comp||0;
-        o['Data de Contratação']=r.data_contratacao||'';
-        o['Status']=r.status||'';
-        o['MOU']=r.mou||'';
-        o['Prev. Inicio']=r.prev_inicio||'';
-        o['Ancord']=r.ancord||'';
-        o['Detalhe Coparticipação']=r.coparticipacao||0;
-        o['Trigger 1 Tri']=r.trigger1_tri||0;
-        o['Trigger 1']=r.trigger1||0;
-        o['Trigger 2']=r.trigger2||0;
-        o['Trigger 3']=r.trigger3||0;
-        o['Trigger 4']=r.trigger4||0;
-        return o;
-      });
-      localStorage.setItem('B3D',JSON.stringify(converted)); // cache local
-      callback(converted);
-    })
-    .catch(function(){
-      // Fallback localStorage
+  supaFetch('candidatos?order=updated_at.desc&limit=500',{prefer:'return=representation'})
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    if(!rows||!rows.length){
       var local=localStorage.getItem('B3D');
       if(local){try{callback(JSON.parse(local));return;}catch(e){}}
       callback([]);
+      return;
+    }
+    // Capturar data da última atualização do registro mais recente
+    if(rows[0] && rows[0].updated_at){
+      var d = new Date(rows[0].updated_at);
+      var months=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+      var dateStr = d.getDate().toString().padStart(2,'0')+' '+months[d.getMonth()]+' '+d.getFullYear();
+      localStorage.setItem('B3D_DATE', dateStr);
+    }
+    // Converter formato Supabase para B3D
+    var converted=rows.map(function(r){
+      var o={};
+      o['Candidato']=r.candidato||'';
+      o['Senioridade']=r.senioridade||'';
+      o['Origem']=r.origem||'';
+      o['Filial']=r.filial||'';
+      o['Hunter']=r.hunter||'';
+      o['Sign in']=r.sign_in||0;
+      o['Piso']=r.piso||0;
+      o['Período']=r.periodo||12;
+      o['Total Captação (MM)']=r.total_captacao_mm?r.total_captacao_mm*1e6:0;
+      o['Total Comp.']=r.total_comp||0;
+      o['Data de Contratação']=r.data_contratacao||'';
+      o['Status']=r.status||'';
+      o['MOU']=r.mou||'';
+      o['Prev. Inicio']=r.prev_inicio||'';
+      o['Ancord']=r.ancord||'';
+      o['Detalhe Coparticipação']=r.coparticipacao||0;
+      o['Trigger 1 Tri']=r.trigger1_tri||0;
+      o['Trigger 1']=r.trigger1||0;
+      o['Trigger 2']=r.trigger2||0;
+      o['Trigger 3']=r.trigger3||0;
+      o['Trigger 4']=r.trigger4||0;
+      return o;
     });
+    localStorage.setItem('B3D',JSON.stringify(converted));
+    callback(converted);
+  })
+  .catch(function(){
+    var local=localStorage.getItem('B3D');
+    if(local){try{callback(JSON.parse(local));return;}catch(e){}}
+    callback([]);
+  });
 }
 
 // ── dataLoader (lê de window.Blue3Data._rawRows) ──
@@ -375,27 +380,44 @@ function Blue3_init(callback){
     if(callback) callback(ok, resultCand.length);
   }
 
-  // Candidatos
-  blue3LoadData(function(rows){ resultCand=rows||[]; finish(); });
+  // 1. Candidatos + data do último upload
+  blue3LoadData(function(rows){
+    resultCand = rows || [];
+    // Buscar data do último update no Supabase
+    supaFetch('candidatos?select=updated_at&order=updated_at.desc&limit=1',
+              {prefer:'return=representation'})
+    .then(function(r){ return r.json(); })
+    .then(function(rows){
+      if(rows && rows.length && rows[0].updated_at){
+        var d = new Date(rows[0].updated_at);
+        var meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+        var dateStr = String(d.getDate()).padStart(2,'0') + ' '
+          + meses[d.getMonth()] + ' ' + d.getFullYear();
+        localStorage.setItem('B3D_DATE', dateStr);
+      }
+      finish();
+    })
+    .catch(function(){ finish(); });
+  });
 
-  // M&A
+  // 2. M&A
   supaFetch('ma_pipeline?order=id.asc',{prefer:'return=representation'})
-  .then(function(r){return r.json();})
+  .then(function(r){ return r.json(); })
   .then(function(rows){
-    resultMA=(rows||[]).map(function(r){
-      return{n:r.nome||'',p:r.praca||'',a:parseFloat(r.auc_b)||0,s:r.status||''};
+    resultMA = (rows||[]).map(function(r){
+      return {n:r.nome||'',p:r.praca||'',a:parseFloat(r.auc_b)||0,s:r.status||''};
     });
     finish();
   })
   .catch(function(){ resultMA=[]; finish(); });
 
-  // Pipeline Estratégico
+  // 3. Pipeline Estratégico
   supaFetch('pipeline_estrategico?order=id.asc',{prefer:'return=representation'})
-  .then(function(r){return r.json();})
+  .then(function(r){ return r.json(); })
   .then(function(rows){
-    resultPE=(rows||[]).map(function(r){
-      return{n:r.nome||'',p:r.praca||'',i:r.instituicao||'',
-             a:parseFloat(r.auc_mm)||0,tipo:r.tipo||'Contratado'};
+    resultPE = (rows||[]).map(function(r){
+      return {n:r.nome||'',p:r.praca||'',i:r.instituicao||'',
+              a:parseFloat(r.auc_mm)||0,tipo:r.tipo||'Contratado'};
     });
     finish();
   })
