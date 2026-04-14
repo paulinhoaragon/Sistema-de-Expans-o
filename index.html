@@ -175,6 +175,7 @@ body{
 .admin-table tr:last-child td{border-bottom:none;}
 .admin-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;}
 .admin-badge.master{background:#DBEAFE;color:#1E40AF;}
+.admin-badge.gerente{background:#D1FAE5;color:#065F46;}
 .admin-badge.paulo{background:#D1FAE5;color:#065F46;}
 .admin-badge.viewer{background:#F3F4F6;color:#6B7280;}
 .admin-action{background:none;border:1px solid #E2E6F2;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;color:#1A3BAD;font-family:'DM Sans',sans-serif;}
@@ -281,7 +282,7 @@ body{
         <input type="password" id="add-pw" placeholder="Senha inicial">
         <select id="add-role">
           <option value="viewer">Viewer (Relatório + Simulador)</option>
-          <option value="paulo">Paulo (Tudo exceto Admin)</option>
+          <option value="gerente">Gerente (Tudo exceto Upload e Admin)</option>
           <option value="master">Master (Acesso total)</option>
         </select>
       </div>
@@ -838,7 +839,7 @@ function b3AdminClose() {
 }
 function b3AdminRender() {
   var users = getB3Users();
-  var roleLabel = { master: 'Master', paulo: 'Paulo', viewer: 'Viewer' };
+  var roleLabel = { master: 'Master', gerente: 'Gerente', paulo: 'Gerente', viewer: 'Viewer' };
   var html = '';
   users.forEach(function(u) {
     html += '<tr>'
