@@ -273,7 +273,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Contratações líquidas ativas</div><div class="kv"><span id="dyn-liq">28</span></div><div class="ks" id="dyn-liq-sub-el">Jan–Abr 2026 · 4 meses (31 brutas − 3 desist.)</div><div class="kp pu">↑ Ritmo: 6,75 líquidas/mês</div></div>
     <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">AuC total mapeado</div><div class="kv"><span id="dyn-auc">R$1,88B</span></div><div class="ks" id="dyn-auc-sub-el">27 candidatos com carteira</div><div class="kp pu">↑ Média R$148M / pessoa</div></div>
     <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">AuC estratégico confirmado</div><div class="kv">R$655M</div><div class="ks">7 assessores estratégicos</div><div class="kp pu">↑ R$600M em negociação</div></div>
-    <div class="kc"><div class="ktr" style="background:#7C3AED;"></div><div class="kl">Pipeline M&amp;A</div><div class="kv">R$25,1B</div><div class="ks">8 operações em andamento</div><div class="kp pu">↑ 22% no pipe negociação</div></div>
+    <div class="kc"><div class="ktr" style="background:#7C3AED;"></div><div class="kl">Pipeline M&amp;A</div><div class="kv" id="dyn-ma-total">R$25,1B</div><div class="ks" id="dyn-ma-count">8 operações em andamento</div><div class="kp pu">↑ 22% no pipe negociação</div></div>
   </div>
   <div class="ib">
     <div class="ii"><div class="iv"><span id="dyn-brutas">31</span></div><div class="il">Contratações brutas Jan–Abr</div></div>
@@ -635,6 +635,19 @@ function Blue3_charts() {
 
   // ── KPI fills ──
   set('dyn-liq',    AT);
+
+  // ── M&A KPIs dinâmicos ──
+  if (D.ma && D.ma.length) {
+    var maTotal = D.ma.reduce(function(s,o){ return s + (o.a||0); }, 0);
+    function fmtMaB(v) {
+      if (!v || v === 0) return '—';
+      if (v >= 1000) return 'R$' + (v/1000).toFixed(1).replace('.',',') + 'T';
+      if (v >= 1)    return 'R$' + v.toFixed(2).replace('.',',').replace(',00','') + 'B';
+      return 'R$' + (v*1000).toFixed(0) + 'M';
+    }
+    set('dyn-ma-total', fmtMaB(maTotal));
+    set('dyn-ma-count', D.ma.length + ' operações em andamento');
+  }
   set('dyn-liq-sub','Jan–Abr 2026 · 4 meses ('+(G.brutas||AT+3)+' brutas − 3 desist.)');
   set('dyn-auc',    'R$'+(G.aucB||'0')+'B');
   set('dyn-auc-sub', AT+' candidatos com carteira');
