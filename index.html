@@ -484,10 +484,10 @@ function getB3Users() {
   var s = localStorage.getItem('b3users');
   if (s) return JSON.parse(s);
   return [
-    {id:'u1', n:'Master Admin', l:'master',  p:'blue3@2026',  r:'master', mc:false},
-    {id:'u2', n:'Bianca',       l:'bianca',  p:'bianca123',   r:'viewer', mc:true},
-    {id:'u3', n:'Eduarda',      l:'eduarda', p:'eduarda123',  r:'viewer', mc:true},
-    {id:'u4', n:'Paulo',        l:'paulo',   p:'paulo123',    r:'paulo',  mc:true}
+    {id:'u1', n:'Master Admin', l:'master',  p:'blue3@2026',  r:'master',  mc:false},
+    {id:'u2', n:'Bianca',       l:'bianca',  p:'bianca123',   r:'viewer',  mc:true},
+    {id:'u3', n:'Eduarda',      l:'eduarda', p:'eduarda123',  r:'viewer',  mc:true},
+    {id:'u4', n:'Paulo',        l:'paulo',   p:'paulo123',    r:'gerente', mc:true}
   ];
 }
 
@@ -523,20 +523,31 @@ function b3Login() {
 function b3Start() {
   sessionStorage.setItem('b3s', JSON.stringify(B3CU));
   document.getElementById('b3-sair-btn').style.display = 'inline-block';
-  if (B3CU.r === 'master') {
+
+  var r = B3CU.r;
+
+  // Master — acesso total
+  if (r === 'master') {
     document.getElementById('b3-card-upload').classList.remove('b3-hidden');
-    document.getElementById('b3-card-cf').classList.remove('b3-hidden');
-    document.getElementById('b3-card-hunter').classList.remove('b3-hidden');
-    document.getElementById('b3-card-ma').classList.remove('b3-hidden');
     document.getElementById('b3-card-admin').classList.remove('b3-hidden');
-  }
-  if (B3CU.r === 'paulo') {
-    document.getElementById('b3-card-upload').classList.remove('b3-hidden');
+    document.getElementById('b3-card-ma').classList.remove('b3-hidden');
     document.getElementById('b3-card-cf').classList.remove('b3-hidden');
     document.getElementById('b3-card-hunter').classList.remove('b3-hidden');
-    document.getElementById('b3-card-ma').classList.remove('b3-hidden');
   }
-  // viewer vê apenas relatório e simulador (já visíveis por padrão)
+
+  // Gerente — tudo exceto Upload CSV e Gestão de Usuários
+  if (r === 'gerente' || r === 'paulo') {
+    document.getElementById('b3-card-ma').classList.remove('b3-hidden');
+    document.getElementById('b3-card-cf').classList.remove('b3-hidden');
+    document.getElementById('b3-card-hunter').classList.remove('b3-hidden');
+  }
+
+  // Viewer — tudo exceto Upload CSV, Gestão de Usuários e Pipeline M&A
+  if (r === 'viewer') {
+    document.getElementById('b3-card-cf').classList.remove('b3-hidden');
+    document.getElementById('b3-card-hunter').classList.remove('b3-hidden');
+  }
+
   updateCSVStatus();
 }
 
