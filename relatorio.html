@@ -258,7 +258,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <div class="cr">
       <div class="rt">Relatório Executivo<br>1º Semestre 2026</div>
       <div class="rp">Contratações · Pipeline M&amp;A · Performance de Hunters</div>
-      <div class="rc">Atualizado 06 abr 2026 · Confidencial</div>
+      <div class="rc">Atualizado <span id="dyn-update-date">06 abr 2026</span> · Confidencial</div>
     </div>
   </div>
   <div class="cover-rule"></div>
@@ -577,7 +577,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 <!-- FOOTER -->
 <div class="foot">
   <div class="fl">Blue3 Expansão · Growth &amp; Talent Division</div>
-  <div class="fr">Documento confidencial · Uso interno · 06 abr 2026</div>
+  <div class="fr">Documento confidencial · Uso interno · <span id="dyn-update-date">06 abr 2026</span></div>
 </div>
 
 <script>
@@ -634,6 +634,22 @@ function Blue3_charts() {
   var hPau = H.find(function(h){return normL(h.nome)==='paulo';  })||{total:0,senior:0,pleno:0,junior:0};
 
   // ── KPI fills ──
+  // ── Data da última atualização ──
+  (function(){
+    var dt = localStorage.getItem('B3D_DATE') || '';
+    if (dt) {
+      var el = document.getElementById('dyn-update-date');
+      if (el) el.textContent = 'Atualizado ' + dt;
+    }
+  })();
+
+  // ── Data da última atualização ──
+  var b3date = localStorage.getItem('B3D_DATE');
+  if (b3date) {
+    var el = document.getElementById('dyn-update-date');
+    if (el) el.textContent = 'Atualizado ' + b3date;
+  }
+
   set('dyn-liq',    AT);
 
   // ── M&A KPIs dinâmicos ──
