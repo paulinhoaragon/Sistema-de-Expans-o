@@ -326,21 +326,37 @@ function blue3SavePipelines(contratados, negociacao, ma){
   .catch(function(e){console.error('[Blue3] M&A save erro:',e);});
 }
 function Blue3_runPipeline(rows){
-  window.Blue3Ready=false;
-  window.Blue3Data={candidatos:[],financeiros:[],paybacks:[],hunters:[],pipeline:[],ma:[],resumoGeral:{},_rawRows:rows||[]};
-  if(!rows||!rows.length){
-    // Tentar localStorage
-    var local=localStorage.getItem('B3D');
-    if(local){try{window.Blue3Data._rawRows=JSON.parse(local);}catch(e){return false;}}
-    else{return false;}
+  window.Blue3Ready = false;
+
+  // Preservar dados do Supabase antes de recriar Blue3Data
+  var prevMA  = (window.Blue3Data && window.Blue3Data._ma)          || [];
+  var prevPE  = (window.Blue3Data && window.Blue3Data._pipeline)    || [];
+  var prevPN  = (window.Blue3Data && window.Blue3Data._pipelineNeg) || [];
+
+  window.Blue3Data = {
+    candidatos:[], financeiros:[], paybacks:[],
+    hunters:[], pipeline:[], ma:[], resumoGeral:{},
+    _rawRows: rows || [],
+    _ma:          prevMA,
+    _pipeline:    prevPE,
+    _pipelineNeg: prevPN
+  };
+
+  if (!rows || !rows.length) {
+    var local = localStorage.getItem('B3D');
+    if (local) {
+      try { window.Blue3Data._rawRows = JSON.parse(local); }
+      catch(e) { return false; }
+    } else { return false; }
   }
-  if(!Blue3_dataLoader())return false;
+
+  if (!Blue3_dataLoader())   return false;
   Blue3_financeMetrics();
   Blue3_payback();
   Blue3_huntersPerformance();
   Blue3_pipelineStrategic();
   Blue3_maPipeline();
-  window.Blue3Ready=true;
+  window.Blue3Ready = true;
   return true;
 }
 
