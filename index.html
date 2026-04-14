@@ -689,6 +689,13 @@ function b3ImportCSV(input) {
 
       // Salvar localStorage imediatamente
       localStorage.setItem('B3D', JSON.stringify(rows));
+      // Salvar data/hora do último upload
+      var now = new Date();
+      var dd = String(now.getDate()).padStart(2,'0');
+      var mm = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][now.getMonth()];
+      var yyyy = now.getFullYear();
+      localStorage.setItem('B3D_DATE', dd + ' ' + mm + ' ' + yyyy);
+      localStorage.setItem('B3D_DATE', new Date().toLocaleDateString('pt-BR', {day:'2-digit',month:'short',year:'numeric'}));
       updateCSVStatus();
 
       // ── Salvar no Supabase ──
