@@ -230,14 +230,8 @@ function Blue3_financeMetrics(){
   var AT=F.length,seniors=F.filter(function(r){return norm(r.sen)==='sênior';});
   var ps={};F.forEach(function(r){if(r.p)ps[r.p]=1;});
   var maior=F.length?F.reduce(function(a,b){return b.cap>a.cap?b:a;}):null;
-  var desist=parseInt(localStorage.getItem('B3D_DESIST')||'0',10);
-  // byHunter and byPraca summaries for filters
-  var byH={},byP={};
-  F.forEach(function(r){
-    if(r.h){byH[r.h]=(byH[r.h]||0)+1;}
-    if(r.p){byP[r.p]=(byP[r.p]||0)+1;}
-  });
-  window.Blue3Data.resumoGeral={total:AT,trab:F.filter(function(r){return norm(r.st)==='trabalhando';}).length,contCount:F.filter(function(r){return norm(r.st)==='contratado(a)';}).length,mouOk:F.filter(function(r){return norm(r.mou)==='assinado';}).length,mouPend:F.filter(function(r){return norm(r.mou)==='pendente';}).length,ancord:F.filter(function(r){return norm(r.ancord)==='sim';}).length,aucTotal:F.reduce(function(s,r){return s+r.cap;},0),compTotal:F.reduce(function(s,r){return s+r.comp;},0),siTotal:F.reduce(function(s,r){return s+r.si;},0),xpTotal:F.reduce(function(s,r){return s+r.xp;},0),blue3Liq:F.reduce(function(s,r){return s+r.comp;},0)-F.reduce(function(s,r){return s+r.xp;},0),siCount:F.filter(function(r){return r.si>0;}).length,seniors:seniors.length,plenos:F.filter(function(r){return norm(r.sen)==='pleno';}).length,juniors:F.filter(function(r){return norm(r.sen)==='junior'||norm(r.sen)==='júnior';}).length,seniorPct:AT>0?Math.round(seniors.length/AT*100):0,pracas:Object.keys(ps).length,desist:desist,brutas:AT+desist,maiorCand:maior,byMonth:bm,senByMonth:sbm,byHunter:byH,byPraca:byP,aucB:(F.reduce(function(s,r){return s+r.cap;},0)/1000).toFixed(2).replace('.',',')};
+  window.Blue3Data.resumoGeral={total:AT,trab:F.filter(function(r){return norm(r.st)==='trabalhando';}).length,contCount:F.filter(function(r){return norm(r.st)==='contratado(a)';}).length,mouOk:F.filter(function(r){return norm(r.mou)==='assinado';}).length,mouPend:F.filter(function(r){return norm(r.mou)==='pendente';}).length,ancord:F.filter(function(r){return norm(r.ancord)==='sim';}).length,aucTotal:F.reduce(function(s,r){return s+r.cap;},0),compTotal:F.reduce(function(s,r){return s+r.comp;},0),siTotal:F.reduce(function(s,r){return s+r.si;},0),xpTotal:F.reduce(function(s,r){return s+r.xp;},0),blue3Liq:F.reduce(function(s,r){return s+r.comp;},0)-F.reduce(function(s,r){return s+r.xp;},0),siCount:F.filter(function(r){return r.si>0;}).length,seniors:seniors.length,plenos:F.filter(function(r){return norm(r.sen)==='pleno';}).length,juniors:F.filter(function(r){return norm(r.sen)==='junior'||norm(r.sen)==='júnior';}).length,seniorPct:AT>0?Math.round(seniors.length/AT*100):0,pracas:Object.keys(ps).length,brutas:AT+3,maiorCand:maior,byMonth:bm,senByMonth:sbm,aucB:(F.reduce(function(s,r){return s+r.cap;},0)/1000).toFixed(2).replace('.',',')};
+}
 
 function Blue3_payback(){
   window.Blue3Data.paybacks=window.Blue3Data.financeiros.map(function(r){
@@ -248,7 +242,7 @@ function Blue3_payback(){
 }
 
 function Blue3_huntersPerformance(){
-    var C=window.Blue3Data.candidatos,hs={};
+  var C=window.Blue3Data.candidatos,hs={'Eduarda':true,'Bianca':true,'Paulo':true};
   C.forEach(function(r){if(r.h)hs[r.h]=true;});
   window.Blue3Data.hunters=Object.keys(hs).map(function(h){
     var rows=C.filter(function(r){return norm(r.h)===norm(h);});
@@ -386,24 +380,10 @@ function Blue3_init(callback){
     if(callback) callback(ok, resultCand.length);
   }
 
-  // 1. Candidatos + data do último upload
+  // 1. Candidatos (inclui captura da data inline no blue3LoadData)
   blue3LoadData(function(rows){
     resultCand = rows || [];
-    // Buscar data do último update no Supabase
-    supaFetch('candidatos?select=updated_at&order=updated_at.desc&limit=1',
-              {prefer:'return=representation'})
-    .then(function(r){ return r.json(); })
-    .then(function(rows){
-      if(rows && rows.length && rows[0].updated_at){
-        var d = new Date(rows[0].updated_at);
-        var meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-        var dateStr = String(d.getDate()).padStart(2,'0') + ' '
-          + meses[d.getMonth()] + ' ' + d.getFullYear();
-        localStorage.setItem('B3D_DATE', dateStr);
-      }
-      finish();
-    })
-    .catch(function(){ finish(); });
+    finish();
   });
 
   // 2. M&A
