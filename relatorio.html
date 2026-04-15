@@ -708,11 +708,18 @@ function Blue3_charts() {
     set('dyn-ma-total', fmtMaB(maTotal));
     set('dyn-ma-count', D.ma.length + ' operações em andamento');
   }
-  set('dyn-liq-sub','Jan–Abr 2026 · 4 meses ('+(G.brutas||AT+3)+' brutas − 3 desist.)');
+  var desist=G.desist||0;
+  var meses=Object.keys(G.byMonth||{}).length||1;
+  var mLabels={1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
+  var mNums=Object.keys(G.byMonth||{}).map(Number).sort(function(a,b){return a-b;});
+  var periodoLabel=mNums.length>=2?(mLabels[mNums[0]]+'–'+mLabels[mNums[mNums.length-1]]+' 2026 · '+meses+' meses'):'2026';
+  var taxaDesist=G.brutas>0?Math.round(desist/G.brutas*100):0;
+  set('dyn-liq-sub',periodoLabel+' ('+G.brutas+' brutas − '+desist+' desist.)');
   set('dyn-auc',    'R$'+(G.aucB||'0')+'B');
   set('dyn-auc-sub', AT+' candidatos com carteira');
-  set('dyn-brutas', G.brutas||AT+3);
-  set('dyn-desist', 3);
+  set('dyn-brutas', G.brutas||AT);
+  set('dyn-desist', desist);
+  set('dyn-desist-label','Desistências · taxa '+taxaDesist+'%');
   set('dyn-senior-pct', (G.seniorPct||0)+'%');
   if (G.maiorCand) {
     set('dyn-maior', 'R$'+G.maiorCand.cap+'M');
