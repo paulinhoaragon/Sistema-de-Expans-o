@@ -739,7 +739,39 @@ function Blue3_charts() {
   set('dyn-cont',  G.contCount||0);
   set('dyn-ancord',   G.ancord||0);
   set('dyn-mou-ok',   G.mouOk||0);
-  set('dyn-mou-pend', G.mouPend||0);
+   set('dyn-mou-pend', G.mouPend||0);
+
+  // ── Comparação entre períodos ──
+  (function(){
+    var el=document.getElementById('comp-periodos'); if(!el)return;
+    var mNamesLong={1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
+    var mNamesShort={1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
+    var months=Object.keys(BM).map(Number).sort(function(a,b){return a-b;});
+    if(!months.length){el.innerHTML='<p style="color:var(--t3);font-size:12px;">Dados insuficientes para comparação.</p>';return;}
+    var acum=0;
+    el.innerHTML=months.map(function(m,i){
+      var val=BM[m]||0, prev=i>0?(BM[months[i-1]]||0):null;
+      acum+=val;
+      var delta=prev!==null?val-prev:null;
+      var deltaHtml=delta===null?'<span style="font-size:10px;color:var(--t4);">—</span>'
+        :(delta>0?'<span style="font-size:11px;color:#16A34A;font-weight:700;">▲ +'+delta+' vs '+mNamesShort[months[i-1]]+'</span>'
+          :delta<0?'<span style="font-size:11px;color:#DC2626;font-weight:700;">▼ '+delta+' vs '+mNamesShort[months[i-1]]+'</span>'
+          :'<span style="font-size:11px;color:var(--t3);font-weight:600;">= igual vs '+mNamesShort[months[i-1]]+'</span>');
+      var senPct=seniorPctFn(m);
+      return '<div style="background:var(--s2,#F8FAFF);border:1px solid var(--rule,#E5E9F5);border-radius:var(--r12);padding:16px;text-align:center;">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;">'+mNamesLong[m]+'</div>'
+        +'<div style="font-size:32px;font-weight:700;color:var(--cobalt);line-height:1.1;margin:6px 0;">'+val+'</div>'
+        +'<div style="font-size:10px;color:var(--t3);margin-bottom:6px;">contratações no mês</div>'
+        +deltaHtml
+        +'<div style="margin-top:8px;font-size:10px;color:var(--t4);">Acumulado: <strong style="color:var(--t1);">'+acum+'</strong></div>'
+        +'<div style="font-size:10px;color:var(--t4);">'+senPct+'% sênior</div>'
+        +'</div>';
+    }).join('');
+  })();
+  function seniorPctFn(mo){
+    var total=BM[mo]||0,sen=G.senByMonth?(G.senByMonth[mo]||0):0;
+    return total>0?Math.round(sen/total*100):0;
+  }
 
   // ── Chart 1: Trend ──
   function seniorPct(mo) {
