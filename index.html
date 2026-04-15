@@ -638,16 +638,18 @@ function b3ImportCSV(input) {
         return parseFloat(s)||0;
       }
 
-      // ── Parse candidatos ──
-      var rows = [];
+          // ── Parse candidatos ──
+      var rows = [], desistCount = 0;
       for (var i=1; i<lines.length; i++) {
         if (!lines[i].trim()) continue;
         var v=lines[i].split(sep), o={};
         h.forEach(function(hh,j){ o[hh]=(v[j]||'').trim().replace(/^"|"$/g,''); });
         var st=(o['Status']||'').trim();
         if (o['Candidato'] && (st==='Trabalhando'||st==='Contratado(a)')) rows.push(o);
+        else if (o['Candidato'] && /desist/i.test(st)) desistCount++;
       }
       if (!rows.length) { alert('Nenhum candidato válido.'); return; }
+      localStorage.setItem('B3D_DESIST', desistCount);
 
       // ── Parse Pipeline Estratégico Contratados ──
       var contratados=[], idxC=-1;
