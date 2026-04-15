@@ -578,11 +578,15 @@ function getBonusTier(t,p){
 }
 
 function buildH(hunters,cands){
-  var ord=[];
-  HUNTER_ORDER.forEach(function(n){var h=hunters.find(function(x){return ns(x.nome)===ns(n);});if(h)ord.push(h);});
-  hunters.forEach(function(h){if(!HUNTER_ORDER.some(function(n){return ns(n)===ns(h.nome);}))ord.push(h);});
+  // Garante que todos os hunters do CSV tenham config gerada
+  hunters.forEach(function(h){hunterCfg(h.nome);});
+  // Ordena pelo campo order da config (conhecido primeiro, novos ao final)
+  var ord=hunters.slice().sort(function(a,b){
+    return hunterCfg(a.nome).order-hunterCfg(b.nome).order;
+  });
   return ord.map(function(h){
-    var meta=HUNTER_METAS[h.nome]||13,color=HUNTER_COLORS[h.nome]||'#64748B';
+    var cfg=hunterCfg(h.nome),meta=cfg.meta,color=cfg.color;
+
     var pace=meta>0?Math.round(h.total/meta*100):0,hn=ns(h.nome);
     var cs=cands.filter(function(c){return ns(c.h)===hn;}).map(function(c){
       return{nome:c.n,filial:c.p,status:c.st,mou:c.mou,inicio:c.inicio||null,auc:c.cap,piso:c.piso,periodo:c.periodo,comp:c.comp,sen:c.sen};
