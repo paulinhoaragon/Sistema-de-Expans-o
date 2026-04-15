@@ -842,6 +842,43 @@ function Blue3_charts() {
       +'<strong style="color:#92400E;">Atenção:</strong> <span style="color:#92400E;">Faltam '+falt+' contratações. Necessário: '+nec+'/mês.</span></div>';
   })();
 
+  // ── Funil de conversão ──
+  (function(){
+    var fc=document.getElementById('funil-container');
+    var fd=document.getElementById('funil-details');
+    if(!fc||!fd)return;
+    var stages=[
+      {label:'Total contratados',val:AT,color:'#1A3BAD'},
+      {label:'MOU assinado',val:G.mouOk||0,color:'#2952E3'},
+      {label:'Formalizado (Ancord)',val:G.ancord||0,color:'#0EA5E9'},
+      {label:'Trabalhando',val:G.trab||0,color:'#16A34A'}
+    ];
+    var max=AT||1;
+    fc.innerHTML=stages.map(function(s,i){
+      var pct=Math.round(s.val/max*100);
+      var conv=i===0?100:(stages[i-1].val>0?Math.round(s.val/stages[i-1].val*100):0);
+      return '<div style="flex:1;min-width:0;background:'+s.color+';padding:24px 16px;text-align:center;position:relative;">'
+        +(i<stages.length-1?'<div style="position:absolute;right:-1px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:20px solid transparent;border-bottom:20px solid transparent;border-left:14px solid '+s.color+';z-index:2;"></div>':'')
+        +'<div style="font-size:28px;font-weight:700;color:#fff;line-height:1;">'+s.val+'</div>'
+        +'<div style="font-size:10px;font-weight:600;color:rgba(255,255,255,.75);margin-top:4px;text-transform:uppercase;letter-spacing:.06em;">'+s.label+'</div>'
+        +'<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:6px;">'+pct+'% do total'+(i>0?' · '+conv+'% conv.':'')+'</div>'
+        +'</div>';
+    }).join('');
+    var mouPend=G.mouPend||0;
+    fd.innerHTML='<div style="flex:1;background:#FFF7ED;border:1px solid #FED7AA;border-radius:var(--r8);padding:14px 16px;">'
+      +'<div style="font-size:12px;font-weight:700;color:#92400E;">MOU pendente</div>'
+      +'<div style="font-size:22px;font-weight:700;color:#C2410C;margin:4px 0;">'+mouPend+'</div>'
+      +'<div style="font-size:11px;color:#92400E;">assessores aguardando assinatura</div></div>'
+      +'<div style="flex:1;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:var(--r8);padding:14px 16px;">'
+      +'<div style="font-size:12px;font-weight:700;color:#14532D;">Taxa de formalização</div>'
+      +'<div style="font-size:22px;font-weight:700;color:#16A34A;margin:4px 0;">'+(AT>0?Math.round((G.ancord||0)/AT*100):0)+'%</div>'
+      +'<div style="font-size:11px;color:#166534;">chegaram ao status Ancord</div></div>'
+      +'<div style="flex:1;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:var(--r8);padding:14px 16px;">'
+      +'<div style="font-size:12px;font-weight:700;color:#1E3A5F;">Taxa de ativação</div>'
+      +'<div style="font-size:22px;font-weight:700;color:#1A3BAD;margin:4px 0;">'+(AT>0?Math.round((G.trab||0)/AT*100):0)+'%</div>'
+      +'<div style="font-size:11px;color:#1D4ED8;">contratados já em operação</div></div>';
+  })();
+
   // ── Chart 3: Hunter bar ──
   sc('chartHunter', {type:'bar', data:{
     labels:['Paulo','Eduarda','Bianca'],
