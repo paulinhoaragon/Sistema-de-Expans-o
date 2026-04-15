@@ -541,10 +541,27 @@ window.addEventListener('storage', function (e) {
 
 console.log('[Blue3] pipeline.js carregado — aguardando chamada explícita.');
 
-
-var HUNTER_PHOTOS={},HUNTER_METAS={'Eduarda':14,'Bianca':14,'Paulo':12};
-var HUNTER_COLORS={'Eduarda':'#6366F1','Bianca':'#EC4899','Paulo':'#B8962E'};
-var HUNTER_ORDER=['Eduarda','Bianca','Paulo'],H=[];
+var HUNTER_PHOTOS={};
+// Config base — hunters conhecidos; novos hunters herdam defaults automaticamente
+var HUNTER_CFG={
+  'Eduarda':{meta:14,color:'#6366F1',order:0},
+  'Bianca':  {meta:14,color:'#EC4899',order:1},
+  'Paulo':   {meta:12,color:'#B8962E',order:2}
+};
+// Paleta de cores para hunters não configurados
+var _AUTO_COLORS=['#0EA5E9','#10B981','#F59E0B','#8B5CF6','#EF4444','#06B6D4','#84CC16'];
+function hunterCfg(nome){
+  if(HUNTER_CFG[nome])return HUNTER_CFG[nome];
+  // auto-gera config para hunter novo
+  var idx=Object.keys(HUNTER_CFG).length;
+  HUNTER_CFG[nome]={meta:13,color:_AUTO_COLORS[idx%_AUTO_COLORS.length],order:idx};
+  return HUNTER_CFG[nome];
+}
+// Compat shims para código legado que usa HUNTER_METAS/COLORS/ORDER diretamente
+var HUNTER_METAS=new Proxy({},{get:function(_,k){return hunterCfg(k).meta;}});
+var HUNTER_COLORS=new Proxy({},{get:function(_,k){return hunterCfg(k).color;}});
+var HUNTER_ORDER=[];// preenchido em buildH após detecção dinâmica
+var H=[];
 
 function diag(m){var e=document.getElementById('diag');if(!e)return;e.style.display='block';e.textContent=m;clearTimeout(diag._t);diag._t=setTimeout(function(){e.style.display='none';},7000);}
 function ns(s){return String(s||'').trim().toLowerCase();}
