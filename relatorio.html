@@ -1019,6 +1019,108 @@ function Blue3_charts() {
   console.log('[Blue3] Blue3_charts concluído com sucesso');
 }
 
+// ── Filtros dinâmicos ──
+var _activeFilters={hunter:'',praca:'',sen:'',status:''};
+
+function populateFilters(){
+  if(!window.Blue3Data||!window.Blue3Data.candidatos)return;
+  var C=window.Blue3Data.candidatos;
+  var hunters=[],pracas=[];
+  C.forEach(function(r){
+    if(r.h&&hunters.indexOf(r.h)<0)hunters.push(r.h);
+    if(r.p&&pracas.indexOf(r.p)<0)pracas.push(r.p);
+  });
+  hunters.sort();pracas.sort();
+  var fh=document.getElementById('flt-hunter');
+  var fp=document.getElementById('flt-praca');
+  if(fh){fh.innerHTML='<option value="">Todos os hunters</option>'+hunters.map(function(h){return'<option value="'+h+'">'+h+'</option>';}).join('');}
+  if(fp){fp.innerHTML='<option value="">Todas as praças</option>'+pracas.map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join('');}
+}
+
+function getFilteredCandidatos(){
+  if(!window.Blue3Data||!window.Blue3Data.candidatos)return[];
+  var f=_activeFilters;
+  return window.Blue3Data.candidatos.filter(function(r){
+    if(f.hunter&&r.h!==f.hunter)return false;
+    if(f.praca&&r.p!==f.praca)return false;
+    if(f.sen&&(r.sen||'').toLowerCase()!==f.sen.toLowerCase())return false;
+    if(f.status&&(r.st||'').toLowerCase()!==f.status.toLowerCase())return false;
+    return true;
+  });
+}
+
+function applyFilters(){
+  _activeFilters.hunter=(document.getElementById('flt-hunter')||{}).value||'';
+  _activeFilters.praca=(document.getElementById('flt-praca')||{}).value||'';
+  _activeFilters.sen=(document.getElementById('flt-sen')||{}).value||'';
+  _activeFilters.status=(document.getElementById('flt-status')||{}).value||'';
+  var hasFilter=_activeFilters.hunter||_activeFilters.praca||_activeFilters.sen||_activeFilters.status;
+  var btn=document.getElementById('btn-clear-flt');
+  if(btn)btn.style.display=hasFilter?'inline-block':'none';
+  var fc=getFilteredCandidatos();
+  var cnt=document.getElementById('flt-count');
+  if(cnt)cnt.textContent=hasFilter?('Mostrando '+fc.length+' de '+(window.Blue3Data.candidatos||[]).length+' candidatos'):'';
+  renderWithFilter(fc);
+}
+
+function clearFilters(){
+  ['flt-hunter','flt-praca','flt-sen','flt-status'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.value='';
+  });
+  _activeFilters={hunter:'',praca:'',sen:'',status:''};
+  var btn=document.getElementById('btn-clear-flt');
+  if(btn)btn.style.display='none';
+  var cnt=document.getElementById('flt-count');if(cnt)cnt.textContent='';
+  renderPage();
+}
+
+function renderWithFilter(filteredC){
+  if(!window.Blue3Data)return;
+  var AT=filteredC.length;
+  var trab=filteredC.filter(function(r){return(r.st||'').toLowerCase()==='trabalhando';}).length;
+  var mouOk=filteredC.filter(function(r){return(r.mou||'').toLowerCase()==='assinado';}).length;
+  var ancord=filteredC.filter(function(r){return(r.ancord||'').toLowerCase()==='sim';}).length;
+  var seniors=filteredC.filter(function(r){return(r.sen||'').toLowerCase()==='sênior';}).length;
+  var aucTotal=filteredC.reduce(function(s,r){return s+(r.cap||0);},0);
+  function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+  set('dyn-liq',AT);
+  set('dyn-trab',trab);
+  set('dyn-ancord',ancord);
+  set('dyn-mou-ok',mouOk);
+  set('dyn-senior-pct',AT>0?Math.round(seniors/AT*100)+'%':'—');
+  set('dyn-auc','R$'+(aucTotal/1000).toFixed(2).replace('.',',')+'B');
+  set('dyn-auc-sub',AT+' candidatos com carteira');
+  var fc=document.getElementById('funil-container');
+  if(fc){
+    var stages=[
+      {label:'Total contratados',val:AT,color:'#1A3BAD'},
+      {label:'MOU assinado',val:mouOk,color:'#2952E3'},
+      {label:'Formalizado (Ancord)',val:ancord,color:'#0EA5E9'},
+      {label:'Trabalhando',val:trab,color:'#16A34A'}
+    ];
+    var max=AT||1;
+    fc.innerHTML=stages.map(function(s,i){
+      var pct=Math.round(s.val/max*100);
+      var conv=i===0?100:(stages[i-1].val>0?Math.round(s.val/stages[i-1].val*100):0);
+      return '<div style="flex:1;min-width:0;background:'+s.color+';padding:24px 16px;text-align:center;position:relative;">'
+        +(i<stages.length-1?'<div style="position:absolute;right:-1px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:20px solid transparent;border-bottom:20px solid transparent;border-left:14px solid '+s.color+';z-index:2;"></div>':'')
+        +'<div style="font-size:28px;font-weight:700;color:#fff;line-height:1;">'+s.val+'</div>'
+        +'<div style="font-size:10px;font-weight:600;color:rgba(255,255,255,.75);margin-top:4px;text-transform:uppercase;letter-spacing:.06em;">'+s.label+'</div>'
+        +'<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:6px;">'+pct+'% do total'+(i>0?' · '+conv+'% conv.':'')+'</div>'
+        +'</div>';
+    }).join('');
+  }
+  var cl=document.getElementById('cand-list');
+  if(cl){
+    if(!filteredC.length){cl.innerHTML='<p style="color:var(--t3);padding:16px;font-size:13px;">Nenhum candidato encontrado com os filtros selecionados.</p>';return;}
+    cl.innerHTML='<table class="tbl" style="width:100%;border-collapse:collapse;"><thead><tr>'
+      +'<th>Candidato</th><th>Praça</th><th>Hunter</th><th>Senioridade</th><th>Status</th><th>MOU</th><th>AuC (MM)</th></tr></thead><tbody>'
+      +filteredC.map(function(r){
+        return'<tr><td style="font-weight:600;">'+r.n+'</td><td>'+r.p+'</td><td>'+(r.h||'—')+'</td><td>'+r.sen+'</td><td>'+r.st+'</td><td>'+(r.mou||'—')+'</td><td>R$'+r.cap+'M</td></tr>';
+      }).join('')+'</tbody></table>';
+  }
+}
+
 // ── renderPage ──
 function renderPage() {
   console.log('[Blue3 Relatorio] renderPage. Ready:', window.Blue3Ready,
