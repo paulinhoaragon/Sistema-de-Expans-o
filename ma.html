@@ -93,15 +93,14 @@ tfoot td:last-child{text-align:right}
       <tfoot><tr><td colspan="3">Total Pipeline</td><td id="ma-tfoot-total">—</td></tr></tfoot>
     </table>
   </div>
-</div>
 
-<!-- Seção declinados -->
-<div id="ma-section-declinados" style="display:none;margin-top:20px;">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-    <div style="width:3px;height:20px;background:#DC2626;border-radius:2px;flex-shrink:0;"></div>
-    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#DC2626;">Operações Declinadas</div>
-    <span id="ma-dec-count" style="background:#FEE2E2;color:#991B1B;font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;"></span>
-    <span style="font-size:11px;color:var(--t3);margin-left:4px;">AuC potencial não convertido</span>
+  <!-- Seção declinados -->
+  <div id="ma-section-declinados" style="display:none;margin-top:28px;">
+  <div class="sh" style="border-bottom-color:#FECACA;">
+    <span class="sn" style="color:#DC2626;">02</span>
+    <span class="st" style="color:#DC2626;">Operações Declinadas</span>
+    <span id="ma-dec-count" class="ss" style="color:#991B1B;background:#FEE2E2;padding:2px 10px;border-radius:20px;margin-left:0;"></span>
+    <span class="ss">AuC potencial não convertido</span>
   </div>
   <div style="background:var(--surface);border:1px solid #FECACA;border-radius:var(--r12);overflow:hidden;box-shadow:var(--sh);">
     <table style="width:100%;border-collapse:collapse;">
@@ -115,6 +114,8 @@ tfoot td:last-child{text-align:right}
     </table>
   </div>
 </div>
+
+</div><!-- /page -->
 
 <script>
 // ── Dados estáticos M&A (não vêm do CSV) ──
