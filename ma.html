@@ -95,6 +95,27 @@ tfoot td:last-child{text-align:right}
   </div>
 </div>
 
+<!-- Seção declinados -->
+<div id="ma-section-declinados" style="display:none;margin-top:20px;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+    <div style="width:3px;height:20px;background:#DC2626;border-radius:2px;flex-shrink:0;"></div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#DC2626;">Operações Declinadas</div>
+    <span id="ma-dec-count" style="background:#FEE2E2;color:#991B1B;font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;"></span>
+    <span style="font-size:11px;color:var(--t3);margin-left:4px;">AuC potencial não convertido</span>
+  </div>
+  <div style="background:var(--surface);border:1px solid #FECACA;border-radius:var(--r12);overflow:hidden;box-shadow:var(--sh);">
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr style="background:#FEF2F2;">
+        <th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#991B1B;border-bottom:1px solid #FECACA;">Operação</th>
+        <th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#991B1B;border-bottom:1px solid #FECACA;">Praça</th>
+        <th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#991B1B;border-bottom:1px solid #FECACA;">AuC Potencial</th>
+        <th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#991B1B;border-bottom:1px solid #FECACA;">Observação</th>
+      </tr></thead>
+      <tbody id="ma-tbody-dec"></tbody>
+    </table>
+  </div>
+</div>
+
 <script>
 // ── Dados estáticos M&A (não vêm do CSV) ──
 // Fonte: pipeline.js → Blue3_maPipeline() → window.Blue3Data.ma
@@ -112,7 +133,8 @@ const stT = {
   'NDA':                    't-nda',
   'Proposta Apresentada':   't-prop',
   'Prospecção':             't-pros',
-  'Documentação Valuation': 't-doc'
+  'Documentação Valuation': 't-doc',
+  'Declinou':               't-dec'
 };
 
 var _chartMA = null, _chartMABar = null;
@@ -127,15 +149,17 @@ function fmtB(v) {
 function renderPage() {
   if (!window.Blue3Ready) { console.warn('[Blue3] Pipeline não finalizado'); return; }
   var D = window.Blue3Data;
-  if (!D || !D.ma || !D.ma.length) { showEmptyState(); return; }
+  var maOps = (D && D.ma) ? D.ma : [];
+  var maDec = (D && D.maDeclinados) ? D.maDeclinados : [];
 
-  var maOps = D.ma;  // [{n, p, a (em MM), s}]
+  // Permitir renderizar mesmo sem ativos se há declinados
+  if (!maOps.length && !maDec.length) { showEmptyState(); return; }
+
   var total = maOps.reduce(function(s,o){ return s + o.a; }, 0);
-
   var byStatus = {};
   maOps.forEach(function(o){ byStatus[o.s] = (byStatus[o.s]||0) + o.a; });
 
-  // KPIs
+  // KPIs (apenas ativos)
   set('ma-total', fmtB(total));
   set('ma-deal',  fmtB(byStatus['Deal']||0));
   set('ma-nda',   fmtB(byStatus['NDA']||0));
@@ -145,17 +169,48 @@ function renderPage() {
   set('ma-pros',  fmtB(pros));
   set('ma-count', maOps.length + ' operações · 28 assessores');
 
-  // Tabela
-  document.getElementById('ma-tbody').innerHTML = maOps.map(function(o) {
-    var tagCls = stT[o.s] || 't-pros';
-    var praca = o.p === 'nan' ? '—' : o.p;
-    return '<tr><td>'+o.n+'</td><td style="color:var(--t3)">'+praca+'</td>'
-      +'<td><span class="tag '+tagCls+'">'+o.s+'</span></td>'
-      +'<td>'+fmtB(o.a)+'</td></tr>';
-  }).join('');
+  // Tabela ativa
+  var tbEl = document.getElementById('ma-tbody');
+  if (tbEl) {
+    tbEl.innerHTML = maOps.map(function(o) {
+      var tagCls = stT[o.s] || 't-pros';
+      var praca = o.p === 'nan' ? '—' : o.p;
+      return '<tr><td>'+o.n+'</td><td style="color:var(--t3)">'+praca+'</td>'
+        +'<td><span class="tag '+tagCls+'">'+o.s+'</span></td>'
+        +'<td>'+fmtB(o.a)+'</td></tr>';
+    }).join('') || '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--t3);font-size:12px;">Nenhuma operação ativa no pipeline</td></tr>';
+  }
   set('ma-tfoot-total', fmtB(total));
 
-  // Charts
+  // Seção declinados
+  var decSec = document.getElementById('ma-section-declinados');
+  if (decSec) {
+    if (maDec.length > 0) {
+      decSec.style.display = 'block';
+      set('ma-dec-count', maDec.length + ' operação' + (maDec.length > 1 ? 'ões' : ''));
+      var totalDec = maDec.reduce(function(s,o){ return s + o.a; }, 0);
+      var tbDec = document.getElementById('ma-tbody-dec');
+      if (tbDec) {
+        tbDec.innerHTML = maDec.map(function(o) {
+          var praca = o.p === 'nan' ? '—' : o.p;
+          return '<tr style="opacity:.75;">'
+            +'<td style="padding:10px 14px;font-size:12px;font-weight:500;color:#991B1B;border-bottom:1px solid #FEE2E2;">'+o.n+'</td>'
+            +'<td style="padding:10px 14px;font-size:12px;color:var(--t3);border-bottom:1px solid #FEE2E2;">'+praca+'</td>'
+            +'<td style="padding:10px 14px;font-size:12px;font-weight:600;color:#991B1B;text-decoration:line-through;border-bottom:1px solid #FEE2E2;">'+fmtB(o.a)+'</td>'
+            +'<td style="padding:10px 14px;border-bottom:1px solid #FEE2E2;"><span style="background:#FEE2E2;color:#991B1B;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.05em;text-transform:uppercase;">Declinou</span></td>'
+            +'</tr>';
+        }).join('')
+        +'<tr style="background:#FEF2F2;">'
+        +'<td colspan="2" style="padding:10px 14px;font-size:11px;font-weight:600;color:#991B1B;">AuC não convertido</td>'
+        +'<td style="padding:10px 14px;font-size:13px;font-weight:700;color:#991B1B;text-decoration:line-through;">'+fmtB(totalDec)+'</td>'
+        +'<td></td></tr>';
+      }
+    } else {
+      decSec.style.display = 'none';
+    }
+  }
+
+  // Charts (apenas ativos)
   if (typeof Chart === 'undefined') { setTimeout(function(){ renderCharts(maOps, byStatus); }, 200); }
   else { renderCharts(maOps, byStatus); }
 }
