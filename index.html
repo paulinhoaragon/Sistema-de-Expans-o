@@ -640,10 +640,15 @@ function b3ImportCSV(input) {
 
       // ── Parse candidatos ──
       var rows = [];
+      var secoes = ['Pipeline Estratégico','Desistencias','Candidatos','M&A'];
       for (var i=1; i<lines.length; i++) {
         if (!lines[i].trim()) continue;
         var v=lines[i].split(sep), o={};
         h.forEach(function(hh,j){ o[hh]=(v[j]||'').trim().replace(/^"|"$/g,''); });
+        // Parar ao encontrar marcador de seção
+        var nome0 = (v[0]||'').trim();
+        var isSec = secoes.some(function(s){ return nome0.indexOf(s)===0; });
+        if(isSec) break;
         if (o['Candidato']) rows.push(o);
       }
       if (!rows.length) { alert('Nenhum candidato válido.'); return; }
@@ -656,9 +661,9 @@ function b3ImportCSV(input) {
       if(idxC>-1){
         for(var i=idxC+2;i<lines.length;i++){
           var cols=lines[i].split(sep);
-          var nome=(cols[0]||'').trim(),praca=(cols[2]||'').trim();
-          var inst=(cols[3]||'').trim(),cont=(cols[4]||'').trim();
-          var auc=pnC(cols[5]||'0');
+          var nome=(cols[0]||'').trim(),praca=(cols[1]||'').trim();
+          var inst=(cols[2]||'').trim(),cont=(cols[3]||'').trim();
+          var auc=pnC(cols[4]||'0');
           if(!nome||nome.toUpperCase()==='TOTAL'||!inst) break;
           if(cont==='VERDADEIRO'||cont==='TRUE'||cont==='1'){
             contratados.push({nome:nome,praca:praca,instituicao:inst,
@@ -675,8 +680,8 @@ function b3ImportCSV(input) {
       if(idxN>-1){
         for(var i=idxN+2;i<lines.length;i++){
           var cols=lines[i].split(sep);
-          var nome=(cols[0]||'').trim(),praca=(cols[2]||'').trim();
-          var inst=(cols[3]||'').trim(),auc=pnC(cols[5]||'0');
+          var nome=(cols[0]||'').trim(),praca=(cols[1]||'').trim();
+          var inst=(cols[2]||'').trim(),auc=pnC(cols[4]||'0');
           if(!nome||nome.toUpperCase()==='TOTAL'||!inst) break;
           negociacao.push({nome:nome,praca:praca,instituicao:inst,
                            auc_mm:Math.round(auc/1e6),tipo:'Negoçiação'});
@@ -691,8 +696,8 @@ function b3ImportCSV(input) {
       if(idxMA>-1){
         for(var i=idxMA+2;i<lines.length;i++){
           var cols=lines[i].split(sep);
-          var nome=(cols[0]||'').trim(),praca=(cols[2]||'').trim();
-          var auc=pnC(cols[3]||'0'),status=(cols[4]||'').trim();
+          var nome=(cols[0]||'').trim(),praca=(cols[1]||'').trim();
+          var auc=pnC(cols[2]||'0'),status=(cols[3]||'').trim();
           if(!nome||nome.toUpperCase()==='TOTAL'||!status) break;
           var declinado = status.toLowerCase() === 'declinou';
           ma.push({nome:nome,praca:praca,auc_b:Math.round(auc/1e9*100)/100,status:status,declinado:declinado});
