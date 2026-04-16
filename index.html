@@ -644,8 +644,7 @@ function b3ImportCSV(input) {
         if (!lines[i].trim()) continue;
         var v=lines[i].split(sep), o={};
         h.forEach(function(hh,j){ o[hh]=(v[j]||'').trim().replace(/^"|"$/g,''); });
-        var st=(o['Status']||'').trim();
-        if (o['Candidato'] && (st==='Trabalhando'||st==='Contratado(a)')) rows.push(o);
+        if (o['Candidato']) rows.push(o);
       }
       if (!rows.length) { alert('Nenhum candidato válido.'); return; }
 
