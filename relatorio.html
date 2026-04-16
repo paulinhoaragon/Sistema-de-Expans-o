@@ -294,11 +294,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
 <div style="margin-bottom:32px;">
   <div class="sh"><span class="sn">01</span><span class="st">Visão geral do semestre</span><span class="ss">Contratações ativas apenas</span></div>
-  <div class="krow">
+  <div class="krow" style="grid-template-columns:repeat(3,1fr);">
     <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Contratações líquidas ativas</div><div class="kv"><span id="dyn-liq">28</span></div><div class="ks" id="dyn-liq-sub-el">Jan–Abr 2026 · 4 meses (31 brutas − 3 desist.)</div><div class="kp pu">↑ Ritmo: 6,75 líquidas/mês</div></div>
     <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">AuC total mapeado</div><div class="kv"><span id="dyn-auc">R$1,88B</span></div><div class="ks" id="dyn-auc-sub-el">27 candidatos com carteira</div><div class="kp pu">↑ Média R$148M / pessoa</div></div>
     <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">AuC estratégico confirmado</div><div class="kv">R$655M</div><div class="ks">7 assessores estratégicos</div><div class="kp pu">↑ R$600M em negociação</div></div>
-    <div class="kc"><div class="ktr" style="background:#7C3AED;"></div><div class="kl">Pipeline M&amp;A</div><div class="kv" id="dyn-ma-total">R$25,1B</div><div class="ks" id="dyn-ma-count">8 operações em andamento</div><div class="kp pu">↑ 22% no pipe negociação</div></div>
   </div>
   <div class="ib">
     <div class="ii"><div class="iv"><span id="dyn-brutas">31</span></div><div class="il">Contratações brutas Jan–Abr</div></div>
@@ -435,7 +434,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
 <hr class="rule">
 
-!-- 03b COMPARAÇÃO ENTRE PERÍODOS -->
+<!-- 03 COMPARAÇÃO ENTRE PERÍODOS -->
 <div style="margin-bottom:32px;" id="section-comparacao">
   <div class="sh"><span class="sn">03</span><span class="st">Comparação entre períodos</span><span class="ss">Evolução mês a mês — contratações e AuC</span></div>
   <div id="comp-periodos" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;"></div>
