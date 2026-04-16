@@ -969,7 +969,7 @@ function Blue3_charts() {
     }).join('');
     var tfoot = '<tfoot><tr style="background:var(--s2);">'
       +'<td colspan="6" style="padding:10px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
-      +'<td style="padding:10px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;">R$'+(totalAuC>=1000?(totalAuC/1000).toFixed(2).replace('.',',')+' B':totalAuC+' MM')+'</td>'
+      +'<td style="padding:10px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">R$'+(totalAuC>=1000?(totalAuC/1000).toFixed(2).replace('.',',')+' B':totalAuC+' MM')+'</td>'
       +'</tr></tfoot>';
     clEl.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'+th+'<tbody>'+rows2+'</tbody>'+tfoot+'</table></div>';
   }
