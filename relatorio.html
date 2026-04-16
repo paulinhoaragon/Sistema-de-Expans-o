@@ -550,7 +550,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 <hr class="rule hr-assessor">
 <!-- 03 PACE -->
 <div id="sect-pace" style="margin-bottom:32px;">
-  <div class="sh"><span class="sn">03</span><span class="st">Pace de contratações — Meta 40 no semestre</span><span class="ss">Base: contratações líquidas (excl. desistências)</span></div>
+  <div class="sh"><span class="sn">03</span><span class="st">Pace de contratações</span><span class="ss">Meta 40 no semestre · Assessores · Outras áreas sob demanda</span></div>
   <div class="card" id="pace-card"></div>
 </div>
 
@@ -949,30 +949,72 @@ function fmtM(v) {
   // ── Pace card ──
   (function(){
     var META=40, MESES=6, DEC=4;
-    var proj=Math.round(AT/DEC*MESES), pct=Math.min(100,Math.round(AT/META*100));
-    var esp=Math.round(DEC/MESES*META), saldo=AT-esp, falt=META-AT, nec=Math.ceil(falt/(MESES-DEC)), ok=proj>=META;
+
+    // Separar Assessores de outras áreas
+    var allCands = window.Blue3Data ? (window.Blue3Data.candidatos||[]) : [];
+    var assessores = allCands.filter(function(r){ return (r.area||'Assessores').toLowerCase()==='assessores'; });
+    var outrasAreas = allCands.filter(function(r){ return (r.area||'Assessores').toLowerCase()!=='assessores'; });
+    var AT_ASS = assessores.length;
+
+    // Pace de Assessores
+    var proj=Math.round(AT_ASS/DEC*MESES), pct=Math.min(100,Math.round(AT_ASS/META*100));
+    var esp=Math.round(DEC/MESES*META), saldo=AT_ASS-esp, falt=META-AT_ASS, nec=Math.ceil(falt/(MESES-DEC)), ok=proj>=META;
     var el=document.getElementById('pace-card'); if(!el)return;
-    el.innerHTML='<div class="pstats">'
-      +'<div class="ps"><div class="psl">Ativas realizadas</div><div class="psv">'+AT+'</div><div class="psn">de '+META+' na meta</div></div>'
+
+    // ── Bloco Assessores ──
+    var htmlAssessores = ''
+      +'<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--rule);">Assessores · Meta 40 no semestre</div>'
+      +'<div class="pstats">'
+      +'<div class="ps"><div class="psl">Ativas realizadas</div><div class="psv">'+AT_ASS+'</div><div class="psn">de '+META+' na meta</div></div>'
       +'<div class="ps"><div class="psl">Esperado até Abr</div><div class="psv">'+esp+'</div><div class="psn">67% do semestre</div></div>'
       +'<div class="ps" style="background:#FFF7ED;border:1px solid #FED7AA;"><div class="psl" style="color:#92400E;">Saldo vs. pace</div><div class="psv" style="color:#C2410C;">'+saldo+'</div><div class="psn" style="color:#92400E;">'+(saldo>=0?'no pace':'abaixo')+'</div></div>'
       +'<div class="ps"><div class="psl">Projeção Jun 2026</div><div class="psv" style="color:'+(ok?'#16A34A':'#DC2626')+';">'+proj+'</div><div class="psn">ativas estimadas</div></div>'
       +'<div class="ps"><div class="psl">Ritmo necessário</div><div class="psv">'+nec+'</div><div class="psn">ativas/mês (Mai–Jun)</div></div>'
       +'</div>'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;margin-top:12px;">'
       +'<span style="font-size:11px;font-weight:600;color:var(--t2);">Régua — Meta: '+META+'</span>'
       +'<span style="font-size:10px;font-weight:700;padding:3px 12px;border-radius:20px;background:'+(ok?'#DCFCE7':'#FEE2E2')+';color:'+(ok?'#14532D':'#991B1B')+';">'+(ok?'✓ No pace':'⚠ Abaixo')+'</span>'
       +'</div>'
       +'<div class="rtrack"><div class="rpmark" style="left:50%;"></div>'
-      +'<div class="rfill" style="width:'+pct+'%;background:linear-gradient(90deg,var(--cobalt),'+(ok?'#16A34A':'#DC2626')+');"><span>'+pct+'% · '+AT+' ativas</span></div></div>'
+      +'<div class="rfill" style="width:'+pct+'%;background:linear-gradient(90deg,var(--cobalt),'+(ok?'#16A34A':'#DC2626')+');"><span>'+pct+'% · '+AT_ASS+' ativas</span></div></div>'
       +'<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t4);margin-top:4px;padding:0 2px;">'
-      +'<span>0</span><span style="position:relative;left:calc(50% - 30px);color:var(--t2);font-weight:600;">↑ pace esperado</span><span>Meta: '+META+'</span></div>'
-      +'<div class="rmonths">'
-      +[{m:'Jan',n:BM[1]||0,d:true},{m:'Fev',n:BM[2]||0,d:true},{m:'Mar',n:BM[3]||0,d:true},{m:'Abr',n:BM[4]||0,d:true},{m:'Mai',n:null,d:false},{m:'Jun',n:null,d:false}]
-        .map(function(x){return '<div class="rm '+(x.d?'rmd':'rmt')+'"><div class="rmmo">'+x.m+'</div><div class="rmn">'+(x.n!==null?x.n:'—')+'</div></div>';}).join('')
-      +'</div>'
-      +'<div style="margin-top:8px;padding:8px 12px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:6px;font-size:11px;">'
-      +'<strong style="color:#92400E;">Atenção:</strong> <span style="color:#92400E;">Faltam '+falt+' contratações. Necessário: '+nec+'/mês.</span></div>';
+      +'<span>0</span><span style="position:relative;left:calc(50% - 30px);color:var(--t2);font-weight:600;">↑ pace esperado</span><span>Meta '+META+'</span>'
+      +'</div>';
+
+    // Aviso quando abaixo do pace
+    if(!ok){
+      htmlAssessores += '<div style="margin-top:10px;padding:8px 12px;background:#FFF7ED;border-left:3px solid #F59E0B;border-radius:0 var(--r8) var(--r8) 0;">'
+        +'<span style="font-size:11px;font-weight:600;color:#92400E;">⚠ Abaixo do pace. </span>'
+        +'<span style="font-size:11px;color:#92400E;">Faltam '+falt+' contratações. Necessário: '+nec+'/mês.</span></div>';
+    }
+
+    // ── Bloco Outras Áreas ──
+    var htmlOutras = '';
+    if(outrasAreas.length > 0){
+      // Agrupar por área
+      var byArea = {};
+      outrasAreas.forEach(function(r){ var a=r.area||'Outros'; byArea[a]=(byArea[a]||0)+1; });
+      var areas = Object.keys(byArea).sort();
+      var colors = ['var(--cobalt)','var(--g)','var(--gold)','#7C3AED','#0891B2','#DC2626'];
+
+      htmlOutras += '<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--rule);">'
+        +'<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;">Outras Áreas · Sob demanda</div>'
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;">';
+
+      areas.forEach(function(a, i){
+        var n = byArea[a];
+        var col = colors[i % colors.length];
+        htmlOutras += '<div class="ps" style="border-top:3px solid '+col+';padding:10px 12px;">'
+          +'<div class="psl">'+a+'</div>'
+          +'<div class="psv" style="color:'+col+';">'+n+'</div>'
+          +'<div class="psn">'+(n===1?'contratado':'contratados')+' · sem meta</div>'
+          +'</div>';
+      });
+
+      htmlOutras += '</div></div>';
+    }
+
+    el.innerHTML = htmlAssessores + htmlOutras;
   })();
 
   // ── Funil de conversão ──
