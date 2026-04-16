@@ -172,6 +172,7 @@ function blue3LoadData(callback){
       o['MOU']=r.mou||'';
       o['Prev. Inicio']=r.prev_inicio||'';
       o['Ancord']=r.ancord||'';
+      o['Area']=r.area||'Assessores';
       o['Detalhe Coparticipação']=r.coparticipacao||0;
       o['Trigger 1 Tri']=r.trigger1_tri||0;
       o['Trigger 1']=r.trigger1||0;
@@ -200,6 +201,7 @@ function Blue3_dataLoader(){
       p:(r['Filial']||'').trim(),
       h:(r['Hunter']||'').trim(),
       sen:(r['Senioridade']||'').trim(),
+      area:(r['Área']||r['Area']||'Assessores').trim(),
       org:(r['Origem']||'').trim(),
       mou:(r['MOU']||'').trim(),
       st:(r['Status']||'').trim(),
@@ -240,7 +242,9 @@ function Blue3_financeMetrics(){
   var AT=F.length,seniors=F.filter(function(r){return norm(r.sen)==='sênior';});
   var ps={};F.forEach(function(r){if(r.p)ps[r.p]=1;});
   var maior=F.length?F.reduce(function(a,b){return b.cap>a.cap?b:a;}):null;
-  window.Blue3Data.resumoGeral={total:AT,brutas:window.Blue3Data._brutas||AT,desist:window.Blue3Data._desist||0,trab:F.filter(function(r){return norm(r.st)==='trabalhando';}).length,contCount:F.filter(function(r){return norm(r.st)==='contratado(a)';}).length,mouOk:F.filter(function(r){return norm(r.mou)==='assinado';}).length,mouPend:F.filter(function(r){return norm(r.mou)==='pendente';}).length,ancord:F.filter(function(r){return norm(r.ancord)==='sim';}).length,aucTotal:F.reduce(function(s,r){return s+r.cap;},0),compTotal:F.reduce(function(s,r){return s+r.comp;},0),siTotal:F.reduce(function(s,r){return s+r.si;},0),xpTotal:F.reduce(function(s,r){return s+r.xp;},0),blue3Liq:F.reduce(function(s,r){return s+r.comp;},0)-F.reduce(function(s,r){return s+r.xp;},0),siCount:F.filter(function(r){return r.si>0;}).length,seniors:seniors.length,plenos:F.filter(function(r){return norm(r.sen)==='pleno';}).length,juniors:F.filter(function(r){return norm(r.sen)==='junior'||norm(r.sen)==='júnior';}).length,seniorPct:AT>0?Math.round(seniors.length/AT*100):0,pracas:Object.keys(ps).length,brutas:AT+3,maiorCand:maior,byMonth:bm,senByMonth:sbm,aucB:(F.reduce(function(s,r){return s+r.cap;},0)/1000).toFixed(2).replace('.',',')};
+  var byArea={};
+  F.forEach(function(r){ var a=r.area||'Assessores'; byArea[a]=(byArea[a]||0)+1; });
+  window.Blue3Data.resumoGeral={total:AT,brutas:window.Blue3Data._brutas||AT,desist:window.Blue3Data._desist||0,byArea:byArea,trab:F.filter(function(r){return norm(r.st)==='trabalhando';}).length,contCount:F.filter(function(r){return norm(r.st)==='contratado(a)';}).length,mouOk:F.filter(function(r){return norm(r.mou)==='assinado';}).length,mouPend:F.filter(function(r){return norm(r.mou)==='pendente';}).length,ancord:F.filter(function(r){return norm(r.ancord)==='sim';}).length,aucTotal:F.reduce(function(s,r){return s+r.cap;},0),compTotal:F.reduce(function(s,r){return s+r.comp;},0),siTotal:F.reduce(function(s,r){return s+r.si;},0),xpTotal:F.reduce(function(s,r){return s+r.xp;},0),blue3Liq:F.reduce(function(s,r){return s+r.comp;},0)-F.reduce(function(s,r){return s+r.xp;},0),siCount:F.filter(function(r){return r.si>0;}).length,seniors:seniors.length,plenos:F.filter(function(r){return norm(r.sen)==='pleno';}).length,juniors:F.filter(function(r){return norm(r.sen)==='junior'||norm(r.sen)==='júnior';}).length,seniorPct:AT>0?Math.round(seniors.length/AT*100):0,pracas:Object.keys(ps).length,brutas:AT+3,maiorCand:maior,byMonth:bm,senByMonth:sbm,aucB:(F.reduce(function(s,r){return s+r.cap;},0)/1000).toFixed(2).replace('.',',')};
 }
 
 function Blue3_payback(){
