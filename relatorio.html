@@ -286,6 +286,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <option value="trabalhando">Trabalhando</option>
     <option value="contratado(a)">Contratado(a)</option>
   </select>
+  <select id="flt-area" onchange="applyFilters()" style="padding:6px 10px;border:1px solid var(--rule,#E5E9F5);border-radius:var(--r8);font-size:12px;color:var(--t1);background:#fff;outline:none;cursor:pointer;">
+    <option value="">Todas as áreas</option>
+  </select>
   <button onclick="clearFilters()" id="btn-clear-flt" style="display:none;padding:6px 14px;border:1px solid #DC2626;border-radius:var(--r8);font-size:12px;font-weight:600;color:#DC2626;background:#fff;cursor:pointer;">✕ Limpar filtros</button>
   <span id="flt-count" style="font-size:11px;color:var(--t3);margin-left:4px;"></span>
 </div>
@@ -299,6 +302,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">AuC total mapeado</div><div class="kv"><span id="dyn-auc">R$1,88B</span></div><div class="ks" id="dyn-auc-sub-el">27 candidatos com carteira</div><div class="kp pu">↑ Média R$148M / pessoa</div></div>
     <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">AuC estratégico confirmado</div><div class="kv">R$655M</div><div class="ks">7 assessores estratégicos</div><div class="kp pu">↑ R$600M em negociação</div></div>
   </div>
+  <!-- Breakdown por área -->
+  <div id="area-breakdown" style="display:none;margin-bottom:16px;"></div>
+
   <div class="ib">
     <div class="ii"><div class="iv"><span id="dyn-brutas">31</span></div><div class="il">Contratações brutas Jan–Abr</div></div>
        <div class="ii"><div class="iv"><span id="dyn-desist">3</span></div><div class="il" id="dyn-desist-label">Desistências · taxa —</div></div>
@@ -440,10 +446,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   <div id="comp-periodos" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;"></div>
 </div>
 
-<hr class="rule">
-
+<hr class="rule hr-assessor">
 <!-- 03 PACE -->
-<div style="margin-bottom:32px;">
+<div id="sect-pace" style="margin-bottom:32px;">
   <div class="sh"><span class="sn">03</span><span class="st">Pace de contratações — Meta 40 no semestre</span><span class="ss">Base: contratações líquidas (excl. desistências)</span></div>
   <div class="card" id="pace-card"></div>
 </div>
@@ -457,10 +462,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;" id="funil-details"></div>
 </div>
 
-<hr class="rule">
-
+<hr class="rule hr-assessor">
 <!-- 04 HUNTERS -->
-<div style="margin-bottom:32px;">
+<div id="sect-hunters" style="margin-bottom:32px;">
   <div class="sh"><span class="sn">04</span><span class="st">Performance das Hunters — Caderno de Bônus</span><span class="ss">Eduarda &amp; Bianca · contratações ativas apenas</span></div>
   <div class="hgrid" id="hunter-cards"></div>
   <div class="g2">
@@ -952,7 +956,7 @@ function Blue3_charts() {
       +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Senioridade</th>'
       +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Status</th>'
       +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">MOU</th>'
-      +'<th style="padding:8px 10px;text-align:right;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">AuC (MM)</th>'
+      +'<th style="padding:8px 10px;text-align:right;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);white-space:nowrap;min-width:80px;">AuC (MM)</th>'
       +'</tr></thead>';
     var senTag = function(s){ var m={'sênior':'background:#DCFCE7;color:#166534;','pleno':'background:#FEF3C7;color:#92400E;','júnior':'background:#FCE7F3;color:#9D174D;','junior':'background:#FCE7F3;color:#9D174D;'}; return m[(s||'').toLowerCase()]||'background:var(--s2);color:var(--t2);'; };
     var mouTag = function(m){ return (m||'').toLowerCase()==='assinado'?'background:#DCFCE7;color:#166534;':'background:#FEF3C7;color:#92400E;'; };
@@ -969,7 +973,7 @@ function Blue3_charts() {
     }).join('');
     var tfoot = '<tfoot><tr style="background:var(--s2);">'
       +'<td colspan="6" style="padding:10px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
-      +'<td style="padding:10px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">R$'+(totalAuC>=1000?(totalAuC/1000).toFixed(2).replace('.',',')+' B':totalAuC+' MM')+'</td>'
+      +'<td style="padding:10px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+( totalAuC>=1000? 'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B' : 'R$'+totalAuC+' MM' )+'</td>'
       +'</tr></tfoot>';
     clEl.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'+th+'<tbody>'+rows2+'</tbody>'+tfoot+'</table></div>';
   }
@@ -1030,21 +1034,51 @@ function Blue3_charts() {
 }
 
 // ── Filtros dinâmicos ──
-var _activeFilters={hunter:'',praca:'',sen:'',status:''};
+var _activeFilters={hunter:'',praca:'',sen:'',status:'',area:''};
+
+function renderAreaBreakdown(candidatos){
+  var el=document.getElementById('area-breakdown');
+  if(!el)return;
+  var C=candidatos||window.Blue3Data.candidatos||[];
+  var byArea={};
+  C.forEach(function(r){ var a=r.area||'Assessores'; byArea[a]=(byArea[a]||0)+1; });
+  var areas=Object.keys(byArea).sort();
+  if(areas.length<=1){el.style.display='none';return;}
+  var colors=['var(--cobalt)','var(--g)','var(--gold)','#7C3AED','#0891B2','#DC2626','#EA580C'];
+  el.style.display='flex';
+  el.style.gap='10px';
+  el.style.flexWrap='wrap';
+  el.innerHTML=areas.map(function(a,i){
+    var n=byArea[a];
+    var total=C.length;
+    var pct=Math.round(n/total*100);
+    var col=colors[i%colors.length];
+    return '<div style="flex:1;min-width:120px;background:var(--surface);border:1px solid var(--rule);border-top:3px solid '+col+';border-radius:var(--r12);padding:12px 16px;box-shadow:var(--sh);">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:4px;">'+a+'</div>'
+      +'<div style="font-size:22px;font-weight:700;color:var(--t1);line-height:1;">'+n+'</div>'
+      +'<div style="font-size:11px;color:var(--t3);margin-top:2px;">'+pct+'% do total</div>'
+      +'</div>';
+  }).join('');
+}
 
 function populateFilters(){
   if(!window.Blue3Data||!window.Blue3Data.candidatos)return;
   var C=window.Blue3Data.candidatos;
-  var hunters=[],pracas=[];
+  var hunters=[],pracas=[],areas=[];
   C.forEach(function(r){
     if(r.h&&hunters.indexOf(r.h)<0)hunters.push(r.h);
     if(r.p&&pracas.indexOf(r.p)<0)pracas.push(r.p);
+    if(r.area&&areas.indexOf(r.area)<0)areas.push(r.area);
   });
-  hunters.sort();pracas.sort();
+  hunters.sort();pracas.sort();areas.sort();
   var fh=document.getElementById('flt-hunter');
   var fp=document.getElementById('flt-praca');
+  var fa=document.getElementById('flt-area');
   if(fh){fh.innerHTML='<option value="">Todos os hunters</option>'+hunters.map(function(h){return'<option value="'+h+'">'+h+'</option>';}).join('');}
   if(fp){fp.innerHTML='<option value="">Todas as praças</option>'+pracas.map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join('');}
+  if(fa){fa.innerHTML='<option value="">Todas as áreas</option>'+areas.map(function(a){return'<option value="'+a+'">'+a+'</option>';}).join('');}
+  // Renderizar breakdown por área
+  renderAreaBreakdown(C);
 }
 
 function getFilteredCandidatos(){
@@ -1055,6 +1089,7 @@ function getFilteredCandidatos(){
     if(f.praca&&r.p!==f.praca)return false;
     if(f.sen&&(r.sen||'').toLowerCase()!==f.sen.toLowerCase())return false;
     if(f.status&&(r.st||'').toLowerCase()!==f.status.toLowerCase())return false;
+    if(f.area&&(r.area||'').toLowerCase()!==f.area.toLowerCase())return false;
     return true;
   });
 }
@@ -1064,6 +1099,7 @@ function applyFilters(){
   _activeFilters.praca=(document.getElementById('flt-praca')||{}).value||'';
   _activeFilters.sen=(document.getElementById('flt-sen')||{}).value||'';
   _activeFilters.status=(document.getElementById('flt-status')||{}).value||'';
+  _activeFilters.area=(document.getElementById('flt-area')||{}).value||'';
   var hasFilter=_activeFilters.hunter||_activeFilters.praca||_activeFilters.sen||_activeFilters.status;
   var btn=document.getElementById('btn-clear-flt');
   if(btn)btn.style.display=hasFilter?'inline-block':'none';
@@ -1074,7 +1110,7 @@ function applyFilters(){
 }
 
 function clearFilters(){
-  ['flt-hunter','flt-praca','flt-sen','flt-status'].forEach(function(id){
+  ['flt-hunter','flt-praca','flt-sen','flt-status','flt-area'].forEach(function(id){
     var el=document.getElementById(id);if(el)el.value='';
   });
   _activeFilters={hunter:'',praca:'',sen:'',status:''};
@@ -1082,6 +1118,17 @@ function clearFilters(){
   if(btn)btn.style.display='none';
   var cnt=document.getElementById('flt-count');if(cnt)cnt.textContent='';
   renderPage();
+  // Ocultar seções exclusivas de Assessores quando outra área for selecionada
+  var areaFiltro=(_activeFilters.area||'').toLowerCase();
+  var isAssessor=!areaFiltro||areaFiltro==='assessores';
+  var assessorSections=['sect-pace','sect-funil','sect-hunters','sect-estrategico','sect-financeiro'];
+  assessorSections.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.style.display=isAssessor?'':'none';
+  });
+  // Mostrar/ocultar HR das seções ocultadas
+  var assessorHrs=document.querySelectorAll('.hr-assessor');
+  assessorHrs.forEach(function(el){ el.style.display=isAssessor?'':'none'; });
 }
 
 function renderWithFilter(filteredC){
