@@ -743,6 +743,7 @@ function b3ImportCSV(input) {
               return supaInsert('candidatos', lote.map(function(r){
                 return{
                   candidato:(r['Candidato']||'').trim(),
+                  area:(r['Área']||r['Area']||'Assessores').trim(),
                   senioridade:(r['Senioridade']||'').trim(),
                   origem:(r['Origem']||'').trim(),
                   filial:(r['Filial']||'').trim(),
