@@ -340,6 +340,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 <!-- 02 EVOLUÇÃO MENSAL -->
 <div style="margin-bottom:32px;">
   <div class="sh"><span class="sn">02</span><span class="st">Evolução mensal de contratações</span><span class="ss">Verde = Sênior · Âmbar = Pleno · Rosa = Júnior · Vermelho = Desistência</span></div>
+  <!-- Sub-label Assessores -->
+  <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--rule);">Assessores</div>
   <div class="mg">
     <!-- Janeiro -->
     <div class="mc">
@@ -422,6 +424,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         <div class="mcs"><div class="mcsv" style="color:#DC2626">0</div><div class="mcsl">Desist.</div></div>
       </div>
     </div>
+  </div>
+
+  <!-- Cards outras áreas (gerado dinamicamente) -->
+  <div id="mg-outras" style="display:none;margin-top:20px;">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--rule);">Outras Áreas</div>
+    <div id="mg-outras-grid" class="mg"></div>
   </div>
 
   <div class="g2">
@@ -692,7 +700,8 @@ function Blue3_charts() {
     if (a >= 1e3) return 'R$' + Math.round(v/1e3) + 'K';
     return 'R$' + v.toLocaleString('pt-BR');
   }
-  function fmtM(v) {
+  function norm(s){return String(s||"").trim().toLowerCase();}
+function fmtM(v) {
     if (!v || v === 0) return '—';
     var a = Math.abs(v);
     if (a >= 1e6) return 'R$' + (v/1e6).toFixed(1).replace('.',',') + 'M';
@@ -1043,6 +1052,73 @@ function Blue3_charts() {
 // ── Filtros dinâmicos ──
 var _activeFilters={hunter:'',praca:'',sen:'',status:'',area:''};
 
+
+function renderOutrasAreas(candidatos) {
+  var mgEl  = document.getElementById('mg-outras');
+  var grid  = document.getElementById('mg-outras-grid');
+  if (!mgEl || !grid) return;
+
+  var C = (candidatos || window.Blue3Data.candidatos || [])
+    .filter(function(r){
+      return r.area && r.area.toLowerCase() !== 'assessores';
+    });
+
+  if (!C.length) { mgEl.style.display = 'none'; return; }
+
+  // Agrupar por mês
+  var meses = {};
+  C.forEach(function(r){
+    var dt = r.dt || '';
+    var parts = dt.split('/');
+    var mes = parts.length >= 2 ? parseInt(parts[1], 10) : 0;
+    if (!mes) return;
+    if (!meses[mes]) meses[mes] = [];
+    meses[mes].push(r);
+  });
+
+  var mLabels = {1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',
+                 7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
+  var mesesOrdenados = Object.keys(meses).map(Number).sort(function(a,b){return a-b;});
+
+  if (!mesesOrdenados.length) { mgEl.style.display = 'none'; return; }
+
+  grid.innerHTML = mesesOrdenados.map(function(mes) {
+    var cands = meses[mes];
+    var ativos  = cands.filter(function(r){ var s=norm(r.st||''); return s==='trabalhando'||s==='contratado(a)'; });
+    var desist  = cands.filter(function(r){ var s=norm(r.st||''); return s==='desistência'||s==='desistencia'; });
+    var senior  = ativos.filter(function(r){ return norm(r.sen||'')==='sênior'; }).length;
+    var pleno   = ativos.filter(function(r){ return norm(r.sen||'')==='pleno'; }).length;
+    var junior  = ativos.filter(function(r){ return norm(r.sen||'')==='júnior'||norm(r.sen||'')==='junior'; }).length;
+    var total   = ativos.length + desist.length;
+
+    var ativasLabel = ativos.length + ' ativa' + (ativos.length !== 1 ? 's' : '');
+    if (desist.length) ativasLabel += ' · ' + desist.length + ' desistência' + (desist.length > 1 ? 's' : '');
+
+    var pessoas = cands.map(function(r){
+      var isDesist = norm(r.st||'')==='desistência'||norm(r.st||'')==='desistencia';
+      var senNorm  = norm(r.sen||'');
+      var tagCls   = isDesist ? 't-dt' : (senNorm==='sênior'?'t-sr':senNorm==='pleno'?'t-pl':'t-jr');
+      var tagLbl   = isDesist ? 'Desistência' : (r.sen||'—');
+      // Mostrar área junto ao nome para diferenciar quando há múltiplas
+      var nome = r.n + (r.area ? ' <span style="font-size:9px;color:var(--t3);">['+r.area+']</span>' : '');
+      return '<div class="mcp"><span class="mcn">'+nome+'</span><span class="tag '+tagCls+'">'+tagLbl+'</span></div>';
+    }).join('');
+
+    return '<div class="mc">'
+      + '<div class="mch"><div><div class="mcm">'+mLabels[mes]+'</div><div class="mca">'+ativasLabel+'</div></div><div class="mcc">'+total+'</div></div>'
+      + '<div class="mcb">'+pessoas+'</div>'
+      + '<div class="mcf">'
+      + '<div class="mcs"><div class="mcsv" style="color:var(--g)">'+senior+'</div><div class="mcsl">Sênior</div></div>'
+      + '<div class="mcs"><div class="mcsv" style="color:var(--am)">'+pleno+'</div><div class="mcsl">Pleno</div></div>'
+      + '<div class="mcs"><div class="mcsv" style="color:var(--rose)">'+junior+'</div><div class="mcsl">Júnior</div></div>'
+      + '<div class="mcs"><div class="mcsv" style="color:#DC2626">'+desist.length+'</div><div class="mcsl">Desist.</div></div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+
+  mgEl.style.display = 'block';
+}
+
 function renderAreaBreakdown(candidatos){
   var el=document.getElementById('area-breakdown');
   if(!el)return;
@@ -1086,6 +1162,7 @@ function populateFilters(){
   if(fa){fa.innerHTML='<option value="">Todas as áreas</option>'+areas.map(function(a){return'<option value="'+a+'">'+a+'</option>';}).join('');}
   // Renderizar breakdown por área
   renderAreaBreakdown(C);
+  renderOutrasAreas(C);
 }
 
 function getFilteredCandidatos(){
@@ -1193,6 +1270,7 @@ function renderWithFilter(filteredC){
           +'</tr>';
       }).join('')+'</tbody></table>';
   }
+  renderOutrasAreas(filteredC);
 }
 
 // ── renderPage ──
