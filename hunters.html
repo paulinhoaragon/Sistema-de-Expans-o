@@ -8,7 +8,7 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--ink:#0A0F1E;--cobalt:#1A3BAD;--cobalt-gl:#4A70F5;--canvas:#F4F6FB;--surface:#fff;--rule:#E2E6F2;--t1:#0A0F1E;--t2:#3A4268;--t3:#7A82A8;--t4:#A8B0CC}
-body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:14px;-webkit-font-smoothing:antialiased}
+html{background:var(--ink)}body{font-family:'DM Sans',sans-serif;background:transparent;color:var(--t1);font-size:14px;-webkit-font-smoothing:antialiased}.page{background:var(--canvas);border-radius:0}
 .cover{background:var(--ink);min-height:130px;position:relative;overflow:hidden}
 .cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:52px 52px}
 .cgl{position:absolute;top:-60px;right:-40px;width:400px;height:400px;background:radial-gradient(ellipse,rgba(41,82,227,.18) 0%,transparent 65%)}
@@ -17,7 +17,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .ct{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:#fff}
 .cs{font-size:11px;color:rgba(255,255,255,.4);margin-top:3px}
 .cover-rule{height:1px;background:linear-gradient(90deg,transparent,rgba(74,112,245,.4),transparent)}
-.page{max-width:1100px;margin:0 auto;padding:20px 28px 60px}
+.page{max-width:1100px;margin:0 auto;padding:20px 28px 60px;background:var(--canvas)}
 .sh{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--rule)}
 .st{font-size:13px;font-weight:600;color:var(--t1)}.ss{font-size:11px;color:var(--t3);margin-left:auto}
 .hgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
@@ -67,7 +67,7 @@ tbody td:first-child{text-align:left;font-weight:600;color:var(--t1)}
 .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
 .bg-g{background:#DCFCE7;color:#15803D}.bg-b{background:#EEF2FD;color:#1A3BAD}.bg-a{background:#FEF3C7;color:#92400E}
 .bd{width:5px;height:5px;border-radius:50%;background:currentColor}
-</style>↵<script src="pipeline.js"></script>↵</head>
+</style></head>
 <body>
 
 <div class="cover"><div class="cg"></div><div class="cgl"></div>
@@ -541,27 +541,10 @@ window.addEventListener('storage', function (e) {
 
 console.log('[Blue3] pipeline.js carregado — aguardando chamada explícita.');
 
-var HUNTER_PHOTOS={};
-// Config base — hunters conhecidos; novos hunters herdam defaults automaticamente
-var HUNTER_CFG={
-  'Eduarda':{meta:14,color:'#6366F1',order:0},
-  'Bianca':  {meta:14,color:'#EC4899',order:1},
-  'Paulo':   {meta:12,color:'#B8962E',order:2}
-};
-// Paleta de cores para hunters não configurados
-var _AUTO_COLORS=['#0EA5E9','#10B981','#F59E0B','#8B5CF6','#EF4444','#06B6D4','#84CC16'];
-function hunterCfg(nome){
-  if(HUNTER_CFG[nome])return HUNTER_CFG[nome];
-  // auto-gera config para hunter novo
-  var idx=Object.keys(HUNTER_CFG).length;
-  HUNTER_CFG[nome]={meta:13,color:_AUTO_COLORS[idx%_AUTO_COLORS.length],order:idx};
-  return HUNTER_CFG[nome];
-}
-// Compat shims para código legado que usa HUNTER_METAS/COLORS/ORDER diretamente
-var HUNTER_METAS=new Proxy({},{get:function(_,k){return hunterCfg(k).meta;}});
-var HUNTER_COLORS=new Proxy({},{get:function(_,k){return hunterCfg(k).color;}});
-var HUNTER_ORDER=[];// preenchido em buildH após detecção dinâmica
-var H=[];
+
+var HUNTER_PHOTOS={},HUNTER_METAS={'Eduarda':14,'Bianca':14,'Paulo':12};
+var HUNTER_COLORS={'Eduarda':'#6366F1','Bianca':'#EC4899','Paulo':'#B8962E'};
+var HUNTER_ORDER=['Eduarda','Bianca','Paulo'],H=[];
 
 function diag(m){var e=document.getElementById('diag');if(!e)return;e.style.display='block';e.textContent=m;clearTimeout(diag._t);diag._t=setTimeout(function(){e.style.display='none';},7000);}
 function ns(s){return String(s||'').trim().toLowerCase();}
@@ -578,15 +561,11 @@ function getBonusTier(t,p){
 }
 
 function buildH(hunters,cands){
-  // Garante que todos os hunters do CSV tenham config gerada
-  hunters.forEach(function(h){hunterCfg(h.nome);});
-  // Ordena pelo campo order da config (conhecido primeiro, novos ao final)
-  var ord=hunters.slice().sort(function(a,b){
-    return hunterCfg(a.nome).order-hunterCfg(b.nome).order;
-  });
+  var ord=[];
+  HUNTER_ORDER.forEach(function(n){var h=hunters.find(function(x){return ns(x.nome)===ns(n);});if(h)ord.push(h);});
+  hunters.forEach(function(h){if(!HUNTER_ORDER.some(function(n){return ns(n)===ns(h.nome);}))ord.push(h);});
   return ord.map(function(h){
-    var cfg=hunterCfg(h.nome),meta=cfg.meta,color=cfg.color;
-
+    var meta=HUNTER_METAS[h.nome]||13,color=HUNTER_COLORS[h.nome]||'#64748B';
     var pace=meta>0?Math.round(h.total/meta*100):0,hn=ns(h.nome);
     var cs=cands.filter(function(c){return ns(c.h)===hn;}).map(function(c){
       return{nome:c.n,filial:c.p,status:c.st,mou:c.mou,inicio:c.inicio||null,auc:c.cap,piso:c.piso,periodo:c.periodo,comp:c.comp,sen:c.sen};
@@ -745,23 +724,11 @@ function uploadCSV(input){
 
 document.addEventListener('DOMContentLoaded',function(){
   diag('Iniciando hunters...');
-  if (typeof Blue3_init === 'function') {
-    Blue3_init(function(ok) {
-      if (ok) renderPage();
-      else {
-        var raw=localStorage.getItem('B3D');
-        if(!raw){showEmptyState();diag('CSV nao encontrado - faca upload acima');return;}
-        if(Blue3_runPipeline())renderPage();
-        else showEmptyState('Pipeline falhou. Faca o upload do CSV novamente.');
-      }
-    });
-  } else {
-    var raw=localStorage.getItem('B3D');
-    if(!raw){showEmptyState();diag('CSV nao encontrado - faca upload acima');return;}
-    var ok=Blue3_runPipeline();
-    if(ok){renderPage();}
-    else{showEmptyState('Pipeline falhou. Faca o upload do CSV novamente.');}
-  }
+  var raw=localStorage.getItem('B3D');
+  if(!raw){showEmptyState();diag('CSV nao encontrado - faca upload acima');return;}
+  var ok=Blue3_runPipeline();
+  if(ok){renderPage();}
+  else{showEmptyState('Pipeline falhou. Faca o upload do CSV novamente.');}
 });
 
 window.b3OnCSVLoaded=function(){if(Blue3_runPipeline())renderPage();};
