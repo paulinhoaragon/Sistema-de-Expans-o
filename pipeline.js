@@ -194,7 +194,7 @@ function blue3LoadData(callback){
 function Blue3_dataLoader(){
   var rows=window.Blue3Data._rawRows;
   if(!rows||!rows.length)return false;
-  window.Blue3Data.candidatos=rows.map(function(r){
+  var all=rows.map(function(r){
     return{
       n:(r['Candidato']||'').trim(),
       p:(r['Filial']||'').trim(),
@@ -214,7 +214,17 @@ function Blue3_dataLoader(){
       dt:(r['Data de Contratação']||null),
       inicio:(r['Prev. Inicio']||null)
     };
-  }).filter(function(r){var s=norm(r.st);return r.n&&(s==='trabalhando'||s==='contratado(a)');});
+  });
+  // Contar brutas e desistências antes do filtro de ativos
+  var validAll = all.filter(function(r){ return !!r.n; });
+  window.Blue3Data._brutas = validAll.length;
+  window.Blue3Data._desist = validAll.filter(function(r){
+    var s=norm(r.st); return s!=='trabalhando'&&s!=='contratado(a)'&&s!=='';
+  }).length;
+  // Aplicar filtro — apenas ativos
+  window.Blue3Data.candidatos = validAll.filter(function(r){
+    var s=norm(r.st); return s==='trabalhando'||s==='contratado(a)';
+  });
   return window.Blue3Data.candidatos.length>0;
 }
 
