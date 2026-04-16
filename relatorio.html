@@ -218,6 +218,94 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .foot{background:var(--ink);padding:20px 44px;display:flex;justify-content:space-between;align-items:center;}
 .fl{font-size:11px;font-weight:500;color:rgba(255,255,255,.28);letter-spacing:.05em;}
 .fr{font-size:10px;color:rgba(255,255,255,.18);}
+
+/* ══════════════════════════════════════════════
+   PDF / PRINT STYLES — Blue3 Relatório Executivo
+   ══════════════════════════════════════════════ */
+@media print {
+  /* Reset */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  
+  /* Ocultar elementos de UI */
+  #filter-bar,
+  #btn-export-pdf,
+  #btn-clear-flt,
+  #flt-count,
+  #area-breakdown { display: none !important; }
+  
+  /* Corpo */
+  body { background: #fff !important; margin: 0; padding: 0; }
+  
+  /* Cover — manter visual escuro */
+  .cover { 
+    min-height: 160px !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    page-break-after: avoid;
+  }
+  
+  /* Page */
+  .page { 
+    max-width: 100% !important; 
+    padding: 16px 24px 24px !important;
+    margin: 0 !important;
+  }
+
+  /* KPIs — forçar grid 3 colunas */
+  .krow { 
+    display: grid !important; 
+    grid-template-columns: repeat(3,1fr) !important; 
+    gap: 10px !important;
+    page-break-inside: avoid;
+  }
+  .kc { break-inside: avoid; }
+
+  /* Cards */
+  .card { break-inside: avoid; }
+  .g2   { break-inside: avoid; }
+  
+  /* ib — barra de stats */
+  .ib { page-break-inside: avoid; }
+
+  /* Seções — evitar quebras no meio */
+  .sh { page-break-after: avoid; }
+
+  /* mg — grid de meses — quebra de página antes se necessário */
+  .mg { 
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  .mc { break-inside: avoid; }
+  
+  /* Tabelas */
+  table { page-break-inside: auto; }
+  tr    { page-break-inside: avoid; page-break-after: auto; }
+  thead { display: table-header-group; }
+
+  /* Seção estratégico e financeiro — nova página */
+  #sect-estrategico { page-break-before: always; }
+  #sect-financeiro  { page-break-before: always; }
+
+  /* Rodapé de impressão */
+  .cover-rule { display: none !important; }
+
+  /* Links */
+  a { text-decoration: none !important; color: inherit !important; }
+
+  /* Ocultar canvas (gráficos não imprimem bem) — mostrar só tabelas */
+  canvas { display: none !important; }
+  .leg   { display: none !important; }
+  
+  /* Ajuste de fonte para impressão */
+  body { font-size: 11px !important; }
+  .kv  { font-size: 24px !important; }
+}
+
+@page {
+  size: A4 portrait;
+  margin: 10mm 12mm 14mm 12mm;
+}
 </style>
 </head>
 <body>
@@ -262,6 +350,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     </div>
   </div>
   <div class="cover-rule"></div>
+  <!-- Botão exportar PDF -->
+  <button onclick="exportarPDF()" id="btn-export-pdf" style="position:absolute;top:16px;right:20px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 16px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:background .2s;" onmouseover="this.style.background='rgba(255,255,255,.22)'" onmouseout="this.style.background='rgba(255,255,255,.12)'">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Exportar PDF
+  </button>
 </div>
 
 <div class="page">
@@ -1800,6 +1893,70 @@ function gerarPropostaFromModal(){
   if(pp && regPraca && regPraca.value) pp.value = regPraca.value;
   openPropostaModal();
 }
+
+// ── Exportar PDF executivo ──
+function exportarPDF() {
+  var D = window.Blue3Data;
+  var dataStr = localStorage.getItem('B3D_DATE') || 'Atual';
+  var titulo  = 'Blue3 Expansão · Relatório Executivo 1S2026';
+
+  // Coletar conteúdo das seções visíveis
+  var page = document.querySelector('.cover');
+  var pageContent = document.querySelector('.page');
+  if (!pageContent) { alert('Carregue os dados antes de exportar.'); return; }
+
+  var win = window.open('', '_blank', 'width=900,height=1200');
+  win.document.write('<!DOCTYPE html><html lang="pt-BR"><head>');
+  win.document.write('<meta charset="UTF-8">');
+  win.document.write('<title>' + titulo + '</title>');
+  win.document.write('<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">');
+  
+  // Copiar o <style> principal
+  var styles = document.querySelectorAll('style');
+  styles.forEach(function(s){ win.document.write(s.outerHTML); });
+
+  win.document.write('<style>');
+  win.document.write('@page { size: A4 portrait; margin: 10mm 12mm 14mm 12mm; }');
+  win.document.write('* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }');
+  win.document.write('body { margin:0; padding:0; background:#fff; font-family:"DM Sans",sans-serif; }');
+  win.document.write('#filter-bar, #btn-export-pdf, #btn-clear-flt, #flt-count, #area-breakdown { display:none !important; }');
+  win.document.write('.cover { min-height:140px !important; page-break-after:avoid; }');
+  win.document.write('.page { max-width:100% !important; padding:16px 24px 24px !important; margin:0 !important; }');
+  win.document.write('.krow { grid-template-columns:repeat(3,1fr) !important; gap:10px !important; page-break-inside:avoid; }');
+  win.document.write('.mg { grid-template-columns:repeat(2,1fr) !important; gap:12px !important; }');
+  win.document.write('.mc, .card, .kc { break-inside:avoid; }');
+  win.document.write('.sh { page-break-after:avoid; }');
+  win.document.write('#sect-estrategico, #sect-financeiro { page-break-before:always; }');
+  win.document.write('canvas { display:none !important; }');
+  win.document.write('.leg, .legPerfil { display:none !important; }');
+  win.document.write('table { page-break-inside:auto; width:100%; }');
+  win.document.write('tr { page-break-inside:avoid; }');
+  win.document.write('thead { display:table-header-group; }');
+  win.document.write('a { text-decoration:none !important; color:inherit !important; }');
+  // Marca d'água confidencial
+  win.document.write('@media print {');
+  win.document.write('  body::after { content:"CONFIDENCIAL"; position:fixed; bottom:8mm; right:12mm;');
+  win.document.write('    font-size:8px; font-weight:700; letter-spacing:.15em; color:rgba(0,0,0,.18);');
+  win.document.write('    text-transform:uppercase; font-family:"DM Sans",sans-serif; }');
+  win.document.write('}');
+  win.document.write('</style>');
+
+  win.document.write('</head><body>');
+  
+  // Cover
+  if (page) win.document.write(page.outerHTML);
+  // Conteúdo
+  win.document.write(pageContent.outerHTML);
+
+  win.document.write('<script>');
+  win.document.write('window.onload = function() {');
+  win.document.write('  setTimeout(function(){ window.print(); }, 800);');
+  win.document.write('};');
+  win.document.write('<\/script>');
+  win.document.write('</body></html>');
+  win.document.close();
+}
+
 
 function downloadProposta(){
   var nome = (document.getElementById('s-nome')||{}).value||'proposta';
