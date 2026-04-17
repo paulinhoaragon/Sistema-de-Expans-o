@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Blue3 - Performance de Hunters</title>
+<title>Nexus · Performance Hunters · Blue3</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -22,7 +22,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .st{font-size:13px;font-weight:600;color:var(--t1)}.ss{font-size:11px;color:var(--t3);margin-left:auto}
 .hgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
 @media(max-width:700px){.hgrid{grid-template-columns:1fr}}
-.hcard{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:18px;cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden}
+.hcard{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:18px;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .3s,box-shadow .3s;position:relative;overflow:hidden}
+.hcard.meta-atingida{border-color:rgba(250,204,21,.5);animation:hcard-pulse 2.5s ease-in-out infinite;}
+@keyframes hcard-pulse{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.0),var(--sh);}50%{box-shadow:0 0 24px 4px rgba(250,204,21,.18),var(--sh);}}
+.hcard-crown{position:absolute;top:-18px;left:50%;transform:translateX(-50%) scale(0);font-size:20px;transition:top .5s cubic-bezier(.175,.885,.32,1.275),transform .5s cubic-bezier(.175,.885,.32,1.275);pointer-events:none;z-index:2;}
+.hcard.meta-atingida .hcard-crown{top:-10px;transform:translateX(-50%) scale(1);}
+.hcard-meta-badge{display:none;align-items:center;justify-content:center;gap:5px;margin-top:10px;padding:6px 12px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:20px;font-size:10px;font-weight:700;color:#FCD34D;letter-spacing:.04em;}
+.hcard.meta-atingida .hcard-meta-badge{display:flex;}
+.hcard-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .3s;}
+.hcard.meta-atingida .hcard-particles{opacity:1;}
+.hparticle{position:absolute;width:4px;height:4px;border-radius:50%;animation:hpart-up 3s ease-in-out infinite;}
+@keyframes hpart-up{0%{transform:translateY(100%) scale(0);opacity:0;}20%{opacity:1;}80%{opacity:.7;}100%{transform:translateY(-160px) scale(1);opacity:0;}}
 .hcard:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(10,15,30,.1)}
 .hcard-top{height:3px;border-radius:14px 14px 0 0;position:absolute;top:0;left:0;right:0}
 .hcard-name{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--t1);margin-bottom:2px;margin-top:4px}
@@ -67,12 +77,13 @@ tbody td:first-child{text-align:left;font-weight:600;color:var(--t1)}
 .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
 .bg-g{background:#DCFCE7;color:#15803D}.bg-b{background:#EEF2FD;color:#1A3BAD}.bg-a{background:#FEF3C7;color:#92400E}
 .bd{width:5px;height:5px;border-radius:50%;background:currentColor}
-</style></head>
+</style><script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+</head>
 <body>
 
 <div class="cover"><div class="cg"></div><div class="cgl"></div>
 <div class="cover-in">
-  <div><div class="b3w">BLUE<em>3</em></div></div>
+  <div><div style="display:flex;align-items:center;gap:10px;"><svg width="26" height="26" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><radialGradient id="ncg" cx="40%" cy="30%" r="70%"><stop offset="0%" stop-color="#7AA3FF"/><stop offset="100%" stop-color="#1A3BAD"/></radialGradient><line x1="30" y1="8" x2="46" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/><line x1="46" y1="17" x2="46" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/><line x1="46" y1="35" x2="30" y2="44" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/><line x1="30" y1="44" x2="14" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/><line x1="14" y1="35" x2="14" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/><line x1="14" y1="17" x2="30" y2="8" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/><line x1="30" y1="8" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/><line x1="46" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/><line x1="46" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/><line x1="30" y1="44" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/><line x1="14" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/><line x1="14" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/><circle cx="30" cy="8" r="3" fill="#4A70F5"/><circle cx="46" cy="17" r="3" fill="#4A70F5"/><circle cx="46" cy="35" r="3" fill="#4A70F5"/><circle cx="30" cy="44" r="3" fill="#4A70F5"/><circle cx="14" cy="35" r="3" fill="#4A70F5"/><circle cx="14" cy="17" r="3" fill="#4A70F5"/><circle cx="30" cy="26" r="5.5" fill="url(#ncg)" stroke="#4A70F5" stroke-width="1.5"/><circle cx="28.5" cy="24.5" r="1.8" fill="white" fill-opacity=".45"/></svg><div><div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:.05em;">NEXUS</div><div style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#4A70F5;margin-top:1px;">Blue3 Expansão Suite</div></div></div></div>
   <div><div class="ct">Performance de Hunters</div>
   <div class="cs">Meta semestral: 40 contratações</div></div>
 </div>  <a href="index.html" style="position:absolute;top:14px;right:20px;color:rgba(255,255,255,.7);font-size:11px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;background:rgba(255,255,255,.1);" onmouseover="this.style.background='rgba(255,255,255,.2)'" onmouseout="this.style.background='rgba(255,255,255,.1)'">← Home</a>
@@ -650,22 +661,61 @@ function renderBonusCards(){
 function renderOv(){
   renderBonusCards();
   var el=document.getElementById('hgrid');if(!el)return;
-  el.innerHTML=H.map(function(h){
-    var pc=h.pace_pct,pcC=pc>=100?'#16A34A':pc>=70?'#B8962E':'#DC2626';
-    return'<div class="hcard" onclick="showDet(\''+h.nome+'\')">'
-      +'<div class="hcard-top" style="background:'+h.color+'"></div>'
-      +'<div class="hcard-name">'+h.nome+'</div>'
-      +'<div class="hcard-sub">Hunter - Expansao 1S2026</div>'
-      +'<div class="hs"><span class="hl">Contratacoes</span><span class="hv">'+h.total+'/'+h.meta+'</span></div>'
-      +'<div class="hs"><span class="hl">AuC Alvo</span><span class="hv">'+fmt(h.auc)+'</span></div>'
-      +'<div class="hs"><span class="hl">Comp. Gerada</span><span class="hv">'+fmt(h.comp)+'</span></div>'
-      +'<div class="hs"><span class="hl">MOU OK</span><span class="hv">'+h.mou_ok+'/'+h.total+'</span></div>'
-      +'<div class="hs"><span class="hl">Trabalhando</span><span class="hv">'+h.trabalhando+'</span></div>'
+  el.innerHTML=H.map(function(hun){
+    var pc=hun.pace_pct;
+    var pcC=pc>=100?'#16A34A':pc>=70?'#B8962E':'#DC2626';
+    var metaOk=(hun.total>=hun.meta);
+    var cardCls='hcard'+(metaOk?' meta-atingida':'');
+    var crown=metaOk?'<div class="hcard-crown">&#x1F451;</div>':'';
+    var badge=metaOk?'<div class="hcard-meta-badge">&#x1F3C6; Meta atingida! Parab&eacute;ns!</div>':'';
+    var particles='<div class="hcard-particles">';
+    if(metaOk){
+      var pColors=['#FCD34D','#6366F1','#4ADE80','#F472B6','#60A5FA'];
+      for(var pi=0;pi<14;pi++){
+        particles+='<div class="hparticle" style="left:'+(Math.random()*100)+'%;bottom:'+(Math.random()*20)+'px;background:'+pColors[pi%pColors.length]+';animation-delay:'+(Math.random()*2)+'s;animation-duration:'+(2+Math.random()*1.5)+'s;"></div>';
+      }
+    }
+    particles+='</div>';
+    var nomeEsc=hun.nome.replace(/'/g,"&#39;");
+    return '<div class="'+cardCls+'" onclick="showDet(&#39;'+nomeEsc+'&#39;)">'
+      +crown+particles
+      +'<div class="hcard-top" style="background:'+hun.color+'"></div>'
+      +'<div class="hcard-name">'+hun.nome+'</div>'
+      +'<div class="hcard-sub">Hunter &middot; Expans&atilde;o 1S2026</div>'
+      +'<div class="hs"><span class="hl">Contrata&ccedil;&otilde;es</span><span class="hv">'+hun.total+'/'+hun.meta+'</span></div>'
+      +'<div class="hs"><span class="hl">AuC Alvo</span><span class="hv">'+fmt(hun.auc)+'</span></div>'
+      +'<div class="hs"><span class="hl">Comp. Gerada</span><span class="hv">'+fmt(hun.comp)+'</span></div>'
+      +'<div class="hs"><span class="hl">MOU OK</span><span class="hv">'+hun.mou_ok+'/'+hun.total+'</span></div>'
+      +'<div class="hs"><span class="hl">Trabalhando</span><span class="hv">'+hun.trabalhando+'</span></div>'
       +'<div class="pace-bar"><div class="pace-fill" style="width:'+Math.min(pc,100)+'%;background:'+pcC+'"></div></div>'
       +'<div class="pace-lbl"><span>Pace vs meta</span><span style="font-weight:700;color:'+pcC+'">'+pc+'%</span></div>'
-      +'</div>';
+      +badge+'</div>';
   }).join('');
   rank('r-auc',function(h){return h.auc;},fmt);
+  // Disparar confetes para hunters que bateram a meta
+  setTimeout(function(){
+    H.forEach(function(h){
+      if(h.total >= h.meta){
+        var card = document.querySelector('.hcard.meta-atingida');
+        if(!card) return;
+        var cards = document.querySelectorAll('.hcard.meta-atingida');
+        cards.forEach(function(card){
+          var rect = card.getBoundingClientRect();
+          var cx = (rect.left + rect.width/2) / window.innerWidth;
+          var cy = (rect.top + rect.height/2) / window.innerHeight;
+          if(typeof confetti === 'function'){
+            confetti({particleCount:60,spread:65,origin:{x:cx,y:cy},
+              colors:['#FCD34D','#6366F1','#4ADE80','#F472B6','#60A5FA','#fff'],
+              scalar:1.0,gravity:0.9});
+            setTimeout(function(){
+              confetti({particleCount:30,spread:45,origin:{x:cx-0.05,y:cy-0.05},
+                colors:['#FCD34D','#fff'],scalar:0.8});
+            },350);
+          }
+        });
+      }
+    });
+  }, 600);
   rank('r-cont',function(h){return h.total;},function(v){return v+' contratos';});
   rank('r-comp',function(h){return h.comp;},fmt);
 }
