@@ -63,7 +63,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .col-empty{text-align:center;padding:32px 16px;color:var(--t4);font-size:12px;}
 
 /* Vaga card */
-.vcard{background:var(--canvas);border:1px solid var(--rule);border-radius:var(--r8);padding:12px 14px;cursor:pointer;transition:box-shadow .15s,border-color .15s;}
+.vcard{background:var(--canvas);border:1px solid var(--rule);border-radius:var(--r8);padding:12px 14px;cursor:grab;transition:box-shadow .15s,border-color .15s;user-select:none;}
+.vcard.dragging{opacity:.45;cursor:grabbing;transform:rotate(1deg);}
+.col-body.drag-over{background:#EEF2FF;border:2px dashed var(--cobalt);border-radius:var(--r8);}
 .vcard:hover{box-shadow:0 3px 12px rgba(0,0,0,.1);border-color:var(--cobalt);}
 .vcard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;}
 .vcard-cargo{font-size:12px;font-weight:600;color:var(--t1);line-height:1.3;}
@@ -203,7 +205,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         </div>
         <div class="col-count" id="cnt-ab">0</div>
       </div>
-      <div class="col-body" id="col-ab">
+      <div class="col-body" id="col-ab"   ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event,'aberta')">
         <div class="spinner">Carregando...</div>
       </div>
     </div>
@@ -217,7 +219,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         </div>
         <div class="col-count" id="cnt-and">0</div>
       </div>
-      <div class="col-body" id="col-and">
+      <div class="col-body" id="col-and"  ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event,'andamento')">
         <div class="col-empty">Nenhuma vaga em andamento</div>
       </div>
     </div>
@@ -231,7 +233,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         </div>
         <div class="col-count" id="cnt-conc">0</div>
       </div>
-      <div class="col-body" id="col-conc">
+      <div class="col-body" id="col-conc" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event,'concluida')">
         <div class="col-empty">Nenhuma vaga concluída ainda</div>
       </div>
     </div>
@@ -524,7 +526,7 @@ function renderVcard(v, tipo) {
     hunterInfo = '<div class="vcard-hunter">Fechado por: <strong>' + v.concluido_por + '</strong> · ' + v.candidato_fechado + '</div>';
   }
 
-  return '<div class="vcard" onclick="abrirDetalhe(' + v.id + ')">'
+  return '<div class="vcard" draggable="true" data-id="' + v.id + '" data-status="' + tipo + '" onclick="abrirDetalhe(' + v.id + ')" ondragstart="dragStart(event)" ondragend="dragEnd(event)">'
     + '<div class="vcard-top">'
     + '<div class="vcard-cargo">' + v.cargo + '</div>'
     + (v.zeev ? '<div class="vcard-zeev">#' + v.zeev + '</div>' : '')
@@ -548,6 +550,7 @@ var _editId = null;
 function abrirModalNova() {
   _editId = null;
   _modoEdicao = false;
+  _vagaAtiva = null;
   document.getElementById('modal-vaga-title').textContent = 'Nova Vaga';
   document.getElementById('btn-submit-vaga').textContent = 'Criar Vaga';
   ['f-zeev','f-cargo','f-solicitante','f-unidade','f-obs','f-remuneracao'].forEach(function(id){
@@ -580,7 +583,7 @@ function abrirModalEditar(id) {
 }
 
 function fecharModalVaga(e) { if (e.target === document.getElementById('modal-vaga')) fecharModalVagaBtn(); }
-function fecharModalVagaBtn() { document.getElementById('modal-vaga').style.display = 'none'; }
+function fecharModalVagaBtn() { document.getElementById('modal-vaga').style.display = 'none'; _editId = null; _modoEdicao = false; }
 
 function salvarVaga() {
   var cargo = document.getElementById('f-cargo').value.trim();
@@ -613,9 +616,11 @@ function salvarVaga() {
   btn.textContent = 'Salvando...'; btn.disabled = true;
 
   var req;
-  if (_modoEdicao && _editId) {
-    req = supa('vagas?id=eq.' + _editId, { method: 'PATCH', body: body });
+  if (_editId) {
+    // PATCH — atualiza apenas os campos enviados, preserva status/hunter/conclusão
+    req = supa('vagas?id=eq.' + _editId, { method: 'PATCH', prefer: 'return=minimal', body: body });
   } else {
+    // POST — nova vaga
     req = supa('vagas', { method: 'POST', body: body });
   }
 
@@ -765,6 +770,58 @@ function devolverVaga(id) {
     body: { status: 'aberta', hunter_responsavel: '', hunter_assumiu_em: null }
   }).then(function(){ carregarVagas(); })
     .catch(function(){ alert('Erro ao devolver vaga.'); });
+}
+
+// ── Drag & Drop ──
+var _dragId = null;
+
+function dragStart(e) {
+  _dragId = parseInt(e.currentTarget.dataset.id);
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function dragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.col-body').forEach(function(el){ el.classList.remove('drag-over'); });
+}
+function dragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+function dragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+function drop(e, novoStatus) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!_dragId) return;
+  var v = _vagas.find(function(x){ return x.id === _dragId; });
+  if (!v || v.status === novoStatus) return;
+
+  // Mover para 'andamento' pede confirmação com nome do hunter
+  if (novoStatus === 'andamento') {
+    var nome = prompt('Informe o nome do hunter que assumirá esta vaga:');
+    if (!nome || !nome.trim()) return;
+    supa('vagas?id=eq.' + _dragId, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: { status: 'andamento', hunter_responsavel: nome.trim(), hunter_assumiu_em: new Date().toISOString() }
+    }).then(carregarVagas);
+  } else if (novoStatus === 'concluida') {
+    var candidato = prompt('Candidato contratado para fechar a vaga:');
+    if (!candidato || !candidato.trim()) return;
+    supa('vagas?id=eq.' + _dragId, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: { status: 'concluida', candidato_fechado: candidato.trim(), concluido_por: CU ? (CU.n||CU.l) : '', concluido_em: new Date().toISOString() }
+    }).then(carregarVagas);
+  } else {
+    // Devolver ao estoque
+    supa('vagas?id=eq.' + _dragId, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: { status: 'aberta', hunter_responsavel: '', hunter_assumiu_em: null }
+    }).then(carregarVagas);
+  }
+  _dragId = null;
 }
 
 function closeDetalhe() { document.getElementById('modal-detalhe').style.display='none'; }
