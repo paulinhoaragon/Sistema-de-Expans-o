@@ -94,6 +94,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .btn-assumir:hover{background:#DBEAFE;}
 .btn-concluir{background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;font-size:10px;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;flex:1;}
 .btn-concluir:hover{background:#DCFCE7;}
+.btn-devolver{background:#FFF7ED;color:#C2410C;border:1px solid #FED7AA;font-size:10px;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;}
+.btn-devolver:hover{background:#FFEDD5;}
+.btn-concluir:hover{background:#DCFCE7;}
 .btn-editar{background:var(--s2);color:var(--t3);border:1px solid var(--rule);font-size:10px;font-weight:600;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;}
 .btn-editar:hover{color:var(--t1);}
 .btn-editar.hidden{display:none;}
@@ -281,7 +284,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         </div>
         <div class="fg">
           <label>Remuneração (R$)</label>
-          <input id="f-remuneracao" type="number" placeholder="Ex: 3496.57">
+          <input id="f-remuneracao" type="text" placeholder="Ex: 3.496,57" oninput="mascaraRemuneracao(this)" maxlength="20">
         </div>
         <div class="fg" style="grid-column:span 2;">
           <label>Tipo de Solicitação</label>
@@ -499,8 +502,11 @@ function renderVcard(v, tipo) {
       + editBtn
       + '</div>';
   } else if (tipo === 'andamento') {
+    var editAndBtn = PODE_CADASTRAR ? '<button class="btn-editar" onclick="event.stopPropagation();abrirModalEditar(' + v.id + ')">Editar</button>' : '';
     acoes = '<div class="vcard-actions">'
-      + '<button class="btn-concluir" onclick="event.stopPropagation();abrirModalConcluir(' + v.id + ')">✓ Concluir vaga</button>'
+      + '<button class="btn-concluir" onclick="event.stopPropagation();abrirModalConcluir(' + v.id + ')">✓ Concluir</button>'
+      + '<button class="btn-devolver" onclick="event.stopPropagation();devolverVaga(' + v.id + ')">↩ Devolver</button>'
+      + editAndBtn
       + '</div>';
   }
 
@@ -560,7 +566,8 @@ function abrirModalEditar(id) {
   document.getElementById('f-solicitante').value = v.solicitante || '';
   document.getElementById('f-unidade').value = v.unidade || '';
   document.getElementById('f-modalidade').value = v.modalidade || '';
-  document.getElementById('f-remuneracao').value = v.remuneracao || '';
+  var remVal = v.remuneracao ? parseFloat(v.remuneracao).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.') : '';
+  document.getElementById('f-remuneracao').value = remVal;
   document.getElementById('f-tipo').value = v.tipo_solicitacao || '';
   document.getElementById('f-obs').value = v.observacao || '';
   document.getElementById('modal-vaga').style.display = 'flex';
@@ -579,7 +586,7 @@ function salvarVaga() {
     solicitante:      document.getElementById('f-solicitante').value.trim(),
     unidade:          document.getElementById('f-unidade').value.trim(),
     modalidade:       document.getElementById('f-modalidade').value,
-    remuneracao:      parseFloat(document.getElementById('f-remuneracao').value) || 0,
+    remuneracao:      parseMascara(document.getElementById('f-remuneracao').value),
     tipo_solicitacao: document.getElementById('f-tipo').value,
     observacao:       document.getElementById('f-obs').value.trim(),
     criado_por:       CU ? (CU.n || CU.l) : '',
@@ -716,7 +723,8 @@ function abrirDetalhe(id) {
       + '<button class="btn-submit" onclick="closeDetalhe();abrirModalAssumir(' + vid + ')">Assumir vaga</button>';
   } else if (v.status === 'andamento') {
     foot = '<button class="btn-cancel" onclick="closeDetalhe()">Fechar</button>'
-      + '<button class="btn-submit danger" onclick="closeDetalhe();abrirModalConcluir(' + vid + ')">Concluir vaga</button>';
+      + '<button class="btn-submit" style="background:#FFF7ED;color:#C2410C;border:1px solid #FED7AA;" onclick="closeDetalhe();devolverVaga(' + vid + ')">↩ Devolver</button>'
+      + '<button class="btn-submit danger" onclick="closeDetalhe();abrirModalConcluir(' + vid + ')">✓ Concluir</button>';
   } else {
     foot = '<button class="btn-cancel" onclick="closeDetalhe()">Fechar</button>';
   }
@@ -724,7 +732,29 @@ function abrirDetalhe(id) {
   document.getElementById('modal-detalhe').style.display = 'flex';
 }
 
+function devolverVaga(id) {
+  if (!confirm('Devolver esta vaga ao estoque? O hunter será desvinculado.')) return;
+  supa('vagas?id=eq.' + id, {
+    method: 'PATCH',
+    body: { status: 'aberta', hunter_responsavel: '', hunter_assumiu_em: null }
+  }).then(function(){ carregarVagas(); })
+    .catch(function(){ alert('Erro ao devolver vaga.'); });
+}
+
 function closeDetalhe() { document.getElementById('modal-detalhe').style.display='none'; }
+function mascaraRemuneracao(el) {
+  var v = el.value.replace(/\D/g,'');
+  if (!v) { el.value = ''; return; }
+  v = (parseInt(v,10)/100).toFixed(2);
+  var parts = v.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  el.value = parts.join(',');
+}
+function parseMascara(v) {
+  if (!v) return 0;
+  return parseFloat(v.replace(/\./g,'').replace(',','.')) || 0;
+}
+
 function fecharModalDetalhe(e) { if (e.target === document.getElementById('modal-detalhe')) document.getElementById('modal-detalhe').style.display = 'none'; }
 </script>
 </body>
