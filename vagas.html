@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blue3 · Gestão de Vagas</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0A0F1E;--cobalt:#1A3BAD;--cobalt-gl:#4A70F5;--canvas:#F4F6FB;
+  --surface:#fff;--rule:#E2E8F5;--s2:#F8FAFF;
+  --t1:#0A0F1E;--t2:#374151;--t3:#8892A4;--t4:#B0BAC9;
+  --g:#16A34A;--am:#D97706;--rose:#BE185D;--red:#DC2626;
+  --r8:8px;--r12:12px;--sh:0 2px 8px rgba(0,0,0,.07);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:14px;margin:0;-webkit-font-smoothing:antialiased;}
+
+/* Cover */
+.cover{background:var(--ink);position:relative;overflow:hidden;min-height:120px;}
+.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:32px 32px;}
+.cgl{position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(74,112,245,.5),transparent);}
+.cover-in{position:relative;max-width:1200px;margin:0 auto;padding:22px 28px 16px;display:flex;justify-content:space-between;align-items:center;}
+.b3w{font-size:18px;font-weight:700;color:#fff;letter-spacing:-.01em;}
+.b3w em{color:var(--cobalt-gl);font-style:normal;}
+.cover-right{text-align:right;}
+.ct{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:#fff;}
+.cs{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px;}
+.cnav{position:relative;max-width:1200px;margin:0 auto;padding:8px 28px;display:flex;align-items:center;justify-content:space-between;}
+.back-btn{color:rgba(255,255,255,.5);font-size:11px;text-decoration:none;display:flex;align-items:center;gap:5px;}
+.back-btn:hover{color:#fff;}
+.cnav-right{display:flex;align-items:center;gap:10px;}
+.cnav-badge{background:rgba(74,112,245,.25);color:#93AEFF;font-size:9px;font-weight:700;padding:2px 10px;border-radius:20px;letter-spacing:.08em;text-transform:uppercase;}
+.cnav-user{color:rgba(255,255,255,.5);font-size:11px;}
+
+/* Page */
+.page{max-width:1200px;margin:0 auto;padding:24px 28px 60px;}
+
+/* KPIs */
+.krow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;}
+.kc{background:var(--surface);border-radius:var(--r12);padding:16px 18px;border:1px solid var(--rule);border-top:3px solid var(--cobalt);box-shadow:var(--sh);}
+.kc.g{border-top-color:var(--g);}
+.kc.am{border-top-color:var(--am);}
+.kc.pu{border-top-color:#7C3AED;}
+.kl{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px;}
+.kv{font-size:26px;font-weight:700;line-height:1.1;}
+.ks{font-size:10px;color:var(--t3);margin-top:4px;}
+
+/* Board — 3 colunas */
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start;}
+
+/* Coluna */
+.col{background:var(--surface);border-radius:var(--r12);border:1px solid var(--rule);box-shadow:var(--sh);overflow:hidden;}
+.col-head{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rule);}
+.col-title{display:flex;align-items:center;gap:8px;}
+.col-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.dot-ab{background:#F59E0B;}
+.dot-and{background:#1A3BAD;}
+.dot-conc{background:#16A34A;}
+.col-label{font-size:12px;font-weight:700;color:var(--t1);}
+.col-count{background:var(--s2);color:var(--t3);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;}
+.col-body{padding:12px;display:flex;flex-direction:column;gap:8px;min-height:120px;}
+.col-empty{text-align:center;padding:32px 16px;color:var(--t4);font-size:12px;}
+
+/* Vaga card */
+.vcard{background:var(--canvas);border:1px solid var(--rule);border-radius:var(--r8);padding:12px 14px;cursor:pointer;transition:box-shadow .15s,border-color .15s;}
+.vcard:hover{box-shadow:0 3px 12px rgba(0,0,0,.1);border-color:var(--cobalt);}
+.vcard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;}
+.vcard-cargo{font-size:12px;font-weight:600;color:var(--t1);line-height:1.3;}
+.vcard-zeev{font-size:9px;color:var(--t3);white-space:nowrap;}
+.vcard-meta{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
+.vcard-footer{display:flex;align-items:center;justify-content:space-between;}
+.vcard-hunter{font-size:10px;color:var(--t3);display:flex;align-items:center;gap:4px;}
+.vcard-hunter strong{color:var(--cobalt);}
+.vcard-date{font-size:9px;color:var(--t4);}
+.tag{display:inline-block;font-size:8px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.04em;white-space:nowrap;}
+.t-alto{background:#FEE2E2;color:#991B1B;}
+.t-medio{background:#FEF3C7;color:#92400E;}
+.t-baixo{background:#DCFCE7;color:#166534;}
+.t-aai{background:#EEF2FF;color:#1A3BAD;}
+.t-cs{background:#F0FDF4;color:#166534;}
+.t-pj{background:#FDF4FF;color:#7C3AED;}
+.t-aum{background:#EEF2FF;color:#1A3BAD;}
+.t-sub{background:#FFF7ED;color:#C2410C;}
+
+/* Botão Nova Vaga */
+.btn-nova{background:var(--cobalt);color:#fff;border:none;font-size:12px;font-weight:600;padding:8px 16px;border-radius:var(--r8);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;}
+.btn-nova:hover{background:#162FA0;}
+.btn-nova.hidden{display:none;}
+
+/* Actions */
+.vcard-actions{display:flex;gap:6px;margin-top:10px;}
+.btn-assumir{background:#EEF2FF;color:var(--cobalt);border:1px solid #C7D7FD;font-size:10px;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;flex:1;}
+.btn-assumir:hover{background:#DBEAFE;}
+.btn-concluir{background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;font-size:10px;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;flex:1;}
+.btn-concluir:hover{background:#DCFCE7;}
+.btn-editar{background:var(--s2);color:var(--t3);border:1px solid var(--rule);font-size:10px;font-weight:600;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;}
+.btn-editar:hover{color:var(--t1);}
+.btn-editar.hidden{display:none;}
+
+/* Modal overlay */
+.modal-ov{position:fixed;inset:0;background:rgba(10,15,30,.5);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal{background:var(--surface);border-radius:var(--r12);width:100%;max-width:580px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.modal-head{background:var(--ink);padding:18px 22px;border-radius:var(--r12) var(--r12) 0 0;display:flex;align-items:center;justify-content:space-between;}
+.modal-head h2{color:#fff;font-size:15px;font-weight:600;}
+.modal-close{background:rgba(255,255,255,.1);border:none;color:#fff;font-size:14px;width:28px;height:28px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.modal-body{padding:22px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-grid.full{grid-template-columns:1fr;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);}
+.fg input,.fg select,.fg textarea{border:1px solid var(--rule);border-radius:var(--r8);padding:9px 11px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--t1);outline:none;background:#fff;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--cobalt);box-shadow:0 0 0 3px rgba(26,59,173,.08);}
+.fg textarea{min-height:70px;resize:vertical;line-height:1.5;}
+.fg input::placeholder,.fg textarea::placeholder{color:var(--t4);}
+.modal-foot{padding:16px 22px;border-top:1px solid var(--rule);display:flex;justify-content:flex-end;gap:10px;}
+.btn-cancel{background:var(--s2);color:var(--t2);border:1px solid var(--rule);font-size:12px;font-weight:600;padding:9px 18px;border-radius:var(--r8);cursor:pointer;font-family:inherit;}
+.btn-submit{background:var(--cobalt);color:#fff;border:none;font-size:12px;font-weight:600;padding:9px 22px;border-radius:var(--r8);cursor:pointer;font-family:inherit;}
+.btn-submit:hover{background:#162FA0;}
+.btn-submit.danger{background:var(--g);}
+
+/* Modal concluir */
+.concluir-box{background:#F0FDF4;border:1px solid #BBF7D0;border-radius:var(--r8);padding:14px 16px;margin-bottom:16px;}
+.concluir-box p{font-size:12px;color:#166534;line-height:1.5;}
+
+/* Spinner */
+.spinner{text-align:center;padding:40px;color:var(--t3);font-size:12px;}
+
+/* Responsive */
+@media(max-width:900px){
+  .board{grid-template-columns:1fr;}
+  .krow{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cg"></div><div class="cgl"></div>
+  <div class="cover-in">
+    <div class="b3w">BLUE<em>3</em></div>
+    <div class="cover-right">
+      <div class="ct">Gestão de Vagas</div>
+      <div class="cs">Estoque · Em andamento · Histórico</div>
+    </div>
+  </div>
+  <div class="cnav">
+    <a href="index.html" class="back-btn">← Voltar ao início</a>
+    <div class="cnav-right">
+      <span class="cnav-badge" id="badge-perfil">—</span>
+      <span class="cnav-user" id="label-user">—</span>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="main-page">
+
+  <!-- KPIs -->
+  <div class="krow">
+    <div class="kc am">
+      <div class="kl">Estoque — Abertas</div>
+      <div class="kv" id="kpi-ab">—</div>
+      <div class="ks">aguardando hunter</div>
+    </div>
+    <div class="kc">
+      <div class="kl">Em Andamento</div>
+      <div class="kv" id="kpi-and">—</div>
+      <div class="ks">hunters trabalhando</div>
+    </div>
+    <div class="kc g">
+      <div class="kl">Concluídas</div>
+      <div class="kv" id="kpi-conc">—</div>
+      <div class="ks">vagas fechadas no período</div>
+    </div>
+    <div class="kc pu">
+      <div class="kl">Total no Histórico</div>
+      <div class="kv" id="kpi-total">—</div>
+      <div class="ks">todas as vagas</div>
+    </div>
+  </div>
+
+  <!-- Ações do topo -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div style="font-size:11px;color:var(--t3);">Clique em uma vaga para ver detalhes ou tomar ação</div>
+    <button class="btn-nova hidden" id="btn-nova" onclick="abrirModalNova()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nova Vaga
+    </button>
+  </div>
+
+  <!-- Board -->
+  <div class="board">
+
+    <!-- Box 1: Estoque -->
+    <div class="col">
+      <div class="col-head">
+        <div class="col-title">
+          <div class="col-dot dot-ab"></div>
+          <div class="col-label">Estoque — Vagas Abertas</div>
+        </div>
+        <div class="col-count" id="cnt-ab">0</div>
+      </div>
+      <div class="col-body" id="col-ab">
+        <div class="spinner">Carregando...</div>
+      </div>
+    </div>
+
+    <!-- Box 2: Em Andamento -->
+    <div class="col">
+      <div class="col-head">
+        <div class="col-title">
+          <div class="col-dot dot-and"></div>
+          <div class="col-label">Em Andamento</div>
+        </div>
+        <div class="col-count" id="cnt-and">0</div>
+      </div>
+      <div class="col-body" id="col-and">
+        <div class="col-empty">Nenhuma vaga em andamento</div>
+      </div>
+    </div>
+
+    <!-- Box 3: Concluídas -->
+    <div class="col">
+      <div class="col-head">
+        <div class="col-title">
+          <div class="col-dot dot-conc"></div>
+          <div class="col-label">Concluídas — Histórico</div>
+        </div>
+        <div class="col-count" id="cnt-conc">0</div>
+      </div>
+      <div class="col-body" id="col-conc">
+        <div class="col-empty">Nenhuma vaga concluída ainda</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal Nova / Editar Vaga -->
+<div class="modal-ov" id="modal-vaga" style="display:none;" onclick="fecharModalVaga(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h2 id="modal-vaga-title">Nova Vaga</h2>
+      <button class="modal-close" onclick="fecharModalVagaBtn()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fg">
+          <label>N° Zeev</label>
+          <input id="f-zeev" placeholder="Ex: 112964">
+        </div>
+        <div class="fg">
+          <label>Nível de Prioridade</label>
+          <select id="f-prioridade">
+            <option value="Alto">Alto</option>
+            <option value="Médio" selected>Médio</option>
+            <option value="Baixo">Baixo</option>
+          </select>
+        </div>
+        <div class="fg" style="grid-column:span 2;">
+          <label>Cargo *</label>
+          <input id="f-cargo" placeholder="Ex: Advisor I, Especialista Alocação Offshore...">
+        </div>
+        <div class="fg">
+          <label>Solicitante da Vaga</label>
+          <input id="f-solicitante" placeholder="Nome do solicitante">
+        </div>
+        <div class="fg">
+          <label>Unidade</label>
+          <input id="f-unidade" placeholder="Ex: Ribeirão Preto - Comercial">
+        </div>
+        <div class="fg">
+          <label>Modalidade de Contratação</label>
+          <select id="f-modalidade">
+            <option value="">Selecione</option>
+            <option value="AAI">AAI</option>
+            <option value="CS">CS</option>
+            <option value="PJ">PJ</option>
+            <option value="CLT">CLT</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Remuneração (R$)</label>
+          <input id="f-remuneracao" type="number" placeholder="Ex: 3496.57">
+        </div>
+        <div class="fg" style="grid-column:span 2;">
+          <label>Tipo de Solicitação</label>
+          <select id="f-tipo">
+            <option value="">Selecione</option>
+            <option value="Aumento de Quadro">Aumento de Quadro</option>
+            <option value="Substituição">Substituição</option>
+            <option value="Projeto">Projeto</option>
+          </select>
+        </div>
+        <div class="fg" style="grid-column:span 2;">
+          <label>Observação</label>
+          <textarea id="f-obs" placeholder="Informações adicionais sobre a vaga..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="fecharModalVagaBtn()">Cancelar</button>
+      <button class="btn-submit" id="btn-submit-vaga" onclick="salvarVaga()">Criar Vaga</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Assumir Vaga -->
+<div class="modal-ov" id="modal-assumir" style="display:none;" onclick="fecharModalAssumir(event)">
+  <div class="modal" style="max-width:440px;" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h2>Assumir Vaga</h2>
+      <button class="modal-close" onclick="document.getElementById('modal-assumir').style.display='none'">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--t2);margin-bottom:16px;line-height:1.5;">
+        Ao assumir esta vaga, ela será movida para <strong>Em Andamento</strong> com seu nome. Todos os hunters verão que esta vaga está sendo trabalhada por você.
+      </p>
+      <div style="background:var(--s2);border:1px solid var(--rule);border-radius:var(--r8);padding:12px 14px;margin-bottom:16px;">
+        <div style="font-size:11px;color:var(--t3);margin-bottom:4px;">Vaga selecionada</div>
+        <div style="font-size:14px;font-weight:600;" id="assumir-cargo">—</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:2px;" id="assumir-unidade">—</div>
+      </div>
+      <div class="fg">
+        <label>Seu nome</label>
+        <input id="assumir-nome" placeholder="Digite seu nome" readonly style="background:var(--s2);">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="document.getElementById('modal-assumir').style.display='none'">Cancelar</button>
+      <button class="btn-submit" onclick="confirmarAssumirVaga()">Assumir esta vaga</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Concluir Vaga -->
+<div class="modal-ov" id="modal-concluir" style="display:none;" onclick="fecharModalConcluir(event)">
+  <div class="modal" style="max-width:480px;" onclick="event.stopPropagation()">
+    <div class="modal-head" style="background:#166534;">
+      <h2>Concluir Vaga</h2>
+      <button class="modal-close" onclick="document.getElementById('modal-concluir').style.display='none'">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="concluir-box">
+        <p>✓ Parabéns! Ao concluir, esta vaga será movida para o <strong>histórico permanente</strong> com todos os detalhes de fechamento.</p>
+      </div>
+      <div style="background:var(--s2);border:1px solid var(--rule);border-radius:var(--r8);padding:12px 14px;margin-bottom:16px;">
+        <div style="font-size:11px;color:var(--t3);margin-bottom:4px;">Vaga sendo concluída</div>
+        <div style="font-size:14px;font-weight:600;" id="concluir-cargo">—</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:2px;" id="concluir-unidade">—</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="fg">
+          <label>Candidato contratado *</label>
+          <input id="concluir-candidato" placeholder="Nome do candidato que fechou a vaga">
+        </div>
+        <div class="fg">
+          <label>Observação final</label>
+          <textarea id="concluir-obs" placeholder="Detalhes sobre o fechamento, condições, etc..." style="min-height:80px;"></textarea>
+        </div>
+        <div class="fg">
+          <label>Seu nome</label>
+          <input id="concluir-nome" placeholder="Quem está concluindo" readonly style="background:var(--s2);">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="document.getElementById('modal-concluir').style.display='none'">Cancelar</button>
+      <button class="btn-submit danger" onclick="confirmarConcluirVaga()">✓ Concluir vaga</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalhe -->
+<div class="modal-ov" id="modal-detalhe" style="display:none;" onclick="fecharModalDetalhe(event)">
+  <div class="modal" style="max-width:520px;" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h2 id="det-cargo">—</h2>
+      <button class="modal-close" onclick="document.getElementById('modal-detalhe').style.display='none'">✕</button>
+    </div>
+    <div class="modal-body" id="det-body"></div>
+    <div class="modal-foot" id="det-foot"></div>
+  </div>
+</div>
+
+<script>
+var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+
+function supa(path, opts) {
+  opts = opts || {};
+  return fetch(SUPA_URL + '/rest/v1/' + path, {
+    method: opts.method || 'GET',
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || 'return=representation'
+    },
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+}
+
+// ── Sessão ──
+var CU = null;
+var PODE_CADASTRAR = false;
+(function(){
+  var s = sessionStorage.getItem('b3s');
+  if (s) { try { CU = JSON.parse(s); } catch(e) {} }
+  if (!CU) {
+    // Redirecionar para login se não logado
+    window.location.href = 'index.html';
+    return;
+  }
+  var r = (CU.r||'').toLowerCase();
+  PODE_CADASTRAR = (r === 'master' || r === 'gerente' || r === 'paulo');
+  document.getElementById('badge-perfil').textContent = CU.r || '—';
+  document.getElementById('label-user').textContent = CU.n || CU.l || '';
+  if (PODE_CADASTRAR) document.getElementById('btn-nova').classList.remove('hidden');
+  carregarVagas();
+})();
+
+// ── Estado ──
+var _vagas = [];
+var _vagaAtiva = null;
+var _modoEdicao = false;
+
+// ── Helpers ──
+function fmtData(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  return d.getDate().toString().padStart(2,'0') + '/' + (d.getMonth()+1).toString().padStart(2,'0') + '/' + d.getFullYear();
+}
+function fmtRemuneracao(v) {
+  if (!v) return '—';
+  return 'R$ ' + parseFloat(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function tagPrioridade(p) {
+  var m = {'Alto':'t-alto','Médio':'t-medio','Baixo':'t-baixo'};
+  return '<span class="tag ' + (m[p]||'t-medio') + '">' + p + '</span>';
+}
+function tagModalidade(m) {
+  var mp = {'AAI':'t-aai','CS':'t-cs','PJ':'t-pj','CLT':'t-aai'};
+  return m ? '<span class="tag ' + (mp[m]||'t-aai') + '">' + m + '</span>' : '';
+}
+function tagTipo(t) {
+  var m = {'Aumento de Quadro':'t-aum','Substituição':'t-sub'};
+  return t ? '<span class="tag ' + (m[t]||'t-aai') + '">' + t + '</span>' : '';
+}
+
+// ── Carregar vagas ──
+function carregarVagas() {
+  supa('vagas?order=created_at.desc')
+    .then(function(r){ return r.json(); })
+    .then(function(rows){
+      _vagas = rows || [];
+      renderBoard();
+    })
+    .catch(function(){
+      document.getElementById('col-ab').innerHTML = '<div class="col-empty">Erro ao carregar vagas.</div>';
+    });
+}
+
+// ── Renderizar board ──
+function renderBoard() {
+  var ab  = _vagas.filter(function(v){ return v.status === 'aberta'; });
+  var and = _vagas.filter(function(v){ return v.status === 'andamento'; });
+  var con = _vagas.filter(function(v){ return v.status === 'concluida'; });
+
+  document.getElementById('kpi-ab').textContent    = ab.length;
+  document.getElementById('kpi-and').textContent   = and.length;
+  document.getElementById('kpi-conc').textContent  = con.length;
+  document.getElementById('kpi-total').textContent = _vagas.length;
+  document.getElementById('cnt-ab').textContent    = ab.length;
+  document.getElementById('cnt-and').textContent   = and.length;
+  document.getElementById('cnt-conc').textContent  = con.length;
+
+  renderColuna('col-ab',  ab,  'aberta');
+  renderColuna('col-and', and, 'andamento');
+  renderColuna('col-conc',con, 'concluida');
+}
+
+function renderColuna(elId, vagas, tipo) {
+  var el = document.getElementById(elId);
+  if (!vagas.length) {
+    var msgs = {aberta:'Nenhuma vaga no estoque', andamento:'Nenhuma vaga em andamento', concluida:'Nenhuma vaga concluída ainda'};
+    el.innerHTML = '<div class="col-empty">' + (msgs[tipo]||'—') + '</div>';
+    return;
+  }
+  el.innerHTML = vagas.map(function(v){ return renderVcard(v, tipo); }).join('');
+}
+
+function renderVcard(v, tipo) {
+  var acoes = '';
+  if (tipo === 'aberta') {
+    var editBtn = PODE_CADASTRAR ? '<button class="btn-editar" onclick="event.stopPropagation();abrirModalEditar(' + v.id + ')">Editar</button>' : '';
+    acoes = '<div class="vcard-actions">'
+      + '<button class="btn-assumir" onclick="event.stopPropagation();abrirModalAssumir(' + v.id + ')">Assumir vaga</button>'
+      + editBtn
+      + '</div>';
+  } else if (tipo === 'andamento') {
+    acoes = '<div class="vcard-actions">'
+      + '<button class="btn-concluir" onclick="event.stopPropagation();abrirModalConcluir(' + v.id + ')">✓ Concluir vaga</button>'
+      + '</div>';
+  }
+
+  var hunterInfo = '';
+  if (tipo === 'andamento' && v.hunter_responsavel) {
+    hunterInfo = '<div class="vcard-hunter">Hunter: <strong>' + v.hunter_responsavel + '</strong></div>';
+  }
+  if (tipo === 'concluida' && v.candidato_fechado) {
+    hunterInfo = '<div class="vcard-hunter">Fechado por: <strong>' + v.concluido_por + '</strong> · ' + v.candidato_fechado + '</div>';
+  }
+
+  return '<div class="vcard" onclick="abrirDetalhe(' + v.id + ')">'
+    + '<div class="vcard-top">'
+    + '<div class="vcard-cargo">' + v.cargo + '</div>'
+    + (v.zeev ? '<div class="vcard-zeev">#' + v.zeev + '</div>' : '')
+    + '</div>'
+    + '<div class="vcard-meta">'
+    + tagPrioridade(v.prioridade)
+    + tagModalidade(v.modalidade)
+    + tagTipo(v.tipo_solicitacao)
+    + '</div>'
+    + (v.unidade ? '<div style="font-size:10px;color:var(--t3);margin-bottom:6px;">' + v.unidade + '</div>' : '')
+    + '<div class="vcard-footer">'
+    + hunterInfo
+    + '<div class="vcard-date">' + fmtData(v.created_at) + '</div>'
+    + '</div>'
+    + acoes
+    + '</div>';
+}
+
+// ── Modal Nova Vaga ──
+var _editId = null;
+function abrirModalNova() {
+  _editId = null;
+  _modoEdicao = false;
+  document.getElementById('modal-vaga-title').textContent = 'Nova Vaga';
+  document.getElementById('btn-submit-vaga').textContent = 'Criar Vaga';
+  ['f-zeev','f-cargo','f-solicitante','f-unidade','f-obs','f-remuneracao'].forEach(function(id){
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-prioridade').value = 'Médio';
+  document.getElementById('f-modalidade').value = '';
+  document.getElementById('f-tipo').value = '';
+  document.getElementById('modal-vaga').style.display = 'flex';
+}
+
+function abrirModalEditar(id) {
+  var v = _vagas.find(function(x){ return x.id === id; });
+  if (!v) return;
+  _editId = id;
+  _modoEdicao = true;
+  document.getElementById('modal-vaga-title').textContent = 'Editar Vaga';
+  document.getElementById('btn-submit-vaga').textContent = 'Salvar alterações';
+  document.getElementById('f-zeev').value = v.zeev || '';
+  document.getElementById('f-cargo').value = v.cargo || '';
+  document.getElementById('f-prioridade').value = v.prioridade || 'Médio';
+  document.getElementById('f-solicitante').value = v.solicitante || '';
+  document.getElementById('f-unidade').value = v.unidade || '';
+  document.getElementById('f-modalidade').value = v.modalidade || '';
+  document.getElementById('f-remuneracao').value = v.remuneracao || '';
+  document.getElementById('f-tipo').value = v.tipo_solicitacao || '';
+  document.getElementById('f-obs').value = v.observacao || '';
+  document.getElementById('modal-vaga').style.display = 'flex';
+}
+
+function fecharModalVaga(e) { if (e.target === document.getElementById('modal-vaga')) fecharModalVagaBtn(); }
+function fecharModalVagaBtn() { document.getElementById('modal-vaga').style.display = 'none'; }
+
+function salvarVaga() {
+  var cargo = document.getElementById('f-cargo').value.trim();
+  if (!cargo) { alert('O campo Cargo é obrigatório.'); return; }
+  var body = {
+    zeev:             document.getElementById('f-zeev').value.trim(),
+    prioridade:       document.getElementById('f-prioridade').value,
+    cargo:            cargo,
+    solicitante:      document.getElementById('f-solicitante').value.trim(),
+    unidade:          document.getElementById('f-unidade').value.trim(),
+    modalidade:       document.getElementById('f-modalidade').value,
+    remuneracao:      parseFloat(document.getElementById('f-remuneracao').value) || 0,
+    tipo_solicitacao: document.getElementById('f-tipo').value,
+    observacao:       document.getElementById('f-obs').value.trim(),
+    criado_por:       CU ? (CU.n || CU.l) : '',
+    status:           'aberta'
+  };
+
+  var btn = document.getElementById('btn-submit-vaga');
+  btn.textContent = 'Salvando...'; btn.disabled = true;
+
+  var req;
+  if (_modoEdicao && _editId) {
+    req = supa('vagas?id=eq.' + _editId, { method: 'PATCH', body: body });
+  } else {
+    req = supa('vagas', { method: 'POST', body: body });
+  }
+
+  req.then(function(){ fecharModalVagaBtn(); carregarVagas(); })
+    .catch(function(){ alert('Erro ao salvar. Tente novamente.'); })
+    .finally(function(){ btn.textContent = _modoEdicao ? 'Salvar alterações' : 'Criar Vaga'; btn.disabled = false; });
+}
+
+// ── Modal Assumir ──
+var _assumirId = null;
+function abrirModalAssumir(id) {
+  _assumirId = id;
+  var v = _vagas.find(function(x){ return x.id === id; });
+  if (!v) return;
+  document.getElementById('assumir-cargo').textContent = v.cargo;
+  document.getElementById('assumir-unidade').textContent = v.unidade || '';
+  document.getElementById('assumir-nome').value = CU ? (CU.n || CU.l || '') : '';
+  document.getElementById('modal-assumir').style.display = 'flex';
+}
+function fecharModalAssumir(e) { if (e.target === document.getElementById('modal-assumir')) document.getElementById('modal-assumir').style.display = 'none'; }
+
+function confirmarAssumirVaga() {
+  if (!_assumirId) return;
+  var nome = document.getElementById('assumir-nome').value.trim();
+  if (!nome) { alert('Nome obrigatório.'); return; }
+  supa('vagas?id=eq.' + _assumirId, {
+    method: 'PATCH',
+    body: { status: 'andamento', hunter_responsavel: nome, hunter_assumiu_em: new Date().toISOString() }
+  }).then(function(){
+    document.getElementById('modal-assumir').style.display = 'none';
+    carregarVagas();
+  }).catch(function(){ alert('Erro. Tente novamente.'); });
+}
+
+// ── Modal Concluir ──
+var _concluirId = null;
+function abrirModalConcluir(id) {
+  _concluirId = id;
+  var v = _vagas.find(function(x){ return x.id === id; });
+  if (!v) return;
+  document.getElementById('concluir-cargo').textContent = v.cargo;
+  document.getElementById('concluir-unidade').textContent = v.unidade || '';
+  document.getElementById('concluir-candidato').value = '';
+  document.getElementById('concluir-obs').value = '';
+  document.getElementById('concluir-nome').value = CU ? (CU.n || CU.l || '') : '';
+  document.getElementById('modal-concluir').style.display = 'flex';
+}
+function fecharModalConcluir(e) { if (e.target === document.getElementById('modal-concluir')) document.getElementById('modal-concluir').style.display = 'none'; }
+
+function confirmarConcluirVaga() {
+  if (!_concluirId) return;
+  var candidato = document.getElementById('concluir-candidato').value.trim();
+  if (!candidato) { alert('Informe o candidato contratado.'); return; }
+  supa('vagas?id=eq.' + _concluirId, {
+    method: 'PATCH',
+    body: {
+      status: 'concluida',
+      candidato_fechado: candidato,
+      obs_conclusao: document.getElementById('concluir-obs').value.trim(),
+      concluido_por: document.getElementById('concluir-nome').value.trim(),
+      concluido_em: new Date().toISOString()
+    }
+  }).then(function(){
+    document.getElementById('modal-concluir').style.display = 'none';
+    carregarVagas();
+  }).catch(function(){ alert('Erro. Tente novamente.'); });
+}
+
+// ── Modal Detalhe ──
+function abrirDetalhe(id) {
+  var v = _vagas.find(function(x){ return x.id === id; });
+  if (!v) return;
+  document.getElementById('det-cargo').textContent = v.cargo;
+
+  var rows = [
+    ['N° Zeev', v.zeev || '—'],
+    ['Prioridade', v.prioridade],
+    ['Unidade', v.unidade || '—'],
+    ['Solicitante', v.solicitante || '—'],
+    ['Modalidade', v.modalidade || '—'],
+    ['Remuneração', fmtRemuneracao(v.remuneracao)],
+    ['Tipo', v.tipo_solicitacao || '—'],
+    ['Criado por', v.criado_por || '—'],
+    ['Criado em', fmtData(v.created_at)],
+  ];
+
+  if (v.status === 'andamento') {
+    rows.push(['Hunter', v.hunter_responsavel || '—']);
+    rows.push(['Assumido em', fmtData(v.hunter_assumiu_em)]);
+  }
+  if (v.status === 'concluida') {
+    rows.push(['Hunter', v.hunter_responsavel || '—']);
+    rows.push(['Candidato fechado', v.candidato_fechado || '—']);
+    rows.push(['Concluído por', v.concluido_por || '—']);
+    rows.push(['Concluído em', fmtData(v.concluido_em)]);
+    if (v.obs_conclusao) rows.push(['Obs. conclusão', v.obs_conclusao]);
+  }
+
+  var body = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">'
+    + rows.map(function(r){
+      return '<div style="background:var(--s2);border-radius:var(--r8);padding:10px 12px;">'
+        + '<div style="font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:3px;">' + r[0] + '</div>'
+        + '<div style="font-size:13px;font-weight:600;color:var(--t1);">' + r[1] + '</div>'
+        + '</div>';
+    }).join('')
+    + '</div>';
+
+  if (v.observacao) {
+    body += '<div style="background:var(--s2);border-radius:var(--r8);padding:12px 14px;margin-bottom:16px;">'
+      + '<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px;">Observação</div>'
+      + '<div style="font-size:12px;color:var(--t2);line-height:1.6;">' + v.observacao + '</div>'
+      + '</div>';
+  }
+
+  document.getElementById('det-body').innerHTML = body;
+
+  var vid = v.id;
+  var foot = '';
+  if (v.status === 'aberta') {
+    foot = '<button class="btn-cancel" onclick="closeDetalhe()">Fechar</button>'
+      + '<button class="btn-submit" onclick="closeDetalhe();abrirModalAssumir(' + vid + ')">Assumir vaga</button>';
+  } else if (v.status === 'andamento') {
+    foot = '<button class="btn-cancel" onclick="closeDetalhe()">Fechar</button>'
+      + '<button class="btn-submit danger" onclick="closeDetalhe();abrirModalConcluir(' + vid + ')">Concluir vaga</button>';
+  } else {
+    foot = '<button class="btn-cancel" onclick="closeDetalhe()">Fechar</button>';
+  }
+  document.getElementById('det-foot').innerHTML = foot;
+  document.getElementById('modal-detalhe').style.display = 'flex';
+}
+
+function closeDetalhe() { document.getElementById('modal-detalhe').style.display='none'; }
+function fecharModalDetalhe(e) { if (e.target === document.getElementById('modal-detalhe')) document.getElementById('modal-detalhe').style.display = 'none'; }
+</script>
+</body>
+</html>
