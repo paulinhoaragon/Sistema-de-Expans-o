@@ -359,7 +359,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         </div>
         <div class="fg">
           <label>Observação final</label>
-          <textarea id="concluir-obs" placeholder="Detalhes sobre o fechamento, condições, etc..." style="min-height:80px;"></textarea>
+          <textarea id="concluir-obs" placeholder="Cole aqui as informações do candidato — use Enter para quebrar linha..." style="min-height:140px;line-height:1.6;"></textarea>
         </div>
         <div class="fg">
           <label>Seu nome</label>
@@ -507,6 +507,12 @@ function renderVcard(v, tipo) {
       + '<button class="btn-concluir" onclick="event.stopPropagation();abrirModalConcluir(' + v.id + ')">✓ Concluir</button>'
       + '<button class="btn-devolver" onclick="event.stopPropagation();devolverVaga(' + v.id + ')">↩ Devolver</button>'
       + editAndBtn
+      + '</div>';
+  } else if (tipo === 'concluida') {
+    var editConcBtn = PODE_CADASTRAR ? '<button class="btn-editar" onclick="event.stopPropagation();abrirModalEditar(' + v.id + ')">Editar</button>' : '';
+    acoes = '<div class="vcard-actions">'
+      + '<button class="btn-devolver" onclick="event.stopPropagation();devolverVaga(' + v.id + ')">↩ Devolver ao estoque</button>'
+      + editConcBtn
       + '</div>';
   }
 
@@ -695,7 +701,7 @@ function abrirDetalhe(id) {
     rows.push(['Candidato fechado', v.candidato_fechado || '—']);
     rows.push(['Concluído por', v.concluido_por || '—']);
     rows.push(['Concluído em', fmtData(v.concluido_em)]);
-    if (v.obs_conclusao) rows.push(['Obs. conclusão', v.obs_conclusao]);
+    // obs_conclusao exibida separado abaixo
   }
 
   var body = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">'
@@ -707,10 +713,18 @@ function abrirDetalhe(id) {
     }).join('')
     + '</div>';
 
+  // Observação vaga
   if (v.observacao) {
-    body += '<div style="background:var(--s2);border-radius:var(--r8);padding:12px 14px;margin-bottom:16px;">'
+    body += '<div style="background:var(--s2);border-radius:var(--r8);padding:12px 14px;margin-bottom:12px;">'
       + '<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px;">Observação</div>'
-      + '<div style="font-size:12px;color:var(--t2);line-height:1.6;">' + v.observacao + '</div>'
+      + '<pre style="font-size:12px;color:var(--t2);line-height:1.6;white-space:pre-wrap;font-family:inherit;margin:0;">' + v.observacao + '</pre>'
+      + '</div>';
+  }
+  // Obs. conclusão — campo largo no final
+  if (v.obs_conclusao) {
+    body += '<div style="background:var(--s2);border-radius:var(--r8);padding:14px 16px;margin-top:4px;grid-column:span 2;">'
+      + '<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;">Observação de Conclusão</div>'
+      + '<pre style="font-size:12px;color:var(--t2);line-height:1.7;white-space:pre-wrap;font-family:inherit;margin:0;max-height:none;">' + v.obs_conclusao + '</pre>'
       + '</div>';
   }
 
@@ -726,7 +740,9 @@ function abrirDetalhe(id) {
       + '<button class="btn-submit" style="background:#FFF7ED;color:#C2410C;border:1px solid #FED7AA;" onclick="closeDetalhe();devolverVaga(' + vid + ')">↩ Devolver</button>'
       + '<button class="btn-submit danger" onclick="closeDetalhe();abrirModalConcluir(' + vid + ')">✓ Concluir</button>';
   } else {
-    foot = '<button class="btn-cancel" onclick="closeDetalhe()">Fechar</button>';
+    foot = '<button class="btn-cancel" onclick="closeDetalhe()">Fechar</button>'
+      + (PODE_CADASTRAR ? '<button class="btn-editar" style="padding:9px 16px;" onclick="closeDetalhe();abrirModalEditar(' + vid + ')">Editar</button>' : '')
+      + '<button class="btn-devolver" style="padding:9px 14px;" onclick="closeDetalhe();devolverVaga(' + vid + ')">↩ Devolver ao estoque</button>';
   }
   document.getElementById('det-foot').innerHTML = foot;
   document.getElementById('modal-detalhe').style.display = 'flex';
