@@ -585,7 +585,8 @@ function fecharModalVagaBtn() { document.getElementById('modal-vaga').style.disp
 function salvarVaga() {
   var cargo = document.getElementById('f-cargo').value.trim();
   if (!cargo) { alert('O campo Cargo é obrigatório.'); return; }
-  var body = {
+  // Campos editáveis — nunca sobrescrevem status, hunter ou dados de conclusão
+  var camposEditaveis = {
     zeev:             document.getElementById('f-zeev').value.trim(),
     prioridade:       document.getElementById('f-prioridade').value,
     cargo:            cargo,
@@ -594,10 +595,19 @@ function salvarVaga() {
     modalidade:       document.getElementById('f-modalidade').value,
     remuneracao:      parseMascara(document.getElementById('f-remuneracao').value),
     tipo_solicitacao: document.getElementById('f-tipo').value,
-    observacao:       document.getElementById('f-obs').value.trim(),
-    criado_por:       CU ? (CU.n || CU.l) : '',
-    status:           'aberta'
+    observacao:       document.getElementById('f-obs').value.trim()
   };
+  var body;
+  if (_modoEdicao) {
+    // Edição: apenas campos do formulário — status e dados de hunter/conclusão preservados
+    body = camposEditaveis;
+  } else {
+    // Nova vaga: inclui status inicial e criado_por
+    body = Object.assign({}, camposEditaveis, {
+      status:     'aberta',
+      criado_por: CU ? (CU.n || CU.l) : ''
+    });
+  }
 
   var btn = document.getElementById('btn-submit-vaga');
   btn.textContent = 'Salvando...'; btn.disabled = true;
