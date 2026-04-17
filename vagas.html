@@ -663,9 +663,10 @@ function abrirModalConcluir(id) {
   if (!v) return;
   document.getElementById('concluir-cargo').textContent = v.cargo;
   document.getElementById('concluir-unidade').textContent = v.unidade || '';
-  document.getElementById('concluir-candidato').value = '';
-  document.getElementById('concluir-obs').value = '';
-  document.getElementById('concluir-nome').value = CU ? (CU.n || CU.l || '') : '';
+  // Pré-preencher com dados já salvos anteriormente, se existirem
+  document.getElementById('concluir-candidato').value = v.candidato_fechado || '';
+  document.getElementById('concluir-obs').value = v.obs_conclusao || '';
+  document.getElementById('concluir-nome').value = v.concluido_por || (CU ? (CU.n || CU.l || '') : '');
   document.getElementById('modal-concluir').style.display = 'flex';
 }
 function fecharModalConcluir(e) { if (e.target === document.getElementById('modal-concluir')) document.getElementById('modal-concluir').style.display = 'none'; }
@@ -808,11 +809,15 @@ function drop(e, novoStatus) {
       body: { status: 'andamento', hunter_responsavel: nome.trim(), hunter_assumiu_em: new Date().toISOString() }
     }).then(carregarVagas);
   } else if (novoStatus === 'concluida') {
-    var candidato = prompt('Candidato contratado para fechar a vaga:');
-    if (!candidato || !candidato.trim()) return;
+    var v = _vagas.find(function(x){ return x.id === _dragId; });
+    var defaultCand = (v && v.candidato_fechado) ? v.candidato_fechado : '';
+    var candidato = prompt('Candidato contratado para fechar a vaga:' + (defaultCand ? ' (atual: ' + defaultCand + ')' : ''), defaultCand);
+    if (candidato === null) return;
+    var candFinal = candidato.trim() || defaultCand;
+    if (!candFinal) return;
     supa('vagas?id=eq.' + _dragId, {
       method: 'PATCH', prefer: 'return=minimal',
-      body: { status: 'concluida', candidato_fechado: candidato.trim(), concluido_por: CU ? (CU.n||CU.l) : '', concluido_em: new Date().toISOString() }
+      body: { status: 'concluida', candidato_fechado: candFinal, concluido_por: CU ? (CU.n||CU.l) : '', concluido_em: new Date().toISOString() }
     }).then(carregarVagas);
   } else {
     // Devolver ao estoque
