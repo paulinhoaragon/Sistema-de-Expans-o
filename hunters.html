@@ -702,7 +702,7 @@ function renderOv(){
     particles+='</div>';
     var nomeEsc=hun.nome.replace(/'/g,"&#39;");
     var isGestor=(hun.nome==='Paulo');
-    var contratStr=isGestor?String(hun.total)+' (contribui&ccedil;&atilde;o)':String(hun.total)+'/'+String(hun.meta);
+    var contratStr=String(hun.total)+'/'+String(hun.meta);
     var subLabel=isGestor?'Gestor &middot; Deals Estrat&eacute;gicos':'Hunter &middot; Expans&atilde;o 1S2026';
     return '<div class="'+cardCls+'" onclick="showDet(&#39;'+nomeEsc+'&#39;)">'
       +(isGestor?'':crown)+particles
@@ -714,9 +714,8 @@ function renderOv(){
       +'<div class="hs"><span class="hl">Comp. Gerada</span><span class="hv">'+fmt(hun.comp)+'</span></div>'
       +'<div class="hs"><span class="hl">MOU OK</span><span class="hv">'+hun.mou_ok+'/'+hun.total+'</span></div>'
       +'<div class="hs"><span class="hl">Trabalhando</span><span class="hv">'+hun.trabalhando+'</span></div>'
-      +(isGestor?''
-        :'<div class="pace-bar"><div class="pace-fill" style="width:'+Math.min(pc,100)+'%;background:'+pcC+'"></div></div>'
-        +'<div class="pace-lbl"><span>Pace vs meta</span><span style="font-weight:700;color:'+pcC+'">'+pc+'%</span></div>')
+      +'<div class="pace-bar"><div class="pace-fill" style="width:'+Math.min(pc,100)+'%;background:'+pcC+'"></div></div>'
+      +'<div class="pace-lbl"><span>Pace vs meta</span><span style="font-weight:700;color:'+pcC+'">'+pc+'%</span></div>'
       +(isGestor?'':badge)+'</div>';
   }).join('');
   rank('r-auc',function(h){return h.auc;},fmt);
