@@ -577,7 +577,7 @@ function buildH(hunters,cands){
   HUNTER_ORDER.forEach(function(n){var h=hunters.find(function(x){return ns(x.nome)===ns(n);});if(h)ord.push(h);});
   hunters.forEach(function(h){if(!HUNTER_ORDER.some(function(n){return ns(n)===ns(h.nome);}))ord.push(h);});
   return ord.map(function(h){
-    var meta=HUNTER_METAS[h.nome]||13,color=HUNTER_COLORS[h.nome]||'#64748B';
+    var meta=(HUNTER_METAS[h.nome]!==undefined?HUNTER_METAS[h.nome]:13),color=HUNTER_COLORS[h.nome]||'#64748B';
     var pace=meta>0?Math.round(h.total/meta*100):0,hn=ns(h.nome);
     var cs=cands.filter(function(c){return ns(c.h)===hn;}).map(function(c){
       return{nome:c.n,filial:c.p,status:c.st,mou:c.mou,inicio:c.inicio||null,auc:c.cap,piso:c.piso,periodo:c.periodo,comp:c.comp,sen:c.sen};
