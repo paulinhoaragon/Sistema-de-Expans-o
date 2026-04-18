@@ -635,7 +635,6 @@ function rank(id,sf,lf){
 function renderBonusCards(){
   var el=document.getElementById('bonus-summary');if(!el)return;
   var bh=H.filter(function(h){return h.nome==='Eduarda'||h.nome==='Bianca';});
-  var paulo=H.find(function(h){return h.nome==='Paulo';});
   if(!bh.length){el.innerHTML='';return;}
 
   // Total das hunters comerciais
@@ -680,23 +679,7 @@ function renderBonusCards(){
         +nx+'</div></div>';
     }).join('')+'</div>'
 
-    // Card de Paulo — gestor estratégico
-    +(paulo?
-      '<div style="margin-top:16px;">'
-      +'<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;">Gestão Estratégica</div>'
-      +'<div style="background:var(--surface);border:1px solid var(--rule);border-left:3px solid #B8962E;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:16px;">'
-      +'<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#78350f,#B8962E);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:16px;flex-shrink:0;">P</div>'
-      +'<div style="flex:1;">'
-      +'<div style="font-size:14px;font-weight:700;color:var(--t1);">Paulo</div>'
-      +'<div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B8962E;margin-top:1px;">Gestor · Deals Estratégicos</div>'
-      +'</div>'
-      +'<div style="text-align:right;">'
-      +'<div style="font-size:11px;font-weight:600;color:var(--t3);">'+paulo.total+' acompanhadas</div>'
-      +'<div style="font-size:9px;color:var(--t4);margin-top:2px;">Sem meta comercial</div>'
-      +'</div>'
-      +'</div>'
-      +'</div>'
-    :'');
+    +'';
 }
 
 function renderOv(){
@@ -718,19 +701,23 @@ function renderOv(){
     }
     particles+='</div>';
     var nomeEsc=hun.nome.replace(/'/g,"&#39;");
+    var isGestor=(hun.meta===0);
+    var contratStr=isGestor?String(hun.total)+' (contribui&ccedil;&atilde;o)':String(hun.total)+'/'+String(hun.meta);
+    var subLabel=isGestor?'Gestor &middot; Deals Estrat&eacute;gicos':'Hunter &middot; Expans&atilde;o 1S2026';
     return '<div class="'+cardCls+'" onclick="showDet(&#39;'+nomeEsc+'&#39;)">'
-      +crown+particles
+      +(isGestor?'':crown)+particles
       +'<div class="hcard-top" style="background:'+hun.color+'"></div>'
       +'<div class="hcard-name">'+hun.nome+'</div>'
-      +'<div class="hcard-sub">Hunter &middot; Expans&atilde;o 1S2026</div>'
-      +'<div class="hs"><span class="hl">Contrata&ccedil;&otilde;es</span><span class="hv">'+hun.total+'/'+hun.meta+'</span></div>'
+      +'<div class="hcard-sub">'+subLabel+'</div>'
+      +'<div class="hs"><span class="hl">Contrata&ccedil;&otilde;es</span><span class="hv">'+contratStr+'</span></div>'
       +'<div class="hs"><span class="hl">AuC Alvo</span><span class="hv">'+fmt(hun.auc)+'</span></div>'
       +'<div class="hs"><span class="hl">Comp. Gerada</span><span class="hv">'+fmt(hun.comp)+'</span></div>'
       +'<div class="hs"><span class="hl">MOU OK</span><span class="hv">'+hun.mou_ok+'/'+hun.total+'</span></div>'
       +'<div class="hs"><span class="hl">Trabalhando</span><span class="hv">'+hun.trabalhando+'</span></div>'
-      +'<div class="pace-bar"><div class="pace-fill" style="width:'+Math.min(pc,100)+'%;background:'+pcC+'"></div></div>'
-      +'<div class="pace-lbl"><span>Pace vs meta</span><span style="font-weight:700;color:'+pcC+'">'+pc+'%</span></div>'
-      +badge+'</div>';
+      +(isGestor?''
+        :'<div class="pace-bar"><div class="pace-fill" style="width:'+Math.min(pc,100)+'%;background:'+pcC+'"></div></div>'
+        +'<div class="pace-lbl"><span>Pace vs meta</span><span style="font-weight:700;color:'+pcC+'">'+pc+'%</span></div>')
+      +(isGestor?'':badge)+'</div>';
   }).join('');
   rank('r-auc',function(h){return h.auc;},fmt);
   // Disparar confetes para hunters que bateram a meta
