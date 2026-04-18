@@ -635,7 +635,30 @@ function rank(id,sf,lf){
 function renderBonusCards(){
   var el=document.getElementById('bonus-summary');if(!el)return;
   var bh=H.filter(function(h){return h.nome==='Eduarda'||h.nome==='Bianca';});
+  var paulo=H.find(function(h){return h.nome==='Paulo';});
   if(!bh.length){el.innerHTML='';return;}
+
+  // Total das hunters comerciais
+  var totalContr=bh.reduce(function(s,h){return s+h.total;},0);
+  var metaTotal=bh.reduce(function(s,h){return s+h.meta;},0);
+  var pctTotal=Math.min(100,Math.round(totalContr/metaTotal*100));
+
+  el.innerHTML=
+    // Título caderno de metas
+    '<div style="margin-bottom:20px;">'
+    +'<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:14px;">Caderno de Metas · Hunters Comerciais</div>'
+    // Barra consolidada
+    +'<div style="background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:14px 18px;margin-bottom:16px;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+    +'<div style="font-size:12px;font-weight:600;color:var(--t1);">Meta consolidada do semestre</div>'
+    +'<div style="font-size:14px;font-weight:700;color:'+(pctTotal>=100?'#16A34A':'var(--t1)')+';">'+totalContr+' / '+metaTotal+'</div>'
+    +'</div>'
+    +'<div style="height:7px;background:var(--rule);border-radius:4px;overflow:hidden;">'
+    +'<div style="height:100%;width:'+pctTotal+'%;background:'+(pctTotal>=100?'#16A34A':'linear-gradient(90deg,#1A3BAD,#4A70F5)')+';border-radius:4px;transition:width .8s;"></div>'
+    +'</div>'
+    +'<div style="font-size:10px;color:var(--t3);margin-top:5px;">'+pctTotal+'% · Faltam '+(metaTotal-totalContr > 0 ? metaTotal-totalContr : 0)+' contratações</div>'
+    +'</div>'
+    +'</div>'
   el.innerHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px;">'
     +bh.map(function(h){
       var sp=h.senior/Math.max(h.total,1),tier=getBonusTier(h.total,sp);
@@ -655,7 +678,25 @@ function renderBonusCards(){
         +'<div style="height:6px;background:var(--rule);border-radius:3px;overflow:hidden;margin-bottom:4px;"><div style="height:100%;width:'+bp+'%;background:'+tier.color+';border-radius:3px;"></div></div>'
         +'<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t4);margin-bottom:2px;"><span>0</span><span>10</span><span>15</span><span>20</span><span>25+</span></div>'
         +nx+'</div></div>';
-    }).join('')+'</div>';
+    }).join('')+'</div>'
+
+    // Card de Paulo — gestor estratégico
+    +(paulo?
+      '<div style="margin-top:16px;">'
+      +'<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;">Gestão Estratégica</div>'
+      +'<div style="background:var(--surface);border:1px solid var(--rule);border-left:3px solid #B8962E;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:16px;">'
+      +'<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#78350f,#B8962E);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:16px;flex-shrink:0;">P</div>'
+      +'<div style="flex:1;">'
+      +'<div style="font-size:14px;font-weight:700;color:var(--t1);">Paulo</div>'
+      +'<div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B8962E;margin-top:1px;">Gestor · Deals Estratégicos</div>'
+      +'</div>'
+      +'<div style="text-align:right;">'
+      +'<div style="font-size:11px;font-weight:600;color:var(--t3);">'+paulo.total+' acompanhadas</div>'
+      +'<div style="font-size:9px;color:var(--t4);margin-top:2px;">Sem meta comercial</div>'
+      +'</div>'
+      +'</div>'
+      +'</div>'
+    :'');
 }
 
 function renderOv(){
