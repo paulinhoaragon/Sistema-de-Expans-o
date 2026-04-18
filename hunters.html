@@ -554,7 +554,7 @@ window.addEventListener('storage', function (e) {
 console.log('[Blue3] pipeline.js carregado — aguardando chamada explícita.');
 
 
-var HUNTER_PHOTOS={},HUNTER_METAS={'Eduarda':20,'Bianca':20,'Paulo':0};
+var HUNTER_PHOTOS={},HUNTER_METAS={'Eduarda':20,'Bianca':20,'Paulo':10};
 var HUNTER_COLORS={'Eduarda':'#6366F1','Bianca':'#EC4899','Paulo':'#B8962E'};
 var HUNTER_ORDER=['Eduarda','Bianca','Paulo'],H=[];
 
@@ -701,7 +701,7 @@ function renderOv(){
     }
     particles+='</div>';
     var nomeEsc=hun.nome.replace(/'/g,"&#39;");
-    var isGestor=(hun.meta===0);
+    var isGestor=(hun.nome==='Paulo');
     var contratStr=isGestor?String(hun.total)+' (contribui&ccedil;&atilde;o)':String(hun.total)+'/'+String(hun.meta);
     var subLabel=isGestor?'Gestor &middot; Deals Estrat&eacute;gicos':'Hunter &middot; Expans&atilde;o 1S2026';
     return '<div class="'+cardCls+'" onclick="showDet(&#39;'+nomeEsc+'&#39;)">'
