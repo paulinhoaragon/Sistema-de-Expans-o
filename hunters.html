@@ -554,7 +554,7 @@ window.addEventListener('storage', function (e) {
 console.log('[Blue3] pipeline.js carregado — aguardando chamada explícita.');
 
 
-var HUNTER_PHOTOS={},HUNTER_METAS={'Eduarda':14,'Bianca':14,'Paulo':12};
+var HUNTER_PHOTOS={},HUNTER_METAS={'Eduarda':20,'Bianca':20,'Paulo':0};
 var HUNTER_COLORS={'Eduarda':'#6366F1','Bianca':'#EC4899','Paulo':'#B8962E'};
 var HUNTER_ORDER=['Eduarda','Bianca','Paulo'],H=[];
 
@@ -661,7 +661,7 @@ function renderBonusCards(){
   el.innerHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px;">'
     +bh.map(function(h){
       var sp=h.senior/Math.max(h.total,1),tier=getBonusTier(h.total,sp);
-      var bp=Math.min(100,Math.round(h.total/25*100));
+      var bp=Math.min(100,Math.round(h.total/h.meta*100));
       var nx=tier.falta>0?'<div style="font-size:11px;margin-top:6px;">Faltam <b>'+tier.falta+'</b> para '+tier.next+'</div>':'<div style="font-size:11px;color:#16A34A;margin-top:6px;">OK - Max tier</div>';
       var ph=HUNTER_PHOTOS[h.nome]||'';
       return'<div style="background:var(--surface);border:1px solid var(--rule);border-radius:12px;overflow:hidden;">'
@@ -675,7 +675,7 @@ function renderBonusCards(){
         +'<div style="padding:12px 14px;">'
         +(ph?'':'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span style="font-size:12px;font-weight:700;">'+h.nome+'</span><span style="font-size:11px;font-weight:700;color:'+tier.color+';">'+tier.lbl+'</span></div>')
         +'<div style="height:6px;background:var(--rule);border-radius:3px;overflow:hidden;margin-bottom:4px;"><div style="height:100%;width:'+bp+'%;background:'+tier.color+';border-radius:3px;"></div></div>'
-        +'<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t4);margin-bottom:2px;"><span>0</span><span>10</span><span>15</span><span>20</span><span>25+</span></div>'
+        +'<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t4);margin-bottom:2px;"><span>0</span><span>5</span><span>10</span><span>15</span><span>20 ✓</span></div>'
         +nx+'</div></div>';
     }).join('')+'</div>'
 
