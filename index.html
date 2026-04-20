@@ -84,6 +84,7 @@ body{
 .nav-card:hover .card-bar{opacity:1;}
 .card-exp .card-bar{background:linear-gradient(90deg,var(--cobalt-br),var(--cobalt-gl));}
 .card-sim .card-bar{background:linear-gradient(90deg,var(--gold),#e5c76b);}
+.card-hist .card-bar{background:linear-gradient(90deg,#0891B2,#06B6D4);}
 .card-cf .card-bar,.card-cf:hover{border-color:rgba(74,112,245,.4) !important;}
 .card-cf .card-bar{background:linear-gradient(90deg,#1A3BAD,#4A70F5);}
 .card-hunter .card-bar{background:linear-gradient(90deg,#4338CA,#6366F1);}
@@ -94,6 +95,7 @@ body{
 .card-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,.1);}
 .card-exp .card-icon{background:linear-gradient(140deg,var(--cobalt),var(--cobalt-br));box-shadow:0 4px 20px rgba(41,82,227,.3);}
 .card-sim .card-icon{background:linear-gradient(140deg,#7a5e18,var(--gold));box-shadow:0 4px 20px rgba(184,150,46,.3);}
+.card-hist .card-icon{background:linear-gradient(140deg,#0E7490,#06B6D4);box-shadow:0 4px 20px rgba(6,182,212,.3);}
 .card-cf .card-icon{background:linear-gradient(140deg,#1A3BAD,#4A70F5);box-shadow:0 4px 20px rgba(41,82,227,.3);}
 .card-hunter .card-icon{background:linear-gradient(140deg,#4338CA,#6366F1);box-shadow:0 4px 20px rgba(99,102,241,.3);}
 .card-ma .card-icon{background:linear-gradient(140deg,#5B21B6,#7C3AED);box-shadow:0 4px 20px rgba(124,58,237,.3);}
@@ -105,6 +107,7 @@ body{
 .card-label{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px;}
 .card-exp .card-label{color:var(--cobalt-gl);}
 .card-sim .card-label{color:var(--gold);}
+.card-hist .card-label{color:#22D3EE;}
 .card-cf .card-label{color:#4A70F5;}
 .card-hunter .card-label{color:#818CF8;}
 .card-ma .card-label{color:#A78BFA;}
@@ -115,6 +118,7 @@ body{
 .card-cta{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;margin-top:4px;transition:gap .2s ease;}
 .card-exp .card-cta{color:var(--cobalt-gl);}
 .card-sim .card-cta{color:var(--gold);}
+.card-hist .card-cta{color:#22D3EE;}
 .card-cf .card-cta{color:#4A70F5;}
 .card-hunter .card-cta{color:#818CF8;}
 .card-ma .card-cta{color:#A78BFA;}
@@ -379,6 +383,21 @@ body{
         <div class="card-desc">Simule cenários de contratação, projeções de custo e retorno por perfil de assessor.</div>
       </div>
       <div class="card-cta">Abrir simulador <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </a>
+
+    <!-- Histórico de Propostas -->
+    <a class="nav-card card-hist" href="propostas.html">
+      <div class="card-bar"></div>
+      <div class="card-status"><span class="status-dot" style="background:#22D3EE;box-shadow:0 0 6px #22D3EE;"></span>Ativo</div>
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14 2 14 8 20 8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="13" x2="16" y2="13" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="17" x2="13" y2="17" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="card-label">Propostas comerciais</div>
+        <div class="card-title">Histórico<br>de Propostas</div>
+        <div class="card-desc">Consulte, versione e gerencie propostas por candidato. Busca por telefone.</div>
+      </div>
+      <div class="card-cta">Ver histórico <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     </a>
 
     <!-- Projeção de Caixa — restrito -->
