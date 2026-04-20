@@ -192,32 +192,32 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           <select id="m-praca">
             <option value="">— Selecione —</option>
             <optgroup label="Blue3 — Cidades">
-              <option>Blue3 - Anywhere</option>
-              <option>Blue3 - Bauru</option>
-              <option>Blue3 - Belém</option>
-              <option>Blue3 - Belo Horizonte</option>
-              <option>Blue3 - Brasília</option>
-              <option>Blue3 - Campinas</option>
-              <option>Blue3 - Curitiba</option>
-              <option>Blue3 - Franca</option>
-              <option>Blue3 - Galpão Franca</option>
-              <option>Blue3 - Goiânia</option>
-              <option>Blue3 - Internacional</option>
-              <option>Blue3 - Itajaí</option>
-              <option>Blue3 - Marília</option>
-              <option>Blue3 - Poços de Caldas</option>
-              <option>Blue3 - Ribeirão Preto</option>
-              <option>Blue3 - Rio de Janeiro</option>
-              <option>Blue3 - São José do Rio Preto</option>
-              <option>Blue3 - São José dos Campos</option>
-              <option>Blue3 - São Paulo</option>
-              <option>Blue3 - Uberaba</option>
-              <option>Blue3 - Uberlândia</option>
+              <option value="Blue3 - Anywhere">Anywhere</option>
+              <option value="Blue3 - Bauru">Bauru</option>
+              <option value="Blue3 - Belém">Belém</option>
+              <option value="Blue3 - Belo Horizonte">Belo Horizonte</option>
+              <option value="Blue3 - Brasília">Brasília</option>
+              <option value="Blue3 - Campinas">Campinas</option>
+              <option value="Blue3 - Curitiba">Curitiba</option>
+              <option value="Blue3 - Franca">Franca</option>
+              <option value="Blue3 - Galpão Franca">Galpão Franca</option>
+              <option value="Blue3 - Goiânia">Goiânia</option>
+              <option value="Blue3 - Internacional">Internacional</option>
+              <option value="Blue3 - Itajaí">Itajaí</option>
+              <option value="Blue3 - Marília">Marília</option>
+              <option value="Blue3 - Poços de Caldas">Poços de Caldas</option>
+              <option value="Blue3 - Ribeirão Preto">Ribeirão Preto</option>
+              <option value="Blue3 - Rio de Janeiro">Rio de Janeiro</option>
+              <option value="Blue3 - São José do Rio Preto">São José do Rio Preto</option>
+              <option value="Blue3 - São José dos Campos">São José dos Campos</option>
+              <option value="Blue3 - São Paulo">São Paulo</option>
+              <option value="Blue3 - Uberaba">Uberaba</option>
+              <option value="Blue3 - Uberlândia">Uberlândia</option>
             </optgroup>
             <optgroup label="Blue3 — Segmentos">
-              <option>Blue3 - Advisor RF</option>
-              <option>Blue3 - Broker RV</option>
-              <option>Blue3 - Corporate</option>
+              <option value="Blue3 - Advisor RF">Advisor RF</option>
+              <option value="Blue3 - Broker RV">Broker RV</option>
+              <option value="Blue3 - Corporate">Corporate</option>
             </optgroup>
             <optgroup label="Parceiros & Outros">
               <option>B2B - M&A</option>
@@ -274,6 +274,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         <div class="f-row">
           <label id="lbl-bonus-liq">Bônus Semestral Líquido <span style="font-weight:400;color:var(--t4)">−27,5%</span></label>
           <input id="m-bonus-liq" type="text" readonly placeholder="—" style="background:#f0f2fa;color:var(--g);font-weight:700;cursor:default">
+        </div>
+        <div class="f-row">
+          <label>Plano de Saúde (R$/mês)</label>
+          <input id="m-saude" type="number" placeholder="0" oninput="calcFinanceiro()">
+          <span style="font-size:9px;color:var(--t4);margin-top:2px">Valor mensal · será × 12 no total anual</span>
+        </div>
+        <div class="f-row">
+          <label>VA/VR (R$/mês)</label>
+          <input id="m-vavr" type="number" placeholder="0" oninput="calcFinanceiro()">
+          <span style="font-size:9px;color:var(--t4);margin-top:2px">Valor mensal · será × 12 no total anual</span>
         </div>
         <div class="f-row" style="justify-content:flex-end;align-self:flex-end">
           <div id="m-rem-total-box" style="background:var(--cobalt-pl);border-radius:6px;padding:10px 12px;display:none">
@@ -578,6 +588,8 @@ function abrirEdicao(id) {
   document.getElementById('m-rem-bruta').value   = r.remuneracao_bruta||'';
   document.getElementById('m-bonus-bruto').value = r.bonus_bruto||'';
   document.getElementById('m-tipo-bonus').value  = r.tipo_bonus||'Semestral';
+  document.getElementById('m-saude').value         = r.plano_saude||'';
+  document.getElementById('m-vavr').value          = r.vavr||'';
   calcFinanceiro();
   document.getElementById('overlay-cand').classList.add('open');
 }
@@ -585,7 +597,7 @@ function abrirEdicao(id) {
 function fecharModal() { document.getElementById('overlay-cand').classList.remove('open'); }
 
 function limparModal() {
-  ['m-id','m-nome','m-tel','m-inst','m-auc','m-piso','m-periodo','m-upfront','m-t1m','m-t1v','m-t2m','m-t2v','m-data-ent','m-data-ini','m-obs','m-auc-cust','m-clientes','m-rem-bruta','m-bonus-bruto'].forEach(function(id){
+  ['m-id','m-nome','m-tel','m-inst','m-auc','m-piso','m-periodo','m-upfront','m-t1m','m-t1v','m-t2m','m-t2v','m-data-ent','m-data-ini','m-obs','m-auc-cust','m-clientes','m-rem-bruta','m-bonus-bruto','m-saude','m-vavr'].forEach(function(id){
     document.getElementById(id).value='';
   });
   document.getElementById('m-hunter').value='';
@@ -623,6 +635,8 @@ function salvarCandidato() {
     remuneracao_bruta: gn('m-rem-bruta'),
     bonus_bruto:       gn('m-bonus-bruto'),
     tipo_bonus:        g('m-tipo-bonus') || 'Semestral',
+    plano_saude:       gn('m-saude'),
+    vavr:              gn('m-vavr'),
     atualizado_em: new Date().toISOString()
   };
   var id = g('m-id');
@@ -820,7 +834,7 @@ function calcFinanceiro() {
 
   // Ticket médio
   var ticket = cli > 0 ? (auc / cli) : 0;
-  document.getElementById('m-ticket').value = ticket > 0 ? ticket.toFixed(3).replace('.',',') + ' MM' : '—';
+  document.getElementById('m-ticket').value = ticket > 0 ? ticket.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' MM' : '—';
 
   // Líquidos mensais
   var remLiq = rem  * (1 - ALIQ);
@@ -831,11 +845,15 @@ function calcFinanceiro() {
   // Label bônus
   document.getElementById('lbl-bonus-liq').innerHTML = 'Bônus ' + tipo + ' Líquido <span style="font-weight:400;color:var(--t4)">−27,5%</span>';
 
-  // Pacote total anual líquido
+  // Plano de saúde e VA/VR
+  var saude = parseFloat(document.getElementById('m-saude').value)||0;
+  var vavr  = parseFloat(document.getElementById('m-vavr').value) ||0;
+
+  // Pacote total anual líquido (inclui benefícios)
   var totalBox = document.getElementById('m-rem-total-box');
-  if (rem > 0 || bon > 0) {
+  if (rem > 0 || bon > 0 || saude > 0 || vavr > 0) {
     var bonAnual = tipo === 'Semestral' ? bonLiq * 2 : bonLiq;
-    var totalAnual = remLiq * 12 + bonAnual;
+    var totalAnual = remLiq * 12 + bonAnual + (saude * 12) + (vavr * 12);
     document.getElementById('m-rem-total').textContent = 'R$ ' + fmtBRL(totalAnual) + '/ano';
     totalBox.style.display = 'block';
   } else {
