@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nexus · CRM · Blue3</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="pipeline.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0A0F1E;--cobalt:#1A3BAD;--cobalt-br:#2952E3;--cobalt-gl:#4A70F5;
+  --gold:#B8962E;--g:#16A34A;--am:#B45309;--rose:#BE185D;--red:#DC2626;
+  --canvas:#F0F2FA;--surface:#fff;--rule:#E2E5F0;
+  --t1:#0A0F1E;--t2:#3A4268;--t3:#7A82A8;--t4:#A8B0CC;
+  --r8:8px;--r12:12px;--sh:0 1px 4px rgba(10,15,30,.07),0 4px 16px rgba(10,15,30,.06);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:13px;min-height:100vh}
+
+/* ── COVER ── */
+.cover{background:var(--ink);min-height:120px;position:relative;overflow:hidden;padding:28px 32px 22px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px}
+.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+.cgl{position:absolute;top:-80px;right:-40px;width:360px;height:360px;background:radial-gradient(ellipse,rgba(41,82,227,.18) 0%,transparent 65%);pointer-events:none}
+.cover-rule{height:3px;background:linear-gradient(90deg,var(--cobalt),var(--cobalt-gl),transparent)}
+.cv-t{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:#fff;letter-spacing:-.02em}
+.cv-s{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.14em;margin-top:3px}
+.cv-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn-add{background:var(--cobalt-br);color:#fff;border:none;border-radius:var(--r8);padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:7px;transition:all .15s}
+.btn-add:hover{background:#162FA0}
+.btn-import{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:var(--r8);padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;transition:all .15s}
+.btn-import:hover{background:rgba(255,255,255,.18)}
+.btn-home{color:rgba(255,255,255,.6);font-size:11px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;background:rgba(255,255,255,.08)}
+.btn-home:hover{background:rgba(255,255,255,.15)}
+
+/* ── FILTROS ── */
+.filters{background:var(--surface);border-bottom:1px solid var(--rule);padding:10px 24px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:50}
+.f-inp{padding:6px 10px;border:1px solid var(--rule);border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--t1);background:#fafbfd;outline:none;min-width:160px;transition:border .15s}
+.f-inp:focus{border-color:var(--cobalt)}
+.f-sel{padding:6px 10px;border:1px solid var(--rule);border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--t1);background:#fafbfd;outline:none;cursor:pointer}
+.f-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em}
+.f-count{font-size:11px;color:var(--t4);margin-left:auto}
+
+/* ── BOARD ── */
+.board-wrap{overflow-x:auto;padding:16px 20px 24px}
+.board{display:flex;gap:12px;min-width:max-content;align-items:flex-start}
+
+/* ── COLUNA ── */
+.col{width:240px;flex-shrink:0;background:#E8EBF5;border-radius:var(--r12);display:flex;flex-direction:column;max-height:calc(100vh - 200px)}
+.col-hd{padding:12px 14px 8px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0}
+.col-name{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.col-count{font-size:10px;font-weight:700;background:rgba(255,255,255,.6);color:var(--t2);padding:2px 7px;border-radius:10px}
+.col-body{padding:0 8px 10px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:7px;min-height:60px}
+.col-body.drag-over{background:rgba(41,82,227,.06);border-radius:8px}
+
+/* ── CARD ── */
+.kcard{background:var(--surface);border-radius:var(--r8);padding:12px 13px;cursor:pointer;box-shadow:var(--sh);border:1px solid transparent;transition:all .15s;position:relative}
+.kcard:hover{border-color:var(--cobalt-gl);box-shadow:0 2px 12px rgba(41,82,227,.12)}
+.kcard.dragging{opacity:.5}
+.kc-nome{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:3px;padding-right:14px}
+.kc-sub{font-size:10px;color:var(--t3);margin-bottom:7px}
+.kc-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.tag{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em}
+.t-sr{background:#DCFCE7;color:#166534}
+.t-pl{background:#FEF3C7;color:#92400E}
+.t-jr{background:#FCE7F3;color:#9D174D}
+.t-mou{background:#EEF2FD;color:var(--cobalt)}
+.t-anc{background:#F0FDF4;color:#15803D}
+.kc-auc{font-size:11px;font-weight:700;color:var(--cobalt-br)}
+.kc-hunter{font-size:9px;color:var(--t4);position:absolute;top:10px;right:11px}
+.kc-ini{font-size:9px;color:var(--t4);margin-top:4px}
+
+/* Cor das colunas */
+.col-prosp .col-hd{background:#E8EBF5}.col-prosp .col-name{color:#475569}
+.col-qual  .col-hd{background:#EDE9FE}.col-qual  .col-name{color:#5B21B6}
+.col-neg   .col-hd{background:#FEF3C7}.col-neg   .col-name{color:#92400E}
+.col-cont  .col-hd{background:#FFF7ED}.col-cont  .col-name{color:#C2410C}
+.col-trab  .col-hd{background:#DCFCE7}.col-trab  .col-name{color:#166534}
+.col-dec   .col-hd{background:#FEE2E2}.col-dec   .col-name{color:#991B1B}
+.col-fut   .col-hd{background:#F1F5F9}.col-fut   .col-name{color:#64748B}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:14px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.22)}
+.modal-hd{padding:22px 24px 0;border-bottom:1px solid var(--rule);padding-bottom:14px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--surface);z-index:1}
+.modal-titulo{font-size:16px;font-weight:700;color:var(--t1)}
+.modal-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.btn-fechar{background:none;border:none;font-size:20px;color:var(--t3);cursor:pointer;padding:2px 6px;border-radius:4px}
+.btn-fechar:hover{background:var(--rule);color:var(--t1)}
+.modal-body{padding:20px 24px}
+.sec-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--rule)}
+.sec-lbl:first-child{margin-top:0}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.f-row{display:flex;flex-direction:column;gap:4px}
+.f-row label{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.07em}
+.f-row input,.f-row select,.f-row textarea{padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--t1);background:#fafbfd;outline:none;transition:border .15s;width:100%}
+.f-row input:focus,.f-row select:focus,.f-row textarea:focus{border-color:var(--cobalt)}
+.f-row textarea{resize:vertical;min-height:60px}
+.modal-foot{padding:14px 24px 20px;border-top:1px solid var(--rule);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--surface)}
+.btn-salvar{background:var(--cobalt);color:#fff;border:none;border-radius:var(--r8);padding:10px 22px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-salvar:hover{background:var(--cobalt-br)}
+.btn-cancelar{background:var(--canvas);color:var(--t2);border:1px solid var(--rule);border-radius:var(--r8);padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-excluir{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;border-radius:var(--r8);padding:10px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-right:auto}
+.btn-excluir:hover{background:#DC2626;color:#fff}
+
+/* ── IMPORT MODAL ── */
+.import-area{border:2px dashed var(--rule);border-radius:var(--r12);padding:28px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:14px}
+.import-area:hover,.import-area.drag-file{border-color:var(--cobalt);background:#EEF2FD}
+.import-area input{display:none}
+.import-icon{font-size:32px;margin-bottom:8px}
+.import-t{font-size:13px;font-weight:600;color:var(--t1);margin-bottom:4px}
+.import-s{font-size:11px;color:var(--t3)}
+.import-preview{max-height:200px;overflow-y:auto;border:1px solid var(--rule);border-radius:6px;font-size:10px;padding:8px 10px;background:#fafbfd;margin-bottom:12px;white-space:pre;font-family:monospace;display:none}
+.import-mapa{display:none}
+.mapa-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px}
+.mapa-field{font-weight:600;color:var(--t2);min-width:120px}
+.mapa-sel{flex:1;padding:5px 8px;border:1px solid var(--rule);border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif;outline:none}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:60px 20px;color:var(--t4)}
+.empty-icon{font-size:38px;margin-bottom:10px}
+.empty-t{font-size:14px;font-weight:600;color:var(--t2);margin-bottom:4px}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cg"></div><div class="cgl"></div>
+  <div>
+    <div class="cv-t">CRM · Pipeline de Assessores</div>
+    <div class="cv-s">Blue3 Expansão · Gestão do funil de contratação</div>
+  </div>
+  <div class="cv-actions">
+    <button class="btn-import" onclick="abrirImport()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Importar CSV
+    </button>
+    <button class="btn-add" onclick="abrirModal()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Novo candidato
+    </button>
+    <a href="index.html" class="btn-home">← Home</a>
+  </div>
+</div>
+<div class="cover-rule"></div>
+
+<!-- FILTROS -->
+<div class="filters">
+  <span class="f-lbl">Filtrar</span>
+  <input class="f-inp" id="f-busca" placeholder="Nome ou instituição..." oninput="renderBoard()">
+  <select class="f-sel" id="f-hunter" onchange="renderBoard()">
+    <option value="">Todos os hunters</option>
+    <option>Eduarda</option><option>Bianca</option><option>Paulo</option>
+    <option>Henrique</option><option>Thaila</option>
+  </select>
+  <select class="f-sel" id="f-nivel" onchange="renderBoard()">
+    <option value="">Todas as senioridades</option>
+    <option>Sênior</option><option>Pleno</option><option>Júnior</option>
+  </select>
+  <select class="f-sel" id="f-praca" onchange="renderBoard()">
+    <option value="">Todas as praças</option>
+  </select>
+  <span class="f-count" id="f-count"></span>
+</div>
+
+<!-- BOARD -->
+<div class="board-wrap">
+  <div class="board" id="board"></div>
+</div>
+
+<!-- MODAL CANDIDATO -->
+<div class="overlay" id="overlay-cand">
+  <div class="modal">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-titulo" id="modal-titulo">Novo candidato</div>
+        <div class="modal-sub" id="modal-etapa-label"></div>
+      </div>
+      <button class="btn-fechar" onclick="fecharModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="m-id">
+
+      <div class="sec-lbl">Identificação</div>
+      <div class="fgrid">
+        <div class="f-row"><label>Nome completo *</label><input id="m-nome" placeholder="Nome do candidato"></div>
+        <div class="f-row"><label>Telefone</label><input id="m-tel" placeholder="(11) 99999-9999"></div>
+        <div class="f-row"><label>Instituição de origem</label><input id="m-inst" placeholder="ex: XP, BTG, Itaú..."></div>
+        <div class="f-row"><label>Praça</label><input id="m-praca" placeholder="ex: São Paulo"></div>
+      </div>
+
+      <div class="sec-lbl">Responsável</div>
+      <div class="fgrid">
+        <div class="f-row"><label>Hunter</label>
+          <select id="m-hunter">
+            <option value="">— Selecione —</option>
+            <option>Eduarda</option><option>Bianca</option><option>Paulo</option>
+            <option>Henrique</option><option>Thaila</option>
+          </select>
+        </div>
+        <div class="f-row"><label>Líder</label><input id="m-lider" placeholder="Nome do líder"></div>
+        <div class="f-row"><label>Senioridade</label>
+          <select id="m-nivel">
+            <option value="">— Selecione —</option>
+            <option>Sênior</option><option>Pleno</option><option>Júnior</option>
+          </select>
+        </div>
+        <div class="f-row"><label>Etapa</label>
+          <select id="m-etapa">
+            <option>Prospecção</option><option>Qualificação</option>
+            <option>Negociação</option><option>Contratação</option>
+            <option>Trabalhando</option><option>Declinou</option>
+            <option>Contato Futuro</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sec-lbl">Carteira & Proposta</div>
+      <div class="fgrid3">
+        <div class="f-row"><label>AuC (MM)</label><input id="m-auc" type="number" step="0.1" placeholder="0"></div>
+        <div class="f-row"><label>Piso R$/mês</label><input id="m-piso" type="number" placeholder="0"></div>
+        <div class="f-row"><label>Período (meses)</label><input id="m-periodo" type="number" placeholder="12"></div>
+        <div class="f-row"><label>Upfront R$</label><input id="m-upfront" type="number" placeholder="0"></div>
+        <div class="f-row"><label>Trigger 1 (MM → R$)</label><input id="m-t1m" type="number" placeholder="Meta MM"></div>
+        <div class="f-row"><label>Trigger 1 valor</label><input id="m-t1v" type="number" placeholder="Valor R$"></div>
+        <div class="f-row"><label>Trigger 2 (MM → R$)</label><input id="m-t2m" type="number" placeholder="Meta MM"></div>
+        <div class="f-row"><label>Trigger 2 valor</label><input id="m-t2v" type="number" placeholder="Valor R$"></div>
+      </div>
+
+      <div class="sec-lbl">Status Operacional</div>
+      <div class="fgrid">
+        <div class="f-row"><label>MOU</label>
+          <select id="m-mou"><option>Pendente</option><option>Assinado</option></select>
+        </div>
+        <div class="f-row"><label>Status Ancord</label>
+          <select id="m-ancord">
+            <option>Pendente</option><option>Em preparo</option><option>Aprovada</option><option>Isento</option>
+          </select>
+        </div>
+        <div class="f-row"><label>Data de entrada</label><input id="m-data-ent" type="date"></div>
+        <div class="f-row"><label>Data início trabalho</label><input id="m-data-ini" type="date"></div>
+      </div>
+
+      <div class="sec-lbl">Comentários</div>
+      <div class="f-row"><label>Observações / histórico</label>
+        <textarea id="m-obs" placeholder="LinkedIn, situação atual, observações da negociação..."></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-excluir" id="btn-excluir" style="display:none" onclick="excluirCandidato()">Excluir</button>
+      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarCandidato()">
+        <span id="btn-salvar-txt">Salvar candidato</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR CSV -->
+<div class="overlay" id="overlay-import">
+  <div class="modal">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-titulo">Importar CSV</div>
+        <div class="modal-sub">Carga de dados do Notion ou planilha · mapeie as colunas abaixo</div>
+      </div>
+      <button class="btn-fechar" onclick="fecharImport()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="import-area" id="import-area" onclick="document.getElementById('csv-file').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+        <input type="file" id="csv-file" accept=".csv,.txt" onchange="lerCSV(event)">
+        <div class="import-icon">📂</div>
+        <div class="import-t">Clique ou arraste o arquivo CSV</div>
+        <div class="import-s">Exportado do Notion, Excel ou outra fonte · UTF-8</div>
+      </div>
+
+      <pre class="import-preview" id="import-preview"></pre>
+
+      <div class="import-mapa" id="import-mapa">
+        <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:10px;">Mapear colunas do CSV → campos do CRM</div>
+        <div id="mapa-linhas"></div>
+        <div style="margin-top:14px;font-size:11px;color:var(--t3)" id="import-resumo"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancelar" onclick="fecharImport()">Cancelar</button>
+      <button class="btn-salvar" id="btn-importar" style="display:none" onclick="executarImport()">
+        <span id="btn-import-txt">Importar candidatos</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+
+var ETAPAS = ['Prospecção','Qualificação','Negociação','Contratação','Trabalhando','Declinou','Contato Futuro'];
+var COR_ETAPA = {
+  'Prospecção':'col-prosp','Qualificação':'col-qual','Negociação':'col-neg',
+  'Contratação':'col-cont','Trabalhando':'col-trab','Declinou':'col-dec','Contato Futuro':'col-fut'
+};
+
+var _todos = [];   // cache local
+var _csvRows = [], _csvHeaders = [];
+
+// ── Supabase ──────────────────────────────────────────────────────
+function supa(path, opts) {
+  var h = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+  return fetch(SUPA_URL+'/rest/v1/'+path, Object.assign({ headers: h }, opts||{}));
+}
+
+function carregar() {
+  supa('crm_candidatos?order=criado_em.desc&limit=500')
+    .then(function(r){ return r.json(); })
+    .then(function(rows){
+      _todos = Array.isArray(rows) ? rows : [];
+      popularFiltrosPraca();
+      renderBoard();
+    })
+    .catch(function(){ renderErro(); });
+}
+
+function popularFiltrosPraca() {
+  var pracas = [...new Set(_todos.map(function(r){ return r.praca||''; }).filter(Boolean))].sort();
+  var sel = document.getElementById('f-praca');
+  var cur = sel.value;
+  sel.innerHTML = '<option value="">Todas as praças</option>' + pracas.map(function(p){ return '<option'+(p===cur?' selected':'')+'>'+p+'</option>'; }).join('');
+}
+
+// ── Board ─────────────────────────────────────────────────────────
+function renderBoard() {
+  var q       = (document.getElementById('f-busca').value||'').toLowerCase();
+  var hunter  = document.getElementById('f-hunter').value;
+  var nivel   = document.getElementById('f-nivel').value;
+  var praca   = document.getElementById('f-praca').value;
+
+  var filtrados = _todos.filter(function(r){
+    if (q && !(r.nome||'').toLowerCase().includes(q) && !(r.instituicao||'').toLowerCase().includes(q)) return false;
+    if (hunter && r.hunter !== hunter) return false;
+    if (nivel  && r.nivel  !== nivel)  return false;
+    if (praca  && r.praca  !== praca)  return false;
+    return true;
+  });
+
+  document.getElementById('f-count').textContent = filtrados.length + ' candidato' + (filtrados.length!==1?'s':'');
+
+  var board = document.getElementById('board');
+  board.innerHTML = ETAPAS.map(function(etapa) {
+    var cards = filtrados.filter(function(r){ return r.etapa === etapa; });
+    return '<div class="col '+COR_ETAPA[etapa]+'" id="col-'+etapa+'" ondragover="dragOverCol(event,\''+etapa+'\')" ondragleave="dragLeaveCol(event)" ondrop="dropCard(event,\''+etapa+'\')">'
+      + '<div class="col-hd"><span class="col-name">'+etapa+'</span><span class="col-count">'+cards.length+'</span></div>'
+      + '<div class="col-body" id="body-'+etapa+'">'
+      + (cards.length ? cards.map(cardHTML).join('') : '<div style="padding:12px 6px;text-align:center;font-size:10px;color:var(--t4);">—</div>')
+      + '</div></div>';
+  }).join('');
+}
+
+function cardHTML(r) {
+  var senCls = {Sênior:'t-sr',Pleno:'t-pl',Júnior:'t-jr'}[r.nivel]||'t-pl';
+  var tags = '';
+  if (r.nivel)                        tags += '<span class="tag '+senCls+'">'+r.nivel+'</span>';
+  if ((r.mou||'').toLowerCase()==='assinado')    tags += '<span class="tag t-mou">MOU</span>';
+  if ((r.status_ancord||'').toLowerCase()==='aprovada') tags += '<span class="tag t-anc">Ancord</span>';
+
+  var auc = r.auc_mm > 0 ? '<div class="kc-auc">R$'+r.auc_mm+'MM</div>' : '';
+  var ini = r.data_inicio ? '<div class="kc-ini">Início: '+fmtDate(r.data_inicio)+'</div>' : '';
+
+  return '<div class="kcard" id="kc-'+r.id+'" draggable="true" ondragstart="dragStart(event,\''+r.id+'\')" onclick="abrirEdicao(\''+r.id+'\')">'
+    + '<div class="kc-hunter">'+(r.hunter?r.hunter.charAt(0):'—')+'</div>'
+    + '<div class="kc-nome">'+esc(r.nome)+'</div>'
+    + '<div class="kc-sub">'+(r.instituicao||'')+(r.praca?' · '+r.praca:'')+'</div>'
+    + (tags?'<div class="kc-tags">'+tags+'</div>':'')
+    + auc + ini
+    + '</div>';
+}
+
+function renderErro() {
+  document.getElementById('board').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-t">Erro ao carregar</div><div class="empty-s">Crie a tabela crm_candidatos no Supabase e recarregue.</div></div>';
+}
+
+function fmtDate(s) { if(!s)return''; var d=new Date(s+'T12:00:00'); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}); }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Drag & Drop ───────────────────────────────────────────────────
+var _dragId = null;
+function dragStart(e, id) { _dragId = id; e.target.classList.add('dragging'); }
+function dragOverCol(e, etapa) { e.preventDefault(); document.getElementById('body-'+etapa).classList.add('drag-over'); }
+function dragLeaveCol(e) { e.currentTarget.querySelector('.col-body').classList.remove('drag-over'); }
+function dropCard(e, etapa) {
+  e.preventDefault();
+  e.currentTarget.querySelector('.col-body').classList.remove('drag-over');
+  if (!_dragId) return;
+  var cand = _todos.find(function(r){ return r.id===_dragId; });
+  if (!cand || cand.etapa === etapa) { _dragId=null; return; }
+  cand.etapa = etapa;
+  renderBoard();
+  supa('crm_candidatos?id=eq.'+_dragId, { method:'PATCH', body: JSON.stringify({ etapa: etapa, atualizado_em: new Date().toISOString() }) })
+    .catch(function(){ cand.etapa = etapa; }); // otimista, mantém
+  _dragId = null;
+  document.querySelectorAll('.kcard').forEach(function(c){ c.classList.remove('dragging'); });
+}
+
+// ── Modal Candidato ───────────────────────────────────────────────
+function abrirModal(etapaInicial) {
+  limparModal();
+  document.getElementById('modal-titulo').textContent = 'Novo candidato';
+  document.getElementById('modal-etapa-label').textContent = '';
+  document.getElementById('btn-excluir').style.display = 'none';
+  if (etapaInicial) document.getElementById('m-etapa').value = etapaInicial;
+  document.getElementById('overlay-cand').classList.add('open');
+}
+
+function abrirEdicao(id) {
+  var r = _todos.find(function(x){ return x.id===id; });
+  if (!r) return;
+  limparModal();
+  document.getElementById('modal-titulo').textContent = r.nome;
+  document.getElementById('modal-etapa-label').textContent = r.etapa;
+  document.getElementById('btn-excluir').style.display = 'block';
+  document.getElementById('m-id').value       = r.id;
+  document.getElementById('m-nome').value     = r.nome||'';
+  document.getElementById('m-tel').value      = r.telefone||'';
+  document.getElementById('m-inst').value     = r.instituicao||'';
+  document.getElementById('m-praca').value    = r.praca||'';
+  document.getElementById('m-hunter').value   = r.hunter||'';
+  document.getElementById('m-lider').value    = r.lider||'';
+  document.getElementById('m-nivel').value    = r.nivel||'';
+  document.getElementById('m-etapa').value    = r.etapa||'Prospecção';
+  document.getElementById('m-auc').value      = r.auc_mm||'';
+  document.getElementById('m-piso').value     = r.piso||'';
+  document.getElementById('m-periodo').value  = r.periodo||'';
+  document.getElementById('m-upfront').value  = r.upfront||'';
+  document.getElementById('m-t1m').value      = r.trigger1_meta||'';
+  document.getElementById('m-t1v').value      = r.trigger1_val||'';
+  document.getElementById('m-t2m').value      = r.trigger2_meta||'';
+  document.getElementById('m-t2v').value      = r.trigger2_val||'';
+  document.getElementById('m-mou').value      = r.mou||'Pendente';
+  document.getElementById('m-ancord').value   = r.status_ancord||'Pendente';
+  document.getElementById('m-data-ent').value = r.data_entrada||'';
+  document.getElementById('m-data-ini').value = r.data_inicio||'';
+  document.getElementById('m-obs').value      = r.comentarios||'';
+  document.getElementById('overlay-cand').classList.add('open');
+}
+
+function fecharModal() { document.getElementById('overlay-cand').classList.remove('open'); }
+
+function limparModal() {
+  ['m-id','m-nome','m-tel','m-inst','m-praca','m-lider','m-auc','m-piso','m-periodo','m-upfront','m-t1m','m-t1v','m-t2m','m-t2v','m-data-ent','m-data-ini','m-obs'].forEach(function(id){
+    document.getElementById(id).value='';
+  });
+  document.getElementById('m-hunter').value='';
+  document.getElementById('m-nivel').value='';
+  document.getElementById('m-etapa').value='Prospecção';
+  document.getElementById('m-mou').value='Pendente';
+  document.getElementById('m-ancord').value='Pendente';
+}
+
+function g(id){ return (document.getElementById(id)||{}).value||''; }
+function gn(id){ return parseFloat(g(id))||0; }
+function gi(id){ return parseInt(g(id))||0; }
+
+function salvarCandidato() {
+  var nome = g('m-nome').trim();
+  if (!nome) { alert('Informe o nome do candidato.'); return; }
+  var payload = {
+    nome: nome, telefone: g('m-tel'), instituicao: g('m-inst'), praca: g('m-praca'),
+    hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), etapa: g('m-etapa'),
+    auc_mm: gn('m-auc'), piso: gn('m-piso'), periodo: gi('m-periodo'), upfront: gn('m-upfront'),
+    trigger1_meta: gn('m-t1m'), trigger1_val: gn('m-t1v'), trigger2_meta: gn('m-t2m'), trigger2_val: gn('m-t2v'),
+    mou: g('m-mou'), status_ancord: g('m-ancord'),
+    data_entrada: g('m-data-ent')||null, data_inicio: g('m-data-ini')||null,
+    comentarios: g('m-obs'), atualizado_em: new Date().toISOString()
+  };
+  var id = g('m-id');
+  document.getElementById('btn-salvar-txt').textContent = 'Salvando...';
+  var req;
+  if (id) {
+    req = supa('crm_candidatos?id=eq.'+id, { method:'PATCH', body: JSON.stringify(payload) });
+  } else {
+    payload.data_entrada = payload.data_entrada || new Date().toISOString().slice(0,10);
+    req = supa('crm_candidatos', { method:'POST', body: JSON.stringify(payload) });
+  }
+  req.then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function(){ fecharModal(); carregar(); })
+    .catch(function(e){ alert('Erro ao salvar: '+e+'\nCrie a tabela crm_candidatos no Supabase.'); })
+    .finally(function(){ document.getElementById('btn-salvar-txt').textContent='Salvar candidato'; });
+}
+
+function excluirCandidato() {
+  var id = g('m-id'); if (!id) return;
+  var nome = g('m-nome');
+  if (!confirm('Excluir "'+nome+'"? Esta ação não pode ser desfeita.')) return;
+  supa('crm_candidatos?id=eq.'+id, { method:'DELETE' })
+    .then(function(){ fecharModal(); carregar(); })
+    .catch(function(e){ alert('Erro ao excluir: '+e); });
+}
+
+// ── Import CSV ────────────────────────────────────────────────────
+var CAMPOS_CRM = [
+  {key:'nome',       label:'Nome'},
+  {key:'telefone',   label:'Telefone'},
+  {key:'instituicao',label:'Instituição'},
+  {key:'praca',      label:'Praça'},
+  {key:'hunter',     label:'Hunter'},
+  {key:'lider',      label:'Líder'},
+  {key:'nivel',      label:'Senioridade'},
+  {key:'etapa',      label:'Etapa/Status'},
+  {key:'auc_mm',     label:'AuC (MM)'},
+  {key:'piso',       label:'Piso R$'},
+  {key:'periodo',    label:'Período (meses)'},
+  {key:'upfront',    label:'Upfront R$'},
+  {key:'mou',        label:'MOU'},
+  {key:'status_ancord',label:'Status Ancord'},
+  {key:'data_entrada',label:'Data Entrada'},
+  {key:'data_inicio', label:'Data Início'},
+  {key:'comentarios', label:'Comentários'},
+  {key:'_ignorar',   label:'— Ignorar coluna —'},
+];
+
+// Mapeamento automático por similaridade de nome
+var AUTO_MAP = {
+  'nome do candidato':'nome','name':'nome','candidato':'nome',
+  'telefone':'telefone','phone':'telefone','celular':'telefone','whatsapp':'telefone',
+  'instituição de origem':'instituicao','instituicao':'instituicao','origem':'instituicao','banco':'instituicao',
+  'praça':'praca','praca':'praca','filial':'praca','cidade':'praca',
+  'hunter':'hunter','responsável':'hunter',
+  'líder':'lider','lider':'lider',
+  'nível do assessor':'nivel','nivel':'nivel','senioridade':'nivel','sênior':'nivel',
+  'status':'etapa','etapa':'etapa','funil':'etapa','coluna':'etapa',
+  'carteira auc':'auc_mm','auc':'auc_mm','carteira':'auc_mm','volume':'auc_mm',
+  'piso':'piso','salário':'piso',
+  'período':'periodo','periodo':'periodo','prazo':'periodo',
+  'upfront':'upfront','luva':'upfront','sign-in':'upfront',
+  'mou':'mou',
+  'ancord':'status_ancord','status ancord':'status_ancord',
+  'data de criação':'data_entrada','created':'data_entrada','criado em':'data_entrada',
+  'data que começou a trabalhar':'data_inicio','início':'data_inicio','data inicio':'data_inicio',
+  'comentários':'comentarios','comentarios':'comentarios','observações':'comentarios','obs':'comentarios',
+};
+
+function abrirImport() { document.getElementById('overlay-import').classList.add('open'); }
+function fecharImport() { document.getElementById('overlay-import').classList.remove('open'); _csvRows=[]; _csvHeaders=[]; }
+function dragOver(e){ e.preventDefault(); document.getElementById('import-area').classList.add('drag-file'); }
+function dragLeave(e){ document.getElementById('import-area').classList.remove('drag-file'); }
+function dropFile(e){ e.preventDefault(); dragLeave(); var f=e.dataTransfer.files[0]; if(f)processarArquivo(f); }
+
+function lerCSV(e){ var f=e.target.files[0]; if(f)processarArquivo(f); }
+
+function processarArquivo(file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = e.target.result;
+    var linhas = text.split(/\r?\n/).filter(Boolean);
+    if (linhas.length < 2) { alert('CSV precisa ter pelo menos uma linha de cabeçalho e uma de dados.'); return; }
+    // Detectar delimitador
+    var del = text.indexOf(';') > text.indexOf(',') ? ';' : ',';
+    _csvHeaders = parseCSVLine(linhas[0], del);
+    _csvRows = linhas.slice(1).map(function(l){ return parseCSVLine(l, del); });
+    // Preview
+    var prev = document.getElementById('import-preview');
+    prev.textContent = linhas.slice(0,4).join('\n');
+    prev.style.display = 'block';
+    // Mapeamento
+    var mapa = document.getElementById('import-mapa');
+    var linhasHtml = _csvHeaders.map(function(h, i){
+      var autoKey = AUTO_MAP[h.trim().toLowerCase()] || '_ignorar';
+      var opts = CAMPOS_CRM.map(function(c){ return '<option value="'+c.key+'"'+(c.key===autoKey?' selected':'')+'>'+c.label+'</option>'; }).join('');
+      return '<div class="mapa-row"><span class="mapa-field">'+esc(h)+'</span><select class="mapa-sel" id="mapa-'+i+'">'+opts+'</select></div>';
+    }).join('');
+    document.getElementById('mapa-linhas').innerHTML = linhasHtml;
+    document.getElementById('import-resumo').textContent = _csvRows.length + ' linhas encontradas para importação.';
+    mapa.style.display = 'block';
+    document.getElementById('btn-importar').style.display = 'inline-flex';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSVLine(line, del) {
+  var result=[], cur='', inQ=false;
+  for(var i=0;i<line.length;i++){
+    var c=line[i];
+    if(c==='"'){inQ=!inQ;}
+    else if(c===del&&!inQ){result.push(cur.trim());cur='';}
+    else{cur+=c;}
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function executarImport() {
+  if (!_csvRows.length) return;
+  // Montar mapeamento
+  var mapa = {};
+  _csvHeaders.forEach(function(h,i){
+    var sel = document.getElementById('mapa-'+i);
+    if (sel && sel.value !== '_ignorar') mapa[i] = sel.value;
+  });
+
+  // Normalizar etapa
+  var normEtapa = function(s) {
+    var m = {
+      'lead':'Prospecção','prospecção':'Prospecção','prospecao':'Prospecção',
+      'apresentação':'Qualificação','qualificação':'Qualificação','perfil':'Qualificação',
+      'agendamento':'Negociação','negociação':'Negociação','negociacao':'Negociação',
+      'parecer jurídico':'Contratação','contratação':'Contratação','contratacao':'Contratação',
+      'aguardando termo':'Contratação','onboarding':'Contratação',
+      'trabalhando':'Trabalhando','inserido contrato social':'Trabalhando',
+      'declinou':'Declinou','desistência':'Declinou','desistencia':'Declinou',
+      'contato futuro':'Contato Futuro',
+    };
+    return m[(s||'').toLowerCase().trim()] || s || 'Prospecção';
+  };
+
+  var batch = _csvRows.filter(function(row){ return row.some(Boolean); }).map(function(row){
+    var obj = { etapa: 'Prospecção', data_entrada: new Date().toISOString().slice(0,10) };
+    Object.keys(mapa).forEach(function(i){
+      var campo = mapa[i];
+      var val = (row[i]||'').trim();
+      if (!val) return;
+      if (campo==='etapa') { obj.etapa = normEtapa(val); }
+      else if (['auc_mm','piso','upfront','trigger1_meta','trigger1_val','trigger2_meta','trigger2_val'].includes(campo)) {
+        obj[campo] = parseFloat(val.replace(/[^0-9.,]/g,'').replace(',','.'))||0;
+      } else if (campo==='periodo') {
+        obj[campo] = parseInt(val)||0;
+      } else { obj[campo] = val; }
+    });
+    return obj;
+  }).filter(function(o){ return o.nome; });
+
+  if (!batch.length) { alert('Nenhum candidato com nome encontrado para importar. Verifique o mapeamento.'); return; }
+
+  document.getElementById('btn-import-txt').textContent = 'Importando '+batch.length+'...';
+  document.getElementById('btn-importar').disabled = true;
+
+  // Enviar em lotes de 50
+  var lotes = [];
+  for (var i=0;i<batch.length;i+=50) lotes.push(batch.slice(i,i+50));
+  var idx = 0;
+  function proxLote() {
+    if (idx >= lotes.length) {
+      fecharImport();
+      carregar();
+      document.getElementById('btn-import-txt').textContent = 'Importar candidatos';
+      document.getElementById('btn-importar').disabled = false;
+      return;
+    }
+    supa('crm_candidatos', { method:'POST', body: JSON.stringify(lotes[idx]) })
+      .then(function(r){ if(!r.ok) throw new Error(r.status); idx++; proxLote(); })
+      .catch(function(e){
+        alert('Erro no lote '+(idx+1)+': '+e+'\nCrie a tabela crm_candidatos no Supabase.');
+        document.getElementById('btn-import-txt').textContent = 'Importar candidatos';
+        document.getElementById('btn-importar').disabled = false;
+      });
+  }
+  proxLote();
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+carregar();
+</script>
+</body>
+</html>
