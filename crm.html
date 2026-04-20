@@ -121,6 +121,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .empty{text-align:center;padding:60px 20px;color:var(--t4)}
 .empty-icon{font-size:38px;margin-bottom:10px}
 .empty-t{font-size:14px;font-weight:600;color:var(--t2);margin-bottom:4px}
+
+/* ── Histórico de contatos ── */
+.hist-wrap{border:1px solid var(--rule);border-radius:var(--r8);background:#fafbfd;overflow:hidden}
+.hist-nova{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--rule);background:#fff}
+.hist-nova textarea{flex:1;border:1px solid var(--rule);border-radius:6px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--t1);outline:none;resize:none;min-height:42px;transition:border .15s;background:#fafbfd}
+.hist-nova textarea:focus{border-color:var(--cobalt);background:#fff}
+.btn-hist-add{background:var(--cobalt);color:#fff;border:none;border-radius:6px;padding:0 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;align-self:flex-end;height:34px;transition:all .15s;flex-shrink:0}
+.btn-hist-add:hover{background:var(--cobalt-br)}
+.hist-lista{max-height:240px;overflow-y:auto}
+.hist-item{padding:10px 14px;border-bottom:1px solid var(--rule);display:flex;gap:10px;align-items:flex-start}
+.hist-item:last-child{border-bottom:none}
+.hist-data{font-size:9px;font-weight:700;color:var(--cobalt);white-space:nowrap;padding-top:1px;min-width:90px}
+.hist-txt{font-size:12px;color:var(--t1);line-height:1.5;flex:1;white-space:pre-wrap}
+.hist-del{background:none;border:none;color:var(--t4);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;flex-shrink:0}
+.hist-del:hover{color:var(--red)}
+.hist-vazio{padding:16px;text-align:center;font-size:11px;color:var(--t4)}
+
 </style>
 </head>
 <body>
@@ -383,10 +400,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         <div class="f-row"><label>Data início trabalho</label><input id="m-data-ini" type="date"></div>
       </div>
 
-      <div class="sec-lbl">Comentários</div>
-      <div class="f-row"><label>Observações / histórico</label>
-        <textarea id="m-obs" placeholder="LinkedIn, situação atual, observações da negociação..."></textarea>
+      <div class="sec-lbl">Histórico de Contatos</div>
+      <div class="hist-wrap">
+        <div class="hist-nova">
+          <textarea id="m-obs-nova" placeholder="Registrar nova observação ou contato..." rows="2"></textarea>
+          <button class="btn-hist-add" onclick="adicionarNota()">+ Adicionar</button>
+        </div>
+        <div class="hist-lista" id="hist-lista">
+          <div class="hist-vazio">Nenhum registro ainda.</div>
+        </div>
       </div>
+      <!-- campo oculto que persiste o histórico serializado -->
+      <input type="hidden" id="m-obs">
     </div>
     <div class="modal-foot">
       <button class="btn-excluir" id="btn-excluir" style="display:none" onclick="excluirCandidato()">Excluir</button>
@@ -581,7 +606,7 @@ function abrirEdicao(id) {
   document.getElementById('m-ancord').value   = r.status_ancord||'Pendente';
   document.getElementById('m-data-ent').value = r.data_entrada||'';
   document.getElementById('m-data-ini').value = r.data_inicio||'';
-  document.getElementById('m-obs').value      = r.comentarios||'';
+  carregarHistorico(r.comentarios||'');
   // campos financeiros
   document.getElementById('m-auc-cust').value    = r.auc_custodia_mm||'';
   document.getElementById('m-clientes').value    = r.num_clientes||'';
@@ -597,7 +622,7 @@ function abrirEdicao(id) {
 function fecharModal() { document.getElementById('overlay-cand').classList.remove('open'); }
 
 function limparModal() {
-  ['m-id','m-nome','m-tel','m-inst','m-auc','m-piso','m-periodo','m-upfront','m-t1m','m-t1v','m-t2m','m-t2v','m-data-ent','m-data-ini','m-obs','m-auc-cust','m-clientes','m-rem-bruta','m-bonus-bruto','m-saude','m-vavr'].forEach(function(id){
+  ['m-id','m-nome','m-tel','m-inst','m-auc','m-piso','m-periodo','m-upfront','m-t1m','m-t1v','m-t2m','m-t2v','m-data-ent','m-data-ini','m-obs','m-auc-cust','m-clientes','m-rem-bruta','m-bonus-bruto','m-saude','m-vavr','m-obs-nova'].forEach(function(id){
     document.getElementById(id).value='';
   });
   document.getElementById('m-hunter').value='';
@@ -613,6 +638,9 @@ function limparModal() {
   document.getElementById('m-rem-liq').value='';
   document.getElementById('m-bonus-liq').value='';
   document.getElementById('m-rem-total-box').style.display='none';
+  _histAtual = [];
+  document.getElementById('m-obs').value='';
+  renderHistorico();
 }
 
 function g(id){ return (document.getElementById(id)||{}).value||''; }
@@ -890,6 +918,66 @@ document.addEventListener('change', function(e) {
     }
   }
 });
+
+
+// ── Histórico de contatos ─────────────────────────────────────────
+var _histAtual = [];
+
+function parsearHistorico(raw) {
+  if (!raw || !raw.trim()) return [];
+  return raw.split('\n---\n').map(function(bloco) {
+    var pipe = bloco.indexOf(' | ');
+    if (pipe < 0) return { dt: '', txt: bloco.trim() };
+    return { dt: bloco.slice(0, pipe).trim(), txt: bloco.slice(pipe + 3).trim() };
+  }).filter(function(e){ return e.txt; }).reverse();
+}
+
+function serializarHistorico(arr) {
+  return arr.slice().reverse().map(function(e){
+    return e.dt + ' | ' + e.txt;
+  }).join('\n---\n');
+}
+
+function renderHistorico() {
+  var lista = document.getElementById('hist-lista');
+  if (!lista) return;
+  if (!_histAtual.length) {
+    lista.innerHTML = '<div class="hist-vazio">Nenhum registro ainda.</div>';
+    return;
+  }
+  lista.innerHTML = _histAtual.map(function(e, i) {
+    return '<div class="hist-item">'
+      + '<span class="hist-data">📅 ' + e.dt + '</span>'
+      + '<span class="hist-txt">' + esc(e.txt) + '</span>'
+      + '<button class="hist-del" onclick="removerNota(' + i + ')" title="Remover">×</button>'
+      + '</div>';
+  }).join('');
+}
+
+function adicionarNota() {
+  var txt = (document.getElementById('m-obs-nova').value || '').trim();
+  if (!txt) { document.getElementById('m-obs-nova').focus(); return; }
+  var agora = new Date();
+  var dt = agora.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'})
+         + ' ' + agora.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+  _histAtual.unshift({ dt: dt, txt: txt });
+  document.getElementById('m-obs-nova').value = '';
+  document.getElementById('m-obs').value = serializarHistorico(_histAtual);
+  renderHistorico();
+}
+
+function removerNota(i) {
+  if (!confirm('Remover este registro?')) return;
+  _histAtual.splice(i, 1);
+  document.getElementById('m-obs').value = serializarHistorico(_histAtual);
+  renderHistorico();
+}
+
+function carregarHistorico(raw) {
+  _histAtual = parsearHistorico(raw);
+  document.getElementById('m-obs').value = raw || '';
+  renderHistorico();
+}
 
 // ── Init ──────────────────────────────────────────────────────────
 carregar();
