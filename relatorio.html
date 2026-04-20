@@ -223,83 +223,76 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
    PDF / PRINT STYLES — Blue3 Relatório Executivo
    ══════════════════════════════════════════════ */
 @media print {
-  /* Reset */
+  /* ── Reset cores ── */
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  
-  /* Ocultar elementos de UI */
-  #filter-bar,
-  #btn-export-pdf,
-  #btn-clear-flt,
-  #flt-count,
-  #area-breakdown { display: none !important; }
-  
-  /* Corpo */
-  body { background: #fff !important; margin: 0; padding: 0; }
-  
-  /* Cover — manter visual escuro */
-  .cover { 
-    min-height: 160px !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-    page-break-after: avoid;
-  }
-  
-  /* Page */
-  .page { 
-    max-width: 100% !important; 
-    padding: 16px 24px 24px !important;
-    margin: 0 !important;
-  }
 
-  /* KPIs — forçar grid 3 colunas */
-  .krow { 
-    display: grid !important; 
-    grid-template-columns: repeat(3,1fr) !important; 
-    gap: 10px !important;
-    page-break-inside: avoid;
-  }
-  .kc { break-inside: avoid; }
-
-  /* Cards */
-  .card { break-inside: avoid; }
-  .g2   { break-inside: avoid; }
-  
-  /* ib — barra de stats */
-  .ib { page-break-inside: avoid; }
-
-  /* Seções — evitar quebras no meio */
-  .sh { page-break-after: avoid; }
-
-  /* mg — grid de meses — quebra de página antes se necessário */
-  .mg { 
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px !important;
-  }
-  .mc { break-inside: avoid; }
-  
-  /* Tabelas */
-  table { page-break-inside: auto; }
-  tr    { page-break-inside: avoid; page-break-after: auto; }
-  thead { display: table-header-group; }
-
-  /* Seção estratégico e financeiro — nova página */
-  #sect-estrategico { page-break-before: always; }
-  #sect-financeiro  { page-break-before: always; }
-
-  /* Rodapé de impressão */
-  .cover-rule { display: none !important; }
-
-  /* Links */
+  /* ── Ocultar UI ── */
+  #filter-bar, #btn-export-pdf, #btn-clear-flt, #flt-count,
+  #area-breakdown, .cover-rule, a[href] { display: none !important; }
   a { text-decoration: none !important; color: inherit !important; }
 
-  /* Ocultar canvas (gráficos não imprimem bem) — mostrar só tabelas */
+  /* ── Corpo e página ── */
+  body   { background: #fff !important; margin: 0; padding: 0; font-size: 10px !important; }
+  .page  { max-width: 100% !important; padding: 12px 20px 20px !important; margin: 0 !important; }
+
+  /* ── Cover compacto — nunca quebra ── */
+  .cover {
+    min-height: 130px !important;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* ── Regra de ouro: cabeçalho de seção fica colado ao conteúdo ── */
+  .sh { page-break-after: avoid; break-after: avoid; }
+
+  /* ── Blocos que NUNCA devem quebrar internamente ── */
+  .krow   { display: grid !important; grid-template-columns: repeat(3,1fr) !important;
+            gap: 8px !important; break-inside: avoid; page-break-inside: avoid; }
+  .kc     { break-inside: avoid; }
+  .ib     { break-inside: avoid; page-break-inside: avoid; }
+  .card   { break-inside: avoid; page-break-inside: avoid; }
+  .g2     { break-inside: avoid; page-break-inside: avoid; }
+  .g6535  { break-inside: avoid; page-break-inside: avoid; }
+  .sgrid  { break-inside: avoid; page-break-inside: avoid; }
+  .hgrid  { break-inside: avoid; page-break-inside: avoid; }
+  #pace-card { break-inside: avoid; page-break-inside: avoid; }
+  #funil-container { break-inside: avoid; page-break-inside: avoid; }
+  #funil-details   { break-inside: avoid; page-break-inside: avoid; }
+
+  /* ── Cards mensais: 3 por linha, nunca quebram ── */
+  .mg  { display: grid !important; grid-template-columns: repeat(3,1fr) !important;
+         gap: 8px !important; }
+  .mc  { break-inside: avoid; page-break-inside: avoid; }
+
+  /* ── Tabelas: cabeçalho repete, linhas não quebram ── */
+  table  { page-break-inside: auto; }
+  tr     { break-inside: avoid; page-break-inside: avoid; page-break-after: auto; }
+  thead  { display: table-header-group; }
+  tfoot  { display: table-footer-group; }
+
+  /* ── Nova página para seções pesadas ── */
+  #sect-estrategico { page-break-before: always; break-before: page; }
+  #sect-financeiro  { page-break-before: always; break-before: page; }
+  #sect-hunters     { page-break-before: always; break-before: page; }
+  #sect-pace        { page-break-before: avoid;  break-before: avoid; }
+
+  /* ── Gráficos: ocultar canvas, manter legendas como texto ── */
   canvas { display: none !important; }
   .leg   { display: none !important; }
-  
-  /* Ajuste de fonte para impressão */
-  body { font-size: 11px !important; }
-  .kv  { font-size: 24px !important; }
+
+  /* ── Tipografia de impressão ── */
+  .kv  { font-size: 22px !important; }
+  .sh  { margin-bottom: 6px !important; }
+  hr.rule { margin: 8px 0 !important; }
+
+  /* ── Marca d'água confidencial ── */
+  body::after {
+    content: "CONFIDENCIAL · BLUE3 EXPANSÃO";
+    position: fixed; bottom: 6mm; right: 8mm;
+    font-size: 6px; font-weight: 700; letter-spacing: .12em;
+    color: rgba(0,0,0,.13); text-transform: uppercase;
+    font-family: 'DM Sans', sans-serif;
+  }
 }
 
 @page {
