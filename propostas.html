@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nexus · Histórico de Propostas · Blue3</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="pipeline.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;font-size:12px;background:#e8ecf3;color:#1a2035;min-height:100vh}
+
+/* ── APP BAR ── */
+.bar{background:#002855;height:52px;display:flex;align-items:center;padding:0 22px;gap:14px;position:sticky;top:0;z-index:300;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+.bar-logo{display:flex;align-items:center;gap:10px}
+.bar-logo img{height:28px;object-fit:contain}
+.bar-divider{width:1px;height:24px;background:rgba(255,255,255,.15)}
+.bar-title{font-size:10px;color:rgba(255,255,255,.45);letter-spacing:.14em;text-transform:uppercase;font-weight:500}
+.bar-spacer{flex:1}
+.btn-bar{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;transition:all .15s}
+.btn-bar:hover{background:rgba(255,255,255,.18)}
+
+/* ── COVER ── */
+.cover{background:linear-gradient(135deg,#002855 0%,#1A3BAD 100%);padding:24px 28px 20px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px}
+.cover-rule{height:3px;background:linear-gradient(90deg,#1A3BAD,#4A70F5,transparent)}
+.cover-t{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.02em}
+.cover-s{font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.12em;margin-top:3px}
+.cover-r{text-align:right}
+.btn-nova{background:#f5a623;color:#002855;border:none;border-radius:7px;padding:10px 20px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:7px;letter-spacing:.04em;transition:all .15s;box-shadow:0 2px 8px rgba(245,166,35,.35)}
+.btn-nova:hover{background:#ffc84d}
+.btn-home{position:absolute;top:14px;right:20px;color:rgba(255,255,255,.7);font-size:11px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;background:rgba(255,255,255,.1)}
+.btn-home:hover{background:rgba(255,255,255,.2)}
+
+/* ── LAYOUT ── */
+.page{max-width:1060px;margin:0 auto;padding:22px 20px}
+
+/* ── BUSCA ── */
+.busca-wrap{background:#fff;border-radius:10px;padding:16px 18px;margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.busca-wrap input,.busca-wrap select{padding:8px 12px;border:1px solid #d0d7e8;border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;outline:none;background:#fafbfd;color:#1a2035;transition:border .15s}
+.busca-wrap input:focus,.busca-wrap select:focus{border-color:#1A3BAD}
+.busca-wrap input{flex:1;min-width:180px}
+.btn-buscar{background:#1A3BAD;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.btn-buscar:hover{background:#2952E3}
+.btn-limpar{background:#f1f3f8;color:#7a82a8;border:1px solid #d0d7e8;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+
+/* ── CANDIDATO CARD ── */
+.cand-block{background:#fff;border-radius:10px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden}
+.cand-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;cursor:pointer;border-bottom:1px solid #eef2ff;gap:12px;flex-wrap:wrap}
+.cand-header:hover{background:#fafbff}
+.cand-nome{font-size:14px;font-weight:700;color:#1a2035}
+.cand-meta{font-size:10px;color:#7a82a8;margin-top:2px}
+.cand-badge{background:#EEF2FD;color:#1A3BAD;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;letter-spacing:.06em;text-transform:uppercase}
+.cand-right{display:flex;align-items:center;gap:8px}
+.chevron{transition:transform .2s;color:#a0aacc}
+.cand-block.open .chevron{transform:rotate(180deg)}
+
+/* ── VERSÕES ── */
+.versoes{display:none;padding:10px 18px 16px}
+.cand-block.open .versoes{display:block}
+.versao-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:8px;margin-bottom:6px;background:#f7f9ff;border:1px solid #e8edf5;gap:8px;flex-wrap:wrap}
+.versao-row:last-child{margin-bottom:0}
+.v-tag{background:#1A3BAD;color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:5px;letter-spacing:.06em;flex-shrink:0}
+.v-resumo{font-size:11px;color:#3a4268;flex:1;min-width:120px}
+.v-data{font-size:10px;color:#a0aacc;flex-shrink:0}
+.v-status{font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;flex-shrink:0}
+.s-neg{background:#FEF3C7;color:#92400E}
+.s-ace{background:#DCFCE7;color:#166534}
+.s-dec{background:#FEE2E2;color:#991B1B}
+.s-exp{background:#F1F5F9;color:#64748B}
+.v-actions{display:flex;gap:6px;flex-shrink:0}
+.btn-v{border:none;border-radius:5px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;display:flex;align-items:center;gap:4px}
+.btn-abrir{background:#EEF2FD;color:#1A3BAD}.btn-abrir:hover{background:#1A3BAD;color:#fff}
+.btn-pdf{background:#f9f3e8;color:#92400E}.btn-pdf:hover{background:#B8962E;color:#fff}
+.btn-status{background:#f1f5f9;color:#64748b;font-size:9px}.btn-status:hover{background:#e2e8f0}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:60px 20px;color:#a0aacc}
+.empty-icon{font-size:42px;margin-bottom:12px}
+.empty-t{font-size:15px;font-weight:600;color:#3a4268;margin-bottom:6px}
+.empty-s{font-size:12px;color:#a0aacc}
+
+/* ── MODAL SALVAR ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:28px 28px 24px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-h{font-size:15px;font-weight:700;color:#1a2035;margin-bottom:4px}
+.modal-s{font-size:11px;color:#7a82a8;margin-bottom:20px}
+.f-row{margin-bottom:12px}
+.f-row label{display:block;font-size:10px;font-weight:700;color:#3a4268;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.f-row input,.f-row select{width:100%;padding:9px 12px;border:1px solid #d0d7e8;border-radius:7px;font-size:12px;font-family:'Inter',sans-serif;outline:none;background:#fafbfd;color:#1a2035}
+.f-row input:focus,.f-row select:focus{border-color:#1A3BAD}
+.f-row .hint{font-size:10px;color:#a0aacc;margin-top:3px}
+.f-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-actions{display:flex;gap:8px;margin-top:20px}
+.btn-confirmar{flex:1;background:#1A3BAD;color:#fff;border:none;border-radius:7px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.btn-confirmar:hover{background:#2952E3}
+.btn-cancelar{background:#f1f3f8;color:#7a82a8;border:1px solid #d0d7e8;border-radius:7px;padding:11px 18px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.v-info{background:#EEF2FD;border-radius:7px;padding:8px 12px;font-size:11px;color:#1A3BAD;margin-bottom:12px;display:none}
+</style>
+</head>
+<body>
+
+<!-- APP BAR -->
+<div class="bar">
+  <div class="bar-logo">
+    <svg width="26" height="26" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+      <radialGradient id="ncg2" cx="40%" cy="30%" r="70%"><stop offset="0%" stop-color="#7AA3FF"/><stop offset="100%" stop-color="#1A3BAD"/></radialGradient>
+      <line x1="30" y1="8" x2="46" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+      <line x1="46" y1="17" x2="46" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+      <line x1="46" y1="35" x2="30" y2="44" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+      <line x1="30" y1="44" x2="14" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+      <line x1="14" y1="35" x2="14" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+      <line x1="14" y1="17" x2="30" y2="8"  stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+      <line x1="30" y1="8"  x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+      <line x1="46" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+      <line x1="46" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+      <line x1="30" y1="44" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+      <line x1="14" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+      <line x1="14" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+      <circle cx="30" cy="8"  r="3" fill="#4A70F5"/>
+      <circle cx="46" cy="17" r="3" fill="#4A70F5"/>
+      <circle cx="46" cy="35" r="3" fill="#4A70F5"/>
+      <circle cx="30" cy="44" r="3" fill="#4A70F5"/>
+      <circle cx="14" cy="35" r="3" fill="#4A70F5"/>
+      <circle cx="14" cy="17" r="3" fill="#4A70F5"/>
+      <circle cx="30" cy="26" r="5.5" fill="url(#ncg2)" stroke="#4A70F5" stroke-width="1.5"/>
+    </svg>
+    <div class="bar-divider"></div>
+    <span class="bar-title">Histórico de Propostas</span>
+  </div>
+  <div class="bar-spacer"></div>
+  <a href="index.html" class="btn-bar">← Home</a>
+</div>
+
+<!-- COVER -->
+<div class="cover" style="position:relative">
+  <div>
+    <div class="cover-t">Histórico de Propostas</div>
+    <div class="cover-s">Blue3 Expansão · Propostas comerciais por candidato · versões e status</div>
+  </div>
+  <div class="cover-r">
+    <button class="btn-nova" onclick="abrirModal()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nova proposta
+    </button>
+  </div>
+</div>
+<div class="cover-rule"></div>
+
+<!-- MODAL SALVAR PROPOSTA -->
+<div class="overlay" id="overlay-salvar">
+  <div class="modal">
+    <div class="modal-h" id="modal-titulo">Salvar proposta</div>
+    <div class="modal-s">Preencha os dados do candidato. A proposta será vinculada ao telefone.</div>
+
+    <div class="v-info" id="v-info"></div>
+
+    <div class="f-row">
+      <label>Telefone <span style="color:#dc2626">*</span></label>
+      <input type="tel" id="m-tel" placeholder="(11) 99999-9999" oninput="buscarPorTel()">
+      <div class="hint" id="m-tel-hint">Chave de busca — informe para vincular versões anteriores</div>
+    </div>
+    <div class="f-grid">
+      <div class="f-row">
+        <label>Nome completo <span style="color:#dc2626">*</span></label>
+        <input type="text" id="m-nome" placeholder="Nome do candidato">
+      </div>
+      <div class="f-row">
+        <label>Praça</label>
+        <input type="text" id="m-praca" placeholder="ex: São Paulo">
+      </div>
+    </div>
+    <div class="f-grid">
+      <div class="f-row">
+        <label>Hunter</label>
+        <input type="text" id="m-hunter" placeholder="ex: Eduarda">
+      </div>
+      <div class="f-row">
+        <label>Status</label>
+        <select id="m-status">
+          <option value="Em negociação">Em negociação</option>
+          <option value="Aceita">Aceita</option>
+          <option value="Declinada">Declinada</option>
+          <option value="Expirada">Expirada</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-confirmar" onclick="salvarProposta()">
+        <span id="btn-conf-txt">Salvar no histórico</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PÁGINA -->
+<div class="page">
+
+  <!-- BUSCA -->
+  <div class="busca-wrap">
+    <input type="text" id="busca-input" placeholder="Buscar por nome ou telefone..." onkeydown="if(event.key==='Enter')buscar()">
+    <select id="busca-status" onchange="buscar()">
+      <option value="">Todos os status</option>
+      <option value="Em negociação">Em negociação</option>
+      <option value="Aceita">Aceita</option>
+      <option value="Declinada">Declinada</option>
+      <option value="Expirada">Expirada</option>
+    </select>
+    <button class="btn-buscar" onclick="buscar()">Buscar</button>
+    <button class="btn-limpar" onclick="limparBusca()">Limpar</button>
+    <span id="busca-count" style="font-size:10px;color:#a0aacc;margin-left:4px;"></span>
+  </div>
+
+  <!-- LISTA -->
+  <div id="lista"></div>
+
+</div>
+
+<script>
+var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+var _dados_sim = null;   // proposta vinda do simulador (via sessionStorage)
+var _telTimer  = null;   // debounce busca por tel
+var _versaoAtual = 1;    // versão a salvar
+
+// ── Helpers Supabase ──────────────────────────────────────────────
+function supa(path, opts) {
+  var h = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+  return fetch(SUPA_URL+'/rest/v1/'+path, Object.assign({ headers: h }, opts || {}));
+}
+
+function fmtData(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function statusClass(s) {
+  var m = { 'Em negociação':'s-neg', 'Aceita':'s-ace', 'Declinada':'s-dec', 'Expirada':'s-exp' };
+  return m[s] || 's-exp';
+}
+
+// ── Carregar / Buscar ─────────────────────────────────────────────
+function buscar() {
+  var q    = (document.getElementById('busca-input').value || '').trim().toLowerCase();
+  var st   = document.getElementById('busca-status').value || '';
+
+  var params = 'order=criado_em.desc&limit=200';
+  if (st) params += '&status=eq.'+encodeURIComponent(st);
+
+  supa('propostas?'+params)
+    .then(function(r){ return r.json(); })
+    .then(function(rows) {
+      // filtro client-side para nome/telefone
+      if (q) rows = rows.filter(function(r){
+        return (r.nome||'').toLowerCase().includes(q) || (r.telefone||'').includes(q);
+      });
+      renderLista(rows);
+    })
+    .catch(function(e){ renderErro(e); });
+}
+
+function limparBusca() {
+  document.getElementById('busca-input').value = '';
+  document.getElementById('busca-status').value = '';
+  buscar();
+}
+
+// ── Agrupar por candidato (telefone) ─────────────────────────────
+function renderLista(rows) {
+  var lista = document.getElementById('lista');
+  if (!rows || !rows.length) {
+    lista.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-t">Nenhuma proposta encontrada</div><div class="empty-s">Use o Simulador e clique "Salvar no Histórico" para registrar.</div></div>';
+    document.getElementById('busca-count').textContent = '';
+    return;
+  }
+
+  // Agrupar por telefone
+  var grupos = {};
+  rows.forEach(function(r) {
+    var k = r.telefone;
+    if (!grupos[k]) grupos[k] = { nome: r.nome, telefone: r.telefone, praca: r.praca, hunter: r.hunter, versoes: [] };
+    grupos[k].versoes.push(r);
+  });
+
+  // Ordenar versões desc
+  Object.keys(grupos).forEach(function(k){
+    grupos[k].versoes.sort(function(a,b){ return b.versao - a.versao; });
+  });
+
+  var candidatos = Object.values(grupos);
+  document.getElementById('busca-count').textContent = candidatos.length + ' candidato' + (candidatos.length!==1?'s':'') + ' · ' + rows.length + ' proposta' + (rows.length!==1?'s':'');
+
+  lista.innerHTML = candidatos.map(function(g, gi) {
+    var ultima = g.versoes[0];
+    var qtdV   = g.versoes.length;
+    var metaUlt= (ultima.dados && ultima.dados.piso) ? 'Piso R$'+fmtBRL(ultima.dados.piso)+' · '+(ultima.dados.pisoMeses||12)+'m' : '';
+    if (ultima.dados && ultima.dados.tranches && ultima.dados.tranches.length) {
+      var maxTranche = ultima.dados.tranches[ultima.dados.tranches.length-1];
+      if (maxTranche) metaUlt += (metaUlt?' · ':'')+' Meta '+maxTranche.aucAlvo+'mm';
+    }
+
+    var versoesHtml = g.versoes.map(function(v) {
+      var resumo = v.resumo || montarResumo(v.dados);
+      return '<div class="versao-row">'
+        + '<span class="v-tag">v'+v.versao+'</span>'
+        + '<span class="v-resumo">'+resumo+'</span>'
+        + '<span class="v-data">'+fmtData(v.criado_em)+'</span>'
+        + '<span class="v-status '+statusClass(v.status)+'">'+v.status+'</span>'
+        + '<div class="v-actions">'
+        + '<button class="btn-v btn-abrir" onclick="abrirNoSimulador(\''+v.id+'\', event)">'
+        + '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
+        + 'Simulador</button>'
+        + '<button class="btn-v btn-pdf" onclick="abrirPDF(\''+v.id+'\', event)">PDF</button>'
+        + '<select class="btn-v btn-status" onchange="alterarStatus(\''+v.id+'\',this.value,this)" title="Alterar status">'
+        + ['Em negociação','Aceita','Declinada','Expirada'].map(function(s){ return '<option value="'+s+'"'+(s===v.status?' selected':'')+'>'+s+'</option>'; }).join('')
+        + '</select>'
+        + '</div></div>';
+    }).join('');
+
+    return '<div class="cand-block" id="cand-'+gi+'">'
+      + '<div class="cand-header" onclick="toggleCand('+gi+')">'
+      + '<div>'
+      + '<div class="cand-nome">'+g.nome+'</div>'
+      + '<div class="cand-meta">'+g.telefone+(g.praca?' · '+g.praca:'')+(g.hunter?' · Hunter: '+g.hunter:'')+(metaUlt?' · '+metaUlt:'')+'</div>'
+      + '</div>'
+      + '<div class="cand-right">'
+      + '<span class="cand-badge">'+qtdV+' versã'+(qtdV===1?'o':'ões')+'</span>'
+      + '<button class="btn-v btn-abrir" style="font-size:10px" onclick="novaVersao(\''+g.telefone+'\',\''+g.nome+'\',\''+g.praca+'\',\''+g.hunter+'\','+ultima.versao+',event)">+ versão</button>'
+      + '<svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'
+      + '</div>'
+      + '</div>'
+      + '<div class="versoes">'+versoesHtml+'</div>'
+      + '</div>';
+  }).join('');
+}
+
+function toggleCand(i) {
+  var el = document.getElementById('cand-'+i);
+  el.classList.toggle('open');
+}
+
+function montarResumo(dados) {
+  if (!dados) return '—';
+  var p = [];
+  if (dados.piso)       p.push('Piso R$'+fmtBRL(dados.piso)+'/mês · '+(dados.pisoMeses||12)+'m');
+  if (dados.luva)       p.push('Luva R$'+fmtBRL(dados.luva));
+  if (dados.tranches && dados.tranches.length) {
+    var ult = dados.tranches[dados.tranches.length-1];
+    if (ult) p.push('Meta '+ult.aucAlvo+'mm');
+  }
+  return p.join(' · ') || '—';
+}
+
+function fmtBRL(n) {
+  var v = Number(n||0);
+  if (v >= 1e6) return (v/1e6).toFixed(1).replace('.',',')+'M';
+  if (v >= 1e3) return Math.round(v/1e3)+'K';
+  return v.toLocaleString('pt-BR');
+}
+
+function renderErro(e) {
+  document.getElementById('lista').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-t">Erro ao carregar</div><div class="empty-s">Verifique a conexão ou crie a tabela no Supabase.<br>'+e+'</div></div>';
+}
+
+// ── Modal ─────────────────────────────────────────────────────────
+function abrirModal(tel, nome, praca, hunter, versaoBase) {
+  _dadosSim = lerDadosSimulador();
+  _versaoAtual = (versaoBase || 0) + 1;
+
+  document.getElementById('modal-titulo').textContent = versaoBase ? 'Salvar nova versão' : 'Salvar proposta';
+  document.getElementById('m-tel').value    = tel    || '';
+  document.getElementById('m-nome').value   = nome   || (_dadosSim ? _dadosSim.nome : '');
+  document.getElementById('m-praca').value  = praca  || (_dadosSim ? _dadosSim.praca : '');
+  document.getElementById('m-hunter').value = hunter || '';
+
+  if (versaoBase) {
+    var vi = document.getElementById('v-info');
+    vi.textContent = 'Será salva como v'+_versaoAtual+' (versão anterior: v'+versaoBase+')';
+    vi.style.display = 'block';
+    document.getElementById('m-tel').disabled = true;
+  } else {
+    document.getElementById('v-info').style.display = 'none';
+    document.getElementById('m-tel').disabled = false;
+  }
+
+  document.getElementById('overlay-salvar').classList.add('open');
+}
+
+function fecharModal() {
+  document.getElementById('overlay-salvar').classList.remove('open');
+  document.getElementById('m-tel').disabled = false;
+}
+
+// Busca candidato ao digitar telefone
+function buscarPorTel() {
+  clearTimeout(_telTimer);
+  _telTimer = setTimeout(function(){
+    var tel = document.getElementById('m-tel').value.replace(/\D/g,'');
+    if (tel.length < 8) { document.getElementById('m-tel-hint').textContent = 'Chave de busca — informe para vincular versões anteriores'; return; }
+    supa('propostas?telefone=eq.'+encodeURIComponent(tel)+'&order=versao.desc&limit=1')
+      .then(function(r){ return r.json(); })
+      .then(function(rows){
+        if (rows && rows.length) {
+          var r = rows[0];
+          _versaoAtual = r.versao + 1;
+          document.getElementById('m-nome').value  = r.nome;
+          document.getElementById('m-praca').value = r.praca || '';
+          document.getElementById('m-hunter').value= r.hunter || '';
+          document.getElementById('m-tel-hint').textContent = '✓ Candidato encontrado · será salvo como v'+_versaoAtual;
+          var vi = document.getElementById('v-info');
+          vi.textContent = 'Já existe v'+r.versao+' para este candidato. Será salvo como v'+_versaoAtual+'.';
+          vi.style.display = 'block';
+        } else {
+          _versaoAtual = 1;
+          document.getElementById('m-tel-hint').textContent = 'Novo candidato — será criado como v1';
+          document.getElementById('v-info').style.display = 'none';
+        }
+      }).catch(function(){});
+  }, 600);
+}
+
+function salvarProposta() {
+  var tel    = (document.getElementById('m-tel').value  || '').replace(/\D/g,'');
+  var nome   = (document.getElementById('m-nome').value || '').trim();
+  var praca  = document.getElementById('m-praca').value.trim();
+  var hunter = document.getElementById('m-hunter').value.trim();
+  var status = document.getElementById('m-status').value;
+
+  if (!tel)  { alert('Informe o telefone.'); return; }
+  if (!nome) { alert('Informe o nome do candidato.'); return; }
+
+  var dadosSim = lerDadosSimulador();
+  var resumo   = montarResumo(dadosSim);
+
+  var payload = {
+    telefone: tel, nome: nome, praca: praca, hunter: hunter,
+    versao: _versaoAtual, status: status,
+    dados: dadosSim || {}, resumo: resumo
+  };
+
+  document.getElementById('btn-conf-txt').textContent = 'Salvando...';
+
+  supa('propostas', { method:'POST', body: JSON.stringify(payload) })
+    .then(function(r){
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    })
+    .then(function(){
+      fecharModal();
+      document.getElementById('btn-conf-txt').textContent = 'Salvar no histórico';
+      buscar();
+    })
+    .catch(function(e){
+      document.getElementById('btn-conf-txt').textContent = 'Salvar no histórico';
+      alert('Erro ao salvar: '+e+'\n\nVerifique se a tabela "propostas" foi criada no Supabase.');
+    });
+}
+
+// ── Ler dados do simulador (via sessionStorage) ───────────────────
+function lerDadosSimulador() {
+  try {
+    var raw = sessionStorage.getItem('b3_proposta_atual');
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+// ── Nova versão ───────────────────────────────────────────────────
+function novaVersao(tel, nome, praca, hunter, versaoBase, e) {
+  if (e) e.stopPropagation();
+  abrirModal(tel, nome, praca, hunter, versaoBase);
+}
+
+// ── Abrir no simulador ────────────────────────────────────────────
+function abrirNoSimulador(id, e) {
+  if (e) e.stopPropagation();
+  supa('propostas?id=eq.'+id)
+    .then(function(r){ return r.json(); })
+    .then(function(rows){
+      if (!rows || !rows.length) return;
+      sessionStorage.setItem('b3_carregar_proposta', JSON.stringify(rows[0]));
+      window.location.href = 'simulador.html';
+    });
+}
+
+// ── Abrir PDF ─────────────────────────────────────────────────────
+function abrirPDF(id, e) {
+  if (e) e.stopPropagation();
+  supa('propostas?id=eq.'+id)
+    .then(function(r){ return r.json(); })
+    .then(function(rows){
+      if (!rows || !rows.length) return;
+      sessionStorage.setItem('b3_proposta_atual', JSON.stringify(rows[0].dados));
+      sessionStorage.setItem('b3_carregar_proposta', JSON.stringify(rows[0]));
+      window.location.href = 'simulador.html?pdf=1';
+    });
+}
+
+// ── Alterar status ────────────────────────────────────────────────
+function alterarStatus(id, novoStatus, el) {
+  el.disabled = true;
+  supa('propostas?id=eq.'+id, { method:'PATCH', body: JSON.stringify({ status: novoStatus, atualizado_em: new Date().toISOString() }) })
+    .then(function(r){ el.disabled = false; if (!r.ok) throw new Error(r.status); })
+    .catch(function(e){ el.disabled = false; alert('Erro ao atualizar status: '+e); });
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+(function(){
+  // Se veio do simulador com ?salvar=1
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('salvar') === '1') {
+    setTimeout(function(){ abrirModal(); }, 300);
+  }
+  buscar();
+})();
+</script>
+</body>
+</html>
