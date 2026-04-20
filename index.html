@@ -85,6 +85,7 @@ body{
 .card-exp .card-bar{background:linear-gradient(90deg,var(--cobalt-br),var(--cobalt-gl));}
 .card-sim .card-bar{background:linear-gradient(90deg,var(--gold),#e5c76b);}
 .card-hist .card-bar{background:linear-gradient(90deg,#0891B2,#06B6D4);}
+.card-crm  .card-bar{background:linear-gradient(90deg,#5B21B6,#7C3AED);}
 .card-cf .card-bar,.card-cf:hover{border-color:rgba(74,112,245,.4) !important;}
 .card-cf .card-bar{background:linear-gradient(90deg,#1A3BAD,#4A70F5);}
 .card-hunter .card-bar{background:linear-gradient(90deg,#4338CA,#6366F1);}
@@ -96,6 +97,7 @@ body{
 .card-exp .card-icon{background:linear-gradient(140deg,var(--cobalt),var(--cobalt-br));box-shadow:0 4px 20px rgba(41,82,227,.3);}
 .card-sim .card-icon{background:linear-gradient(140deg,#7a5e18,var(--gold));box-shadow:0 4px 20px rgba(184,150,46,.3);}
 .card-hist .card-icon{background:linear-gradient(140deg,#0E7490,#06B6D4);box-shadow:0 4px 20px rgba(6,182,212,.3);}
+.card-crm  .card-icon{background:linear-gradient(140deg,#5B21B6,#7C3AED);box-shadow:0 4px 20px rgba(124,58,237,.3);}
 .card-cf .card-icon{background:linear-gradient(140deg,#1A3BAD,#4A70F5);box-shadow:0 4px 20px rgba(41,82,227,.3);}
 .card-hunter .card-icon{background:linear-gradient(140deg,#4338CA,#6366F1);box-shadow:0 4px 20px rgba(99,102,241,.3);}
 .card-ma .card-icon{background:linear-gradient(140deg,#5B21B6,#7C3AED);box-shadow:0 4px 20px rgba(124,58,237,.3);}
@@ -108,6 +110,7 @@ body{
 .card-exp .card-label{color:var(--cobalt-gl);}
 .card-sim .card-label{color:var(--gold);}
 .card-hist .card-label{color:#22D3EE;}
+.card-crm  .card-label{color:#A78BFA;}
 .card-cf .card-label{color:#4A70F5;}
 .card-hunter .card-label{color:#818CF8;}
 .card-ma .card-label{color:#A78BFA;}
@@ -119,6 +122,7 @@ body{
 .card-exp .card-cta{color:var(--cobalt-gl);}
 .card-sim .card-cta{color:var(--gold);}
 .card-hist .card-cta{color:#22D3EE;}
+.card-crm  .card-cta{color:#A78BFA;}
 .card-cf .card-cta{color:#4A70F5;}
 .card-hunter .card-cta{color:#818CF8;}
 .card-ma .card-cta{color:#A78BFA;}
@@ -398,6 +402,21 @@ body{
         <div class="card-desc">Consulte, versione e gerencie propostas por candidato. Busca por telefone.</div>
       </div>
       <div class="card-cta">Ver histórico <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </a>
+
+    <!-- CRM Pipeline -->
+    <a class="nav-card card-crm" href="crm.html">
+      <div class="card-bar"></div>
+      <div class="card-status"><span class="status-dot" style="background:#A78BFA;box-shadow:0 0 6px #A78BFA;"></span>Ativo</div>
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="5" height="18" rx="1.5" stroke="white" stroke-width="1.8"/><rect x="9.5" y="3" width="5" height="13" rx="1.5" stroke="white" stroke-width="1.8"/><rect x="16" y="3" width="5" height="8" rx="1.5" stroke="white" stroke-width="1.8"/></svg>
+      </div>
+      <div>
+        <div class="card-label">Funil de contratação</div>
+        <div class="card-title">CRM<br>Pipeline</div>
+        <div class="card-desc">Kanban de candidatos · 7 etapas · drag &amp; drop · importação do Notion via CSV.</div>
+      </div>
+      <div class="card-cta">Abrir CRM <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     </a>
 
     <!-- Projeção de Caixa — restrito -->
