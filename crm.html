@@ -188,7 +188,99 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         <div class="f-row"><label>Nome completo *</label><input id="m-nome" placeholder="Nome do candidato"></div>
         <div class="f-row"><label>Telefone</label><input id="m-tel" placeholder="(11) 99999-9999"></div>
         <div class="f-row"><label>Instituição de origem</label><input id="m-inst" placeholder="ex: XP, BTG, Itaú..."></div>
-        <div class="f-row"><label>Praça</label><input id="m-praca" placeholder="ex: São Paulo"></div>
+        <div class="f-row"><label>Praça</label>
+          <select id="m-praca">
+            <option value="">— Selecione —</option>
+            <optgroup label="Blue3 — Cidades">
+              <option>Blue3 - Anywhere</option>
+              <option>Blue3 - Bauru</option>
+              <option>Blue3 - Belém</option>
+              <option>Blue3 - Belo Horizonte</option>
+              <option>Blue3 - Brasília</option>
+              <option>Blue3 - Campinas</option>
+              <option>Blue3 - Curitiba</option>
+              <option>Blue3 - Franca</option>
+              <option>Blue3 - Galpão Franca</option>
+              <option>Blue3 - Goiânia</option>
+              <option>Blue3 - Internacional</option>
+              <option>Blue3 - Itajaí</option>
+              <option>Blue3 - Marília</option>
+              <option>Blue3 - Poços de Caldas</option>
+              <option>Blue3 - Ribeirão Preto</option>
+              <option>Blue3 - Rio de Janeiro</option>
+              <option>Blue3 - São José do Rio Preto</option>
+              <option>Blue3 - São José dos Campos</option>
+              <option>Blue3 - São Paulo</option>
+              <option>Blue3 - Uberaba</option>
+              <option>Blue3 - Uberlândia</option>
+            </optgroup>
+            <optgroup label="Blue3 — Segmentos">
+              <option>Blue3 - Advisor RF</option>
+              <option>Blue3 - Broker RV</option>
+              <option>Blue3 - Corporate</option>
+            </optgroup>
+            <optgroup label="Parceiros & Outros">
+              <option>B2B - M&A</option>
+              <option>Contabilidade da Bolsa</option>
+              <option>DV Invest</option>
+              <option>Oby Capital</option>
+              <option>Troon Capital</option>
+              <option>Troon - MFO</option>
+            </optgroup>
+            <option value="__nova__">+ Adicionar nova praça...</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ── Perfil Financeiro ── -->
+      <div class="sec-lbl">Perfil Financeiro · Situação Atual</div>
+      <div class="fgrid3">
+        <div class="f-row">
+          <label>AuC Custódia (MM)</label>
+          <input id="m-auc-cust" type="number" step="0.1" placeholder="0" oninput="calcFinanceiro()">
+          <span style="font-size:9px;color:var(--t4);margin-top:2px">Valor que o candidato possui no banco atual</span>
+        </div>
+        <div class="f-row">
+          <label>Nº de Clientes</label>
+          <input id="m-clientes" type="number" step="1" placeholder="0" oninput="calcFinanceiro()">
+        </div>
+        <div class="f-row">
+          <label>Ticket Médio (MM)</label>
+          <input id="m-ticket" type="text" readonly placeholder="—" style="background:#f0f2fa;color:var(--cobalt);font-weight:700;cursor:default">
+          <span style="font-size:9px;color:var(--t4);margin-top:2px">AuC ÷ Clientes · calculado automaticamente</span>
+        </div>
+      </div>
+
+      <div class="fgrid" style="margin-top:10px">
+        <div class="f-row">
+          <label>Remuneração Mensal Bruta (R$)</label>
+          <input id="m-rem-bruta" type="number" placeholder="0" oninput="calcFinanceiro()">
+        </div>
+        <div class="f-row">
+          <label>Mensal Líquido (R$) <span style="font-weight:400;color:var(--t4)">−27,5%</span></label>
+          <input id="m-rem-liq" type="text" readonly placeholder="—" style="background:#f0f2fa;color:var(--g);font-weight:700;cursor:default">
+        </div>
+        <div class="f-row">
+          <label>Bônus Bruto (R$)</label>
+          <input id="m-bonus-bruto" type="number" placeholder="0" oninput="calcFinanceiro()">
+        </div>
+        <div class="f-row">
+          <label>Periodicidade do Bônus</label>
+          <select id="m-tipo-bonus" onchange="calcFinanceiro()">
+            <option value="Semestral">Semestral</option>
+            <option value="Anual">Anual</option>
+          </select>
+        </div>
+        <div class="f-row">
+          <label id="lbl-bonus-liq">Bônus Semestral Líquido <span style="font-weight:400;color:var(--t4)">−27,5%</span></label>
+          <input id="m-bonus-liq" type="text" readonly placeholder="—" style="background:#f0f2fa;color:var(--g);font-weight:700;cursor:default">
+        </div>
+        <div class="f-row" style="justify-content:flex-end;align-self:flex-end">
+          <div id="m-rem-total-box" style="background:var(--cobalt-pl);border-radius:6px;padding:10px 12px;display:none">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--cobalt);margin-bottom:3px">Pacote Total Líquido/ano</div>
+            <div id="m-rem-total" style="font-size:16px;font-weight:700;color:var(--cobalt)">—</div>
+          </div>
+        </div>
       </div>
 
       <div class="sec-lbl">Responsável</div>
@@ -200,7 +292,45 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
             <option>Henrique</option><option>Thaila</option>
           </select>
         </div>
-        <div class="f-row"><label>Líder</label><input id="m-lider" placeholder="Nome do líder"></div>
+        <div class="f-row"><label>Líder</label>
+          <select id="m-lider">
+            <option value="">— Selecione —</option>
+            <option>Adilson Schelbauer</option>
+            <option>André Resende</option>
+            <option>Bruno Bigueti</option>
+            <option>Bruno Carvalho</option>
+            <option>Bruno Pereira</option>
+            <option>Celio Cintra</option>
+            <option>Cristiane Obregon</option>
+            <option>Daniel Hannun</option>
+            <option>Danilo Ferreira</option>
+            <option>Diego Rodrigues</option>
+            <option>Guilherme Yokoy</option>
+            <option>Henrique Fernandes</option>
+            <option>Jailson Ronconi Portugal</option>
+            <option>Jorge Cantarelli</option>
+            <option>Jorge Marcondas</option>
+            <option>Lais Souza</option>
+            <option>Leandro Canizza</option>
+            <option>Liliane Fernandes</option>
+            <option>Lucas Martins</option>
+            <option>Maickel Curiel</option>
+            <option>Marcely</option>
+            <option>Márcio</option>
+            <option>Marco Tulio Schiavinato</option>
+            <option>Claudio Nascimento</option>
+            <option>Pedro Gimenes</option>
+            <option>Pedro Nunes</option>
+            <option>Rafael Viola</option>
+            <option>Rosana Justo</option>
+            <option>Samuel M. Guimarães</option>
+            <option>Tamires Barrionuevo</option>
+            <option>Tony Firjam</option>
+            <option>VANME</option>
+            <option>Victor Falarino</option>
+            <option value="__novo__">+ Adicionar novo líder...</option>
+          </select>
+        </div>
         <div class="f-row"><label>Senioridade</label>
           <select id="m-nivel">
             <option value="">— Selecione —</option>
@@ -442,13 +572,20 @@ function abrirEdicao(id) {
   document.getElementById('m-data-ent').value = r.data_entrada||'';
   document.getElementById('m-data-ini').value = r.data_inicio||'';
   document.getElementById('m-obs').value      = r.comentarios||'';
+  // campos financeiros
+  document.getElementById('m-auc-cust').value    = r.auc_custodia_mm||'';
+  document.getElementById('m-clientes').value    = r.num_clientes||'';
+  document.getElementById('m-rem-bruta').value   = r.remuneracao_bruta||'';
+  document.getElementById('m-bonus-bruto').value = r.bonus_bruto||'';
+  document.getElementById('m-tipo-bonus').value  = r.tipo_bonus||'Semestral';
+  calcFinanceiro();
   document.getElementById('overlay-cand').classList.add('open');
 }
 
 function fecharModal() { document.getElementById('overlay-cand').classList.remove('open'); }
 
 function limparModal() {
-  ['m-id','m-nome','m-tel','m-inst','m-praca','m-lider','m-auc','m-piso','m-periodo','m-upfront','m-t1m','m-t1v','m-t2m','m-t2v','m-data-ent','m-data-ini','m-obs'].forEach(function(id){
+  ['m-id','m-nome','m-tel','m-inst','m-auc','m-piso','m-periodo','m-upfront','m-t1m','m-t1v','m-t2m','m-t2v','m-data-ent','m-data-ini','m-obs','m-auc-cust','m-clientes','m-rem-bruta','m-bonus-bruto'].forEach(function(id){
     document.getElementById(id).value='';
   });
   document.getElementById('m-hunter').value='';
@@ -456,6 +593,14 @@ function limparModal() {
   document.getElementById('m-etapa').value='Prospecção';
   document.getElementById('m-mou').value='Pendente';
   document.getElementById('m-ancord').value='Pendente';
+  document.getElementById('m-praca').value='';
+  document.getElementById('m-lider').value='';
+  document.getElementById('m-tipo-bonus').value='Semestral';
+  // limpar campos calculados (readonly)
+  document.getElementById('m-ticket').value='';
+  document.getElementById('m-rem-liq').value='';
+  document.getElementById('m-bonus-liq').value='';
+  document.getElementById('m-rem-total-box').style.display='none';
 }
 
 function g(id){ return (document.getElementById(id)||{}).value||''; }
@@ -472,7 +617,13 @@ function salvarCandidato() {
     trigger1_meta: gn('m-t1m'), trigger1_val: gn('m-t1v'), trigger2_meta: gn('m-t2m'), trigger2_val: gn('m-t2v'),
     mou: g('m-mou'), status_ancord: g('m-ancord'),
     data_entrada: g('m-data-ent')||null, data_inicio: g('m-data-ini')||null,
-    comentarios: g('m-obs'), atualizado_em: new Date().toISOString()
+    comentarios: g('m-obs'),
+    auc_custodia_mm:   gn('m-auc-cust'),
+    num_clientes:      gi('m-clientes'),
+    remuneracao_bruta: gn('m-rem-bruta'),
+    bonus_bruto:       gn('m-bonus-bruto'),
+    tipo_bonus:        g('m-tipo-bonus') || 'Semestral',
+    atualizado_em: new Date().toISOString()
   };
   var id = g('m-id');
   document.getElementById('btn-salvar-txt').textContent = 'Salvando...';
@@ -657,6 +808,70 @@ function executarImport() {
   }
   proxLote();
 }
+
+// ── Cálculo financeiro ────────────────────────────────────────────
+function calcFinanceiro() {
+  var auc   = parseFloat(document.getElementById('m-auc-cust').value) || 0;
+  var cli   = parseInt(document.getElementById('m-clientes').value)   || 0;
+  var rem   = parseFloat(document.getElementById('m-rem-bruta').value)|| 0;
+  var bon   = parseFloat(document.getElementById('m-bonus-bruto').value)||0;
+  var tipo  = document.getElementById('m-tipo-bonus').value || 'Semestral';
+  var ALIQ  = 0.275;
+
+  // Ticket médio
+  var ticket = cli > 0 ? (auc / cli) : 0;
+  document.getElementById('m-ticket').value = ticket > 0 ? ticket.toFixed(3).replace('.',',') + ' MM' : '—';
+
+  // Líquidos mensais
+  var remLiq = rem  * (1 - ALIQ);
+  var bonLiq = bon  * (1 - ALIQ);
+  document.getElementById('m-rem-liq').value   = remLiq  > 0 ? 'R$ ' + fmtBRL(remLiq)  : '—';
+  document.getElementById('m-bonus-liq').value = bonLiq  > 0 ? 'R$ ' + fmtBRL(bonLiq)  : '—';
+
+  // Label bônus
+  document.getElementById('lbl-bonus-liq').innerHTML = 'Bônus ' + tipo + ' Líquido <span style="font-weight:400;color:var(--t4)">−27,5%</span>';
+
+  // Pacote total anual líquido
+  var totalBox = document.getElementById('m-rem-total-box');
+  if (rem > 0 || bon > 0) {
+    var bonAnual = tipo === 'Semestral' ? bonLiq * 2 : bonLiq;
+    var totalAnual = remLiq * 12 + bonAnual;
+    document.getElementById('m-rem-total').textContent = 'R$ ' + fmtBRL(totalAnual) + '/ano';
+    totalBox.style.display = 'block';
+  } else {
+    totalBox.style.display = 'none';
+  }
+}
+
+function fmtBRL(n) {
+  return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+// ── Nova praça / novo líder ───────────────────────────────────────
+document.addEventListener('change', function(e) {
+  if (e.target.id === 'm-praca' && e.target.value === '__nova__') {
+    var nova = prompt('Nome da nova praça:');
+    if (nova && nova.trim()) {
+      var opt = document.createElement('option');
+      opt.value = nova.trim(); opt.textContent = nova.trim();
+      e.target.insertBefore(opt, e.target.querySelector('option[value="__nova__"]'));
+      e.target.value = nova.trim();
+    } else {
+      e.target.value = '';
+    }
+  }
+  if (e.target.id === 'm-lider' && e.target.value === '__novo__') {
+    var novo = prompt('Nome do novo líder:');
+    if (novo && novo.trim()) {
+      var opt2 = document.createElement('option');
+      opt2.value = novo.trim(); opt2.textContent = novo.trim();
+      e.target.insertBefore(opt2, e.target.querySelector('option[value="__novo__"]'));
+      e.target.value = novo.trim();
+    } else {
+      e.target.value = '';
+    }
+  }
+});
 
 // ── Init ──────────────────────────────────────────────────────────
 carregar();
