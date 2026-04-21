@@ -6,6 +6,13 @@
 <title>Nexus · Blue3 Expansão Suite</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
+/* ════════ RESET & BASE ════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'DM Sans',sans-serif;background:#0A0F1E;color:#fff;-webkit-font-smoothing:antialiased;}
+
+/* ════════ CSS ORIGINAL PRESERVADO ════════ */
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#0A0F1E;--ink-mid:#1C2444;--ink-light:#2D3A6B;
@@ -221,12 +228,170 @@ body{
   .div-name{font-size:13px !important;}
   .wrapper{padding:48px 20px 40px !important;}
 }
+
+
+/* ════════ SHELL SAAS ════════ */
+#nexus-shell{display:none;height:100vh;width:100vw;overflow:hidden;position:relative;}
+#nexus-shell.active{display:flex;}
+
+/* ── SIDEBAR ── */
+#sb{
+  width:220px;min-width:220px;height:100vh;
+  background:#0D1426;
+  border-right:1px solid rgba(74,112,245,.12);
+  display:flex;flex-direction:column;
+  transition:width .22s cubic-bezier(.4,0,.2,1),min-width .22s cubic-bezier(.4,0,.2,1);
+  position:relative;z-index:10;overflow:hidden;
+  flex-shrink:0;
+}
+#sb.collapsed{width:52px;min-width:52px;}
+#sb.collapsed .sb-label,#sb.collapsed .sb-section,#sb.collapsed .sb-badge,#sb.collapsed .sb-logo-txt{
+  opacity:0;pointer-events:none;width:0;overflow:hidden;white-space:nowrap;
+}
+#sb.collapsed .sb-item{justify-content:center;padding:0 14px;}
+#sb.collapsed .sb-item svg{margin-right:0;}
+
+/* Sidebar brand */
+.sb-brand{
+  display:flex;align-items:center;gap:10px;
+  padding:18px 14px 14px;
+  border-bottom:1px solid rgba(74,112,245,.1);
+  min-height:60px;flex-shrink:0;
+}
+.sb-logo-icon{flex-shrink:0;display:flex;align-items:center;}
+.sb-logo-txt{overflow:hidden;transition:opacity .2s;}
+.sb-logo-name{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;
+  color:#fff;letter-spacing:.06em;line-height:1;}
+.sb-logo-sub{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:#4A70F5;margin-top:2px;}
+
+/* Toggle button */
+#sb-toggle{
+  position:absolute;top:18px;right:-11px;
+  width:22px;height:22px;border-radius:50%;
+  background:#1A3BAD;border:2px solid #0D1426;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  z-index:20;transition:transform .2s;
+  box-shadow:0 2px 8px rgba(26,59,173,.5);
+}
+#sb-toggle:hover{background:#2952E3;}
+#sb-toggle svg{transition:transform .22s;flex-shrink:0;}
+#sb.collapsed #sb-toggle svg{transform:rotate(180deg);}
+
+/* Scroll area */
+.sb-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 0 16px;}
+.sb-scroll::-webkit-scrollbar{width:3px;}
+.sb-scroll::-webkit-scrollbar-thumb{background:rgba(74,112,245,.3);border-radius:2px;}
+
+/* Section header */
+.sb-section{
+  font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.25);padding:14px 16px 5px;
+  transition:opacity .2s,width .2s;white-space:nowrap;
+}
+
+/* Nav item */
+.sb-item{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 14px 8px 16px;
+  font-size:12px;font-weight:500;color:rgba(255,255,255,.55);
+  cursor:pointer;border-radius:6px;margin:1px 6px;
+  transition:all .15s;white-space:nowrap;text-decoration:none;
+  position:relative;
+}
+.sb-item:hover{background:rgba(74,112,245,.12);color:rgba(255,255,255,.85);}
+.sb-item.active{background:rgba(26,59,173,.35);color:#fff;}
+.sb-item.active::before{
+  content:'';position:absolute;left:0;top:20%;bottom:20%;
+  width:3px;border-radius:0 3px 3px 0;background:#4A70F5;
+}
+.sb-item svg{flex-shrink:0;opacity:.7;}
+.sb-item.active svg,.sb-item:hover svg{opacity:1;}
+.sb-label{transition:opacity .2s;overflow:hidden;}
+.sb-badge{
+  margin-left:auto;background:rgba(26,59,173,.4);color:#7AA3FF;
+  font-size:9px;font-weight:700;padding:2px 5px;border-radius:8px;
+  transition:opacity .2s;
+}
+
+/* Sidebar footer */
+.sb-footer{
+  padding:10px 14px 12px;border-top:1px solid rgba(74,112,245,.1);
+  flex-shrink:0;
+}
+.sb-user{display:flex;align-items:center;gap:9px;}
+.sb-avatar{
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,#1A3BAD,#4A70F5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;flex-shrink:0;
+}
+.sb-user-info{overflow:hidden;}
+.sb-user-name{font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-user-role{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.06em;}
+.sb-logout{
+  margin-left:auto;background:none;border:none;cursor:pointer;
+  color:rgba(255,255,255,.3);padding:4px;border-radius:4px;
+  transition:color .15s;flex-shrink:0;
+}
+.sb-logout:hover{color:#DC2626;}
+
+/* ── TOPBAR ── */
+#topbar{
+  height:52px;background:#0D1426;
+  border-bottom:1px solid rgba(74,112,245,.1);
+  display:flex;align-items:center;padding:0 20px;gap:12px;
+  flex-shrink:0;
+}
+.tb-page-title{font-size:14px;font-weight:600;color:#fff;flex:1;}
+.tb-csv-status{
+  display:flex;align-items:center;gap:6px;
+  font-size:10px;color:rgba(255,255,255,.4);
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  padding:5px 10px;border-radius:6px;cursor:default;
+}
+.tb-csv-status .dot{width:6px;height:6px;border-radius:50%;background:#555;}
+.tb-csv-status .dot.ok{background:#16A34A;box-shadow:0 0 6px #16A34A;}
+.tb-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;
+  cursor:pointer;font-family:'DM Sans',sans-serif;border:none;transition:all .15s;
+}
+.tb-btn-upload{background:rgba(26,59,173,.25);color:#7AA3FF;border:1px solid rgba(74,112,245,.25);}
+.tb-btn-upload:hover{background:rgba(26,59,173,.45);}
+.tb-btn-admin{background:rgba(184,150,46,.15);color:#C9A84C;border:1px solid rgba(184,150,46,.2);}
+.tb-btn-admin:hover{background:rgba(184,150,46,.3);}
+
+/* ── CONTENT AREA ── */
+#content-wrap{
+  flex:1;display:flex;flex-direction:column;overflow:hidden;
+  background:#F0F2FA;
+}
+#nexus-iframe{
+  flex:1;border:none;width:100%;
+  background:#F0F2FA;
+}
+
+/* ── UPLOAD PLACEHOLDER (estado sem dados) ── */
+.no-data-banner{
+  background:rgba(26,59,173,.08);border:1px dashed rgba(74,112,245,.3);
+  border-radius:8px;padding:10px 16px;margin:12px 16px 0;
+  display:flex;align-items:center;gap:10px;font-size:11px;color:rgba(255,255,255,.5);
+}
+
+/* ── RESPONSIVO ── */
+@media(max-width:768px){
+  #sb{width:52px;min-width:52px;}
+  #sb .sb-label,#sb .sb-section,#sb .sb-badge,#sb .sb-logo-txt{
+    opacity:0;pointer-events:none;width:0;overflow:hidden;
+  }
+  #sb .sb-item{justify-content:center;padding:0 14px;}
+}
 </style>
-<script src="pipeline.js"></script>
 </head>
 <body>
 
-<!-- LOGIN MODAL -->
+<!-- ══ LOGIN (preservado 100%) ══ -->
 <div id="b3lo">
   <div class="b3lo-bg"></div><div class="b3lo-glow"></div>
   <!-- Logo Blue3 canto superior direito no login -->
@@ -304,234 +469,162 @@ body{
   </div>
 </div>
 
-<!-- BACKGROUND -->
-<div class="bg-layer">
-  <div class="bg-grid"></div>
-  <div class="bg-glow1"></div>
-  <div class="bg-glow2"></div>
-  <div class="bg-glow3"></div>
-</div>
+<!-- ══ NEXUS SHELL ══ -->
+<div id="nexus-shell">
 
-<!-- LOGO -->
-<div class="logo-wrap">
-  <div>
-    <img class="logo-img" src="data:image/jpeg;base64,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" alt="Blue3 Investimentos">
-    <div style="text-align:center;margin-top:6px;">
-      <a id="b3-sair-btn" href="#" onclick="b3Logout(event)" style="display:none;font-size:10px;font-weight:600;color:rgba(255,255,255,.45);text-decoration:none;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border:1px solid rgba(255,255,255,.12);border-radius:20px;font-family:'DM Sans',sans-serif;transition:all .15s">Sair</a>
+  <!-- SIDEBAR -->
+  <nav id="sb">
+    <button id="sb-toggle" onclick="sbToggle()" title="Recolher menu">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+        <polyline points="7,2 3,5 7,8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <!-- Brand -->
+    <div class="sb-brand">
+      <div class="sb-logo-icon">
+        <svg width="28" height="28" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+          <radialGradient id="sbg" cx="40%" cy="30%" r="70%"><stop offset="0%" stop-color="#7AA3FF"/><stop offset="100%" stop-color="#1A3BAD"/></radialGradient>
+          <line x1="30" y1="8" x2="46" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="46" y1="17" x2="46" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="46" y1="35" x2="30" y2="44" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="30" y1="44" x2="14" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="14" y1="35" x2="14" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="14" y1="17" x2="30" y2="8"  stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="30" y1="8"  x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="46" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="46" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="30" y1="44" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="14" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="14" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <circle cx="30" cy="8"  r="3" fill="#4A70F5"/>
+          <circle cx="46" cy="17" r="3" fill="#4A70F5"/>
+          <circle cx="46" cy="35" r="3" fill="#4A70F5"/>
+          <circle cx="30" cy="44" r="3" fill="#4A70F5"/>
+          <circle cx="14" cy="35" r="3" fill="#4A70F5"/>
+          <circle cx="14" cy="17" r="3" fill="#4A70F5"/>
+          <circle cx="30" cy="26" r="5.5" fill="url(#sbg)" stroke="#4A70F5" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="sb-logo-txt">
+        <div class="sb-logo-name">NEXUS</div>
+        <div class="sb-logo-sub">Blue3 Expansão</div>
+      </div>
     </div>
+
+    <!-- Nav -->
+    <div class="sb-scroll">
+
+      <!-- Dashboard -->
+      <div class="sb-section">Dashboard</div>
+      <a class="sb-item active" onclick="navTo('dashboard.html','Visão Geral')" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span class="sb-label">Visão Geral</span>
+      </a>
+
+      <!-- CRM -->
+      <div class="sb-section">CRM</div>
+      <a class="sb-item" onclick="navTo('crm.html','Pipeline de Candidatos')" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="5" height="18" rx="1.5"/><rect x="9.5" y="3" width="5" height="13" rx="1.5"/><rect x="16" y="3" width="5" height="8" rx="1.5"/></svg>
+        <span class="sb-label">Pipeline de Candidatos</span>
+      </a>
+      <a class="sb-item" onclick="navTo('vagas.html','Gestão de Vagas')" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18" stroke-linecap="round"/><path d="M8 14h4M8 17h8" stroke-linecap="round"/></svg>
+        <span class="sb-label">Gestão de Vagas</span>
+      </a>
+
+      <!-- Comercial -->
+      <div class="sb-section">Comercial</div>
+      <a class="sb-item" onclick="navTo('simulador.html','Simulador de Propostas')" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 7H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-2"/><path d="M13 5h6v6"/><path d="M19 5l-8 8" stroke-linecap="round"/></svg>
+        <span class="sb-label">Simulador de Propostas</span>
+      </a>
+      <a class="sb-item" onclick="navTo('propostas.html','Histórico de Propostas')" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+        <span class="sb-label">Histórico de Propostas</span>
+      </a>
+
+      <!-- M&A -->
+      <div class="sb-section" id="sb-ma-section">M&A</div>
+      <a class="sb-item b3-sb-ma" onclick="navTo('ma.html','Pipeline M&A')" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 12H5a2 2 0 00-2 2v3a2 2 0 002 2h3a2 2 0 002-2v-3a2 2 0 00-2-2z"/><path d="M19 3h-3a2 2 0 00-2 2v3a2 2 0 002 2h3a2 2 0 002-2V5a2 2 0 00-2-2z"/><path d="M10 15.5H14M14 8.5H10" stroke-dasharray="2 1"/></svg>
+        <span class="sb-label">Pipeline Estratégico</span>
+      </a>
+
+      <!-- Relatórios -->
+      <div class="sb-section">Relatórios</div>
+      <a class="sb-item" onclick="navTo('relatorio.html','Relatório Executivo')" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 7h20M6 7V5a2 2 0 012-2h8a2 2 0 012 2v2M6 12h4M6 16h3"/><rect x="2" y="7" width="20" height="14" rx="2"/></svg>
+        <span class="sb-label">Executivo</span>
+      </a>
+      <a class="sb-item" onclick="navTo('hunters.html','Performance Hunters')" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="2.5" stroke-dasharray="2 1"/><path d="M3 20c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke-linecap="round"/><path d="M17 14c1.657 0 3 1.343 3 3v1" stroke-linecap="round" stroke-dasharray="2 1"/></svg>
+        <span class="sb-label">Hunters</span>
+      </a>
+      <a class="sb-item b3-sb-cf" onclick="navTo('cashflow.html','Projeção de Caixa')" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 7h20M6 7V5a2 2 0 012-2h8a2 2 0 012 2v2M6 12h4M6 16h3"/><rect x="2" y="7" width="20" height="14" rx="2"/></svg>
+        <span class="sb-label">Financeiro</span>
+      </a>
+
+      <!-- Configurações -->
+      <div class="sb-section">Configurações</div>
+      <a class="sb-item b3-sb-admin" onclick="b3AdminOpen(event)" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3"/><path d="M6 20v-1a6 6 0 0112 0v1" stroke-linecap="round"/></svg>
+        <span class="sb-label">Usuários</span>
+      </a>
+      <a class="sb-item b3-sb-upload" onclick="b3TriggerCSV(event)" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span class="sb-label">Upload CSV</span>
+      </a>
+
+    </div>
+
+    <!-- User footer -->
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-avatar" id="sb-avatar">N</div>
+        <div class="sb-user-info">
+          <div class="sb-user-name" id="sb-user-name">—</div>
+          <div class="sb-user-role" id="sb-user-role">—</div>
+        </div>
+        <button class="sb-logout" onclick="b3Logout()" title="Sair">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- CONTENT -->
+  <div id="content-wrap">
+    <!-- Topbar -->
+    <div id="topbar">
+      <span class="tb-page-title" id="tb-title">Visão Geral</span>
+      <div class="tb-csv-status">
+        <span class="dot" id="csv-dot"></span>
+        <span id="csv-label">Verificando...</span>
+      </div>
+      <button class="tb-btn tb-btn-upload b3-sb-upload" onclick="b3TriggerCSV(event)" style="display:none">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Atualizar CSV
+      </button>
+    </div>
+
+    <!-- iFrame — carrega os módulos -->
+    <iframe
+      id="nexus-iframe"
+      src="dashboard.html"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-modals allow-forms"
+      allowfullscreen
+    ></iframe>
   </div>
 </div>
 
-<!-- Nexus Logo — fixed top left, espelhando Blue3 top right -->
-<div style="position:fixed;top:28px;left:32px;z-index:20;display:flex;align-items:center;gap:16px;filter:drop-shadow(0 0 16px rgba(74,112,245,.3));">
-  <svg width="44" height="44" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-    <radialGradient id="nhg2" cx="40%" cy="30%" r="70%"><stop offset="0%" stop-color="#7AA3FF"/><stop offset="100%" stop-color="#1A3BAD"/></radialGradient>
-    <line x1="30" y1="8" x2="46" y2="17" stroke="#4A70F5" stroke-width="1.8" stroke-opacity=".7"/>
-    <line x1="46" y1="17" x2="46" y2="35" stroke="#4A70F5" stroke-width="1.8" stroke-opacity=".7"/>
-    <line x1="46" y1="35" x2="30" y2="44" stroke="#4A70F5" stroke-width="1.8" stroke-opacity=".7"/>
-    <line x1="30" y1="44" x2="14" y2="35" stroke="#4A70F5" stroke-width="1.8" stroke-opacity=".7"/>
-    <line x1="14" y1="35" x2="14" y2="17" stroke="#4A70F5" stroke-width="1.8" stroke-opacity=".7"/>
-    <line x1="14" y1="17" x2="30" y2="8" stroke="#4A70F5" stroke-width="1.8" stroke-opacity=".7"/>
-    <line x1="30" y1="8" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
-    <line x1="46" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
-    <line x1="46" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
-    <line x1="30" y1="44" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
-    <line x1="14" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
-    <line x1="14" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
-    <circle cx="30" cy="8"  r="3" fill="#4A70F5"/>
-    <circle cx="46" cy="17" r="3" fill="#4A70F5"/>
-    <circle cx="46" cy="35" r="3" fill="#4A70F5"/>
-    <circle cx="30" cy="44" r="3" fill="#4A70F5"/>
-    <circle cx="14" cy="35" r="3" fill="#4A70F5"/>
-    <circle cx="14" cy="17" r="3" fill="#4A70F5"/>
-    <circle cx="30" cy="26" r="5.5" fill="url(#nhg2)" stroke="#4A70F5" stroke-width="1.5"/>
-    <circle cx="28.5" cy="24.5" r="1.8" fill="white" fill-opacity=".4"/>
-  </svg>
-  <div>
-    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#fff;letter-spacing:.06em;line-height:1;">NEXUS</div>
-    <div style="font-size:8px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#4A70F5;margin-top:2px;">Blue3 Expansão Suite</div>
-  </div>
-</div>
-
-<div class="wrapper">
-
-
-  <!-- Navigation Cards -->
-  <div class="cards">
-
-    <!-- Relatório Executivo — sempre visível -->
-    <a class="nav-card card-exp" href="relatorio.html">
-      <div class="card-bar"></div>
-      <div class="card-status"><span class="status-dot"></span>Ativo</div>
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M3 20L8.5 13.5L12.5 17L19.5 9" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 9H19.5V13" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="3" width="5" height="5" rx="1.5" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/></svg>
-      </div>
-      <div>
-        <div class="card-label">Relatório executivo</div>
-        <div class="card-title">Blue3 Expansão<br>2026</div>
-        <div class="card-desc">Contratações ativas, pipeline M&A, performance de hunters e pace semestral.</div>
-      </div>
-      <div class="card-cta">Abrir painel <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    </a>
-
-    <!-- Simulador — sempre visível -->
-    <a class="nav-card card-sim" href="simulador.html">
-      <div class="card-bar"></div>
-      <div class="card-status"><span class="status-dot"></span>Ativo</div>
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M9 7H7C5.9 7 5 7.9 5 9V17C5 18.1 5.9 19 7 19H17C18.1 19 19 18.1 19 17V15" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M13 5H19V11" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 5L11 13" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
-      </div>
-      <div>
-        <div class="card-label">Modelagem financeira</div>
-        <div class="card-title">Blue3<br>Simulador</div>
-        <div class="card-desc">Simule cenários de contratação, projeções de custo e retorno por perfil de assessor.</div>
-      </div>
-      <div class="card-cta">Abrir simulador <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    </a>
-
-    <!-- Histórico de Propostas -->
-    <a class="nav-card card-hist" href="propostas.html">
-      <div class="card-bar"></div>
-      <div class="card-status"><span class="status-dot" style="background:#22D3EE;box-shadow:0 0 6px #22D3EE;"></span>Ativo</div>
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14 2 14 8 20 8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="13" x2="16" y2="13" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="17" x2="13" y2="17" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </div>
-      <div>
-        <div class="card-label">Propostas comerciais</div>
-        <div class="card-title">Histórico<br>de Propostas</div>
-        <div class="card-desc">Consulte, versione e gerencie propostas por candidato. Busca por telefone.</div>
-      </div>
-      <div class="card-cta">Ver histórico <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    </a>
-
-    <!-- CRM Pipeline -->
-    <a class="nav-card card-crm" href="crm.html">
-      <div class="card-bar"></div>
-      <div class="card-status"><span class="status-dot" style="background:#A78BFA;box-shadow:0 0 6px #A78BFA;"></span>Ativo</div>
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="5" height="18" rx="1.5" stroke="white" stroke-width="1.8"/><rect x="9.5" y="3" width="5" height="13" rx="1.5" stroke="white" stroke-width="1.8"/><rect x="16" y="3" width="5" height="8" rx="1.5" stroke="white" stroke-width="1.8"/></svg>
-      </div>
-      <div>
-        <div class="card-label">Funil de contratação</div>
-        <div class="card-title">CRM<br>Pipeline</div>
-        <div class="card-desc">Kanban de candidatos · 7 etapas · drag &amp; drop · importação do Notion via CSV.</div>
-      </div>
-      <div class="card-cta">Abrir CRM <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    </a>
-
-    <!-- Projeção de Caixa — restrito -->
-    <a id="b3-card-cf" class="nav-card card-cf b3-hidden" href="cashflow.html">
-      <div class="card-bar"></div>
-      <div class="card-status"><span class="status-dot"></span>Ativo</div>
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M2 7h20M6 7V5a2 2 0 012-2h8a2 2 0 012 2v2M6 12h4M6 16h3" stroke="white" stroke-width="1.8" stroke-linecap="round"/><rect x="2" y="7" width="20" height="14" rx="2" stroke="white" stroke-width="1.8"/></svg>
-      </div>
-      <div>
-        <div class="card-label">Fluxo financeiro</div>
-        <div class="card-title">Projeção<br>de Caixa</div>
-        <div class="card-desc">Desembolsos mensais, triggers por período e impacto por assessor.</div>
-      </div>
-      <div class="card-cta">Ver projeção <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    </a>
-
-    <!-- Performance Hunters — restrito -->
-    <a id="b3-card-hunter" class="nav-card card-hunter b3-hidden" href="hunters.html">
-      <div class="card-bar"></div>
-      <div class="card-status"><span class="status-dot"></span>Ativo</div>
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="7" r="3" stroke="white" stroke-width="1.8"/><circle cx="17" cy="9" r="2.5" stroke="white" stroke-width="1.5" stroke-dasharray="2 1"/><path d="M3 20c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M17 14c1.657 0 3 1.343 3 3v1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 1"/></svg>
-      </div>
-      <div>
-        <div class="card-label">Equipe de recrutamento</div>
-        <div class="card-title">Performance<br>Hunters</div>
-        <div class="card-desc">Ranking de contratações, AuC captado e bônus por hunter.</div>
-      </div>
-      <div class="card-cta">Ver ranking <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    </a>
-
-        <!-- Gestão de Vagas — todos os perfis -->
-    <a id="b3-card-vagas" class="nav-card card-vagas" href="vagas.html">
-      <div class="card-bar"></div>
-      <div class="card-status"><span class="status-dot"></span>Ativo</div>
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="white" stroke-width="1.8"/><path d="M8 2v4M16 2v4M3 10h18" stroke="white" stroke-width="1.5" stroke-linecap="round"/><path d="M8 14h4M8 17h8" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </div>
-      <div>
-        <div class="card-label">Gestão de recrutamento</div>
-        <div class="card-title">Gestão<br>de Vagas</div>
-        <div class="card-desc">Estoque de vagas · hunters em campo · histórico de fechamentos</div>
-      </div>
-      <div class="card-cta">Ver vagas <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    </a>
-
-<!-- Pipeline M&A — restrito -->
-    <a id="b3-card-ma" class="nav-card card-ma b3-hidden" href="ma.html">
-      <div class="card-bar"></div>
-      <div class="card-status"><span class="status-dot"></span>Ativo</div>
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M8 12H5a2 2 0 00-2 2v3a2 2 0 002 2h3a2 2 0 002-2v-3a2 2 0 00-2-2z" stroke="white" stroke-width="1.8"/><path d="M19 3h-3a2 2 0 00-2 2v3a2 2 0 002 2h3a2 2 0 002-2V5a2 2 0 00-2-2z" stroke="white" stroke-width="1.8"/><path d="M10 15.5H14M14 8.5H10" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 1"/></svg>
-      </div>
-      <div>
-        <div class="card-label">Aquisições estratégicas</div>
-        <div class="card-title">Pipeline<br>M&amp;A</div>
-        <div class="card-desc">Operações em andamento, NDA, valuation e deals em negociação.</div>
-      </div>
-      <div class="card-cta">Ver pipeline <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    </a>
-
-
-    <!-- Upload CSV — restrito -->
-    <a id="b3-card-upload" class="nav-card card-upload b3-hidden" href="#" onclick="b3TriggerCSV(event)">
-      <div class="card-bar"></div>
-      <div class="card-status"><span class="status-dot"></span>Dados</div>
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="17 8 12 3 7 8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="3" x2="12" y2="15" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
-      </div>
-      <div>
-        <div class="card-label">Base de dados</div>
-        <div class="card-title">Atualizar<br>CSV</div>
-        <div class="card-desc">Importe a planilha de candidatos para atualizar todos os painéis.</div>
-        <div id="csv-status"><span id="csv-dot"></span><span id="csv-label">Sem dados carregados</span></div>
-      </div>
-      <div class="card-cta">Fazer upload <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    </a>
-
-    <!-- Gestão Admin — só master -->
-    <a id="b3-card-admin" class="nav-card card-admin b3-hidden" href="#" onclick="b3AdminOpen(event)">
-      <div class="card-bar"></div>
-      <div class="card-status"><span class="status-dot"></span>Admin</div>
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="white" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div>
-        <div class="card-label">Controle de acesso</div>
-        <div class="card-title">Gestão de<br>Usuários</div>
-        <div class="card-desc">Crie, edite e gerencie os acessos ao sistema Blue3.</div>
-      </div>
-      <div class="card-cta">Gerenciar <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M8 3.5L11.5 7L8 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    </a>
-
-  </div>
-
-  <input type="file" id="b3-csv-input" accept=".csv" style="display:none" onchange="b3ImportCSV(this)">
-
-  <div class="footer">
-    <div class="footer-rule"></div>
-    <div class="footer-txt">Nexus · Blue3 Expansão Suite</div>
-    <div class="footer-ver">Crescimento Estruturado com Inteligência e Disciplina de Capital</div>
-  </div>
-</div>
-
-<!-- OVERLAY para páginas externas (fallback, não é mais usado) -->
-<div id="b3-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:#000;flex-direction:column;">
-  <div class="ov-bar">
-    <button class="ov-back" onclick="closeOverlay()">&#8592; Voltar</button>
-    <span id="b3-overlay-title" class="ov-title"></span>
-  </div>
-  <iframe id="b3-frame" style="flex:1;border:none;width:100%;background:#fff;" sandbox="allow-scripts allow-same-origin allow-popups allow-modals"></iframe>
-</div>
+<!-- CSV input oculto (preservado) -->
+<input type="file" id="b3-csv-input" accept=".csv" style="display:none" onchange="b3ImportCSV(this)">
 
 <script>
+// ════════ JS ORIGINAL PRESERVADO ════════
+
 // ── Estado global ──
 var B3CU = null;
 
@@ -970,6 +1063,118 @@ function closeOverlay() {
   document.getElementById('b3-frame').srcdoc = '';
   document.body.style.overflow = '';
 }
+
+
+// ════════ SHELL SAAS — EXTENSÃO DO b3Start ════════
+
+// Sobrescrever b3Start para ativar o shell
+var _b3StartOrig = b3Start;
+b3Start = function() {
+  _b3StartOrig();
+  _activateShell();
+};
+
+// Sobrescrever b3Logout para desativar o shell
+var _b3LogoutOrig = b3Logout;
+b3Logout = function(e) {
+  if (e) e.preventDefault();
+  document.getElementById('nexus-shell').classList.remove('active');
+  document.getElementById('b3lo').style.display = 'flex';
+  B3CU = null;
+  sessionStorage.removeItem('b3s');
+  document.getElementById('b3u').value = '';
+  document.getElementById('b3p').value = '';
+};
+
+function _activateShell() {
+  // Mostrar shell
+  document.getElementById('nexus-shell').classList.add('active');
+  document.getElementById('b3lo').style.display = 'none';
+
+  // Atualizar user info na sidebar
+  if (B3CU) {
+    var name = B3CU.n || B3CU.l || '?';
+    document.getElementById('sb-user-name').textContent = name;
+    document.getElementById('sb-avatar').textContent = name.charAt(0).toUpperCase();
+    var roleMap = {master:'Master',gerente:'Gerente',paulo:'Gerente',viewer:'Viewer',hunter:'Hunter'};
+    document.getElementById('sb-user-role').textContent = roleMap[B3CU.r] || B3CU.r;
+
+    var r = B3CU.r;
+
+    // Controle de acesso por perfil
+    document.querySelectorAll('.b3-sb-ma').forEach(function(el){
+      el.style.display = (r === 'master' || r === 'gerente' || r === 'paulo') ? '' : 'none';
+    });
+    document.querySelectorAll('.b3-sb-cf').forEach(function(el){
+      el.style.display = (r === 'master' || r === 'gerente' || r === 'paulo' || r === 'viewer') ? '' : 'none';
+    });
+    document.querySelectorAll('.b3-sb-admin').forEach(function(el){
+      el.style.display = (r === 'master') ? '' : 'none';
+    });
+    document.querySelectorAll('.b3-sb-upload').forEach(function(el){
+      el.style.display = (r === 'master') ? '' : 'none';
+    });
+    // Seção M&A
+    var maSection = document.getElementById('sb-ma-section');
+    if (maSection) maSection.style.display = (r === 'master' || r === 'gerente' || r === 'paulo') ? '' : 'none';
+
+    // Upload button na topbar
+    var tbUpload = document.querySelector('#topbar .b3-sb-upload');
+    if (tbUpload) tbUpload.style.display = (r === 'master') ? 'flex' : 'none';
+  }
+
+  updateCSVStatus();
+}
+
+// ════════ NAVEGAÇÃO VIA IFRAME ════════
+function navTo(page, title) {
+  var iframe = document.getElementById('nexus-iframe');
+  var pageTitle = document.getElementById('tb-title');
+
+  // Highlight ativo na sidebar
+  document.querySelectorAll('.sb-item').forEach(function(el){
+    el.classList.remove('active');
+  });
+  // Marcar item clicado
+  event.currentTarget && event.currentTarget.classList && event.currentTarget.classList.add('active');
+
+  iframe.src = page;
+  if (pageTitle) pageTitle.textContent = title || page;
+  return false;
+}
+
+// ════════ SIDEBAR TOGGLE ════════
+function sbToggle() {
+  document.getElementById('sb').classList.toggle('collapsed');
+  localStorage.setItem('b3sb', document.getElementById('sb').classList.contains('collapsed') ? '1' : '0');
+}
+
+// Restaurar estado do sidebar
+(function(){
+  if (localStorage.getItem('b3sb') === '1') {
+    document.getElementById('sb').classList.add('collapsed');
+  }
+})();
+
+// ════════ SESSÃO PERSISTENTE (sobrescrever init) ════════
+(function(){
+  var s = sessionStorage.getItem('b3s');
+  if (s) {
+    try { B3CU = JSON.parse(s); } catch(e) {}
+    if (B3CU) {
+      document.getElementById('b3lo').style.display = 'none';
+      b3Start();
+    }
+  }
+})();
+
+// ════════ TECLADO ════════
+document.addEventListener('DOMContentLoaded', function() {
+  var bp = document.getElementById('b3p');
+  var bu = document.getElementById('b3u');
+  if (bp) bp.addEventListener('keydown', function(e){ if(e.key==='Enter') b3Login(); });
+  if (bu) bu.addEventListener('keydown', function(e){ if(e.key==='Enter') bp && bp.focus(); });
+});
 </script>
 </body>
 </html>
