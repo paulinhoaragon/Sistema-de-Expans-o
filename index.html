@@ -250,6 +250,8 @@ body{
 }
 #sb.collapsed .sb-item{justify-content:center;padding:0 14px;}
 #sb.collapsed .sb-item svg{margin-right:0;}
+#sb.collapsed .sb-brand{justify-content:center;padding:14px 10px;}
+#sb.collapsed #sb-toggle{margin-left:0;}
 
 /* Sidebar brand */
 .sb-brand{
@@ -502,8 +504,8 @@ body{
         <div class="sb-logo-name">NEXUS</div>
         <div class="sb-logo-sub">Blue3 Expansão</div>
       </div>
-      <button id="sb-toggle" onclick="sbToggle()" title="Recolher menu">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <button id="sb-toggle" onclick="sbToggle()" title="Recolher/expandir menu" style="flex-shrink:0;margin-left:auto;">
+        <svg id="sb-toggle-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
           <polyline points="8,2 4,6 8,10" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
@@ -1085,8 +1087,11 @@ function navTo(page, title) {
 
 // ════════ SIDEBAR TOGGLE ════════
 function sbToggle() {
-  document.getElementById('sb').classList.toggle('collapsed');
-  localStorage.setItem('b3sb', document.getElementById('sb').classList.contains('collapsed') ? '1' : '0');
+  var sb = document.getElementById('sb');
+  sb.classList.toggle('collapsed');
+  var collapsed = sb.classList.contains('collapsed');
+  localStorage.setItem('b3sb', collapsed ? '1' : '0');
+  // Rotacionar ícone via classe (CSS já faz via #sb.collapsed #sb-toggle svg)
 }
 
 // Restaurar estado do sidebar
