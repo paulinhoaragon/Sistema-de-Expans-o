@@ -628,17 +628,9 @@ body{
 // ── Estado global ──
 var B3CU = null;
 
-// ── Sessão persistente (recarregar aba sem logar de novo) ──
-(function(){
-  var s = sessionStorage.getItem('b3s');
-  if (s) {
-    try { B3CU = JSON.parse(s); } catch(e) {}
-    if (B3CU) {
-      document.getElementById('b3lo').style.display = 'none';
-      b3Start();
-    }
-  }
-})();
+// ── Sessão persistente — tratada pelo shell abaixo ──
+// (desativada aqui para evitar execução antes do override de b3Start)
+var _B3_SESSION_RAW = sessionStorage.getItem('b3s');
 
 // ── Usuários ──
 function getB3Users() {
@@ -1156,14 +1148,14 @@ function sbToggle() {
   }
 })();
 
-// ════════ SESSÃO PERSISTENTE (sobrescrever init) ════════
+// ════════ SESSÃO PERSISTENTE — única execução, pós-override ════════
 (function(){
-  var s = sessionStorage.getItem('b3s');
+  var s = (typeof _B3_SESSION_RAW !== 'undefined') ? _B3_SESSION_RAW : sessionStorage.getItem('b3s');
   if (s) {
-    try { B3CU = JSON.parse(s); } catch(e) {}
+    try { B3CU = JSON.parse(s); } catch(e) { B3CU = null; }
     if (B3CU) {
       document.getElementById('b3lo').style.display = 'none';
-      b3Start();
+      b3Start(); // aqui b3Start já é a versão sobrescrita com _activateShell
     }
   }
 })();
