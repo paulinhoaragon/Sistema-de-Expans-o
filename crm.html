@@ -158,7 +158,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Novo candidato
     </button>
-    <a href="index.html" class="btn-home">← Home</a>
+    
   </div>
 </div>
 <div class="cover-rule"></div>
@@ -200,13 +200,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <div class="modal-body">
       <input type="hidden" id="m-id">
 
-      <div class="sec-lbl">Identificação</div>
-      <div class="fgrid">
-        <div class="f-row"><label>Nome completo *</label><input id="m-nome" placeholder="Nome do candidato"></div>
-        <div class="f-row"><label>Telefone</label><input id="m-tel" placeholder="(11) 99999-9999"></div>
-        <div class="f-row"><label>Instituição de origem</label><input id="m-inst" placeholder="ex: XP, BTG, Itaú..."></div>
-        <div class="f-row"><label>Praça</label>
-          <select id="m-praca">
+      <!-- ── Abas ── -->
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('aba1',this)">CRM / Lead</button>
+        <button class="tab-btn" onclick="switchTab('aba2',this)">Situação Atual</button>
+      </div>
+
+      <!-- ══ ABA 1 — CRM / Lead ══ -->
+      <div class="tab-pane active" id="aba1">
+
+        <div class="sec-lbl" style="margin-top:0">Identificação</div>
+        <div class="fgrid">
+          <div class="f-row"><label>Nome completo *</label><input id="m-nome" placeholder="Nome do candidato"></div>
+          <div class="f-row"><label>Telefone</label><input id="m-tel" placeholder="(11) 99999-9999"></div>
+          <div class="f-row"><label>E-mail</label><input id="m-email" type="email" placeholder="email@exemplo.com"></div>
+          <div class="f-row"><label>Instituição de origem</label><input id="m-inst" placeholder="ex: XP, BTG, Itaú..."></div>
+          <div class="f-row"><label>Praça</label>
+            <select id="m-praca">
             <option value="">— Selecione —</option>
             <optgroup label="Blue3 — Cidades">
               <option value="Blue3 - Anywhere">Anywhere</option>
@@ -246,81 +256,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
             </optgroup>
             <option value="__nova__">+ Adicionar nova praça...</option>
           </select>
-        </div>
-      </div>
-
-      <!-- ── Perfil Financeiro ── -->
-      <div class="sec-lbl">Perfil Financeiro · Situação Atual</div>
-      <div class="fgrid3">
-        <div class="f-row">
-          <label>AuC Custódia (MM)</label>
-          <input id="m-auc-cust" type="number" step="0.1" placeholder="0" oninput="calcFinanceiro()">
-          <span style="font-size:9px;color:var(--t4);margin-top:2px">Valor que o candidato possui no banco atual</span>
-        </div>
-        <div class="f-row">
-          <label>Nº de Clientes</label>
-          <input id="m-clientes" type="number" step="1" placeholder="0" oninput="calcFinanceiro()">
-        </div>
-        <div class="f-row">
-          <label>Ticket Médio (MM)</label>
-          <input id="m-ticket" type="text" readonly placeholder="—" style="background:#f0f2fa;color:var(--cobalt);font-weight:700;cursor:default">
-          <span style="font-size:9px;color:var(--t4);margin-top:2px">AuC ÷ Clientes · calculado automaticamente</span>
-        </div>
-      </div>
-
-      <div class="fgrid" style="margin-top:10px">
-        <div class="f-row">
-          <label>Remuneração Mensal Bruta (R$)</label>
-          <input id="m-rem-bruta" type="number" placeholder="0" oninput="calcFinanceiro()">
-        </div>
-        <div class="f-row">
-          <label>Mensal Líquido (R$) <span style="font-weight:400;color:var(--t4)">−27,5%</span></label>
-          <input id="m-rem-liq" type="text" readonly placeholder="—" style="background:#f0f2fa;color:var(--g);font-weight:700;cursor:default">
-        </div>
-        <div class="f-row">
-          <label>Bônus Bruto (R$)</label>
-          <input id="m-bonus-bruto" type="number" placeholder="0" oninput="calcFinanceiro()">
-        </div>
-        <div class="f-row">
-          <label>Periodicidade do Bônus</label>
-          <select id="m-tipo-bonus" onchange="calcFinanceiro()">
-            <option value="Semestral">Semestral</option>
-            <option value="Anual">Anual</option>
-          </select>
-        </div>
-        <div class="f-row">
-          <label id="lbl-bonus-liq">Bônus Semestral Líquido <span style="font-weight:400;color:var(--t4)">−27,5%</span></label>
-          <input id="m-bonus-liq" type="text" readonly placeholder="—" style="background:#f0f2fa;color:var(--g);font-weight:700;cursor:default">
-        </div>
-        <div class="f-row">
-          <label>Plano de Saúde (R$/mês)</label>
-          <input id="m-saude" type="number" placeholder="0" oninput="calcFinanceiro()">
-          <span style="font-size:9px;color:var(--t4);margin-top:2px">Valor mensal · será × 12 no total anual</span>
-        </div>
-        <div class="f-row">
-          <label>VA/VR (R$/mês)</label>
-          <input id="m-vavr" type="number" placeholder="0" oninput="calcFinanceiro()">
-          <span style="font-size:9px;color:var(--t4);margin-top:2px">Valor mensal · será × 12 no total anual</span>
-        </div>
-        <div class="f-row" style="justify-content:flex-end;align-self:flex-end">
-          <div id="m-rem-total-box" style="background:var(--cobalt-pl);border-radius:6px;padding:10px 12px;display:none">
-            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--cobalt);margin-bottom:3px">Pacote Total Líquido/ano</div>
-            <div id="m-rem-total" style="font-size:16px;font-weight:700;color:var(--cobalt)">—</div>
           </div>
-        </div>
-      </div>
-
-      <div class="sec-lbl">Responsável</div>
-      <div class="fgrid">
-        <div class="f-row"><label>Hunter</label>
-          <select id="m-hunter">
-            <option value="">— Selecione —</option>
-            <option>Eduarda</option><option>Bianca</option><option>Paulo</option>
-            <option>Henrique</option><option>Thaila</option>
-          </select>
-        </div>
-        <div class="f-row"><label>Líder</label>
-          <select id="m-lider">
+          <div class="f-row"><label>Líder</label>
+            <select id="m-lider">
             <option value="">— Selecione —</option>
             <option>Adilson Schelbauer</option>
             <option>André Resende</option>
@@ -357,61 +295,139 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
             <option>Victor Falarino</option>
             <option value="__novo__">+ Adicionar novo líder...</option>
           </select>
+          </div>
+          <div class="f-row"><label>Hunter</label>
+            <select id="m-hunter">
+              <option value="">— Selecione —</option>
+              <option>Eduarda</option><option>Bianca</option><option>Paulo</option>
+              <option>Henrique</option><option>Thaila</option>
+            </select>
+          </div>
+          <div class="f-row"><label>Senioridade</label>
+            <select id="m-nivel">
+              <option value="">— Selecione —</option>
+              <option>Sênior</option><option>Pleno</option><option>Júnior</option>
+            </select>
+          </div>
         </div>
-        <div class="f-row"><label>Senioridade</label>
-          <select id="m-nivel">
-            <option value="">— Selecione —</option>
-            <option>Sênior</option><option>Pleno</option><option>Júnior</option>
-          </select>
+
+        <div class="sec-lbl">Carteira</div>
+        <div class="fgrid3">
+          <div class="f-row">
+            <label>AuC Custódia (MM)</label>
+            <input id="m-auc-cust" type="number" step="0.1" placeholder="0" oninput="calcFinanceiro()">
+          </div>
+          <div class="f-row">
+            <label>Nº de Clientes</label>
+            <input id="m-clientes" type="number" step="1" placeholder="0" oninput="calcFinanceiro()">
+          </div>
+          <div class="f-row">
+            <label>Ticket Médio (MM)</label>
+            <input id="m-ticket" type="text" readonly placeholder="—" style="background:#f0f2fa;color:var(--cobalt);font-weight:700;cursor:default">
+          </div>
         </div>
-        <div class="f-row"><label>Etapa</label>
-          <select id="m-etapa">
-            <option>Prospecção</option><option>Qualificação</option>
-            <option>Negociação</option><option>Contratação</option>
-            <option>Trabalhando</option><option>Declinou</option>
-            <option>Contato Futuro</option>
-          </select>
+
+        <div class="sec-lbl">Etapa & Proposta</div>
+        <div class="fgrid">
+          <div class="f-row"><label>Etapa</label>
+            <select id="m-etapa">
+              <option>Prospecção</option><option>Qualificação</option>
+              <option>Negociação</option><option>Contratação</option>
+              <option>Trabalhando</option><option>Declinou</option>
+              <option>Contato Futuro</option>
+            </select>
+          </div>
+          <div class="f-row"><label>AuC Meta (MM)</label><input id="m-auc" type="number" step="0.1" placeholder="0"></div>
+          <div class="f-row"><label>Piso R$/mês</label><input id="m-piso" type="number" placeholder="0"></div>
+          <div class="f-row"><label>Período (meses)</label><input id="m-periodo" type="number" placeholder="12"></div>
+          <div class="f-row"><label>Upfront R$</label><input id="m-upfront" type="number" placeholder="0"></div>
+          <div class="f-row"><label>MOU</label>
+            <select id="m-mou"><option>Pendente</option><option>Assinado</option></select>
+          </div>
+          <div class="f-row"><label>Status Ancord</label>
+            <select id="m-ancord">
+              <option>Pendente</option><option>Em preparo</option><option>Aprovada</option><option>Isento</option>
+            </select>
+          </div>
+          <div class="f-row"><label>Data de entrada</label><input id="m-data-ent" type="date"></div>
+          <div class="f-row"><label>Data início trabalho</label><input id="m-data-ini" type="date"></div>
+          <div class="f-row"><label>Trigger 1 Meta (MM)</label><input id="m-t1m" type="number" placeholder="0"></div>
+          <div class="f-row"><label>Trigger 1 Valor (R$)</label><input id="m-t1v" type="number" placeholder="0"></div>
+          <div class="f-row"><label>Trigger 2 Meta (MM)</label><input id="m-t2m" type="number" placeholder="0"></div>
+          <div class="f-row"><label>Trigger 2 Valor (R$)</label><input id="m-t2v" type="number" placeholder="0"></div>
         </div>
+
+        <div class="sec-lbl">Histórico de Contatos</div>
+        <div class="hist-wrap">
+          <div class="hist-nova">
+            <textarea id="m-obs-nova" placeholder="Registrar nova observação ou contato..." rows="2"></textarea>
+            <button class="btn-hist-add" onclick="adicionarNota()">+ Adicionar</button>
+          </div>
+          <div class="hist-lista" id="hist-lista">
+            <div class="hist-vazio">Nenhum registro ainda.</div>
+          </div>
+        </div>
+        <input type="hidden" id="m-obs">
+
+        <!-- Botão Gerar Proposta -->
+        <button class="btn-gerar-prop" onclick="gerarProposta()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 7H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-2"/><path d="M13 5h6v6"/><path d="M19 5l-8 8"/></svg>
+          Gerar Proposta no Simulador
+        </button>
+
       </div>
 
-      <div class="sec-lbl">Carteira & Proposta</div>
-      <div class="fgrid3">
-        <div class="f-row"><label>AuC (MM)</label><input id="m-auc" type="number" step="0.1" placeholder="0"></div>
-        <div class="f-row"><label>Piso R$/mês</label><input id="m-piso" type="number" placeholder="0"></div>
-        <div class="f-row"><label>Período (meses)</label><input id="m-periodo" type="number" placeholder="12"></div>
-        <div class="f-row"><label>Upfront R$</label><input id="m-upfront" type="number" placeholder="0"></div>
-        <div class="f-row"><label>Trigger 1 (MM → R$)</label><input id="m-t1m" type="number" placeholder="Meta MM"></div>
-        <div class="f-row"><label>Trigger 1 valor</label><input id="m-t1v" type="number" placeholder="Valor R$"></div>
-        <div class="f-row"><label>Trigger 2 (MM → R$)</label><input id="m-t2m" type="number" placeholder="Meta MM"></div>
-        <div class="f-row"><label>Trigger 2 valor</label><input id="m-t2v" type="number" placeholder="Valor R$"></div>
-      </div>
+      <!-- ══ ABA 2 — Situação Atual ══ -->
+      <div class="tab-pane" id="aba2">
 
-      <div class="sec-lbl">Status Operacional</div>
-      <div class="fgrid">
-        <div class="f-row"><label>MOU</label>
-          <select id="m-mou"><option>Pendente</option><option>Assinado</option></select>
+        <div class="sec-lbl" style="margin-top:0">Remuneração</div>
+        <div class="fgrid">
+          <div class="f-row">
+            <label>Remuneração Mensal Bruta (R$)</label>
+            <input id="m-rem-bruta" type="number" placeholder="0" oninput="calcFinanceiro()">
+          </div>
+          <div class="f-row">
+            <label>Remuneração Líquida (R$) <span style="font-weight:400;color:var(--t4)">−27,5%</span></label>
+            <input id="m-rem-liq" type="text" readonly placeholder="—" style="background:#f0f2fa;color:var(--g);font-weight:700;cursor:default">
+          </div>
+          <div class="f-row">
+            <label>Bônus Bruto (R$)</label>
+            <input id="m-bonus-bruto" type="number" placeholder="0" oninput="calcFinanceiro()">
+          </div>
+          <div class="f-row">
+            <label>Período do Bônus</label>
+            <select id="m-tipo-bonus" onchange="calcFinanceiro()">
+              <option value="Semestral">Semestral</option>
+              <option value="Anual">Anual</option>
+            </select>
+          </div>
+          <div class="f-row">
+            <label id="lbl-bonus-liq">Bônus Anual Líquido <span style="font-weight:400;color:var(--t4)">−27,5%</span></label>
+            <input id="m-bonus-liq" type="text" readonly placeholder="—" style="background:#f0f2fa;color:var(--g);font-weight:700;cursor:default">
+          </div>
         </div>
-        <div class="f-row"><label>Status Ancord</label>
-          <select id="m-ancord">
-            <option>Pendente</option><option>Em preparo</option><option>Aprovada</option><option>Isento</option>
-          </select>
-        </div>
-        <div class="f-row"><label>Data de entrada</label><input id="m-data-ent" type="date"></div>
-        <div class="f-row"><label>Data início trabalho</label><input id="m-data-ini" type="date"></div>
-      </div>
 
-      <div class="sec-lbl">Histórico de Contatos</div>
-      <div class="hist-wrap">
-        <div class="hist-nova">
-          <textarea id="m-obs-nova" placeholder="Registrar nova observação ou contato..." rows="2"></textarea>
-          <button class="btn-hist-add" onclick="adicionarNota()">+ Adicionar</button>
+        <div class="sec-lbl">Benefícios</div>
+        <div class="fgrid">
+          <div class="f-row">
+            <label>Plano de Saúde (R$/mês)</label>
+            <input id="m-saude" type="number" placeholder="0" oninput="calcFinanceiro()">
+            <span style="font-size:9px;color:var(--t4);margin-top:2px">× 12 no total anual</span>
+          </div>
+          <div class="f-row">
+            <label>VA/VR (R$/mês)</label>
+            <input id="m-vavr" type="number" placeholder="0" oninput="calcFinanceiro()">
+            <span style="font-size:9px;color:var(--t4);margin-top:2px">× 12 no total anual</span>
+          </div>
         </div>
-        <div class="hist-lista" id="hist-lista">
-          <div class="hist-vazio">Nenhum registro ainda.</div>
+
+        <div id="m-rem-total-box" style="background:var(--cobalt-pl);border-radius:var(--r8);padding:14px 16px;margin-top:12px;display:none;">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--cobalt);margin-bottom:4px">Total Comp Líquido / ano</div>
+          <div id="m-rem-total" style="font-size:22px;font-weight:700;color:var(--cobalt)">—</div>
         </div>
+
       </div>
-      <!-- campo oculto que persiste o histórico serializado -->
-      <input type="hidden" id="m-obs">
+    </div>
     </div>
     <div class="modal-foot">
       <button class="btn-excluir" id="btn-excluir" style="display:none" onclick="excluirCandidato()">Excluir</button>
@@ -588,6 +604,7 @@ function abrirEdicao(id) {
   document.getElementById('m-id').value       = r.id;
   document.getElementById('m-nome').value     = r.nome||'';
   document.getElementById('m-tel').value      = r.telefone||'';
+  document.getElementById('m-email').value    = r.email||'';
   document.getElementById('m-inst').value     = r.instituicao||'';
   document.getElementById('m-praca').value    = r.praca||'';
   document.getElementById('m-hunter').value   = r.hunter||'';
@@ -622,7 +639,7 @@ function abrirEdicao(id) {
 function fecharModal() { document.getElementById('overlay-cand').classList.remove('open'); }
 
 function limparModal() {
-  ['m-id','m-nome','m-tel','m-inst','m-auc','m-piso','m-periodo','m-upfront','m-t1m','m-t1v','m-t2m','m-t2v','m-data-ent','m-data-ini','m-obs','m-auc-cust','m-clientes','m-rem-bruta','m-bonus-bruto','m-saude','m-vavr','m-obs-nova'].forEach(function(id){
+  ['m-id','m-nome','m-tel','m-email','m-inst','m-auc','m-piso','m-periodo','m-upfront','m-t1m','m-t1v','m-t2m','m-t2v','m-data-ent','m-data-ini','m-obs','m-auc-cust','m-clientes','m-rem-bruta','m-bonus-bruto','m-saude','m-vavr','m-obs-nova'].forEach(function(id){
     document.getElementById(id).value='';
   });
   document.getElementById('m-hunter').value='';
@@ -641,6 +658,8 @@ function limparModal() {
   _histAtual = [];
   document.getElementById('m-obs').value='';
   renderHistorico();
+  // Reset abas
+  switchTab('aba1', document.querySelector('.tab-btn'));
 }
 
 function g(id){ return (document.getElementById(id)||{}).value||''; }
@@ -651,7 +670,7 @@ function salvarCandidato() {
   var nome = g('m-nome').trim();
   if (!nome) { alert('Informe o nome do candidato.'); return; }
   var payload = {
-    nome: nome, telefone: g('m-tel'), instituicao: g('m-inst'), praca: g('m-praca'),
+    nome: nome, telefone: g('m-tel'), email: g('m-email'), instituicao: g('m-inst'), praca: g('m-praca'),
     hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), etapa: g('m-etapa'),
     auc_mm: gn('m-auc'), piso: gn('m-piso'), periodo: gi('m-periodo'), upfront: gn('m-upfront'),
     trigger1_meta: gn('m-t1m'), trigger1_val: gn('m-t1v'), trigger2_meta: gn('m-t2m'), trigger2_val: gn('m-t2v'),
@@ -977,6 +996,38 @@ function carregarHistorico(raw) {
   _histAtual = parsearHistorico(raw);
   document.getElementById('m-obs').value = raw || '';
   renderHistorico();
+}
+
+
+// ── Abas do modal ──────────────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  var pane = document.getElementById(id);
+  if (pane) pane.classList.add('active');
+  if (btn)  btn.classList.add('active');
+}
+
+// ── Gerar Proposta no Simulador ────────────────────────────────────
+function gerarProposta() {
+  var nome  = g('m-nome').trim();
+  var praca = document.getElementById('m-praca');
+  var pracaVal = praca ? (praca.options[praca.selectedIndex] ? praca.options[praca.selectedIndex].text : '') : '';
+  // Se valor tem "Blue3 - " prefixo, usar o texto visível
+  if (pracaVal === '— Selecione —') pracaVal = '';
+  var dados = { nome: nome, praca: pracaVal };
+  sessionStorage.setItem('b3_proposta_atual', JSON.stringify(dados));
+  // Navegar — dentro do iframe, sobe para o parent
+  try {
+    if (window.parent && window.parent.navTo) {
+      fecharModal();
+      window.parent.navTo('simulador.html', 'Simulador de Propostas');
+    } else {
+      window.location.href = 'simulador.html';
+    }
+  } catch(e) {
+    window.location.href = 'simulador.html';
+  }
 }
 
 // ── Init ──────────────────────────────────────────────────────────
