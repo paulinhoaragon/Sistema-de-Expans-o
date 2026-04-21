@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nexus · Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="pipeline.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0A0F1E;--cobalt:#1A3BAD;--cobalt-br:#2952E3;--cobalt-gl:#4A70F5;
+  --gold:#B8962E;--g:#16A34A;--am:#B45309;--red:#DC2626;
+  --canvas:#F0F2FA;--surface:#fff;--rule:#E2E5F0;
+  --t1:#0A0F1E;--t2:#3A4268;--t3:#7A82A8;--t4:#A8B0CC;
+  --r8:8px;--r12:12px;--sh:0 1px 4px rgba(10,15,30,.07),0 4px 16px rgba(10,15,30,.05);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:13px;}
+
+/* ── LAYOUT ── */
+.dash{padding:20px 24px;max-width:1300px;}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px;}
+.kpi{background:var(--surface);border-radius:var(--r12);padding:16px 18px;box-shadow:var(--sh);border-top:3px solid var(--cobalt);position:relative;overflow:hidden;}
+.kpi.green{border-top-color:var(--g);}
+.kpi.gold{border-top-color:var(--gold);}
+.kpi.red{border-top-color:var(--red);}
+.kpi.purple{border-top-color:#7C3AED;}
+.kpi-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px;}
+.kpi-value{font-family:'Playfair Display',serif;font-size:28px;font-weight:600;color:var(--t1);line-height:1;}
+.kpi-sub{font-size:10px;color:var(--t4);margin-top:5px;}
+.kpi-trend{font-size:10px;font-weight:700;margin-top:4px;}
+.kpi-trend.up{color:var(--g);}
+.kpi-trend.down{color:var(--red);}
+
+/* ── SEÇÃO ── */
+.sec-title{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--rule);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+@media(max-width:900px){.row2,.row3{grid-template-columns:1fr;}}
+
+/* ── CARD ── */
+.card{background:var(--surface);border-radius:var(--r12);padding:16px 18px;box-shadow:var(--sh);}
+.card-title{font-size:11px;font-weight:700;color:var(--t2);margin-bottom:12px;}
+
+/* ── FUNIL ── */
+.funil{display:flex;gap:0;border-radius:8px;overflow:hidden;}
+.f-stage{flex:1;padding:12px 8px;text-align:center;}
+.f-val{font-size:20px;font-weight:700;color:#fff;line-height:1;}
+.f-lbl{font-size:9px;color:rgba(255,255,255,.7);margin-top:3px;text-transform:uppercase;letter-spacing:.06em;}
+.f-pct{font-size:9px;color:rgba(255,255,255,.5);margin-top:2px;}
+
+/* ── HUNTERS TABLE ── */
+.hunter-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--rule);}
+.hunter-row:last-child{border-bottom:none;}
+.h-rank{font-size:11px;font-weight:700;color:var(--t4);width:18px;}
+.h-name{font-size:12px;font-weight:600;color:var(--t1);flex:1;padding-left:8px;}
+.h-count{font-size:11px;color:var(--t3);}
+.h-val{font-size:12px;font-weight:700;color:var(--cobalt);}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 20px;color:var(--t4);}
+.empty-icon{font-size:36px;margin-bottom:10px;}
+.empty-t{font-size:14px;font-weight:600;color:var(--t2);margin-bottom:6px;}
+.empty-s{font-size:12px;}
+.btn-upload{display:inline-block;margin-top:14px;background:var(--cobalt);color:#fff;border:none;border-radius:8px;padding:10px 22px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+
+/* ── STATUS BADGES ── */
+.badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;text-transform:uppercase;letter-spacing:.04em;}
+.b-neg{background:#FEF3C7;color:#92400E;}
+.b-ok{background:#DCFCE7;color:#166534;}
+.b-red{background:#FEE2E2;color:#991B1B;}
+</style>
+</head>
+<body>
+
+<div class="dash" id="dash-root">
+  <!-- Carregando -->
+  <div class="empty" id="dash-loading">
+    <div class="empty-icon">⏳</div>
+    <div class="empty-t">Carregando dados...</div>
+  </div>
+</div>
+
+<script>
+var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+
+function supa(path) {
+  return fetch(SUPA_URL+'/rest/v1/'+path, {
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+  }).then(function(r){ return r.json(); });
+}
+
+function fmt(n) {
+  if (!n || n===0) return '—';
+  var a = Math.abs(n);
+  if (a >= 1e9)  return 'R$'+(n/1e9).toFixed(1).replace('.',',')+'B';
+  if (a >= 1e6)  return 'R$'+(n/1e6).toFixed(1).replace('.',',')+'M';
+  if (a >= 1e3)  return 'R$'+Math.round(n/1e3)+'K';
+  return 'R$'+n.toLocaleString('pt-BR');
+}
+function pct(a,b){ return b>0?Math.round(a/b*100)+'%':'—'; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Renderizar dashboard ──
+function renderDash(G, H, crm, propostas, ma) {
+  var root = document.getElementById('dash-root');
+  var AT = G.total || 0;
+  var mouOk = G.mouOk || 0;
+  var ancord = G.ancord || 0;
+  var trab = G.trab || 0;
+
+  // CRM stats
+  var crmTotal = crm ? crm.length : 0;
+  var crmEtapas = {};
+  (crm||[]).forEach(function(r){ crmEtapas[r.etapa] = (crmEtapas[r.etapa]||0)+1; });
+
+  // Propostas stats
+  var propTotal = propostas ? propostas.length : 0;
+  var propStatus = {};
+  (propostas||[]).forEach(function(r){ propStatus[r.status] = (propStatus[r.status]||0)+1; });
+
+  // M&A stats
+  var maTotal = ma ? ma.filter(function(r){ return !r.declinado; }).length : 0;
+  var maAuC = (ma||[]).reduce(function(s,r){ return s + (r.auc_b||0); },0);
+
+  root.innerHTML = [
+    // ── KPIs ──
+    '<div class="kpi-grid">',
+      kpiCard('Assessores Ativos','green', AT, (G.brutas||AT)+' brutas · '+(G.desist||0)+' desist.', pct(AT,G.brutas||AT)+' taxa aproveit.'),
+      kpiCard('AuC Mapeado','cobalt', 'R$'+(G.aucB||'0')+'B', AT+' candidatos com carteira', (G.seniors||0)+' perfil sênior'),
+      kpiCard('Custo Total','gold', fmt(G.compTotal), fmt(G.blue3Liq)+' líquido Blue3', fmt(G.xpTotal)+' coberto XP'),
+      kpiCard('CRM · Pipeline','purple', crmTotal, 'candidatos em funil', (crmEtapas['Negociação']||0)+' em negociação'),
+      kpiCard('Propostas','',  propTotal, 'versões registradas', (propStatus['Em negociação']||0)+' em andamento'),
+      kpiCard('M&A Pipeline','red', maTotal, 'operações ativas', 'AuC: R$'+maAuC.toFixed(1)+'B'),
+    '</div>',
+
+    // ── Linha 1: Funil + Hunters ──
+    '<div class="row2">',
+
+      // Funil de conversão
+      '<div class="card">',
+        '<div class="card-title">Funil de Conversão · Assessores</div>',
+        '<div class="funil">',
+          funilStage('Contratados', AT, AT, '#1A3BAD'),
+          funilStage('MOU', mouOk, AT, '#2952E3'),
+          funilStage('Ancord', ancord, AT, '#0EA5E9'),
+          funilStage('Trabalhando', trab, AT, '#16A34A'),
+        '</div>',
+        '<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">',
+          '<div style="flex:1;background:#FFF7ED;border:1px solid #FED7AA;border-radius:6px;padding:8px 12px;text-align:center;">',
+            '<div style="font-size:18px;font-weight:700;color:#C2410C;">'+(G.mouPend||0)+'</div>',
+            '<div style="font-size:9px;text-transform:uppercase;color:#92400E;letter-spacing:.06em;margin-top:2px;">MOU Pendente</div>',
+          '</div>',
+          '<div style="flex:1;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:8px 12px;text-align:center;">',
+            '<div style="font-size:18px;font-weight:700;color:#1A3BAD;">'+pct(ancord,AT)+'</div>',
+            '<div style="font-size:9px;text-transform:uppercase;color:#1E3A5F;letter-spacing:.06em;margin-top:2px;">Taxa Formalização</div>',
+          '</div>',
+          '<div style="flex:1;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:8px 12px;text-align:center;">',
+            '<div style="font-size:18px;font-weight:700;color:#16A34A;">'+pct(trab,AT)+'</div>',
+            '<div style="font-size:9px;text-transform:uppercase;color:#166534;letter-spacing:.06em;margin-top:2px;">Taxa Ativação</div>',
+          '</div>',
+        '</div>',
+      '</div>',
+
+      // Top Hunters
+      '<div class="card">',
+        '<div class="card-title">Performance Hunters · Contratações Ativas</div>',
+        renderHunters(H),
+      '</div>',
+    '</div>',
+
+    // ── Linha 2: CRM + Propostas + Pace ──
+    '<div class="row3">',
+
+      // CRM por etapa
+      '<div class="card">',
+        '<div class="card-title">CRM · Distribuição por Etapa</div>',
+        renderCRMEtapas(crmEtapas),
+      '</div>',
+
+      // Propostas por status
+      '<div class="card">',
+        '<div class="card-title">Propostas Comerciais · Status</div>',
+        renderPropStatus(propStatus, propTotal),
+      '</div>',
+
+      // Pace
+      '<div class="card">',
+        '<div class="card-title">Pace · Meta 40 no Semestre</div>',
+        renderPace(AT),
+      '</div>',
+
+    '</div>',
+
+  ].join('');
+}
+
+function kpiCard(label, cls, value, sub1, sub2) {
+  return '<div class="kpi '+(cls||'')+'"><div class="kpi-label">'+esc(label)+'</div>'
+    +'<div class="kpi-value">'+esc(String(value))+'</div>'
+    +(sub1?'<div class="kpi-sub">'+esc(sub1)+'</div>':'')
+    +(sub2?'<div class="kpi-sub">'+esc(sub2)+'</div>':'')
+    +'</div>';
+}
+
+function funilStage(label, val, total, color) {
+  var p = total > 0 ? Math.round(val/total*100) : 0;
+  return '<div class="f-stage" style="background:'+color+';">'
+    +'<div class="f-val">'+val+'</div>'
+    +'<div class="f-lbl">'+label+'</div>'
+    +'<div class="f-pct">'+p+'%</div>'
+    +'</div>';
+}
+
+function renderHunters(H) {
+  if (!H || !H.length) return '<div style="font-size:12px;color:var(--t4);padding:16px 0;text-align:center;">Sem dados de hunters.<br>Faça upload do CSV.</div>';
+  return H.slice(0,5).map(function(h, i){
+    return '<div class="hunter-row">'
+      +'<span class="h-rank">'+(i+1)+'</span>'
+      +'<span class="h-name">'+esc(h.nome||'')+'</span>'
+      +'<span class="h-count">'+h.total+' contrat.</span>'
+      +'<span class="h-val">'+fmt((h.auc||0)*1e6)+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+function renderCRMEtapas(etapas) {
+  var ordem = ['Prospecção','Qualificação','Negociação','Contratação','Trabalhando','Declinou','Contato Futuro'];
+  var total = Object.values(etapas).reduce(function(s,v){ return s+v; },0);
+  if (!total) return '<div style="text-align:center;padding:20px;font-size:11px;color:var(--t4);">Nenhum candidato no CRM ainda.</div>';
+  var cores = {'Prospecção':'#64748B','Qualificação':'#7C3AED','Negociação':'#B45309',
+    'Contratação':'#C2410C','Trabalhando':'#16A34A','Declinou':'#DC2626','Contato Futuro':'#94A3B8'};
+  return ordem.map(function(etapa){
+    var n = etapas[etapa] || 0;
+    if (!n) return '';
+    var p = Math.round(n/total*100);
+    var cor = cores[etapa] || '#1A3BAD';
+    return '<div style="margin-bottom:8px;">'
+      +'<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">'
+      +'<span style="color:var(--t2);font-weight:600;">'+esc(etapa)+'</span>'
+      +'<span style="color:var(--t3);">'+n+' ('+p+'%)</span>'
+      +'</div>'
+      +'<div style="background:#E8EDF8;border-radius:10px;height:5px;">'
+      +'<div style="width:'+p+'%;height:5px;border-radius:10px;background:'+cor+';"></div>'
+      +'</div></div>';
+  }).join('');
+}
+
+function renderPropStatus(status, total) {
+  if (!total) return '<div style="text-align:center;padding:20px;font-size:11px;color:var(--t4);">Nenhuma proposta salva ainda.</div>';
+  var ordem = ['Em negociação','Aceita','Declinada','Expirada'];
+  var cores = {'Em negociação':'#B45309','Aceita':'#16A34A','Declinada':'#DC2626','Expirada':'#94A3B8'};
+  return ordem.map(function(s){
+    var n = status[s] || 0;
+    if (!n) return '';
+    var p = Math.round(n/total*100);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--rule);">'
+      +'<span style="font-size:11px;font-weight:600;color:var(--t1);">'+esc(s)+'</span>'
+      +'<div style="display:flex;align-items:center;gap:8px;">'
+      +'<div style="width:60px;background:#E8EDF8;border-radius:8px;height:4px;">'
+      +'<div style="width:'+p+'%;height:4px;border-radius:8px;background:'+(cores[s]||'#1A3BAD')+';"></div></div>'
+      +'<span style="font-size:11px;font-weight:700;color:var(--t2);min-width:24px;text-align:right;">'+n+'</span>'
+      +'</div></div>';
+  }).join('');
+}
+
+function renderPace(AT) {
+  var META = 40, DEC = 4, MESES = 6;
+  var proj = Math.round(AT/DEC*MESES);
+  var pct_pace = Math.min(100, Math.round(AT/META*100));
+  var ok = proj >= META;
+  var esp = Math.round(DEC/MESES*META);
+  var saldo = AT - esp;
+  return '<div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">'
+    +'<span style="color:var(--t2);">Contratados: <strong>'+AT+'</strong></span>'
+    +'<span style="color:var(--t3);">Meta: <strong>'+META+'</strong></span>'
+    +'</div>'
+    +'<div style="background:#E8EDF8;border-radius:10px;height:8px;margin-bottom:8px;position:relative;">'
+    +'<div style="width:50%;height:8px;border-radius:10px 0 0 10px;border-right:2px solid #94A3B8;position:absolute;top:0;"></div>'
+    +'<div style="width:'+pct_pace+'%;height:8px;border-radius:10px;background:linear-gradient(90deg,#1A3BAD,'+(ok?'#16A34A':'#DC2626')+');"></div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">'
+    +'<div style="background:#F4F6FB;border-radius:6px;padding:8px;text-align:center;">'
+    +'<div style="font-size:16px;font-weight:700;color:var(--cobalt);">'+pct_pace+'%</div>'
+    +'<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;">Do pace</div>'
+    +'</div>'
+    +'<div style="background:#F4F6FB;border-radius:6px;padding:8px;text-align:center;">'
+    +'<div style="font-size:16px;font-weight:700;color:'+(ok?'#16A34A':'#DC2626')+';">'+proj+'</div>'
+    +'<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;">Projeção Jun</div>'
+    +'</div>'
+    +'</div>'
+    +'<div style="margin-top:8px;padding:8px 10px;background:'+(ok?'#F0FDF4':'#FFF7ED')+';border-left:3px solid '+(ok?'#16A34A':'#F59E0B')+';border-radius:0 6px 6px 0;font-size:11px;color:'+(ok?'#15803D':'#92400E')+';">'
+    +(ok?'✓ No pace. Saldo de '+(saldo>=0?'+':'')+saldo+' vs esperado.':'⚠ Saldo de '+(saldo>=0?'+':'')+saldo+' vs esperado ('+(esp)+' esperados até agora).')
+    +'</div>'
+    +'</div>';
+}
+
+function showEmpty() {
+  document.getElementById('dash-root').innerHTML = '<div class="empty">'
+    +'<div class="empty-icon">📊</div>'
+    +'<div class="empty-t">Sem dados carregados</div>'
+    +'<div class="empty-s">Faça upload do CSV para visualizar o dashboard.</div>'
+    +'</div>';
+}
+
+// ── Init ──
+(function(){
+  if (typeof Blue3_init === 'function') {
+    Blue3_init(function(ok){
+      if (ok && window.Blue3Data) {
+        var G = window.Blue3Data.resumoGeral || {};
+        var H = window.Blue3Data.hunters || [];
+        // Carregar CRM e Propostas do Supabase em paralelo
+        Promise.all([
+          supa('crm_candidatos?select=etapa&limit=500').catch(function(){ return []; }),
+          supa('propostas?select=status&limit=500').catch(function(){ return []; }),
+          supa('ma_pipeline?select=auc_b,declinado&limit=200').catch(function(){ return []; })
+        ]).then(function(results){
+          renderDash(G, H, results[0], results[1], results[2]);
+        });
+      } else {
+        showEmpty();
+      }
+    });
+  } else {
+    var raw = localStorage.getItem('B3D');
+    if (!raw) { showEmpty(); return; }
+    if (Blue3_runPipeline && Blue3_runPipeline()) {
+      var G = window.Blue3Data.resumoGeral || {};
+      var H = window.Blue3Data.hunters || [];
+      Promise.all([
+        supa('crm_candidatos?select=etapa&limit=500').catch(function(){ return []; }),
+        supa('propostas?select=status&limit=500').catch(function(){ return []; }),
+        supa('ma_pipeline?select=auc_b,declinado&limit=200').catch(function(){ return []; })
+      ]).then(function(results){
+        renderDash(G, H, results[0], results[1], results[2]);
+      });
+    } else { showEmpty(); }
+  }
+})();
+</script>
+</body>
+</html>
