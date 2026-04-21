@@ -138,6 +138,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .hist-del:hover{color:var(--red)}
 .hist-vazio{padding:16px;text-align:center;font-size:11px;color:var(--t4)}
 
+
+/* ── Abas do modal ── */
+.tab-bar{
+  display:flex;gap:2px;
+  background:var(--canvas);border-radius:8px;
+  padding:3px;margin-bottom:16px;
+}
+.tab-btn{
+  flex:1;padding:7px 12px;font-size:11px;font-weight:600;
+  color:var(--t3);cursor:pointer;border:none;
+  background:transparent;font-family:'DM Sans',sans-serif;
+  border-radius:6px;transition:all .15s;letter-spacing:.02em;
+}
+.tab-btn:hover{color:var(--t1);background:rgba(255,255,255,.7);}
+.tab-btn.active{
+  color:var(--cobalt);background:var(--surface);
+  box-shadow:0 1px 4px rgba(10,15,30,.1);font-weight:700;
+}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
 </style>
 </head>
 <body>
@@ -202,11 +222,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
       <!-- ── Abas ── -->
       <div class="tab-bar">
-        <button class="tab-btn active" onclick="switchTab('aba1',this)">CRM / Lead</button>
-        <button class="tab-btn" onclick="switchTab('aba2',this)">Situação Atual</button>
+        <button class="tab-btn active" onclick="switchTab('aba1',this)">Candidato</button>
+        <button class="tab-btn" onclick="switchTab('aba2',this)">Remuneração</button>
       </div>
 
-      <!-- ══ ABA 1 — CRM / Lead ══ -->
+      <!-- ══ ABA 1 — Candidato ══ -->
       <div class="tab-pane active" id="aba1">
 
         <div class="sec-lbl" style="margin-top:0">Identificação</div>
@@ -369,15 +389,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         </div>
         <input type="hidden" id="m-obs">
 
-        <!-- Botão Gerar Proposta -->
-        <button class="btn-gerar-prop" onclick="gerarProposta()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 7H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-2"/><path d="M13 5h6v6"/><path d="M19 5l-8 8"/></svg>
-          Gerar Proposta no Simulador
-        </button>
+        <!-- Botão Gerar Proposta — alinhado com identidade visual -->
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);">
+          <button onclick="gerarProposta()" style="background:var(--cobalt);color:#fff;border:none;border-radius:var(--r8);padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:7px;transition:all .15s;width:100%;justify-content:center;" onmouseover="this.style.background='var(--cobalt-br)'" onmouseout="this.style.background='var(--cobalt)'">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 7H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-2" stroke-linecap="round"/><path d="M13 5h6v6" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 5l-8 8" stroke-linecap="round"/></svg>
+            Gerar Proposta no Simulador
+          </button>
+        </div>
 
       </div>
 
-      <!-- ══ ABA 2 — Situação Atual ══ -->
+      <!-- ══ ABA 2 — Remuneração ══ -->
       <div class="tab-pane" id="aba2">
 
         <div class="sec-lbl" style="margin-top:0">Remuneração</div>
@@ -429,12 +451,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
       </div>
     </div>
     </div>
-    <div class="modal-foot">
-      <button class="btn-excluir" id="btn-excluir" style="display:none" onclick="excluirCandidato()">Excluir</button>
-      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
-      <button class="btn-salvar" onclick="salvarCandidato()">
-        <span id="btn-salvar-txt">Salvar candidato</span>
-      </button>
+    <div class="modal-foot" style="justify-content:space-between;">
+      <button class="btn-excluir" id="btn-excluir" style="display:none;margin-right:auto" onclick="excluirCandidato()">Excluir</button>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+        <button class="btn-salvar" onclick="salvarCandidato()">
+          <span id="btn-salvar-txt">Salvar candidato</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
