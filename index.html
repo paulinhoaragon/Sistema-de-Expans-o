@@ -675,31 +675,44 @@ function b3Login() {
 
 function b3Start() {
   sessionStorage.setItem('b3s', JSON.stringify(B3CU));
-  document.getElementById('b3-sair-btn').style.display = 'inline-block';
 
   var r = B3CU.r;
 
-  // Master — acesso total
-  if (r === 'master') {
-    document.getElementById('b3-card-upload').classList.remove('b3-hidden');
-    document.getElementById('b3-card-admin').classList.remove('b3-hidden');
-    document.getElementById('b3-card-ma').classList.remove('b3-hidden');
-    document.getElementById('b3-card-cf').classList.remove('b3-hidden');
-    document.getElementById('b3-card-hunter').classList.remove('b3-hidden');
+  // ── Ativar shell SaaS ──
+  document.getElementById('nexus-shell').classList.add('active');
+  document.getElementById('b3lo').style.display = 'none';
+
+  // User info na sidebar
+  var name = B3CU.n || B3CU.l || '?';
+  var av = document.getElementById('sb-avatar');
+  var un = document.getElementById('sb-user-name');
+  var ur = document.getElementById('sb-user-role');
+  if (av) av.textContent = name.charAt(0).toUpperCase();
+  if (un) un.textContent = name;
+  if (ur) {
+    var rm = {master:'Master',gerente:'Gerente',paulo:'Gerente',viewer:'Viewer',hunter:'Hunter'};
+    ur.textContent = rm[r] || r;
   }
 
-  // Gerente — tudo exceto Upload CSV e Gestão de Usuários
-  if (r === 'gerente' || r === 'paulo') {
-    document.getElementById('b3-card-ma').classList.remove('b3-hidden');
-    document.getElementById('b3-card-cf').classList.remove('b3-hidden');
-    document.getElementById('b3-card-hunter').classList.remove('b3-hidden');
-  }
+  // Controle de acesso na sidebar
+  var isMaster  = r === 'master';
+  var isGerente = r === 'master' || r === 'gerente' || r === 'paulo';
+  var isCf      = r === 'master' || r === 'gerente' || r === 'paulo' || r === 'viewer';
 
-  // Viewer — tudo exceto Upload CSV, Gestão de Usuários e Pipeline M&A
-  if (r === 'viewer') {
-    document.getElementById('b3-card-cf').classList.remove('b3-hidden');
-    document.getElementById('b3-card-hunter').classList.remove('b3-hidden');
-  }
+  document.querySelectorAll('.b3-sb-ma').forEach(function(el){
+    el.style.display = isGerente ? '' : 'none';
+  });
+  document.querySelectorAll('.b3-sb-cf').forEach(function(el){
+    el.style.display = isCf ? '' : 'none';
+  });
+  document.querySelectorAll('.b3-sb-admin').forEach(function(el){
+    el.style.display = isMaster ? '' : 'none';
+  });
+  document.querySelectorAll('.b3-sb-upload').forEach(function(el){
+    el.style.display = isMaster ? '' : 'none';
+  });
+  var maSection = document.getElementById('sb-ma-section');
+  if (maSection) maSection.style.display = isGerente ? '' : 'none';
 
   updateCSVStatus();
 }
@@ -708,10 +721,7 @@ function b3Logout(e) {
   if (e) e.preventDefault();
   B3CU = null;
   sessionStorage.removeItem('b3s');
-  ['b3-card-upload','b3-card-cf','b3-card-hunter','b3-card-ma','b3-card-admin'].forEach(function(id){
-    document.getElementById(id).classList.add('b3-hidden');
-  });
-  document.getElementById('b3-sair-btn').style.display = 'none';
+  document.getElementById('nexus-shell').classList.remove('active');
   document.getElementById('b3lo').style.display = 'flex';
   document.getElementById('b3u').value = '';
   document.getElementById('b3p').value = '';
@@ -1057,66 +1067,7 @@ function closeOverlay() {
 }
 
 
-// ════════ SHELL SAAS — EXTENSÃO DO b3Start ════════
-
-// Sobrescrever b3Start para ativar o shell
-var _b3StartOrig = b3Start;
-b3Start = function() {
-  _b3StartOrig();
-  _activateShell();
-};
-
-// Sobrescrever b3Logout para desativar o shell
-var _b3LogoutOrig = b3Logout;
-b3Logout = function(e) {
-  if (e) e.preventDefault();
-  document.getElementById('nexus-shell').classList.remove('active');
-  document.getElementById('b3lo').style.display = 'flex';
-  B3CU = null;
-  sessionStorage.removeItem('b3s');
-  document.getElementById('b3u').value = '';
-  document.getElementById('b3p').value = '';
-};
-
-function _activateShell() {
-  // Mostrar shell
-  document.getElementById('nexus-shell').classList.add('active');
-  document.getElementById('b3lo').style.display = 'none';
-
-  // Atualizar user info na sidebar
-  if (B3CU) {
-    var name = B3CU.n || B3CU.l || '?';
-    document.getElementById('sb-user-name').textContent = name;
-    document.getElementById('sb-avatar').textContent = name.charAt(0).toUpperCase();
-    var roleMap = {master:'Master',gerente:'Gerente',paulo:'Gerente',viewer:'Viewer',hunter:'Hunter'};
-    document.getElementById('sb-user-role').textContent = roleMap[B3CU.r] || B3CU.r;
-
-    var r = B3CU.r;
-
-    // Controle de acesso por perfil
-    document.querySelectorAll('.b3-sb-ma').forEach(function(el){
-      el.style.display = (r === 'master' || r === 'gerente' || r === 'paulo') ? '' : 'none';
-    });
-    document.querySelectorAll('.b3-sb-cf').forEach(function(el){
-      el.style.display = (r === 'master' || r === 'gerente' || r === 'paulo' || r === 'viewer') ? '' : 'none';
-    });
-    document.querySelectorAll('.b3-sb-admin').forEach(function(el){
-      el.style.display = (r === 'master') ? '' : 'none';
-    });
-    document.querySelectorAll('.b3-sb-upload').forEach(function(el){
-      el.style.display = (r === 'master') ? '' : 'none';
-    });
-    // Seção M&A
-    var maSection = document.getElementById('sb-ma-section');
-    if (maSection) maSection.style.display = (r === 'master' || r === 'gerente' || r === 'paulo') ? '' : 'none';
-
-    // Upload button na topbar
-    var tbUpload = document.querySelector('#topbar .b3-sb-upload');
-    if (tbUpload) tbUpload.style.display = (r === 'master') ? 'flex' : 'none';
-  }
-
-  updateCSVStatus();
-}
+// ── Shell SaaS integrado diretamente no b3Start ──
 
 // ════════ NAVEGAÇÃO VIA IFRAME ════════
 function navTo(page, title) {
@@ -1155,7 +1106,7 @@ function sbToggle() {
     try { B3CU = JSON.parse(s); } catch(e) { B3CU = null; }
     if (B3CU) {
       document.getElementById('b3lo').style.display = 'none';
-      b3Start(); // aqui b3Start já é a versão sobrescrita com _activateShell
+      b3Start(); // ativa shell + controle de acesso
     }
   }
 })();
