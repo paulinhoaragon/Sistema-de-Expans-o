@@ -445,12 +445,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           <div class="f-row">
             <label>Plano de Saúde (R$/mês)</label>
             <input id="m-saude" type="number" placeholder="0" oninput="calcFinanceiro()">
-            <span style="font-size:9px;color:var(--t4);margin-top:2px">× 12 no total anual</span>
+          </div>
+          <div class="f-row">
+            <label>Plano de Saúde Anual <span style="font-weight:400;color:var(--t4)">× 12</span></label>
+            <input id="m-saude-anual" type="text" readonly placeholder="—" style="background:#f0f2fa;color:var(--t2);font-weight:600;cursor:default">
           </div>
           <div class="f-row">
             <label>VA/VR (R$/mês)</label>
             <input id="m-vavr" type="number" placeholder="0" oninput="calcFinanceiro()">
-            <span style="font-size:9px;color:var(--t4);margin-top:2px">× 12 no total anual</span>
+          </div>
+          <div class="f-row">
+            <label>VA/VR Anual <span style="font-weight:400;color:var(--t4)">× 12</span></label>
+            <input id="m-vavr-anual" type="text" readonly placeholder="—" style="background:#f0f2fa;color:var(--t2);font-weight:600;cursor:default">
           </div>
         </div>
 
@@ -666,7 +672,7 @@ function abrirEdicao(id) {
 function fecharModal() { document.getElementById('overlay-cand').classList.remove('open'); }
 
 function limparModal() {
-  ['m-id','m-nome','m-tel','m-email','m-inst','m-auc','m-piso','m-periodo','m-upfront','m-t1m','m-t1v','m-t2m','m-t2v','m-data-ent','m-data-ini','m-obs','m-auc-cust','m-clientes','m-rem-bruta','m-bonus-bruto','m-saude','m-vavr','m-obs-nova'].forEach(function(id){
+  ['m-id','m-nome','m-tel','m-email','m-inst','m-auc','m-piso','m-periodo','m-upfront','m-t1m','m-t1v','m-t2m','m-t2v','m-data-ent','m-data-ini','m-obs','m-auc-cust','m-clientes','m-rem-bruta','m-bonus-bruto','m-saude','m-vavr','m-saude-anual','m-vavr-anual','m-obs-nova'].forEach(function(id){
     document.getElementById(id).value='';
   });
   document.getElementById('m-hunter').value='';
@@ -922,6 +928,12 @@ function calcFinanceiro() {
   // Plano de saúde e VA/VR
   var saude = parseFloat(document.getElementById('m-saude').value)||0;
   var vavr  = parseFloat(document.getElementById('m-vavr').value) ||0;
+
+  // Exibir valores anuais dos benefícios
+  var saudeA = document.getElementById('m-saude-anual');
+  var vavrA  = document.getElementById('m-vavr-anual');
+  if (saudeA) saudeA.value = saude > 0 ? 'R$ ' + fmtBRL(saude * 12) + '/ano' : '—';
+  if (vavrA)  vavrA.value  = vavr  > 0 ? 'R$ ' + fmtBRL(vavr  * 12) + '/ano' : '—';
 
   // Pacote total anual líquido (inclui benefícios)
   var totalBox = document.getElementById('m-rem-total-box');
