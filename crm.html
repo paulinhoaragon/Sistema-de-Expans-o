@@ -6,6 +6,7 @@
 <title>Nexus · CRM · Blue3</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="pipeline.js"></script>
+<script src="config.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -189,8 +190,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   <input class="f-inp" id="f-busca" placeholder="Nome ou instituição..." oninput="renderBoard()">
   <select class="f-sel" id="f-hunter" onchange="renderBoard()">
     <option value="">Todos os hunters</option>
-    <option>Eduarda</option><option>Bianca</option><option>Paulo</option>
-    <option>Henrique</option><option>Thaila</option>
+    <!-- Populado dinamicamente -->
   </select>
   <select class="f-sel" id="f-nivel" onchange="renderBoard()">
     <option value="">Todas as senioridades</option>
@@ -319,8 +319,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           <div class="f-row"><label>Hunter</label>
             <select id="m-hunter">
               <option value="">— Selecione —</option>
-              <option>Eduarda</option><option>Bianca</option><option>Paulo</option>
-              <option>Henrique</option><option>Thaila</option>
+              <!-- Populado dinamicamente via NexusConfig.getHunters() -->
             </select>
           </div>
           <div class="f-row"><label>Senioridade</label>
@@ -609,10 +608,17 @@ function dropCard(e, etapa) {
   if (!_dragId) return;
   var cand = _todos.find(function(r){ return r.id===_dragId; });
   if (!cand || cand.etapa === etapa) { _dragId=null; return; }
+  var etapaAnterior = cand.etapa;
+  var dragIdAtual   = _dragId;
+  var histBruto     = cand.historico_etapas || '[]';
   cand.etapa = etapa;
   renderBoard();
-  supa('crm_candidatos?id=eq.'+_dragId, { method:'PATCH', body: JSON.stringify({ etapa: etapa, atualizado_em: new Date().toISOString() }) })
-    .catch(function(){ cand.etapa = etapa; }); // otimista, mantém
+  // Registrar mudança de etapa com data automática
+  if (typeof NexusConfig !== 'undefined') {
+    NexusConfig.registrarMudancaEtapa(dragIdAtual, etapaAnterior, etapa, histBruto, null);
+  } else {
+    supa('crm_candidatos?id=eq.'+dragIdAtual, { method:'PATCH', body: JSON.stringify({ etapa: etapa, atualizado_em: new Date().toISOString() }) });
+  }
   _dragId = null;
   document.querySelectorAll('.kcard').forEach(function(c){ c.classList.remove('dragging'); });
 }
@@ -729,7 +735,17 @@ function salvarCandidato() {
     req = supa('crm_candidatos', { method:'POST', body: JSON.stringify(payload) });
   }
   req.then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
-    .then(function(){ fecharModal(); carregar(); })
+    .then(function(rows) {
+      // Registrar mudança de etapa automaticamente
+      if (id) {
+        var novaEtapa = payload.etapa;
+        var candAnt   = _todos.find(function(x){ return x.id===id; });
+        if (candAnt && candAnt.etapa !== novaEtapa && typeof NexusConfig !== 'undefined') {
+          NexusConfig.registrarMudancaEtapa(id, candAnt.etapa, novaEtapa, candAnt.historico_etapas||'[]', null);
+        }
+      }
+      fecharModal(); carregar();
+    })
     .catch(function(e){ alert('Erro ao salvar: '+e+'\nCrie a tabela crm_candidatos no Supabase.'); })
     .finally(function(){ document.getElementById('btn-salvar-txt').textContent='Salvar candidato'; });
 }
@@ -1069,7 +1085,33 @@ function gerarProposta() {
   }
 }
 
+
+// ── Hunters dinâmicos ────────────────────────────────────────────
+function popularSelectsHunter(hunters) {
+  var ativos = hunters.filter(function(h){ return h.status === 'Ativo'; });
+  // Select do modal
+  var selModal = document.getElementById('m-hunter');
+  if (selModal) {
+    var valAtual = selModal.value;
+    selModal.innerHTML = '<option value="">— Selecione —</option>'
+      + ativos.map(function(h){ return '<option value="'+esc(h.nome)+'"'+(h.nome===valAtual?' selected':'')+'>'+esc(h.nome)+'</option>'; }).join('');
+  }
+  // Select do filtro
+  var selFiltro = document.getElementById('f-hunter');
+  if (selFiltro) {
+    var valFiltro = selFiltro.value;
+    selFiltro.innerHTML = '<option value="">Todos os hunters</option>'
+      + ativos.map(function(h){ return '<option value="'+esc(h.nome)+'"'+(h.nome===valFiltro?' selected':'')+'>'+esc(h.nome)+'</option>'; }).join('');
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────
+// Carregar hunters antes do board
+if (typeof NexusConfig !== 'undefined') {
+  NexusConfig.getHunters(function(err, hunters) {
+    if (!err && hunters && hunters.length) popularSelectsHunter(hunters);
+  });
+}
 carregar();
 </script>
 </body>
