@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nexus · Configurações</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0A0F1E;--cobalt:#1A3BAD;--cobalt-br:#2952E3;--cobalt-gl:#4A70F5;
+  --gold:#B8962E;--g:#16A34A;--am:#B45309;--red:#DC2626;
+  --canvas:#F0F2FA;--surface:#fff;--rule:#E2E5F0;
+  --t1:#0A0F1E;--t2:#3A4268;--t3:#7A82A8;--t4:#A8B0CC;
+  --r8:8px;--r12:12px;--sh:0 1px 4px rgba(10,15,30,.07),0 4px 16px rgba(10,15,30,.05);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:13px;}
+
+/* ── COVER ── */
+.cover{background:var(--ink);padding:24px 28px 20px;position:relative;overflow:hidden;}
+.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+.cover-rule{height:3px;background:linear-gradient(90deg,var(--cobalt),var(--cobalt-gl),transparent)}
+.cv-t{font-family:'Playfair Display',serif;font-size:20px;color:#fff;letter-spacing:-.02em;}
+.cv-s{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.14em;margin-top:3px;}
+
+/* ── TABS PRINCIPAIS ── */
+.main-tabs{background:var(--surface);border-bottom:1px solid var(--rule);padding:0 24px;display:flex;gap:0;}
+.main-tab{padding:14px 20px;font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;
+  border:none;background:none;font-family:'DM Sans',sans-serif;
+  border-bottom:3px solid transparent;margin-bottom:-1px;transition:all .15s;}
+.main-tab:hover{color:var(--t1);}
+.main-tab.active{color:var(--cobalt);border-bottom-color:var(--cobalt);}
+
+/* ── LAYOUT ── */
+.page{max-width:900px;padding:24px;}
+
+/* ── CARD ── */
+.card{background:var(--surface);border-radius:var(--r12);padding:22px 24px;box-shadow:var(--sh);margin-bottom:16px;}
+.card-title{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:4px;}
+.card-sub{font-size:11px;color:var(--t3);margin-bottom:18px;}
+
+/* ── FORM ── */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.f-row{display:flex;flex-direction:column;gap:4px;margin-bottom:2px;}
+.f-row label{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;}
+.f-row input,.f-row select,.f-row textarea{
+  padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r8);
+  font-size:12px;font-family:'DM Sans',sans-serif;color:var(--t1);
+  background:#fafbfd;outline:none;transition:border .15s;width:100%;}
+.f-row input:focus,.f-row select:focus,.f-row textarea:focus{border-color:var(--cobalt);}
+.f-row textarea{resize:vertical;min-height:72px;}
+.f-hint{font-size:10px;color:var(--t4);margin-top:3px;}
+
+/* ── BOTÕES ── */
+.btn-primary{background:var(--cobalt);color:#fff;border:none;border-radius:var(--r8);
+  padding:10px 22px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.btn-primary:hover{background:var(--cobalt-br);}
+.btn-secondary{background:var(--canvas);color:var(--t2);border:1px solid var(--rule);border-radius:var(--r8);
+  padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.btn-danger{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;border-radius:var(--r8);
+  padding:8px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.btn-danger:hover{background:var(--red);color:#fff;}
+.btn-row{display:flex;gap:8px;margin-top:16px;align-items:center;}
+
+/* ── STATUS BADGE ── */
+.badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;text-transform:uppercase;}
+.b-ativo{background:#DCFCE7;color:#166534;}
+.b-inativo{background:#F1F5F9;color:#64748B;}
+
+/* ── HUNTERS TABLE ── */
+.hunters-grid{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.hunter-row{display:flex;align-items:center;gap:12px;padding:12px 14px;
+  background:#fafbfd;border:1px solid var(--rule);border-radius:var(--r8);}
+.h-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--cobalt),var(--cobalt-gl));
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;
+  color:#fff;flex-shrink:0;overflow:hidden;}
+.h-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.h-info{flex:1;}
+.h-nome{font-size:12px;font-weight:700;color:var(--t1);}
+.h-meta{font-size:10px;color:var(--t3);}
+.h-actions{display:flex;gap:6px;align-items:center;}
+
+/* ── COLOR PICKER ── */
+.color-row{display:flex;align-items:center;gap:10px;}
+.color-preview{width:36px;height:36px;border-radius:6px;border:1px solid var(--rule);flex-shrink:0;cursor:pointer;}
+input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
+
+/* ── PREVIEW WHITE LABEL ── */
+.wl-preview{background:var(--ink);border-radius:var(--r8);padding:14px 18px;
+  display:flex;align-items:center;gap:12px;margin-top:12px;}
+.wl-prev-logo{width:32px;height:32px;background:var(--cobalt);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;}
+.wl-prev-name{font-size:13px;font-weight:700;color:#fff;}
+.wl-prev-sub{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:#1A3BAD;color:#fff;
+  padding:12px 20px;border-radius:var(--r8);font-size:12px;font-weight:600;
+  box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:999;opacity:0;
+  transform:translateY(10px);transition:all .25s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.ok{background:#16A34A;}
+.toast.err{background:var(--red);}
+
+/* ── TABS CONTENT ── */
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+/* ── EMPTY ── */
+.empty-hunters{text-align:center;padding:32px;color:var(--t4);font-size:12px;}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cg"></div>
+  <div class="cv-t">Configurações</div>
+  <div class="cv-s">Nexus · Blue3 Expansão Suite · Gestão do sistema</div>
+</div>
+<div class="cover-rule"></div>
+
+<!-- Tabs principais -->
+<div class="main-tabs">
+  <button class="main-tab active" onclick="showTab('tab-hunters',this)">Hunters</button>
+  <button class="main-tab" onclick="showTab('tab-params',this)">Parâmetros</button>
+  <button class="main-tab" onclick="showTab('tab-wl',this)">White Label</button>
+</div>
+
+<!-- Toast de feedback -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════
+     TAB 1 — GESTÃO DE HUNTERS
+══════════════════════════════════════════════════ -->
+<div class="tab-content active page" id="tab-hunters">
+
+  <div class="card">
+    <div class="card-title">Gestão de Hunters</div>
+    <div class="card-sub">Cadastro dos hunters ativos. Esses dados alimentam o ranking e os filtros do CRM.</div>
+
+    <!-- Form novo hunter -->
+    <div style="background:var(--canvas);border-radius:var(--r8);padding:16px 18px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:12px;">Adicionar / Editar Hunter</div>
+      <input type="hidden" id="h-edit-id">
+      <div class="fgrid">
+        <div class="f-row"><label>Nome *</label><input id="h-nome" placeholder="Nome completo"></div>
+        <div class="f-row"><label>Meta (contratações)</label><input id="h-meta" type="number" placeholder="0" min="0"></div>
+        <div class="f-row">
+          <label>Status</label>
+          <select id="h-status">
+            <option value="Ativo">Ativo</option>
+            <option value="Inativo">Inativo</option>
+          </select>
+        </div>
+        <div class="f-row">
+          <label>Foto (URL ou upload)</label>
+          <input id="h-foto" placeholder="https://... ou deixe em branco">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="salvarHunter()"><span id="btn-h-txt">Salvar hunter</span></button>
+        <button class="btn-secondary" onclick="limparFormHunter()">Limpar</button>
+      </div>
+    </div>
+
+    <!-- Lista de hunters -->
+    <div id="hunters-lista">
+      <div class="empty-hunters">Carregando hunters...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     TAB 2 — PARÂMETROS GLOBAIS
+══════════════════════════════════════════════════ -->
+<div class="tab-content page" id="tab-params">
+
+  <div class="card">
+    <div class="card-title">Parâmetros Globais do Sistema</div>
+    <div class="card-sub">Esses valores são utilizados como base de cálculo no Simulador de Propostas e demais módulos.</div>
+
+    <div class="fgrid">
+      <div class="f-row">
+        <label>ROA Padrão (%)</label>
+        <input id="p-roa" type="number" step="0.01" placeholder="0.35">
+        <span class="f-hint">Ex: 0.35 = 0,35% ao ano sobre AuC</span>
+      </div>
+      <div class="f-row">
+        <label>Impostos sobre receita (%)</label>
+        <input id="p-impostos" type="number" step="0.1" placeholder="0">
+        <span class="f-hint">% aplicado sobre a receita gerada</span>
+      </div>
+    </div>
+
+    <div class="fgrid" style="margin-top:12px;">
+      <div class="f-row">
+        <label>Custos Indiretos</label>
+        <input id="p-custos" type="number" step="0.1" placeholder="0">
+      </div>
+      <div class="f-row">
+        <label>Tipo de Custo Indireto</label>
+        <select id="p-tipo-custo">
+          <option value="pct">Percentual (%)</option>
+          <option value="fixo">Valor fixo (R$)</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div class="f-row">
+        <label>Regras de Repasse</label>
+        <textarea id="p-repasse" placeholder="Descreva as regras de repasse comercial...&#10;Ex: 30% líquido para o assessor nos primeiros 12 meses, 35% a partir do 13º mês."></textarea>
+        <span class="f-hint">Campo livre · será exibido como referência no simulador</span>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" onclick="salvarParametros()"><span id="btn-p-txt">Salvar parâmetros</span></button>
+      <span id="p-saved-at" style="font-size:10px;color:var(--t4);"></span>
+    </div>
+  </div>
+
+  <!-- Preview de uso -->
+  <div class="card">
+    <div class="card-title">Como esses parâmetros são usados</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:8px;">
+      <div style="background:var(--canvas);border-radius:var(--r8);padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--cobalt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Simulador</div>
+        <div style="font-size:11px;color:var(--t2);">ROA padrão preenche automaticamente o campo de ROA ao abrir o simulador.</div>
+      </div>
+      <div style="background:var(--canvas);border-radius:var(--r8);padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--cobalt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Cashflow</div>
+        <div style="font-size:11px;color:var(--t2);">Impostos e custos indiretos são aplicados na projeção financeira mensal.</div>
+      </div>
+      <div style="background:var(--canvas);border-radius:var(--r8);padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--cobalt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Relatórios</div>
+        <div style="font-size:11px;color:var(--t2);">Regras de repasse são exibidas como referência nos relatórios executivos.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     TAB 3 — WHITE LABEL
+══════════════════════════════════════════════════ -->
+<div class="tab-content page" id="tab-wl">
+
+  <div class="card">
+    <div class="card-title">Identidade Visual · White Label</div>
+    <div class="card-sub">Customize o sistema com a identidade da sua empresa. As alterações são aplicadas em tempo real.</div>
+
+    <div class="fgrid">
+      <div class="f-row">
+        <label>Nome da Empresa</label>
+        <input id="wl-nome" placeholder="Nexus" oninput="previewWL()">
+      </div>
+      <div class="f-row">
+        <label>URL da Logo</label>
+        <input id="wl-logo" placeholder="https://sua-empresa.com/logo.png" oninput="previewWL()">
+        <span class="f-hint">URL pública da imagem (PNG ou SVG recomendado)</span>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">Paleta de Cores</div>
+      <div class="fgrid3">
+        <div class="f-row">
+          <label>Cor Primária</label>
+          <div class="color-row">
+            <div class="color-preview" id="prev-cor1" onclick="document.getElementById('wl-cor1').click()" style="background:#1A3BAD;"></div>
+            <input type="color" id="wl-cor1" value="#1A3BAD" oninput="syncColor('wl-cor1','prev-cor1');previewWL()">
+            <input id="wl-cor1-hex" style="flex:1;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;" value="#1A3BAD" oninput="syncHex('wl-cor1-hex','wl-cor1','prev-cor1');previewWL()" placeholder="#1A3BAD">
+          </div>
+        </div>
+        <div class="f-row">
+          <label>Cor Secundária</label>
+          <div class="color-row">
+            <div class="color-preview" id="prev-cor2" onclick="document.getElementById('wl-cor2').click()" style="background:#4A70F5;"></div>
+            <input type="color" id="wl-cor2" value="#4A70F5" oninput="syncColor('wl-cor2','prev-cor2');previewWL()">
+            <input id="wl-cor2-hex" style="flex:1;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;" value="#4A70F5" oninput="syncHex('wl-cor2-hex','wl-cor2','prev-cor2');previewWL()" placeholder="#4A70F5">
+          </div>
+        </div>
+        <div class="f-row">
+          <label>Cor de Acento</label>
+          <div class="color-row">
+            <div class="color-preview" id="prev-cor3" onclick="document.getElementById('wl-cor3').click()" style="background:#B8962E;"></div>
+            <input type="color" id="wl-cor3" value="#B8962E" oninput="syncColor('wl-cor3','prev-cor3');previewWL()">
+            <input id="wl-cor3-hex" style="flex:1;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;" value="#B8962E" oninput="syncHex('wl-cor3-hex','wl-cor3','prev-cor3');previewWL()" placeholder="#B8962E">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="wl-preview" id="wl-preview-box">
+      <div class="wl-prev-logo" id="wl-prev-logo-box">N</div>
+      <div>
+        <div class="wl-prev-name" id="wl-prev-nome">Nexus</div>
+        <div class="wl-prev-sub">Expansão Suite</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:6px;">
+        <div style="width:24px;height:24px;border-radius:4px;" id="wl-prev-c1"></div>
+        <div style="width:24px;height:24px;border-radius:4px;" id="wl-prev-c2"></div>
+        <div style="width:24px;height:24px;border-radius:4px;" id="wl-prev-c3"></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" onclick="salvarWL()"><span id="btn-wl-txt">Salvar identidade visual</span></button>
+      <button class="btn-secondary" onclick="resetarWL()">Restaurar padrão</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Navegação tabs ────────────────────────────────────────────────
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.main-tab').forEach(function(b){ b.classList.remove('active'); });
+  var el = document.getElementById(id);
+  if (el) el.classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+function toast(msg, tipo) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (tipo||'');
+  clearTimeout(t._t);
+  t._t = setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+// ════════════ HUNTERS ════════════════════════════════════════════
+
+function carregarHunters() {
+  NexusConfig.getHunters(function(err, hunters) {
+    var el = document.getElementById('hunters-lista');
+    if (err || !hunters.length) {
+      el.innerHTML = '<div class="empty-hunters">Nenhum hunter cadastrado ainda.<br>Use o formulário acima para adicionar.</div>';
+      return;
+    }
+    el.innerHTML = '<div class="hunters-grid">' +
+      hunters.map(function(h) {
+        var inicial = (h.nome||'?').charAt(0).toUpperCase();
+        var avatarHTML = h.foto_url
+          ? '<img src="'+h.foto_url+'" alt="'+h.nome+'">'
+          : inicial;
+        return '<div class="hunter-row">'
+          + '<div class="h-avatar">'+avatarHTML+'</div>'
+          + '<div class="h-info">'
+          + '<div class="h-nome">'+esc(h.nome)+'</div>'
+          + '<div class="h-meta">Meta: '+h.meta+' contratações</div>'
+          + '</div>'
+          + '<span class="badge '+(h.status==='Ativo'?'b-ativo':'b-inativo')+'">'+h.status+'</span>'
+          + '<div class="h-actions">'
+          + '<button class="btn-secondary" style="font-size:10px;padding:6px 10px;" onclick="editarHunter(\''+h.id+'\')">Editar</button>'
+          + '<button class="btn-danger" onclick="excluirHunter(\''+h.id+'\')">✕</button>'
+          + '</div>'
+          + '</div>';
+      }).join('') + '</div>';
+  });
+}
+
+function salvarHunter() {
+  var nome = (document.getElementById('h-nome').value||'').trim();
+  if (!nome) { toast('Informe o nome do hunter.','err'); return; }
+  var dados = {
+    nome:    nome,
+    meta:    parseFloat(document.getElementById('h-meta').value)||0,
+    status:  document.getElementById('h-status').value||'Ativo',
+    foto_url:document.getElementById('h-foto').value.trim()||null,
+  };
+  var id = document.getElementById('h-edit-id').value;
+  if (id) dados.id = id;
+  document.getElementById('btn-h-txt').textContent = 'Salvando...';
+  NexusConfig.saveHunter(dados, function(err) {
+    document.getElementById('btn-h-txt').textContent = 'Salvar hunter';
+    if (err) { toast('Erro ao salvar hunter.','err'); return; }
+    toast('Hunter salvo com sucesso!','ok');
+    limparFormHunter();
+    carregarHunters();
+  });
+}
+
+function editarHunter(id) {
+  NexusConfig.getHunters(function(err, hunters) {
+    var h = hunters.find(function(x){ return x.id===id; });
+    if (!h) return;
+    document.getElementById('h-edit-id').value  = h.id;
+    document.getElementById('h-nome').value     = h.nome||'';
+    document.getElementById('h-meta').value     = h.meta||0;
+    document.getElementById('h-status').value   = h.status||'Ativo';
+    document.getElementById('h-foto').value     = h.foto_url||'';
+    document.getElementById('btn-h-txt').textContent = 'Atualizar hunter';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+function excluirHunter(id) {
+  if (!confirm('Excluir este hunter? Esta ação não pode ser desfeita.')) return;
+  NexusConfig.deleteHunter(id, function(err) {
+    if (err) { toast('Erro ao excluir.','err'); return; }
+    toast('Hunter removido.','ok');
+    carregarHunters();
+  });
+}
+
+function limparFormHunter() {
+  document.getElementById('h-edit-id').value = '';
+  document.getElementById('h-nome').value    = '';
+  document.getElementById('h-meta').value    = '';
+  document.getElementById('h-status').value  = 'Ativo';
+  document.getElementById('h-foto').value    = '';
+  document.getElementById('btn-h-txt').textContent = 'Salvar hunter';
+}
+
+// ════════════ PARÂMETROS ══════════════════════════════════════════
+
+function carregarParametros() {
+  NexusConfig.getParametros(function(err, p) {
+    if (err || !p) return;
+    if (p.roa_padrao !== undefined) document.getElementById('p-roa').value      = p.roa_padrao;
+    if (p.impostos !== undefined)   document.getElementById('p-impostos').value = p.impostos;
+    if (p.custos_indiretos !== undefined) document.getElementById('p-custos').value = p.custos_indiretos;
+    if (p.tipo_custos) document.getElementById('p-tipo-custo').value = p.tipo_custos;
+    if (p.regras_repasse) document.getElementById('p-repasse').value = p.regras_repasse;
+    if (p.atualizado_em) {
+      document.getElementById('p-saved-at').textContent =
+        'Atualizado em ' + new Date(p.atualizado_em).toLocaleDateString('pt-BR', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    }
+  });
+}
+
+function salvarParametros() {
+  var dados = {
+    roa_padrao:       parseFloat(document.getElementById('p-roa').value)||0,
+    impostos:         parseFloat(document.getElementById('p-impostos').value)||0,
+    custos_indiretos: parseFloat(document.getElementById('p-custos').value)||0,
+    tipo_custos:      document.getElementById('p-tipo-custo').value,
+    regras_repasse:   document.getElementById('p-repasse').value.trim(),
+  };
+  document.getElementById('btn-p-txt').textContent = 'Salvando...';
+  NexusConfig.saveParametros(dados, function(err) {
+    document.getElementById('btn-p-txt').textContent = 'Salvar parâmetros';
+    if (err) { toast('Erro ao salvar parâmetros.','err'); return; }
+    toast('Parâmetros salvos!','ok');
+    document.getElementById('p-saved-at').textContent = 'Atualizado agora';
+  });
+}
+
+// ════════════ WHITE LABEL ═════════════════════════════════════════
+
+function carregarWL() {
+  NexusConfig.getWhiteLabel(function(err, wl) {
+    if (err || !wl) return;
+    document.getElementById('wl-nome').value     = wl.nome_empresa||'';
+    document.getElementById('wl-logo').value     = wl.logo_url||'';
+    setColor('wl-cor1','prev-cor1','wl-cor1-hex', wl.cor_primaria   ||'#1A3BAD');
+    setColor('wl-cor2','prev-cor2','wl-cor2-hex', wl.cor_secundaria ||'#4A70F5');
+    setColor('wl-cor3','prev-cor3','wl-cor3-hex', wl.cor_acento     ||'#B8962E');
+    previewWL();
+  });
+}
+
+function salvarWL() {
+  var dados = {
+    nome_empresa:   (document.getElementById('wl-nome').value||'').trim() || 'Nexus',
+    logo_url:       document.getElementById('wl-logo').value.trim()||'',
+    cor_primaria:   document.getElementById('wl-cor1-hex').value||'#1A3BAD',
+    cor_secundaria: document.getElementById('wl-cor2-hex').value||'#4A70F5',
+    cor_acento:     document.getElementById('wl-cor3-hex').value||'#B8962E',
+  };
+  document.getElementById('btn-wl-txt').textContent = 'Salvando...';
+  NexusConfig.saveWhiteLabel(dados, function(err) {
+    document.getElementById('btn-wl-txt').textContent = 'Salvar identidade visual';
+    if (err) { toast('Erro ao salvar identidade visual.','err'); return; }
+    NexusConfig.applyWhiteLabel(dados);
+    toast('Identidade visual atualizada!','ok');
+  });
+}
+
+function resetarWL() {
+  setColor('wl-cor1','prev-cor1','wl-cor1-hex','#1A3BAD');
+  setColor('wl-cor2','prev-cor2','wl-cor2-hex','#4A70F5');
+  setColor('wl-cor3','prev-cor3','wl-cor3-hex','#B8962E');
+  document.getElementById('wl-nome').value = 'Nexus';
+  document.getElementById('wl-logo').value = '';
+  previewWL();
+}
+
+function previewWL() {
+  var nome = document.getElementById('wl-nome').value || 'Nexus';
+  var c1   = document.getElementById('wl-cor1-hex').value || '#1A3BAD';
+  var c2   = document.getElementById('wl-cor2-hex').value || '#4A70F5';
+  var c3   = document.getElementById('wl-cor3-hex').value || '#B8962E';
+  var logo = document.getElementById('wl-logo').value;
+  document.getElementById('wl-prev-nome').textContent = nome;
+  document.getElementById('wl-prev-c1').style.background = c1;
+  document.getElementById('wl-prev-c2').style.background = c2;
+  document.getElementById('wl-prev-c3').style.background = c3;
+  var lb = document.getElementById('wl-prev-logo-box');
+  lb.style.background = c1;
+  if (logo) lb.innerHTML = '<img src="'+logo+'" style="width:32px;height:32px;object-fit:contain;border-radius:4px;" onerror="this.remove()">';
+  else lb.textContent = nome.charAt(0).toUpperCase();
+  // Aplicar preview em tempo real
+  document.documentElement.style.setProperty('--cobalt', c1);
+  document.documentElement.style.setProperty('--cobalt-br', c2);
+  document.documentElement.style.setProperty('--gold', c3);
+}
+
+// Helpers cor
+function syncColor(pickerEl, prevEl) {
+  var v = document.getElementById(pickerEl).value;
+  document.getElementById(prevEl).style.background = v;
+  var hexId = pickerEl.replace('wl-cor','wl-cor') + '-hex';
+  // corrigir: wl-cor1 → wl-cor1-hex
+  var hexEl = document.getElementById(pickerEl + '-hex');
+  if (hexEl) hexEl.value = v;
+}
+function syncHex(hexEl, pickerEl, prevEl) {
+  var v = document.getElementById(hexEl).value;
+  if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
+    document.getElementById(pickerEl).value = v;
+    document.getElementById(prevEl).style.background = v;
+  }
+}
+function setColor(pickerId, prevId, hexId, val) {
+  document.getElementById(pickerId).value = val;
+  document.getElementById(prevId).style.background = val;
+  document.getElementById(hexId).value = val;
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Init ──────────────────────────────────────────────────────────
+carregarHunters();
+carregarParametros();
+carregarWL();
+</script>
+</body>
+</html>
