@@ -587,7 +587,9 @@ function getBonusTier(t,p){
 // ════════════════════════════════════════════════════════════════
 function carregarHunterDB(cb){
   if(typeof NexusConfig==='undefined'){ if(cb) cb([]); return; }
-  NexusConfig.getHunters(function(err,hunters){
+  // Invalidar cache para garantir dados frescos do Supabase
+if(NexusConfig._cache) NexusConfig._cache.hunters=null;
+NexusConfig.getHunters(function(err,hunters){
     if(err||!hunters){ if(cb) cb([]); return; }
     HUNTER_DB=hunters;
     // Resetar e preencher variáveis
@@ -609,7 +611,7 @@ function buildH(hunters,cands){
     hunters.sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||''); });
     hunters.forEach(function(h){ ord.push(h); });
   return ord.map(function(h){
-    var meta=(HUNTER_METAS[h.nome]!==undefined?HUNTER_METAS[h.nome]:13),color=HUNTER_COLORS[h.nome]||'#64748B';
+    var meta=HUNTER_METAS[h.nome]||0,color=HUNTER_COLORS[h.nome]||'#64748B';
     var pace=meta>0?Math.round(h.total/meta*100):0,hn=ns(h.nome);
     var cs=cands.filter(function(c){return ns(c.h)===hn;}).map(function(c){
       return{nome:c.n,filial:c.p,status:c.st,mou:c.mou,inicio:c.inicio||null,auc:c.cap,piso:c.piso,periodo:c.periodo,comp:c.comp,sen:c.sen};
@@ -702,7 +704,7 @@ function renderBonusCards(){
       var ph=HUNTER_PHOTOS[h.nome]||'';
       return'<div style="background:var(--surface);border:1px solid var(--rule);border-radius:12px;overflow:hidden;">'
         +(ph?'<div style="height:130px;position:relative;overflow:hidden;background:linear-gradient(135deg,#0A0F1E,#1A3BAD);">'
-          +'<img src="'+ph+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;mix-blend-mode:luminosity;opacity:0.35;">'
+          +'<img src="'+ph+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;opacity:0.7;">'
           +'<div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(26,59,173,.6),rgba(10,15,30,.4));"></div>'
           +'<div style="position:absolute;bottom:12px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:flex-end;">'
           +'<div><span style="font-size:16px;font-weight:700;color:#fff;">'+h.nome+'</span>'
@@ -711,7 +713,7 @@ function renderBonusCards(){
         +'<div style="padding:12px 14px;">'
         +(ph?'':'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span style="font-size:12px;font-weight:700;">'+h.nome+'</span><span style="font-size:11px;font-weight:700;color:'+tier.color+';">'+tier.lbl+'</span></div>')
         +'<div style="height:6px;background:var(--rule);border-radius:3px;overflow:hidden;margin-bottom:4px;"><div style="height:100%;width:'+bp+'%;background:'+tier.color+';border-radius:3px;"></div></div>'
-        +'<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t4);margin-bottom:2px;"><span>0</span><span>5</span><span>10</span><span>15</span><span>20 ✓</span></div>'
+        +'<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t4);margin-bottom:2px;"><span>0</span><span>'+Math.round(h.meta*0.25)+'</span><span>'+Math.round(h.meta*0.5)+'</span><span>'+Math.round(h.meta*0.75)+'</span><span>'+h.meta+' ✓</span></div>'
         +nx+'</div></div>';
     }).join('')+'</div>'
 
@@ -741,9 +743,12 @@ function renderOv(){
     var isGestor=dbHun && dbHun.is_gestor===true;
     var contratStr=String(hun.total)+'/'+String(hun.meta);
     var subLabel=isGestor?'Gestor &middot; Deals Estrat&eacute;gicos':'Hunter &middot; Expans&atilde;o 1S2026';
+    var hunFoto=HUNTER_PHOTOS[hun.nome]||'';
     return '<div class="'+cardCls+'" onclick="showDet(&#39;'+nomeEsc+'&#39;)">'
       +(isGestor?'':crown)+particles
-      +'<div class="hcard-top" style="background:'+hun.color+'"></div>'
+      +(hunFoto
+        ?'<div class="hcard-foto" style="height:90px;overflow:hidden;position:relative;border-radius:14px 14px 0 0;"><img src="'+hunFoto+'" style="width:100%;height:100%;object-fit:cover;object-position:center 15%;"><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(10,15,30,.6) 100%);"></div></div>'
+        :'<div class="hcard-top" style="background:'+hun.color+'"></div>')
       +'<div class="hcard-name">'+hun.nome+'</div>'
       +'<div class="hcard-sub">'+subLabel+'</div>'
       +'<div class="hs"><span class="hl">Contrata&ccedil;&otilde;es</span><span class="hv">'+contratStr+'</span></div>'
@@ -792,17 +797,19 @@ function renderPage(){
     return;
   }
   // Carregar dados do Supabase (foto, meta) e depois renderizar
-  carregarHunterDB(function(){
-    // Enriquecer hunters do CSV com foto e meta do Supabase
+  carregarHunterDB(function(dbHunters){
+    // Enriquecer HUNTER_METAS e HUNTER_PHOTOS com dados do Supabase
+    // HUNTER_METAS e HUNTER_PHOTOS já foram populados dentro de carregarHunterDB
+    // Aqui só garantimos que hunters do CSV sem cadastro no Supabase
+    // não usem fallback errado
     D.hunters.forEach(function(h){
-      var dbH = HUNTER_DB.find(function(d){ return ns(d.nome)===ns(h.nome); });
-      if(dbH){
-        if(dbH.foto_url) HUNTER_PHOTOS[h.nome] = dbH.foto_url;
-        if(dbH.meta)     HUNTER_METAS[h.nome]  = dbH.meta;
+      // Se não tem meta no Supabase, usar meta do CSV ou 0
+      if(HUNTER_METAS[h.nome]===undefined){
+        HUNTER_METAS[h.nome] = h.meta||0;
       }
     });
     H=buildH(D.hunters,D.candidatos);
-    diag('OK: '+H.length+' hunters · dados do Supabase integrados');
+    diag('OK: '+H.length+' hunters · Supabase integrado (meta+foto)');
     renderOv();
   });
 }
