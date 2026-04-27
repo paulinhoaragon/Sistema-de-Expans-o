@@ -1089,7 +1089,15 @@ function fmtM(v) {
       +'<div style="font-size:12px;font-weight:700;color:#1E3A5F;">Taxa de ativação</div>'
       +'<div style="font-size:22px;font-weight:700;color:#1A3BAD;margin:4px 0;">'+(AT>0?Math.round((G.trab||0)/AT*100):0)+'%</div>'
       +'<div style="font-size:11px;color:#1D4ED8;">contratados já em operação</div></div>';
-  })();
+ 
+ })();
+
+  var _hunterPaleta=['#1A3BAD','#4A25AA','#0F6E56','#B45309','#DC2626','#0891B2','#6366F1','#EC4899'];
+  var huntersComerciais=H.filter(function(h){
+    var dbH=REL_HUNTER_DB.find(function(d){return(d.nome||'').trim().toLowerCase()===(h.nome||'').trim().toLowerCase();});
+    return !dbH||dbH.is_gestor!==true;
+  });
+  renderHunterCards(huntersComerciais);
 
   // ── Chart 3: Hunter bar ──
   var _hLabels=huntersComerciais.map(function(h){return h.nome;});
@@ -2168,7 +2176,10 @@ function renderTranchesSimForm(){
 }
 
 // ── DOMContentLoaded ──
-document.addEventListener('DOMContentLoaded',function(){renderRegTranches();renderTranchesSimForm();});
+document.addEventListener('DOMContentLoaded',function(){
+  if(typeof renderRegTranches==='function') renderRegTranches();
+  if(typeof renderTranchesSimForm==='function') renderTranchesSimForm();
+});
 document.getElementById('reg-estrategica').addEventListener('change',function(){
   document.getElementById('reg-estrat-fields').style.display=this.checked?'block':'none';
 });
