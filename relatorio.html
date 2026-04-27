@@ -1091,12 +1091,13 @@ function fmtM(v) {
   })();
 
   // ── Chart 3: Hunter bar ──
+  var _hLabels=huntersComerciais.map(function(h){return h.nome;});
   sc('chartHunter', {type:'bar', data:{
-    labels:['Paulo','Eduarda','Bianca'],
+    labels:_hLabels,
     datasets:[
-      {label:'Sênior', data:[hPau.senior,hEdu.senior,hBia.senior], backgroundColor:'#16A34A', borderRadius:4},
-      {label:'Pleno',  data:[hPau.pleno, hEdu.pleno, hBia.pleno],  backgroundColor:'#B45309', borderRadius:4},
-      {label:'Júnior', data:[hPau.junior,hEdu.junior,hBia.junior], backgroundColor:'#BE185D', borderRadius:4}
+      {label:'Sênior', data:huntersComerciais.map(function(h){return h.senior||0;}), backgroundColor:'#16A34A', borderRadius:4},
+      {label:'Pleno',  data:huntersComerciais.map(function(h){return h.pleno||0;}),  backgroundColor:'#B45309', borderRadius:4},
+      {label:'Júnior', data:huntersComerciais.map(function(h){return h.junior||0;}), backgroundColor:'#BE185D', borderRadius:4}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'}}},
@@ -1105,9 +1106,9 @@ function fmtM(v) {
 
   // ── Chart 4: Hunter total ──
   sc('chartHunterTotal', {type:'bar', data:{
-    labels:['Paulo','Eduarda','Bianca'],
-    datasets:[{data:[hPau.total,hEdu.total,hBia.total],
-      backgroundColor:['#1A3BAD','#4A25AA','#0F6E56'], borderRadius:6, borderSkipped:false}]},
+    labels:_hLabels,
+    datasets:[{data:huntersComerciais.map(function(h){return h.total||0;}),
+      backgroundColor:_hLabels.map(function(_,i){return['#1A3BAD','#4A25AA','#0F6E56','#B45309','#DC2626','#0891B2'][i%6];}), borderRadius:6, borderSkipped:false}]},
     options:{indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(ctx){return ' '+ctx.raw+' contratações';}}}}}
   });
@@ -1452,8 +1453,10 @@ function renderPage() {
   if (!window.Blue3Data || !window.Blue3Data.candidatos || !window.Blue3Data.candidatos.length) {
     showEmptyState(); return;
   }
-  Blue3_charts();
-  populateFilters();
+   carregarHuntersRelatorio(function(){
+    Blue3_charts();
+    populateFilters();
+  });
 }
 
 function showEmptyState(msg) {
