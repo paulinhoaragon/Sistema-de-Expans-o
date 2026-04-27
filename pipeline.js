@@ -256,7 +256,7 @@ function Blue3_payback(){
 }
 
 function Blue3_huntersPerformance(){
-  var C=window.Blue3Data.candidatos,hs={'Eduarda':true,'Bianca':true,'Paulo':true};
+  var C=window.Blue3Data.candidatos,hs={};
   C.forEach(function(r){if(r.h)hs[r.h]=true;});
   window.Blue3Data.hunters=Object.keys(hs).map(function(h){
     var rows=C.filter(function(r){return norm(r.h)===norm(h);});
