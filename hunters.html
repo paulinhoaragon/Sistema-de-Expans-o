@@ -596,13 +596,13 @@ NexusConfig.getHunters(function(err,hunters){
     HUNTER_PHOTOS={}; HUNTER_METAS={}; HUNTER_COLORS={}; HUNTER_ORDER=[];
     var cores=['#6366F1','#EC4899','#B8962E','#16A34A','#0891B2','#DC2626','#7C3AED','#EA580C'];
     hunters.forEach(function(h,i){
-      if(h.foto_url) HUNTER_PHOTOS[h.nome]=h.foto_url;
-      if(h.meta)     HUNTER_METAS[h.nome]=h.meta;
-      HUNTER_COLORS[h.nome]=cores[i%cores.length];
+    hunters.forEach(function(h,i){
+      var key=(h.nome||'').trim().toLowerCase();
+      if(h.foto_url) HUNTER_PHOTOS[key]=h.foto_url;
+      if(h.meta!=null&&h.meta!==false) HUNTER_METAS[key]=Number(h.meta);
+      HUNTER_COLORS[key]=cores[i%cores.length];
       HUNTER_ORDER.push(h.nome);
     });
-    if(cb) cb(hunters);
-  });
 }
 
 function buildH(hunters,cands){
@@ -611,7 +611,8 @@ function buildH(hunters,cands){
     hunters.sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||''); });
     hunters.forEach(function(h){ ord.push(h); });
   return ord.map(function(h){
-    var meta=HUNTER_METAS[h.nome]||0,color=HUNTER_COLORS[h.nome]||'#64748B';
+      var nomKey=(h.nome||'').trim().toLowerCase();
+    var meta=HUNTER_METAS[nomKey]||0,color=HUNTER_COLORS[nomKey]||'#64748B';
     var pace=meta>0?Math.round(h.total/meta*100):0,hn=ns(h.nome);
     var cs=cands.filter(function(c){return ns(c.h)===hn;}).map(function(c){
       return{nome:c.n,filial:c.p,status:c.st,mou:c.mou,inicio:c.inicio||null,auc:c.cap,piso:c.piso,periodo:c.periodo,comp:c.comp,sen:c.sen};
@@ -701,7 +702,7 @@ function renderBonusCards(){
       var sp=h.senior/Math.max(h.total,1),tier=getBonusTier(h.total,sp);
       var bp=Math.min(100,Math.round(h.total/h.meta*100));
       var nx=tier.falta>0?'<div style="font-size:11px;margin-top:6px;">Faltam <b>'+tier.falta+'</b> para '+tier.next+'</div>':'<div style="font-size:11px;color:#16A34A;margin-top:6px;">OK - Max tier</div>';
-      var ph=HUNTER_PHOTOS[h.nome]||'';
+            var ph=HUNTER_PHOTOS[(h.nome||'').trim().toLowerCase()]||'';
       return'<div style="background:var(--surface);border:1px solid var(--rule);border-radius:12px;overflow:hidden;">'
         +(ph?'<div style="height:130px;position:relative;overflow:hidden;background:linear-gradient(135deg,#0A0F1E,#1A3BAD);">'
           +'<img src="'+ph+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;opacity:0.7;">'
@@ -743,7 +744,7 @@ function renderOv(){
     var isGestor=dbHun && dbHun.is_gestor===true;
     var contratStr=String(hun.total)+'/'+String(hun.meta);
     var subLabel=isGestor?'Gestor &middot; Deals Estrat&eacute;gicos':'Hunter &middot; Expans&atilde;o 1S2026';
-    var hunFoto=HUNTER_PHOTOS[hun.nome]||'';
+        var hunFoto=HUNTER_PHOTOS[(hun.nome||'').trim().toLowerCase()]||'';
     return '<div class="'+cardCls+'" onclick="showDet(&#39;'+nomeEsc+'&#39;)">'
       +(isGestor?'':crown)+particles
       +(hunFoto
@@ -802,10 +803,10 @@ function renderPage(){
     // HUNTER_METAS e HUNTER_PHOTOS já foram populados dentro de carregarHunterDB
     // Aqui só garantimos que hunters do CSV sem cadastro no Supabase
     // não usem fallback errado
-    D.hunters.forEach(function(h){
-      // Se não tem meta no Supabase, usar meta do CSV ou 0
-      if(HUNTER_METAS[h.nome]===undefined){
-        HUNTER_METAS[h.nome] = h.meta||0;
+     D.hunters.forEach(function(h){
+      var key=(h.nome||'').trim().toLowerCase();
+      if(HUNTER_METAS[key]===undefined){
+        HUNTER_METAS[key]=h.meta||0;
       }
     });
     H=buildH(D.hunters,D.candidatos);
