@@ -596,13 +596,14 @@ NexusConfig.getHunters(function(err,hunters){
     HUNTER_PHOTOS={}; HUNTER_METAS={}; HUNTER_COLORS={}; HUNTER_ORDER=[];
     var cores=['#6366F1','#EC4899','#B8962E','#16A34A','#0891B2','#DC2626','#7C3AED','#EA580C'];
     hunters.forEach(function(h,i){
-    hunters.forEach(function(h,i){
       var key=(h.nome||'').trim().toLowerCase();
       if(h.foto_url) HUNTER_PHOTOS[key]=h.foto_url;
       if(h.meta!=null&&h.meta!==false) HUNTER_METAS[key]=Number(h.meta);
       HUNTER_COLORS[key]=cores[i%cores.length];
       HUNTER_ORDER.push(h.nome);
     });
+    if(cb) cb(hunters);
+  });
 }
 
 function buildH(hunters,cands){
