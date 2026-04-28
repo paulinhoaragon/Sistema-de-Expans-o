@@ -1234,12 +1234,21 @@ function renderPracasTooltip(candidatos) {
 
   // Agrupar por praça
   var byPraca = {};
+  var semPracaDesist = 0; // desistentes sem praça definida
+
   C.forEach(function(r) {
     var praca = (r.p || '').trim();
-    if (!praca) return;
-    if (!byPraca[praca]) byPraca[praca] = { ativos: 0, desist: 0 };
     var s = norm(r.st || '');
-    if (s === 'desistência' || s === 'desistencia') {
+    var isDesist = s === 'desistência' || s === 'desistencia';
+
+    if (!praca) {
+      // Sem praça: conta apenas se for desistente (ativos sem praça não chegam aqui)
+      if (isDesist) semPracaDesist++;
+      return;
+    }
+
+    if (!byPraca[praca]) byPraca[praca] = { ativos: 0, desist: 0 };
+    if (isDesist) {
       byPraca[praca].desist++;
     } else {
       byPraca[praca].ativos++;
@@ -1253,12 +1262,22 @@ function renderPracasTooltip(candidatos) {
     return tb - ta;
   });
 
-  el.innerHTML = pracasOrdenadas.map(function(praca) {
+  var html = pracasOrdenadas.map(function(praca) {
     var d = byPraca[praca];
     var label = d.ativos > 0 ? String(d.ativos) : '';
     if (d.desist > 0) label += (label ? ' + ' : '') + d.desist + ' desist.';
     return '<div class="ptr"><span class="ptp">' + praca + '</span><span class="ptn">' + label + '</span></div>';
   }).join('');
+
+  // Linha separada para desistentes sem praça cadastrada
+  if (semPracaDesist > 0) {
+    html += '<div class="ptr" style="margin-top:8px;border-top:1px solid rgba(255,255,255,.1);padding-top:8px;">'
+      + '<span class="ptp" style="color:rgba(255,255,255,.45);font-style:italic;">Sem praça definida</span>'
+      + '<span class="ptn" style="color:var(--red);">' + semPracaDesist + ' desist.</span>'
+      + '</div>';
+  }
+
+  el.innerHTML = html;
 }
 
 function renderAssessoresMensal(candidatos) {
