@@ -1169,11 +1169,68 @@ function fmtM(v) {
 var _activeFilters={hunter:'',praca:'',sen:'',status:'',area:''};
 
 
+// ── Complementa candidatos com desistentes a partir dos dados brutos do pipeline ──
+// O pipeline guarda todas as linhas em window.Blue3Data._rawRows (após correção do pipeline.js)
+// Fallback: localStorage B3D_RAW (salvo no upload do CSV)
+function getDesistentesExtras(candidatosAtuais) {
+  try {
+    // Fonte 1: _rawRows já enriquecido pelo pipeline corrigido
+    var rawRows = (window.Blue3Data && window.Blue3Data._rawRows) || [];
+
+    // Fonte 2: B3D_RAW do localStorage (salvo no upload CSV com todos os status)
+    if (!rawRows.length) {
+      var local = localStorage.getItem('B3D_RAW');
+      if (local) rawRows = JSON.parse(local);
+    }
+
+    if (!rawRows || !rawRows.length) return [];
+
+    // Nomes já presentes para evitar duplicatas
+    var nomesAtuais = {};
+    candidatosAtuais.forEach(function(c) {
+      nomesAtuais[(c.n || '').trim().toLowerCase()] = true;
+    });
+
+    var extras = [];
+    rawRows.forEach(function(r) {
+      var nome = (r['Candidato'] || '').trim();
+      if (!nome) return;
+      var st   = (r['Status'] || '').trim();
+      var sNorm = norm(st);
+      if (sNorm !== 'desistência' && sNorm !== 'desistencia') return;
+      if (nomesAtuais[nome.toLowerCase()]) return; // já existe
+
+      // Mesmo mapeamento de campos que Blue3_dataLoader usa (pipeline.js linhas 200-218)
+      extras.push({
+        n:    nome,
+        p:    (r['Filial'] || '').trim(),
+        h:    (r['Hunter'] || '').trim(),
+        sen:  (r['Senioridade'] || '').trim(),
+        area: (r['Área'] || r['Area'] || 'Assessores').trim(),
+        org:  (r['Origem'] || '').trim(),
+        mou:  (r['MOU'] || '').trim(),
+        st:   st,
+        dt:   (r['Data de Contratação'] || null),
+        cap:  0,
+        comp: 0,
+        piso: 0,
+        si:   0,
+        xp:   0
+      });
+    });
+    return extras;
+  } catch(e) {
+    return [];
+  }
+}
+
 function renderPracasTooltip(candidatos) {
   var el = document.getElementById('ptt-content');
   if (!el) return;
 
-  var C = candidatos || window.Blue3Data.candidatos || [];
+  var base = candidatos || window.Blue3Data.candidatos || [];
+  var extras = getDesistentesExtras(base);
+  var C = base.concat(extras);
 
   // Agrupar por praça
   var byPraca = {};
@@ -1209,10 +1266,11 @@ function renderAssessoresMensal(candidatos) {
   var grid  = document.getElementById('mg-assessores-grid');
   if (!mgEl || !grid) return;
 
-  var C = (candidatos || window.Blue3Data.candidatos || [])
-    .filter(function(r) {
-      return !r.area || r.area.toLowerCase() === 'assessores';
-    });
+  var base = candidatos || window.Blue3Data.candidatos || [];
+  var extras = getDesistentesExtras(base);
+  var C = base.concat(extras).filter(function(r) {
+    return !r.area || r.area.toLowerCase() === 'assessores';
+  });
 
   if (!C.length) { mgEl.style.display = 'none'; return; }
 
