@@ -287,16 +287,20 @@ function b3ImportCSV(input){
       if(lines.length<2){alert('CSV inválido.');return;}
       var sep=lines[0].indexOf(';')>-1?';':',';
       var h=lines[0].split(sep).map(function(x){return x.trim().replace(/^\uFEFF/,'').replace(/^"|"$/g,'');});
-      var rows=[];
+      var rows=[], allRows=[];
       for(var i=1;i<lines.length;i++){
         if(!lines[i].trim())continue;
         var v=lines[i].split(sep),o={};
         h.forEach(function(hh,j){o[hh]=(v[j]||'').trim().replace(/^"|"$/g,'');});
         var st=(o['Status']||'').trim();
-        if(o['Candidato']&&(st==='Trabalhando'||st==='Contratado(a)'))rows.push(o);
+        if(!o['Candidato'])continue;
+        allRows.push(o); // todas as linhas com nome válido
+        if(st==='Trabalhando'||st==='Contratado(a)')rows.push(o);
       }
       if(!rows.length){alert('Nenhum candidato válido.');return;}
-      // Salvar no Supabase (e localStorage como fallback)
+      // Salvar todas as linhas (incluindo desistentes) para uso interno
+      localStorage.setItem('B3D_RAW', JSON.stringify(allRows));
+      // Salvar no Supabase apenas os ativos (e localStorage como fallback)
       blue3SaveCSV(rows,function(ok,count){
         alert('\u2705 '+count+' candidatos carregados e sincronizados com a nuvem!');
         if(window.b3OnCSVLoaded)window.b3OnCSVLoaded(rows);
@@ -370,6 +374,26 @@ function Blue3_runPipeline(rows){
       catch(e) { return false; }
     } else { return false; }
   }
+
+  // Complementar _rawRows com desistentes do B3D_RAW (salvo no upload do CSV)
+  try {
+    var rawAll = localStorage.getItem('B3D_RAW');
+    if (rawAll) {
+      var allParsed = JSON.parse(rawAll);
+      var nomesAtivos = {};
+      window.Blue3Data._rawRows.forEach(function(r){ nomesAtivos[(r['Candidato']||'').trim().toLowerCase()] = true; });
+      allParsed.forEach(function(r) {
+        var nome = (r['Candidato'] || '').trim();
+        if (!nome) return;
+        var st = (r['Status'] || '').trim();
+        var sNorm = norm(st);
+        if (sNorm !== 'desistência' && sNorm !== 'desistencia') return;
+        if (!nomesAtivos[nome.toLowerCase()]) {
+          window.Blue3Data._rawRows.push(r);
+        }
+      });
+    }
+  } catch(e) {}
 
   if (!Blue3_dataLoader())   return false;
   Blue3_financeMetrics();
