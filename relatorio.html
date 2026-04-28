@@ -409,19 +409,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         <div class="il">Praças atendidas ↗</div>
         <div class="ptt">
           <div class="ptt-h">Contratações por praça (ativas + desist.)</div>
-          <div class="ptr"><span class="ptp">São Paulo</span><span class="ptn">8 + 1 desist.</span></div>
-          <div class="ptr"><span class="ptp">Rio de Janeiro</span><span class="ptn">6 + 1 desist.</span></div>
-          <div class="ptr"><span class="ptp">Marília</span><span class="ptn">2 + 1 desist.</span></div>
-          <div class="ptr"><span class="ptp">Poços de Caldas</span><span class="ptn">2</span></div>
-          <div class="ptr"><span class="ptp">Franca</span><span class="ptn">1</span></div>
-          <div class="ptr"><span class="ptp">Ribeirão Preto</span><span class="ptn">1</span></div>
-          <div class="ptr"><span class="ptp">Belo Horizonte</span><span class="ptn">1</span></div>
-          <div class="ptr"><span class="ptp">Uberlândia</span><span class="ptn">1</span></div>
-          <div class="ptr"><span class="ptp">Anywhere</span><span class="ptn">1</span></div>
-          <div class="ptr"><span class="ptp">Três Lagoas</span><span class="ptn">1</span></div>
-          <div class="ptr"><span class="ptp">Belém</span><span class="ptn">1</span></div>
-          <div class="ptr"><span class="ptp">Goiânia</span><span class="ptn">1</span></div>
-          <div class="ptr"><span class="ptp">Itajaí</span><span class="ptn">1</span></div>
+          <div id="ptt-content"></div>
         </div>
       </div>
     </div>
@@ -1181,6 +1169,41 @@ function fmtM(v) {
 var _activeFilters={hunter:'',praca:'',sen:'',status:'',area:''};
 
 
+function renderPracasTooltip(candidatos) {
+  var el = document.getElementById('ptt-content');
+  if (!el) return;
+
+  var C = candidatos || window.Blue3Data.candidatos || [];
+
+  // Agrupar por praça
+  var byPraca = {};
+  C.forEach(function(r) {
+    var praca = (r.p || '').trim();
+    if (!praca) return;
+    if (!byPraca[praca]) byPraca[praca] = { ativos: 0, desist: 0 };
+    var s = norm(r.st || '');
+    if (s === 'desistência' || s === 'desistencia') {
+      byPraca[praca].desist++;
+    } else {
+      byPraca[praca].ativos++;
+    }
+  });
+
+  // Ordenar por total decrescente
+  var pracasOrdenadas = Object.keys(byPraca).sort(function(a, b) {
+    var ta = byPraca[a].ativos + byPraca[a].desist;
+    var tb = byPraca[b].ativos + byPraca[b].desist;
+    return tb - ta;
+  });
+
+  el.innerHTML = pracasOrdenadas.map(function(praca) {
+    var d = byPraca[praca];
+    var label = d.ativos > 0 ? String(d.ativos) : '';
+    if (d.desist > 0) label += (label ? ' + ' : '') + d.desist + ' desist.';
+    return '<div class="ptr"><span class="ptp">' + praca + '</span><span class="ptn">' + label + '</span></div>';
+  }).join('');
+}
+
 function renderAssessoresMensal(candidatos) {
   var mgEl = document.getElementById('mg-assessores');
   var grid  = document.getElementById('mg-assessores-grid');
@@ -1364,6 +1387,7 @@ function populateFilters(){
   if(fa){fa.innerHTML='<option value="">Todas as áreas</option>'+areas.map(function(a){return'<option value="'+a+'">'+a+'</option>';}).join('');}
   // Renderizar breakdown por área
   renderAreaBreakdown(C);
+  renderPracasTooltip(C);
   renderAssessoresMensal(C);
   renderOutrasAreas(C);
 }
@@ -1473,6 +1497,7 @@ function renderWithFilter(filteredC){
           +'</tr>';
       }).join('')+'</tbody></table>';
   }
+  renderPracasTooltip(filteredC);
   renderAssessoresMensal(filteredC);
   renderOutrasAreas(filteredC);
 }
