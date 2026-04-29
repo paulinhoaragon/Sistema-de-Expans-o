@@ -343,6 +343,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
               <option>Outros</option>
             </select>
           </div>
+          <div class="f-row"><label>Estratégico</label>
+            <select id="m-estrategico">
+              <option value="Não" selected>Não</option>
+              <option value="Sim">Sim</option>
+            </select>
+          </div>
         </div>
 
         <div class="sec-lbl">Carteira</div>
@@ -777,6 +783,7 @@ function abrirEdicao(id) {
   document.getElementById('m-nome').value     = r.nome||'';
   document.getElementById('m-tel').value      = r.telefone||'';
   var vagaEl = document.getElementById('m-vaga'); if (vagaEl) vagaEl.value = r.vaga||'';
+  var estEl = document.getElementById('m-estrategico'); if (estEl) estEl.value = r.estrategico||'Não';
   document.getElementById('m-email').value    = r.email||'';
   document.getElementById('m-inst').value     = r.instituicao||'';
   document.getElementById('m-praca').value    = r.praca||'';
@@ -881,6 +888,7 @@ function limparModal() {
   document.getElementById('m-lider').value   = '';
   document.getElementById('m-tipo-bonus').value = 'Semestral';
   var vagaEl = document.getElementById('m-vaga'); if (vagaEl) vagaEl.value = '';
+  var estEl = document.getElementById('m-estrategico'); if (estEl) estEl.value = 'Não';
   var setup = document.getElementById('m-setup'); if (setup) setup.value = '';
   // limpar campos calculados (readonly)
   document.getElementById('m-ticket').value  = '';
@@ -913,7 +921,7 @@ function salvarCandidato() {
   if (!vaga) { alert('Selecione a vaga do candidato.'); return; }
   var payload = {
     nome: nome, telefone: g('m-tel'), email: g('m-email'), instituicao: g('m-inst'), praca: g('m-praca'),
-    hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), vaga: vaga, etapa: g('m-etapa'),
+    hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), vaga: vaga, estrategico: g('m-estrategico')||'Não', etapa: g('m-etapa'),
     // Proposta base
     auc_mm: (gn('m-t1tri-m') + gn('m-t1m') + gn('m-t2m') + gn('m-t3m') + gn('m-t4m')) || 0, piso: parseBRL(g('m-piso')), periodo: gi('m-periodo'), upfront: parseBRL(g('m-upfront')),
     // Gatilhos
@@ -988,6 +996,7 @@ var CAMPOS_CRM = [
   {key:'lider',                 label:'Líder'},
   {key:'nivel',                 label:'Senioridade'},
   {key:'vaga',                  label:'Vaga'},
+  {key:'estrategico',           label:'Estratégico'},
   {key:'etapa',                 label:'Etapa/Status'},
   {key:'auc_mm',                label:'AuC Meta (MM)'},
   {key:'piso',                  label:'Piso R$'},
