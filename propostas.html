@@ -521,43 +521,31 @@ function abrirPDF(id, e) {
 // ── Excluir versão da proposta ────────────────────────────────────
 function deletarProposta(id, telefone, e) {
   if (e) e.stopPropagation();
-  if (!confirm('Excluir esta versão da proposta? A ação não pode ser desfeita.')) return;
+  if (!confirm('Excluir esta versão? A ação não pode ser desfeita.')) return;
   fetch(SUPA_URL+'/rest/v1/propostas?id=eq.'+id, {
     method: 'DELETE',
-    headers: {
-      'apikey': SUPA_KEY,
-      'Authorization': 'Bearer '+SUPA_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=minimal'
-    }
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY }
   })
   .then(function(r){
-    if (!r.ok) throw new Error(r.status);
-    gravarLog('delete_versao_proposta', { proposta_id: id, telefone: telefone });
-    buscar();
+    if (r.status === 204 || r.ok) { gravarLog('delete_versao', {id:id,tel:telefone}); buscar(); return; }
+    return r.text().then(function(t){ throw new Error(r.status+' '+t); });
   })
-  .catch(function(err){ alert('Erro ao excluir versão: '+err); });
+  .catch(function(err){ alert('Erro ao excluir: '+err+'\n\nVerifique se RLS permite DELETE na tabela propostas.'); });
 }
 
 // ── Excluir todas as versões de um candidato ─────────────────────
 function deletarCandidato(telefone, nome, e) {
   if (e) e.stopPropagation();
-  if (!confirm('Excluir TODAS as propostas de '+nome+'? Esta ação remove todas as versões e não pode ser desfeita.')) return;
-  fetch(SUPA_URL+'/rest/v1/propostas?telefone=eq.'+encodeURIComponent(telefone), {
+  if (!confirm('Excluir TODAS as propostas de '+nome+'?\nEsta ação remove todas as versões.')) return;
+  fetch(SUPA_URL+'/rest/v1/propostas?telefone=eq.'+encodeURIComponent(telefone.replace(/\D/g,'')), {
     method: 'DELETE',
-    headers: {
-      'apikey': SUPA_KEY,
-      'Authorization': 'Bearer '+SUPA_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=minimal'
-    }
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY }
   })
   .then(function(r){
-    if (!r.ok) throw new Error(r.status);
-    gravarLog('delete_candidato_propostas', { telefone: telefone, nome: nome });
-    buscar();
+    if (r.status === 204 || r.ok) { gravarLog('delete_candidato', {tel:telefone,nome:nome}); buscar(); return; }
+    return r.text().then(function(t){ throw new Error(r.status+' '+t); });
   })
-  .catch(function(err){ alert('Erro ao excluir candidato: '+err); });
+  .catch(function(err){ alert('Erro ao excluir: '+err+'\n\nVerifique se RLS permite DELETE na tabela propostas.'); });
 }
 
 // ── Log de auditoria ─────────────────────────────────────────────
