@@ -233,7 +233,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         <div class="sec-lbl" style="margin-top:0">Identificação</div>
         <div class="fgrid">
           <div class="f-row"><label>Nome completo *</label><input id="m-nome" placeholder="Nome do candidato"></div>
-          <div class="f-row"><label>Telefone</label><input id="m-tel" placeholder="(11) 99999-9999"></div>
+          <div class="f-row"><label>Telefone</label><input id="m-tel" placeholder="(11) 99999-9999" oninput="maskTel(this)" maxlength="15"></div>
           <div class="f-row"><label>E-mail</label><input id="m-email" type="email" placeholder="email@exemplo.com"></div>
           <div class="f-row"><label>Instituição de origem</label><input id="m-inst" placeholder="ex: XP, BTG, Itaú..."></div>
           <div class="f-row"><label>Praça</label>
@@ -327,6 +327,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
             <select id="m-nivel">
               <option value="">— Selecione —</option>
               <option>Sênior</option><option>Pleno</option><option>Júnior</option>
+            </select>
+          </div>
+          <div class="f-row"><label>Vaga</label>
+            <select id="m-vaga">
+              <option value="">— Selecione —</option>
+              <option>Assessor</option>
+              <option>Líder</option>
+              <option>Advisor</option>
+              <option>Broker</option>
+              <option>Offshore</option>
+              <option>Seguros</option>
+              <option>Corporate</option>
+              <option>Assistente</option>
+              <option>Outros</option>
             </select>
           </div>
         </div>
@@ -753,6 +767,7 @@ function abrirEdicao(id) {
   document.getElementById('m-id').value       = r.id;
   document.getElementById('m-nome').value     = r.nome||'';
   document.getElementById('m-tel').value      = r.telefone||'';
+  var vagaEl = document.getElementById('m-vaga'); if (vagaEl) vagaEl.value = r.vaga||'';
   document.getElementById('m-email').value    = r.email||'';
   document.getElementById('m-inst').value     = r.instituicao||'';
   document.getElementById('m-praca').value    = r.praca||'';
@@ -825,6 +840,7 @@ function limparModal() {
   document.getElementById('m-praca').value   = '';
   document.getElementById('m-lider').value   = '';
   document.getElementById('m-tipo-bonus').value = 'Semestral';
+  var vagaEl = document.getElementById('m-vaga'); if (vagaEl) vagaEl.value = '';
   var setup = document.getElementById('m-setup'); if (setup) setup.value = '';
   // limpar campos calculados (readonly)
   document.getElementById('m-ticket').value  = '';
@@ -851,7 +867,7 @@ function salvarCandidato() {
   if (!nome) { alert('Informe o nome do candidato.'); return; }
   var payload = {
     nome: nome, telefone: g('m-tel'), email: g('m-email'), instituicao: g('m-inst'), praca: g('m-praca'),
-    hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), etapa: g('m-etapa'),
+    hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), vaga: g('m-vaga'), etapa: g('m-etapa'),
     // Proposta base
     auc_mm: (gn('m-t1tri-m') + gn('m-t1m') + gn('m-t2m') + gn('m-t3m') + gn('m-t4m')) || 0, piso: parseBRL(g('m-piso')), periodo: gi('m-periodo'), upfront: parseBRL(g('m-upfront')),
     // Gatilhos
@@ -924,6 +940,7 @@ var CAMPOS_CRM = [
   {key:'hunter',                label:'Hunter'},
   {key:'lider',                 label:'Líder'},
   {key:'nivel',                 label:'Senioridade'},
+  {key:'vaga',                  label:'Vaga'},
   {key:'etapa',                 label:'Etapa/Status'},
   {key:'auc_mm',                label:'AuC Meta (MM)'},
   {key:'piso',                  label:'Piso R$'},
@@ -1179,6 +1196,16 @@ function calcFinanceiro() {
   } else {
     totalBox.style.display = 'none';
   }
+}
+
+// ── Máscara Telefone ─────────────────────────────────────────────
+function maskTel(el) {
+  var d = el.value.replace(/\D/g, '').slice(0, 11);
+  if (d.length === 0) { el.value = ''; return; }
+  if (d.length <= 2)        el.value = '(' + d;
+  else if (d.length <= 6)   el.value = '(' + d.slice(0,2) + ') ' + d.slice(2);
+  else if (d.length <= 10)  el.value = '(' + d.slice(0,2) + ') ' + d.slice(2,6) + '-' + d.slice(6);
+  else                      el.value = '(' + d.slice(0,2) + ') ' + d.slice(2,7) + '-' + d.slice(7);
 }
 
 // ── Condições de Renovação ────────────────────────────────────────
