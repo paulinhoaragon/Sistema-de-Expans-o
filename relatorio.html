@@ -468,7 +468,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
 <!-- 03b FUNIL DE CONVERSÃO -->
 <div style="margin-bottom:32px;" id="section-funil">
-  <div class="sh"><span class="sn">03b</span><span class="st">Funil de conversão — assessores ativos</span><span class="ss">Progressão: Contratado → MOU → Formalizado → Trabalhando</span></div>
+  <div class="sh"><span class="sn">03b</span><span class="st">Funil de conversão — assessores ativos</span><span class="ss">Progressão: Contratado → MOU → Trabalhando</span></div>
   <div id="funil-container" style="display:flex;gap:0;align-items:stretch;border-radius:var(--r12);overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);"></div>
   <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;" id="funil-details"></div>
 </div>
@@ -958,18 +958,23 @@ function fmtM(v) {
 
   // ── Pace card ──
   (function(){
-    var META=40, MESES=6, DEC=4;
+    var META=40, MESES=6;
+    var DEC = new Date().getMonth() + 1; // mês atual (1=Jan...6=Jun)
+    if (DEC < 1) DEC = 1; if (DEC > MESES) DEC = MESES;
 
     // Somente Assessores
     var allCands = window.Blue3Data ? (window.Blue3Data.candidatos||[]) : [];
-    var AT = allCands.filter(function(r){ return (r.area||'Assessores').toLowerCase()==='assessores'; }).length;
+    var AT = allCands.filter(function(r){ return ['assessor','assessores'].indexOf((r.area||'Assessores').toLowerCase()) !== -1; }).length;
 
-    var proj=Math.round(AT/DEC*MESES), pct=Math.min(100,Math.round(AT/META*100));
-    var esp=Math.round(DEC/MESES*META), saldo=AT-esp, falt=META-AT, nec=Math.ceil(falt/(MESES-DEC)), ok=proj>=META;
+    var mLabels=['Jan','Fev','Mar','Abr','Mai','Jun'];
+    var mesLabel = mLabels[DEC-1] || 'Abr';
+    var pctSem = Math.round(DEC/MESES*100);
+    var proj=Math.round(AT/Math.max(1,DEC)*MESES), pct=Math.min(100,Math.round(AT/META*100));
+    var esp=Math.round(DEC/MESES*META), saldo=AT-esp, falt=Math.max(0,META-AT), nec=Math.ceil(falt/Math.max(1,MESES-DEC)), ok=proj>=META;
     var el=document.getElementById('pace-card'); if(!el)return;
     el.innerHTML='<div class="pstats">'
       +'<div class="ps"><div class="psl">Ativas realizadas</div><div class="psv">'+AT+'</div><div class="psn">de '+META+' na meta</div></div>'
-      +'<div class="ps"><div class="psl">Esperado até Abr</div><div class="psv">'+esp+'</div><div class="psn">67% do semestre</div></div>'
+      +'<div class="ps"><div class="psl">Esperado até '+mesLabel+'</div><div class="psv">'+esp+'</div><div class="psn">'+pctSem+'% do semestre</div></div>'
       +'<div class="ps" style="background:#FFF7ED;border:1px solid #FED7AA;"><div class="psl" style="color:#92400E;">Saldo vs. pace</div><div class="psv" style="color:#C2410C;">'+saldo+'</div><div class="psn" style="color:#92400E;">'+(saldo>=0?'no pace':'abaixo')+'</div></div>'
       +'<div class="ps"><div class="psl">Projeção Jun 2026</div><div class="psv" style="color:'+(ok?'#16A34A':'#DC2626')+';">'+proj+'</div><div class="psn">ativas estimadas</div></div>'
       +'<div class="ps"><div class="psl">Ritmo necessário</div><div class="psv">'+nec+'</div><div class="psn">ativas/mês (Mai–Jun)</div></div>'
@@ -997,7 +1002,7 @@ function fmtM(v) {
     var stages=[
       {label:'Total contratados',val:AT,color:'#1A3BAD'},
       {label:'MOU assinado',val:G.mouOk||0,color:'#2952E3'},
-      {label:'Formalizado (Ancord)',val:G.ancord||0,color:'#0EA5E9'},
+      {label:'Aguardando MOU',val:G.mouPend||0,color:'#F59E0B'},
       {label:'Trabalhando',val:G.trab||0,color:'#16A34A'}
     ];
     var max=AT||1;
@@ -1013,13 +1018,13 @@ function fmtM(v) {
     }).join('');
     var mouPend=G.mouPend||0;
     fd.innerHTML='<div style="flex:1;background:#FFF7ED;border:1px solid #FED7AA;border-radius:var(--r8);padding:14px 16px;">'
-      +'<div style="font-size:12px;font-weight:700;color:#92400E;">MOU pendente</div>'
+      +'<div style="font-size:12px;font-weight:700;color:#92400E;">Aguardando MOU</div>'
       +'<div style="font-size:22px;font-weight:700;color:#C2410C;margin:4px 0;">'+mouPend+'</div>'
-      +'<div style="font-size:11px;color:#92400E;">assessores aguardando assinatura</div></div>'
+      +'<div style="font-size:11px;color:#92400E;">contratados sem MOU assinado e não trabalhando</div></div>'
       +'<div style="flex:1;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:var(--r8);padding:14px 16px;">'
-      +'<div style="font-size:12px;font-weight:700;color:#14532D;">Taxa de formalização</div>'
-      +'<div style="font-size:22px;font-weight:700;color:#16A34A;margin:4px 0;">'+(AT>0?Math.round((G.ancord||0)/AT*100):0)+'%</div>'
-      +'<div style="font-size:11px;color:#166534;">chegaram ao status Ancord</div></div>'
+      +'<div style="font-size:12px;font-weight:700;color:#14532D;">Taxa de MOU</div>'
+      +'<div style="font-size:22px;font-weight:700;color:#16A34A;margin:4px 0;">'+(AT>0?Math.round((G.mouOk||0)/AT*100):0)+'%</div>'
+      +'<div style="font-size:11px;color:#166534;">contratados com MOU assinado</div></div>'
       +'<div style="flex:1;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:var(--r8);padding:14px 16px;">'
       +'<div style="font-size:12px;font-weight:700;color:#1E3A5F;">Taxa de ativação</div>'
       +'<div style="font-size:22px;font-weight:700;color:#1A3BAD;margin:4px 0;">'+(AT>0?Math.round((G.trab||0)/AT*100):0)+'%</div>'
@@ -1288,7 +1293,7 @@ function renderAssessoresMensal(candidatos) {
   var base = candidatos || window.Blue3Data.candidatos || [];
   var extras = getDesistentesExtras(base);
   var C = base.concat(extras).filter(function(r) {
-    return !r.area || r.area.toLowerCase() === 'assessores';
+    return !r.area || ['assessor','assessores'].indexOf(r.area.toLowerCase()) !== -1;
   });
 
   if (!C.length) { mgEl.style.display = 'none'; return; }
@@ -1362,7 +1367,7 @@ function renderOutrasAreas(candidatos) {
 
   var C = (candidatos || window.Blue3Data.candidatos || [])
     .filter(function(r){
-      return r.area && r.area.toLowerCase() !== 'assessores';
+      return r.area && ['assessor','assessores'].indexOf(r.area.toLowerCase()) === -1;
     });
 
   if (!C.length) { mgEl.style.display = 'none'; return; }
@@ -1508,7 +1513,7 @@ function clearFilters(){
   renderPage();
   // Ocultar seções exclusivas de Assessores quando outra área for selecionada
   var areaFiltro=(_activeFilters.area||'').toLowerCase();
-  var isAssessor=!areaFiltro||areaFiltro==='assessores';
+  var isAssessor=!areaFiltro||['assessor','assessores'].indexOf(areaFiltro) !== -1;
   var assessorSections=['sect-pace','sect-funil','sect-hunters','sect-estrategico','sect-financeiro'];
   assessorSections.forEach(function(id){
     var el=document.getElementById(id);
