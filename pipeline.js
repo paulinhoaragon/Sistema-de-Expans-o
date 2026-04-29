@@ -441,6 +441,9 @@ function Blue3_runPipeline(rows){
 
 // ── Inicializar a partir do Supabase ──
 function Blue3_init(callback){
+  // Sempre buscar dados frescos do Supabase — ignorar cache localStorage
+  localStorage.removeItem('B3D');
+  localStorage.removeItem('B3D_RAW');
   var resultCand=[], resultMA=[], resultPE=[], done=0;
 
   function finish(){
