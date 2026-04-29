@@ -401,7 +401,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   <div id="area-breakdown" style="display:none;margin-bottom:16px;"></div>
 
   <div class="ib">
-    <div class="ii"><div class="iv"><span id="dyn-brutas">31</span></div><div class="il">Contratações brutas Jan–Abr</div></div>
+    <div class="ii"><div class="iv"><span id="dyn-brutas">31</span></div><div class="il">Contratações brutas <span id="dyn-periodo-label">Jan–Abr</span></div></div>
        <div class="ii"><div class="iv"><span id="dyn-desist">3</span></div><div class="il" id="dyn-desist-label">Desistências · taxa —</div></div>
     <div class="ii">
       <div class="ptw">
@@ -442,7 +442,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
       <div class="leg"><span class="li"><span class="ld" style="background:var(--cobalt-br);"></span>Ativas</span><span class="li"><span class="ld" style="background:var(--g);"></span>% Sênior</span></div>
     </div>
     <div class="card">
-      <div class="ch">Perfil de contratações ativas · Jan–Abr 2026</div>
+      <div class="ch">Perfil de contratações ativas · <span id="dyn-periodo-chart">Jan–Abr 2026</span></div>
       <div style="position:relative;width:100%;height:200px;"><canvas id="chartPerfil"></canvas></div>
       <div class="leg" id="legPerfil"></div>
     </div>
@@ -868,7 +868,8 @@ function fmtM(v) {
     set('dyn-maior', 'R$'+G.maiorCand.cap+'M');
     set('dyn-maior-label-el', 'Maior carteira — '+(G.maiorCand.n||'').split(' ')[0]+' · '+(G.maiorCand.p||''));
   }
-  set('dyn-pracas',  G.pracas||0);
+  set('dyn-periodo-label',  periodoLabel.split(' · ')[0] || 'Jan–Abr');
+  set('dyn-periodo-chart',  periodoLabel || 'Jan–Abr 2026');
   set('dyn-auc-footer', 'R$'+G.aucB+'B');
   set('dyn-comp',    fmtM(G.compTotal));
   set('dyn-comp-sub', AT+' candidatos');
@@ -1154,8 +1155,8 @@ function fmtM(v) {
   });
 
   // ── Chart 7: Bubble piso vs captação ──
-  var bData = C.filter(function(r){return r.piso>0&&r.cap>0;}).map(function(r){
-    return {x:r.piso,y:r.cap,r:Math.max(4,Math.sqrt(r.comp/5000)),label:r.n.split(' ')[0]};
+  var bData = C.filter(function(r){return r.piso>0&&r.cap>0&&r.cap<10000;}).map(function(r){
+    return {x:r.piso,y:r.cap,r:Math.min(30,Math.max(4,Math.sqrt(r.comp/50000))),label:r.n.split(' ')[0]};
   });
   if (bData.length) {
     sc('chartPisoVsCap', {type:'bubble', data:{datasets:[{label:'Assessores',data:bData,
