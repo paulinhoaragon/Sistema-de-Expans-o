@@ -680,7 +680,7 @@ function cardHTML(r) {
   if ((r.mou||'').toLowerCase()==='assinado')    tags += '<span class="tag t-mou">MOU</span>';
   if ((r.status_ancord||'').toLowerCase()==='aprovada') tags += '<span class="tag t-anc">Ancord</span>';
 
-  var auc = r.auc_mm > 0 ? '<div class="kc-auc">R$'+r.auc_mm+'MM</div>' : '';
+  var auc = r.auc_mm > 0 ? '<div class="kc-auc">R$ '+Number(r.auc_mm).toLocaleString('pt-BR')+'MM</div>' : '';
   var ini = r.data_inicio ? '<div class="kc-ini">Início: '+fmtDate(r.data_inicio)+'</div>' : '';
 
   return '<div class="kcard" id="kc-'+r.id+'" draggable="true" ondragstart="dragStart(event,\''+r.id+'\')" onclick="abrirEdicao(\''+r.id+'\')">'
@@ -845,7 +845,7 @@ function salvarCandidato() {
     nome: nome, telefone: g('m-tel'), email: g('m-email'), instituicao: g('m-inst'), praca: g('m-praca'),
     hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), etapa: g('m-etapa'),
     // Proposta base
-    auc_mm: parseFloat((g('m-auc')||'').replace(/[^\d.]/g,''))||0, piso: parseBRL(g('m-piso')), periodo: gi('m-periodo'), upfront: parseBRL(g('m-upfront')),
+    auc_mm: (gn('m-t1tri-m') + gn('m-t1m') + gn('m-t2m') + gn('m-t3m') + gn('m-t4m')) || 0, piso: parseBRL(g('m-piso')), periodo: gi('m-periodo'), upfront: parseBRL(g('m-upfront')),
     // Gatilhos
     trigger1_tri_meta: gn('m-t1tri-m'), trigger1_tri_val: parseBRL(g('m-t1tri-v')),
     trigger1_meta: gn('m-t1m'),  trigger1_val: parseBRL(g('m-t1v')),
