@@ -330,6 +330,7 @@ function renderLista(rows) {
       + '<div class="cand-right">'
       + '<span class="cand-badge">'+qtdV+' versã'+(qtdV===1?'o':'ões')+'</span>'
       + '<button class="btn-v btn-abrir" style="font-size:10px" onclick="novaVersao(\''+g.telefone+'\',\''+g.nome+'\',\''+g.praca+'\',\''+g.hunter+'\','+ultima.versao+',event)">+ versão</button>'
+      + '<button class="btn-v btn-del" style="font-size:10px" onclick="deletarCandidato(\''+g.telefone+'\',\''+g.nome+'\',event)" title="Excluir todas as versões">🗑 Excluir tudo</button>'
       + '<svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'
       + '</div>'
       + '</div>'
@@ -517,17 +518,46 @@ function abrirPDF(id, e) {
     });
 }
 
-// ── Excluir proposta ─────────────────────────────────────────────
+// ── Excluir versão da proposta ────────────────────────────────────
 function deletarProposta(id, telefone, e) {
   if (e) e.stopPropagation();
   if (!confirm('Excluir esta versão da proposta? A ação não pode ser desfeita.')) return;
-  supa('propostas?id=eq.'+id, { method:'DELETE' })
-    .then(function(r){
-      if (!r.ok) throw new Error(r.status);
-      gravarLog('delete_proposta', { proposta_id: id, telefone: telefone });
-      buscar();
-    })
-    .catch(function(e){ alert('Erro ao excluir: '+e); });
+  fetch(SUPA_URL+'/rest/v1/propostas?id=eq.'+id, {
+    method: 'DELETE',
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer '+SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    }
+  })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.status);
+    gravarLog('delete_versao_proposta', { proposta_id: id, telefone: telefone });
+    buscar();
+  })
+  .catch(function(err){ alert('Erro ao excluir versão: '+err); });
+}
+
+// ── Excluir todas as versões de um candidato ─────────────────────
+function deletarCandidato(telefone, nome, e) {
+  if (e) e.stopPropagation();
+  if (!confirm('Excluir TODAS as propostas de '+nome+'? Esta ação remove todas as versões e não pode ser desfeita.')) return;
+  fetch(SUPA_URL+'/rest/v1/propostas?telefone=eq.'+encodeURIComponent(telefone), {
+    method: 'DELETE',
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer '+SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    }
+  })
+  .then(function(r){
+    if (!r.ok) throw new Error(r.status);
+    gravarLog('delete_candidato_propostas', { telefone: telefone, nome: nome });
+    buscar();
+  })
+  .catch(function(err){ alert('Erro ao excluir candidato: '+err); });
 }
 
 // ── Log de auditoria ─────────────────────────────────────────────
@@ -559,21 +589,27 @@ function alterarStatus(id, novoStatus, el) {
 (function(){
   // Ler pacote completo do simulador (inclui crm_id, telefone, hunter)
   var pacoteRaw = sessionStorage.getItem('b3_pacote_salvar');
+  var _pacTel='', _pacNome='', _pacPraca='', _pacHunter='';
   if (pacoteRaw) {
     try {
       var pac = JSON.parse(pacoteRaw);
-      if (pac.telefone) { var el=document.getElementById('m-tel');    if(el) el.value=pac.telefone; }
-      if (pac.nome)     { var el=document.getElementById('m-nome');   if(el) el.value=pac.nome; }
-      if (pac.praca)    { var el=document.getElementById('m-praca');  if(el) el.value=pac.praca; }
-      if (pac.hunter)   { var el=document.getElementById('m-hunter'); if(el) el.value=pac.hunter; }
-      // Guardar crm_id para uso no salvarProposta
+      _pacTel    = pac.telefone || '';
+      _pacNome   = pac.nome     || '';
+      _pacPraca  = pac.praca    || '';
+      _pacHunter = pac.hunter   || '';
       window._b3CrmId = pac.crm_id || '';
     } catch(e){}
   }
-  // Se veio do simulador com ?salvar=1
+  // Se veio do simulador com ?salvar=1, abre modal já preenchido
   var params = new URLSearchParams(window.location.search);
   if (params.get('salvar') === '1') {
-    setTimeout(function(){ abrirModal(); }, 300);
+    setTimeout(function(){
+      abrirModal();
+      if (_pacTel)    { var el=document.getElementById('m-tel');    if(el){ el.value=_pacTel;    buscarPorTel(); } }
+      if (_pacNome)   { var el=document.getElementById('m-nome');   if(el) el.value=_pacNome; }
+      if (_pacPraca)  { var el=document.getElementById('m-praca');  if(el) el.value=_pacPraca; }
+      if (_pacHunter) { var el=document.getElementById('m-hunter'); if(el) el.value=_pacHunter; }
+    }, 300);
   }
   buscar();
 })();
