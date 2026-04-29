@@ -321,9 +321,7 @@ function renderCheckpoints(checkpoints) {
     return;
   }
   wrap.innerHTML=checkpoints.map(function(cp,i){
-    var v=parseFloat(cp.custodia)||0;
-    // se veio em R$ (>1000), converter para MM
-    if(v>1000) v=parseFloat((v/1e6).toFixed(2));
+    var v = parseFloat(cp.custodia) || 0;
     return '<div class="f"><label>AuC mínimo — Checkpoint '+(i+1)+' · Mês '+cp.mes+' (MM)</label>'
       +'<input class="fi" type="number" id="f-renov'+(i===0?'':'_'+i)+'" value="'+v+'" min="0" step="0.5"></div>';
   }).join('');
