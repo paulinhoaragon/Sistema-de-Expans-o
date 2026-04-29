@@ -456,7 +456,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
         <div class="sec-lbl" style="margin-top:0">Condições Base</div>
         <div class="fgrid">
-          <div class="f-row"><label>AuC Meta (MM)</label><input id="m-auc" type="number" step="0.1" placeholder="0"></div>
           <div class="f-row"><label>Piso R$/mês</label><input id="m-piso" type="number" placeholder="0" oninput="calcProposta()"></div>
           <div class="f-row"><label>Período (meses)</label><input id="m-periodo" type="number" placeholder="12" oninput="calcProposta()"></div>
           <div class="f-row"><label>Sign-in / Upfront R$</label><input id="m-upfront" type="number" placeholder="0" oninput="calcProposta()"></div>
@@ -464,16 +463,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
         <div class="sec-lbl">Gatilhos de Captação</div>
         <div class="fgrid">
-          <div class="f-row"><label>1º Tri — Meta (MM)</label><input id="m-t1tri-m" type="number" placeholder="0"></div>
+          <div class="f-row"><label>1º Tri — Meta (MM)</label><input id="m-t1tri-m" type="number" placeholder="0" oninput="calcProposta()"></div>
           <div class="f-row"><label>1º Tri — Bônus R$</label><input id="m-t1tri-v" type="number" placeholder="0" oninput="calcProposta()"></div>
-          <div class="f-row"><label>1º Sem — Meta (MM)</label><input id="m-t1m" type="number" placeholder="0"></div>
+          <div class="f-row"><label>1º Sem — Meta (MM)</label><input id="m-t1m" type="number" placeholder="0" oninput="calcProposta()"></div>
           <div class="f-row"><label>1º Sem — Bônus R$</label><input id="m-t1v" type="number" placeholder="0" oninput="calcProposta()"></div>
-          <div class="f-row"><label>2º Sem — Meta (MM)</label><input id="m-t2m" type="number" placeholder="0"></div>
+          <div class="f-row"><label>2º Sem — Meta (MM)</label><input id="m-t2m" type="number" placeholder="0" oninput="calcProposta()"></div>
           <div class="f-row"><label>2º Sem — Bônus R$</label><input id="m-t2v" type="number" placeholder="0" oninput="calcProposta()"></div>
-          <div class="f-row"><label>3º Sem — Meta (MM)</label><input id="m-t3m" type="number" placeholder="0"></div>
+          <div class="f-row"><label>3º Sem — Meta (MM)</label><input id="m-t3m" type="number" placeholder="0" oninput="calcProposta()"></div>
           <div class="f-row"><label>3º Sem — Bônus R$</label><input id="m-t3v" type="number" placeholder="0" oninput="calcProposta()"></div>
-          <div class="f-row"><label>4º Sem — Meta (MM)</label><input id="m-t4m" type="number" placeholder="0"></div>
+          <div class="f-row"><label>4º Sem — Meta (MM)</label><input id="m-t4m" type="number" placeholder="0" oninput="calcProposta()"></div>
           <div class="f-row"><label>4º Sem — Bônus R$</label><input id="m-t4v" type="number" placeholder="0" oninput="calcProposta()"></div>
+        </div>
+
+        <!-- AuC Meta consolidado — calculado automaticamente -->
+        <div class="fgrid" style="margin-top:10px;">
+          <div class="f-row">
+            <label>AuC Meta Total (MM) <span style="font-weight:400;color:var(--t4)">consolidado</span></label>
+            <input id="m-auc" type="text" readonly placeholder="—" style="background:#f0f2fa;color:var(--cobalt);font-weight:700;cursor:default;">
+          </div>
         </div>
 
         <div class="sec-lbl">Coparticipação XP</div>
@@ -497,20 +504,43 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
         <!-- Totalizador da proposta -->
         <div id="m-prop-total-box" style="background:linear-gradient(135deg,#EEF2FD,#F5F7FF);border:1px solid var(--rule);border-radius:var(--r8);padding:16px 18px;margin-top:16px;display:none;">
-          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--cobalt);margin-bottom:10px;">Resumo da Proposta</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-            <div>
-              <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px;">Total Comp.</div>
-              <div id="m-prop-comp" style="font-size:16px;font-weight:700;color:var(--cobalt-br);">—</div>
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--cobalt);margin-bottom:12px;">Resumo da Proposta</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+
+            <!-- Total Comp -->
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:11px;color:var(--t2);">Total Comp.</span>
+              <span id="m-prop-comp" style="font-size:13px;font-weight:700;color:var(--cobalt-br);">—</span>
             </div>
-            <div>
-              <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px;">Total Captação</div>
-              <div id="m-prop-cap" style="font-size:16px;font-weight:700;color:var(--g);">—</div>
+
+            <!-- Total Coparticipação -->
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:11px;color:var(--t2);">Total Coparticipação XP</span>
+              <span id="m-prop-copart" style="font-size:13px;font-weight:700;color:var(--red);">—</span>
             </div>
-            <div>
-              <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px;">Custo/MM captado</div>
-              <div id="m-prop-custo" style="font-size:16px;font-weight:700;color:var(--am);">—</div>
+
+            <!-- Separador -->
+            <div style="border-top:1px solid var(--rule);margin:2px 0;"></div>
+
+            <!-- Total Líquido -->
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:11px;font-weight:700;color:var(--t1);">Total Líquido Contratação</span>
+              <span id="m-prop-liq" style="font-size:15px;font-weight:700;color:var(--g);">—</span>
             </div>
+
+            <!-- Separador -->
+            <div style="border-top:1px solid var(--rule);margin:2px 0;"></div>
+
+            <!-- Total Captação + Custo/MM -->
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:11px;color:var(--t2);">Total Captação</span>
+              <span id="m-prop-cap" style="font-size:13px;font-weight:700;color:var(--t1);">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:11px;color:var(--t2);">Custo/MM captado</span>
+              <span id="m-prop-custo" style="font-size:13px;font-weight:700;color:var(--am);">—</span>
+            </div>
+
           </div>
         </div>
 
@@ -783,6 +813,7 @@ function limparModal() {
   document.getElementById('m-bonus-liq').value = '';
   document.getElementById('m-rem-total-box').style.display = 'none';
   var ptb = document.getElementById('m-prop-total-box'); if (ptb) ptb.style.display = 'none';
+  var aucEl = document.getElementById('m-auc'); if (aucEl) aucEl.value = '';
   _histAtual = [];
   document.getElementById('m-obs').value = '';
   renderHistorico();
@@ -1086,40 +1117,57 @@ function calcProposta() {
   var piso    = gn('m-piso');
   var periodo = gi('m-periodo') || 12;
   var upfront = gn('m-upfront');
-  var t1tri   = gn('m-t1tri-v');
+  var t1tri_v = gn('m-t1tri-v');
   var t1v     = gn('m-t1v');
   var t2v     = gn('m-t2v');
   var t3v     = gn('m-t3v');
   var t4v     = gn('m-t4v');
   var copart  = gn('m-copart');
 
-  var t1trim  = gn('m-t1tri-m');
+  var t1tri_m = gn('m-t1tri-m');
   var t1m     = gn('m-t1m');
   var t2m     = gn('m-t2m');
   var t3m     = gn('m-t3m');
   var t4m     = gn('m-t4m');
 
-  if (!piso && !upfront && !t1v && !t2v) {
-    var ptb = document.getElementById('m-prop-total-box');
-    if (ptb) ptb.style.display = 'none';
+  // AuC Meta = soma de todas as metas de captação acordadas
+  var totalCap = t1tri_m + t1m + t2m + t3m + t4m;
+
+  // Atualizar campo AuC Meta readonly (consolidado)
+  var aucEl = document.getElementById('m-auc');
+  if (aucEl) {
+    aucEl.value = totalCap > 0 ? totalCap.toFixed(0) + ' MM' : '—';
+  }
+
+  var ptb = document.getElementById('m-prop-total-box');
+  if (!ptb) return;
+
+  if (!piso && !upfront && !t1v && !t2v && !t1tri_v) {
+    ptb.style.display = 'none';
     return;
   }
 
-  var totalComp = (piso * periodo) + upfront + t1tri + t1v + t2v + t3v + t4v + copart;
-  var totalCap  = (t1trim + t1m + t2m + t3m + t4m); // em MM
+  // Total Comp = piso × período + upfront + todos os bônus de gatilho (SEM copart)
+  var totalComp = (piso * periodo) + upfront + t1tri_v + t1v + t2v + t3v + t4v;
 
-  var ptb = document.getElementById('m-prop-total-box');
-  if (ptb) {
-    ptb.style.display = 'block';
-    var compEl  = document.getElementById('m-prop-comp');
-    var capEl   = document.getElementById('m-prop-cap');
-    var custoEl = document.getElementById('m-prop-custo');
-    if (compEl)  compEl.textContent  = 'R$ ' + fmtBRL(totalComp);
-    if (capEl)   capEl.textContent   = totalCap > 0 ? totalCap.toFixed(0) + ' MM' : '—';
-    if (custoEl) custoEl.textContent = (totalCap > 0 && totalComp > 0)
-      ? 'R$ ' + fmtBRL(totalComp / totalCap) + '/MM'
-      : '—';
-  }
+  // Total Líquido = Comp − Coparticipação
+  var totalLiq = totalComp - copart;
+
+  ptb.style.display = 'block';
+
+  var compEl  = document.getElementById('m-prop-comp');
+  var copartEl = document.getElementById('m-prop-copart');
+  var liqEl   = document.getElementById('m-prop-liq');
+  var capEl   = document.getElementById('m-prop-cap');
+  var custoEl = document.getElementById('m-prop-custo');
+
+  if (compEl)   compEl.textContent   = 'R$ ' + fmtBRL(totalComp);
+  if (copartEl) copartEl.textContent = copart > 0 ? 'R$ ' + fmtBRL(copart) : '—';
+  if (liqEl)    liqEl.textContent    = 'R$ ' + fmtBRL(totalLiq);
+  if (capEl)    capEl.textContent    = totalCap > 0 ? totalCap.toFixed(0) + ' MM' : '—';
+  if (custoEl)  custoEl.textContent  = (totalCap > 0 && totalLiq > 0)
+    ? 'R$ ' + fmtBRL(totalLiq / totalCap) + '/MM'
+    : '—';
 }
 
 function fmtBRL(n) {
