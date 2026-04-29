@@ -532,11 +532,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
   <!-- Financial KPI row -->
   <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;">
-    <div class="kc"><div class="ktr" style="background:#7C3AED;"></div><div class="kl">Total comprometido</div><div class="kv" style="font-size:22px;"><span id="dyn-comp">R$11,1M</span></div><div class="ks"><span id="dyn-comp-sub">27 candidatos</span></div><div class="kp pu">↑ Média R$354K/pessoa</div></div>
-    <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Custo por MM captado</div><div class="kv" style="font-size:22px;">R$5.528</div><div class="ks">por R$1M de captação</div><div class="kp pu">Meta total: R$1,67B</div></div>
-    <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">Total sign-ins</div><div class="kv" style="font-size:22px;"><span id="dyn-si">R$935K</span></div><div class="ks"><span id="dyn-si-sub">6 candidatos com luva</span></div></div>
-    <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">Coparticipação XP</div><div class="kv" style="font-size:22px;">R$3,15M</div><div class="ks">responsabilidade XP Inc.</div><div class="kp pu">Líquido Blue3: R$7,99M</div></div>
-    <div class="kc"><div class="ktr" style="background:var(--am);"></div><div class="kl">Captação alvo total</div><div class="kv" style="font-size:22px;">R$1.7B</div><div class="ks">metas contratuais</div></div>
+    <div class="kc"><div class="ktr" style="background:#7C3AED;"></div><div class="kl">Total comprometido</div><div class="kv" style="font-size:22px;"><span id="dyn-comp">—</span></div><div class="ks"><span id="dyn-comp-sub">— candidatos</span></div><div class="kp pu">↑ Média <span id="dyn-comp-media">—</span>/pessoa</div></div>
+    <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Custo por MM captado</div><div class="kv" style="font-size:22px;"><span id="dyn-custo-mm">—</span></div><div class="ks">por R$1M de captação</div><div class="kp pu">Meta total: <span id="dyn-cap-total-meta">—</span></div></div>
+    <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">Total sign-ins</div><div class="kv" style="font-size:22px;"><span id="dyn-si">—</span></div><div class="ks"><span id="dyn-si-sub">— candidatos com luva</span></div></div>
+    <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">Coparticipação XP</div><div class="kv" style="font-size:22px;"><span id="dyn-xp">—</span></div><div class="ks">responsabilidade XP Inc.</div><div class="kp pu">Líquido Blue3: <span id="dyn-liq-blue3">—</span></div></div>
+    <div class="kc"><div class="ktr" style="background:var(--am);"></div><div class="kl">Captação alvo total</div><div class="kv" style="font-size:22px;"><span id="dyn-cap-total">—</span></div><div class="ks">metas contratuais</div></div>
   </div>
 
   <div class="g2">
@@ -871,8 +871,21 @@ function fmtM(v) {
   set('dyn-periodo-label',  periodoLabel.split(' · ')[0] || 'Jan–Abr');
   set('dyn-periodo-chart',  periodoLabel || 'Jan–Abr 2026');
   set('dyn-auc-footer', 'R$'+G.aucB+'B');
-  set('dyn-comp',    fmtM(G.compTotal));
-  set('dyn-comp-sub', AT+' candidatos');
+  set('dyn-comp',        fmtM(G.compTotal));
+  set('dyn-comp-sub',    AT+' candidatos');
+  set('dyn-comp-media',  AT>0 ? fmtM(Math.round(G.compTotal/AT)) : '—');
+  set('dyn-xp',          G.xpTotal>0 ? fmtM(G.xpTotal) : '—');
+  set('dyn-liq-blue3',   fmtM(G.blue3Liq));
+  // Captação alvo total em MM→B
+  var capTotalMM = G.aucTotal || 0;
+  var capTotalFmt = capTotalMM >= 1000
+    ? 'R$'+(capTotalMM/1000).toFixed(2).replace('.',',')+' B'
+    : 'R$'+capTotalMM+' MM';
+  set('dyn-cap-total',   capTotalFmt);
+  set('dyn-cap-total-meta', capTotalFmt);
+  // Custo por MM: compTotal / (aucTotal em R$)
+  var custoMM = capTotalMM > 0 ? Math.round(G.compTotal / capTotalMM) : 0;
+  set('dyn-custo-mm',    custoMM > 0 ? 'R$'+custoMM.toLocaleString('pt-BR') : '—');
   set('dyn-si',      fmtM(G.siTotal));
   set('dyn-si-sub',  (G.siCount||0)+' candidatos com luva');
   set('dyn-si-footer','R$ '+(G.siTotal||0).toLocaleString('pt-BR'));
