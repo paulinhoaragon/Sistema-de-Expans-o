@@ -187,10 +187,14 @@ function blue3LoadData(callback){
       o['Período']               = parseInt(r.periodo)||12;
       o['Total Captação (MM)']   = totalCap * 1e6; // MM → R$ para Blue3_dataLoader dividir de volta
       o['Total Comp.']           = totalComp;
-      o['Data de Contratação']   = r.data_entrada
-        ? r.data_entrada.split('-').reverse().join('/') // yyyy-mm-dd → dd/mm/yyyy
+      var _statusFinal = etapaToStatus(r.etapa);
+      // Desistentes usam data_declinio como referência de mês
+      var _dataRef = (_statusFinal === 'Desistência' && r.data_declinio)
+        ? r.data_declinio : r.data_entrada;
+      o['Data de Contratação']   = _dataRef
+        ? _dataRef.split('-').reverse().join('/')
         : '';
-      o['Status']                = etapaToStatus(r.etapa);
+      o['Status']                = _statusFinal;
       o['MOU']                   = (r.mou||'').trim();
       o['Prev. Inicio']          = r.prev_inicio || '';
       o['Ancord']                = (r.status_ancord||'').trim();
