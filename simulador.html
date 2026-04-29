@@ -180,7 +180,9 @@ table.tot tr.r-pb td{background:#00915A;color:#fff!important;border-radius:2px}
         </select>
       </div>
     </div>
-    <div class="f"><label>AuC mínimo para renovação automática (R$ MM)</label><input class="fi" type="number" id="f-renov" value="8" min="0" step="0.5"></div>
+    <div id="renov-wrap">
+      <div class="f"><label>AuC mínimo para renovação — Checkpoint 1 (MM)</label><input class="fi" type="number" id="f-renov" value="0" min="0" step="0.5"></div>
+    </div>
     <div class="hint" id="piso-hint">→ Renovação automática: mês 6</div>
   </div>
 
@@ -191,10 +193,10 @@ table.tot tr.r-pb td{background:#00915A;color:#fff!important;border-radius:2px}
 
   <div class="sec">
     <div class="sec-lbl"><span class="n">5</span> Gatilhos de Captação — Tranches</div>
-    <div style="font-size:8.5px;color:#888;margin-bottom:8px;line-height:1.6">Informe o <strong style="color:#002855">AuC acumulado total</strong> por período. A captação mensal é distribuída automaticamente. Após o último gatilho ativo → padrão até M60.</div>
+    <div style="font-size:8.5px;color:#888;margin-bottom:8px;line-height:1.6">Informe o <strong style="color:#002855">AuC incremental</strong> por período (igual ao card do candidato). O simulador converte para acumulado automaticamente.</div>
     <div style="display:grid;grid-template-columns:18px 34px 1fr 1fr;margin-bottom:4px;padding:0 2px">
       <div></div><div style="font-size:7.5px;color:#bbb;font-weight:700;text-align:center">Mês</div>
-      <div style="font-size:7.5px;color:#bbb;font-weight:700;padding-left:7px">AuC Total (MM)</div>
+      <div style="font-size:7.5px;color:#bbb;font-weight:700;padding-left:7px">AuC Incremental (MM)</div>
       <div style="font-size:7.5px;color:#bbb;font-weight:700;padding-left:7px">Prêmio (R$)</div>
     </div>
     <div class="tr-row" id="tr3-row"><div class="tr-cb"><input type="checkbox" id="t3-on"></div><div class="tr-m">M3</div><div class="tr-f"><div class="tl">AuC acumulado</div><input type="number" id="t3-auc" value="0" min="0" step="1"></div><div class="tr-f"><div class="tl">Pagamento</div><input type="number" id="t3-pay" value="0" min="0" step="1000"></div></div>
@@ -278,31 +280,53 @@ function pisoHint(){
 }
 
 /* ── captação logic ── */
+// Converte incremental (CRM) → acumulado (interno)
+function toAcum(trigs) {
+  var s=trigs.filter(function(t){return t.on;}).sort(function(a,b){return a.m-b.m;});
+  var acc=0; s.forEach(function(t){acc+=t.auc;t.aucAcum=acc;});
+  trigs.forEach(function(t){if(!t.on)t.aucAcum=0;});
+  return trigs;
+}
 function buildCapMap(trigs,capDef){
-  var active=trigs.filter(function(t){return t.on;}).sort(function(a,b){return a.m-b.m;});
+  var active=toAcum(trigs).filter(function(t){return t.on;}).sort(function(a,b){return a.m-b.m;});
   var cap={};var prevM=0,prevAuc=0;
   for(var i=0;i<active.length;i++){
-    var t=active[i];var delta=Math.max(0,t.auc-prevAuc);var months=t.m-prevM;
+    var t=active[i];var delta=Math.max(0,t.aucAcum-prevAuc);var months=t.m-prevM;
     var monthly=months>0?delta/months:0;
     for(var m=prevM+1;m<=t.m;m++)cap[m]=monthly;
-    prevM=t.m;prevAuc=t.auc;
+    prevM=t.m;prevAuc=t.aucAcum;
   }
   for(var m2=prevM+1;m2<=TOTAL;m2++)cap[m2]=capDef;
   return cap;
 }
 function updateCapPreview(trigs,capDef){
-  var active=trigs.filter(function(t){return t.on;}).sort(function(a,b){return a.m-b.m;});
+  var active=toAcum(trigs).filter(function(t){return t.on;}).sort(function(a,b){return a.m-b.m;});
   var el=document.getElementById('cap-preview');if(!el)return;
   if(!active.length){el.innerHTML='Captação: <strong>'+capDef+' MM/mês</strong> em todos os meses';return;}
   var html='',prevM=0,prevAuc=0;
   for(var i=0;i<active.length;i++){
-    var t=active[i];var delta=Math.max(0,t.auc-prevAuc);var months=t.m-prevM;
+    var t=active[i];var delta=Math.max(0,t.aucAcum-prevAuc);var months=t.m-prevM;
     var monthly=months>0?(delta/months).toFixed(2):'—';
-    html+='M'+(prevM+1)+'–M'+t.m+': <strong>'+monthly+' MM/mês</strong> → AuC '+t.auc+' MM<br>';
-    prevM=t.m;prevAuc=t.auc;
+    html+='M'+(prevM+1)+'–M'+t.m+': <strong>'+monthly+' MM/mês</strong> → AuC acum. '+t.aucAcum+' MM<br>';
+    prevM=t.m;prevAuc=t.aucAcum;
   }
   html+='M'+(prevM+1)+'–M60: <strong>'+capDef+' MM/mês</strong> (padrão)';
   el.innerHTML=html;
+}
+// Checkpoints de renovação dinâmicos
+function renderCheckpoints(checkpoints) {
+  var wrap=document.getElementById('renov-wrap');if(!wrap)return;
+  if(!checkpoints||!checkpoints.length){
+    wrap.innerHTML='<div class="f"><label>AuC mínimo para renovação — Checkpoint 1 (MM)</label><input class="fi" type="number" id="f-renov" value="0" min="0" step="0.5"></div>';
+    return;
+  }
+  wrap.innerHTML=checkpoints.map(function(cp,i){
+    var v=parseFloat(cp.custodia)||0;
+    // se veio em R$ (>1000), converter para MM
+    if(v>1000) v=parseFloat((v/1e6).toFixed(2));
+    return '<div class="f"><label>AuC mínimo — Checkpoint '+(i+1)+' · Mês '+cp.mes+' (MM)</label>'
+      +'<input class="fi" type="number" id="f-renov'+(i===0?'':'_'+i)+'" value="'+v+'" min="0" step="0.5"></div>';
+  }).join('');
 }
 
 /* ── simulation ── */
@@ -329,10 +353,10 @@ function runSim(){
     var hasTrig=false;for(var j=0;j<trigs.length;j++){if(trigs[j].on&&trigs[j].m===m){hasTrig=true;break;}}
     months.push({m:m,cap:cap,cumAuc:cumAuc,revB:revB,revL:revL,comm:comm,pisoM:pisoM,luvaM:luvaM,trPay:trPay,res:res,cumRes:cumRes,hasTrig:hasTrig});
   }
-  var actTrgs=trigs.filter(function(t){return t.on;});
+  var actTrgs=toAcum(trigs.filter(function(t){return t.on;}));
   var totP=piso*pisoDur,totL=luva,totT=actTrgs.reduce(function(s,t){return s+t.pay;},0);
   var lastTrig=actTrgs.length>0?actTrgs[actTrgs.length-1]:null;
-  var aucLast=lastTrig?lastTrig.auc:(months[11]?months[11].cumAuc:0);
+  var aucLast=lastTrig?lastTrig.aucAcum:(months[11]?months[11].cumAuc:0);
   var revLastPiso=months[pisoDur-1]?months[pisoDur-1].revL:(months[11]?months[11].revL:0);
   return{name:sv('f-name'),city:sv('f-city'),date:sv('f-date'),obs:sv('f-obs'),
     chkSeguros:bv('chk-seguros'),chkCons:bv('chk-cons'),chkB3w:bv('chk-b3w'),
@@ -791,6 +815,15 @@ document.addEventListener('DOMContentLoaded',function(){
       if (prop.telefone)           { var el=document.getElementById('f-tel');     if(el) el.value = prop.telefone; }
       if (prop.hunter)             { var el=document.getElementById('f-hunter');  if(el) el.value = prop.hunter; }
       if (prop.crm_id)             { var el=document.getElementById('f-crm-id');  if(el) el.value = prop.crm_id; }
+      // Checkpoints de renovação do CRM
+      if (prop.condicoes_renovacao) {
+        try {
+          var cps = typeof prop.condicoes_renovacao === 'string'
+            ? JSON.parse(prop.condicoes_renovacao)
+            : prop.condicoes_renovacao;
+          renderCheckpoints(cps);
+        } catch(e) {}
+      }
       if (d.piso)      { var el=document.getElementById('f-piso'); if(el) el.value = d.piso; }
       if (d.pisoMeses) { var el=document.getElementById('f-dur');  if(el) el.value = d.pisoMeses; pisoHint(); }
       if (d.luva)      { var el=document.getElementById('f-luva'); if(el) el.value = d.luva; }
