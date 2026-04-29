@@ -751,6 +751,7 @@ function abrirEdicao(id) {
   document.getElementById('m-saude').value         = r.plano_saude||'';
   document.getElementById('m-vavr').value          = r.vavr||'';
   calcFinanceiro();
+  calcProposta();
   document.getElementById('overlay-cand').classList.add('open');
 }
 
