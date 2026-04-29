@@ -136,9 +136,9 @@ function blue3SaveCSV(rows, onDone){
   });
 }
 
-// ── Carregar dados do Supabase ──
+// ── Carregar dados do CRM (crm_candidatos) ──
 function blue3LoadData(callback){
-  supaFetch('candidatos?order=updated_at.desc&limit=500',{prefer:'return=representation'})
+  supaFetch('crm_candidatos?order=data_entrada.desc&limit=500',{prefer:'return=representation'})
   .then(function(r){return r.json();})
   .then(function(rows){
     if(!rows||!rows.length){
@@ -147,41 +147,66 @@ function blue3LoadData(callback){
       callback([]);
       return;
     }
-    // Capturar data da última atualização do registro mais recente
-    if(rows[0] && rows[0].updated_at){
-      var d = new Date(rows[0].updated_at);
+    // Capturar data da última atualização
+    if(rows[0] && rows[0].atualizado_em){
+      var d = new Date(rows[0].atualizado_em);
       var months=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
       var dateStr = d.getDate().toString().padStart(2,'0')+' '+months[d.getMonth()]+' '+d.getFullYear();
       localStorage.setItem('B3D_DATE', dateStr);
     }
-    // Converter formato Supabase para B3D
-    var converted=rows.map(function(r){
+    // Mapear etapa CRM → Status compatível com pipeline
+    function etapaToStatus(etapa){
+      var e = norm(etapa);
+      if(e==='trabalhando')   return 'Trabalhando';
+      if(e==='contratação')   return 'Contratado(a)';
+      if(e==='declinou')      return 'Desistência';
+      return etapa || '';
+    }
+    // Converter crm_candidatos → formato B3D (compatível com Blue3_dataLoader)
+    var converted = rows.map(function(r){
+      var totalCap = ((parseFloat(r.trigger1_tri_meta)||0)
+                    + (parseFloat(r.trigger1_meta)||0)
+                    + (parseFloat(r.trigger2_meta)||0)
+                    + (parseFloat(r.trigger3_meta)||0)
+                    + (parseFloat(r.trigger4_meta)||0)) * 1e6; // MM → R$
+      var totalComp = ((parseFloat(r.piso)||0) * (parseInt(r.periodo)||12))
+                    + (parseFloat(r.upfront)||0)
+                    + (parseFloat(r.trigger1_tri_val)||0)
+                    + (parseFloat(r.trigger1_val)||0)
+                    + (parseFloat(r.trigger2_val)||0)
+                    + (parseFloat(r.trigger3_val)||0)
+                    + (parseFloat(r.trigger4_val)||0);
       var o={};
-      o['Candidato']=r.candidato||'';
-      o['Senioridade']=r.senioridade||'';
-      o['Origem']=r.origem||'';
-      o['Filial']=r.filial||'';
-      o['Hunter']=r.hunter||'';
-      o['Sign in']=r.sign_in||0;
-      o['Piso']=r.piso||0;
-      o['Período']=r.periodo||12;
-      o['Total Captação (MM)']=r.total_captacao_mm?r.total_captacao_mm*1e6:0;
-      o['Total Comp.']=r.total_comp||0;
-      o['Data de Contratação']=r.data_contratacao||'';
-      o['Status']=r.status||'';
-      o['MOU']=r.mou||'';
-      o['Prev. Inicio']=r.prev_inicio||'';
-      o['Ancord']=r.ancord||'';
-      o['Area']=r.area||'Assessores';
-      o['Detalhe Coparticipação']=r.coparticipacao||0;
-      o['Trigger 1 Tri']=r.trigger1_tri||0;
-      o['Trigger 1']=r.trigger1||0;
-      o['Trigger 2']=r.trigger2||0;
-      o['Trigger 3']=r.trigger3||0;
-      o['Trigger 4']=r.trigger4||0;
+      o['Candidato']             = (r.nome||'').trim();
+      o['Senioridade']           = (r.nivel||'').trim();
+      o['Origem']                = (r.instituicao||'').trim();
+      o['Filial']                = (r.praca||'').trim();
+      o['Hunter']                = (r.hunter||'').trim();
+      o['Sign in']               = parseFloat(r.upfront)||0;
+      o['Piso']                  = parseFloat(r.piso)||0;
+      o['Período']               = parseInt(r.periodo)||12;
+      o['Total Captação (MM)']   = totalCap;
+      o['Total Comp.']           = totalComp;
+      o['Data de Contratação']   = r.data_entrada
+        ? r.data_entrada.split('-').reverse().join('/') // yyyy-mm-dd → dd/mm/yyyy
+        : '';
+      o['Status']                = etapaToStatus(r.etapa);
+      o['MOU']                   = (r.mou||'').trim();
+      o['Prev. Inicio']          = r.prev_inicio || '';
+      o['Ancord']                = (r.status_ancord||'').trim();
+      o['Área']                  = (r.vaga||'Assessores').trim();
+      o['Detalhe Coparticipação']= parseFloat(r.coparticipacao)||0;
+      o['Trigger 1 Tri']         = parseFloat(r.trigger1_tri_val)||0;
+      o['Trigger 1']             = parseFloat(r.trigger1_val)||0;
+      o['Trigger 2']             = parseFloat(r.trigger2_val)||0;
+      o['Trigger 3']             = parseFloat(r.trigger3_val)||0;
+      o['Trigger 4']             = parseFloat(r.trigger4_val)||0;
+      o['Estratégico']           = (r.estrategico||'Não').trim();
+      o['Telefone']              = (r.telefone||'').trim();
+      o['_crm_id']               = r.id || '';
       return o;
     });
-    localStorage.setItem('B3D',JSON.stringify(converted));
+    localStorage.setItem('B3D', JSON.stringify(converted));
     callback(converted);
   })
   .catch(function(){
@@ -214,14 +239,17 @@ function Blue3_dataLoader(){
       periodo:Math.round(parseFloat(String(r['Período']||'12').replace(',','.'))||12),
       trigs:[pn(r['Trigger 1 Tri']),pn(r['Trigger 1']),pn(r['Trigger 2']),pn(r['Trigger 3']),pn(r['Trigger 4'])],
       dt:(r['Data de Contratação']||null),
-      inicio:(r['Prev. Inicio']||null)
+      inicio:(r['Prev. Inicio']||null),
+      estrategico:(r['Estratégico']||'Não').trim(),
+      tel:(r['Telefone']||'').trim(),
+      _id:(r['_crm_id']||'')
     };
   });
   // Contar brutas e desistências antes do filtro de ativos
   var validAll = all.filter(function(r){ return !!r.n; });
   window.Blue3Data._brutas = validAll.length;
   window.Blue3Data._desist = validAll.filter(function(r){
-    var s=norm(r.st); return s!=='trabalhando'&&s!=='contratado(a)'&&s!=='';
+    var s=norm(r.st); return s==='desistência'||s==='desistencia';
   }).length;
   // Aplicar filtro — apenas ativos
   window.Blue3Data.candidatos = validAll.filter(function(r){
@@ -463,4 +491,4 @@ window.addEventListener('storage',function(e){
   }
 });
 
-console.log('[Blue3] pipeline.js v5 carregado — Supabase integrado.');
+console.log('[Blue3] pipeline.js v6 carregado — fonte: crm_candidatos (Supabase).');
