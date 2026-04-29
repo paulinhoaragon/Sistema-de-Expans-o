@@ -1628,7 +1628,11 @@ function showEmptyState(msg) {
 
 // ── Inicialização ──
 (function() {
-  console.log('[Blue3 Relatorio] init. B3D:', !!localStorage.getItem('B3D'));
+  // Limpar cache antigo para garantir dados frescos do Supabase
+  localStorage.removeItem('B3D');
+  localStorage.removeItem('B3D_RAW');
+  localStorage.removeItem('B3D_DATE');
+  console.log('[Blue3 Relatorio] init. Cache limpo. Buscando do Supabase...');
   if (typeof Blue3_init === 'function') {
     Blue3_init(function(ok) {
       if (ok) renderPage();
