@@ -1122,7 +1122,7 @@ function fmtM(v) {
       var mc = (r.mou||'').trim()==='Assinado'?'background:#DCFCE7;color:#166534;':'background:#FEF3C7;color:#92400E;';
       var sc2= (r.st||'').trim()==='Trabalhando'?'background:#EEF2FD;color:#1A3BAD;':'background:#F1F5F9;color:#475569;';
       return '<tr><td style="font-weight:600;">'+r.n+'</td><td style="color:var(--t3);">'+r.p+'</td>'
-        +'<td>'+fmtM(r.piso)+'</td><td>'+(r.si>0?fmtM(r.si):'—')+'</td><td>'+fmtM(r.cap*1e6)+'</td>'
+        +'<td>'+fmtM(r.piso)+'</td><td>'+(r.si>0?fmtM(r.si):'—')+'</td><td>'+(r.cap>0?'R$'+r.cap+'MM':'—')+'</td>'
         +'<td style="font-weight:600;">'+fmtM(r.comp)+'</td><td>'+(r.xp>0?fmtM(r.xp):'—')+'</td>'
         +'<td><span style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;'+mc+'">'+r.mou+'</span></td>'
         +'<td><span style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;'+sc2+'">'+r.st+'</span></td></tr>';
