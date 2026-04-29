@@ -364,7 +364,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         <div class="sec-lbl">Etapa</div>
         <div class="fgrid">
           <div class="f-row"><label>Etapa</label>
-            <select id="m-etapa">
+            <select id="m-etapa" onchange="toggleDeclinio(this.value)">
               <option>Prospecção</option><option>Qualificação</option>
               <option>Negociação</option><option>Contratação</option>
               <option>Trabalhando</option><option>Declinou</option>
@@ -381,6 +381,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           </div>
           <div class="f-row"><label>Data de entrada</label><input id="m-data-ent" type="date"></div>
           <div class="f-row"><label>Data início trabalho</label><input id="m-data-ini" type="date"></div>
+          <div class="f-row" id="row-declinio" style="display:none;">
+            <label>Data de declínio</label>
+            <input id="m-data-declinio" type="date">
+          </div>
         </div>
 
         <div class="sec-lbl">Histórico de Contatos</div>
@@ -800,6 +804,8 @@ function abrirEdicao(id) {
   document.getElementById('m-ancord').value   = r.status_ancord||'Pendente';
   document.getElementById('m-data-ent').value = r.data_entrada||'';
   document.getElementById('m-data-ini').value = r.data_inicio||'';
+  var dd = document.getElementById('m-data-declinio'); if (dd) dd.value = r.data_declinio||'';
+  toggleDeclinio(r.etapa||'Prospecção');
   carregarHistorico(r.comentarios||'');
   // campos financeiros
   document.getElementById('m-auc-cust').value    = r.auc_custodia_mm ? formatBRL(r.auc_custodia_mm) : '';
@@ -820,6 +826,24 @@ function abrirEdicao(id) {
 }
 
 function fecharModal() { document.getElementById('overlay-cand').classList.remove('open'); }
+
+// Fechar com ESC
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var ov = document.getElementById('overlay-cand');
+    if (ov && ov.classList.contains('open')) fecharModal();
+    var oi = document.getElementById('overlay-import');
+    if (oi && oi.classList.contains('open')) fecharImport();
+  }
+});
+
+// Mostrar/ocultar campo de data de declínio
+function toggleDeclinio(etapa) {
+  var row = document.getElementById('row-declinio');
+  if (!row) return;
+  row.style.display = etapa === 'Declinou' ? '' : 'none';
+  if (etapa !== 'Declinou') document.getElementById('m-data-declinio').value = '';
+}
 
 function limparModal() {
   ['m-id','m-nome','m-tel','m-email','m-inst',
@@ -851,6 +875,8 @@ function limparModal() {
   var aucEl = document.getElementById('m-auc'); if (aucEl) aucEl.value = '';
   var renWrap = document.getElementById('m-renovacao-wrap'); if (renWrap) renWrap.style.display = 'none';
   var renGrid = document.getElementById('m-renovacao-grid'); if (renGrid) renGrid.innerHTML = '';
+  var dd = document.getElementById('m-data-declinio'); if (dd) dd.value = '';
+  toggleDeclinio('Prospecção');
   _histAtual = [];
   document.getElementById('m-obs').value = '';
   renderHistorico();
@@ -865,9 +891,11 @@ function gi(id){ return parseInt(g(id))||0; }
 function salvarCandidato() {
   var nome = g('m-nome').trim();
   if (!nome) { alert('Informe o nome do candidato.'); return; }
+  var vaga = g('m-vaga');
+  if (!vaga) { alert('Selecione a vaga do candidato.'); return; }
   var payload = {
     nome: nome, telefone: g('m-tel'), email: g('m-email'), instituicao: g('m-inst'), praca: g('m-praca'),
-    hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), vaga: g('m-vaga'), etapa: g('m-etapa'),
+    hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), vaga: vaga, etapa: g('m-etapa'),
     // Proposta base
     auc_mm: (gn('m-t1tri-m') + gn('m-t1m') + gn('m-t2m') + gn('m-t3m') + gn('m-t4m')) || 0, piso: parseBRL(g('m-piso')), periodo: gi('m-periodo'), upfront: parseBRL(g('m-upfront')),
     // Gatilhos
@@ -885,6 +913,7 @@ function salvarCandidato() {
     // Status
     mou: g('m-mou'), status_ancord: g('m-ancord'),
     data_entrada: g('m-data-ent')||null, data_inicio: g('m-data-ini')||null,
+    data_declinio: g('m-data-declinio')||null,
     comentarios: g('m-obs'),
     // Carteira atual
     auc_custodia_mm:   parseBRL(g('m-auc-cust')),
