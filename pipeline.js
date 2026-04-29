@@ -169,6 +169,8 @@ function blue3LoadData(callback){
                     + (parseFloat(r.trigger2_meta)||0)
                     + (parseFloat(r.trigger3_meta)||0)
                     + (parseFloat(r.trigger4_meta)||0)); // em MM
+      // Sanity check: se valor > 10000 provavelmente foi salvo em R$ — converter para MM
+      if (totalCap > 10000) totalCap = totalCap / 1e6;
       var totalComp = ((parseFloat(r.piso)||0) * (parseInt(r.periodo)||12))
                     + (parseFloat(r.upfront)||0)
                     + (parseFloat(r.trigger1_tri_val)||0)
