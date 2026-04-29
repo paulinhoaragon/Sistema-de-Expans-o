@@ -335,7 +335,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         <div class="fgrid3">
           <div class="f-row">
             <label>AuC Custódia (MM)</label>
-            <input id="m-auc-cust" type="number" step="0.1" placeholder="0" oninput="calcFinanceiro()">
+            <input id="m-auc-cust" type="text" placeholder="R$ 0,00" oninput="calcFinanceiro()">
           </div>
           <div class="f-row">
             <label>Nº de Clientes</label>
@@ -779,7 +779,7 @@ function abrirEdicao(id) {
   document.getElementById('m-data-ini').value = r.data_inicio||'';
   carregarHistorico(r.comentarios||'');
   // campos financeiros
-  document.getElementById('m-auc-cust').value    = r.auc_custodia_mm||'';
+  document.getElementById('m-auc-cust').value    = r.auc_custodia_mm ? formatBRL(r.auc_custodia_mm) : '';
   document.getElementById('m-clientes').value    = r.num_clientes||'';
   document.getElementById('m-rem-bruta').value   = r.remuneracao_bruta ? formatBRL(r.remuneracao_bruta) : '';
   document.getElementById('m-bonus-bruto').value = r.bonus_bruto       ? formatBRL(r.bonus_bruto)       : '';
@@ -863,7 +863,7 @@ function salvarCandidato() {
     data_entrada: g('m-data-ent')||null, data_inicio: g('m-data-ini')||null,
     comentarios: g('m-obs'),
     // Carteira atual
-    auc_custodia_mm:   gn('m-auc-cust'),
+    auc_custodia_mm:   parseBRL(g('m-auc-cust')),
     num_clientes:      gi('m-clientes'),
     // Remuneração atual
     remuneracao_bruta: parseBRL(g('m-rem-bruta')),
@@ -1110,7 +1110,7 @@ function maskBRL(el) {
 // Lista de IDs monetários — aba2 + aba3
 var MONETARY_IDS = [
   'm-rem-bruta','m-bonus-bruto','m-saude','m-vavr',
-  'm-piso','m-upfront',
+  'm-piso','m-upfront','m-auc-cust',
   'm-t1tri-v','m-t1v','m-t2v','m-t3v','m-t4v',
   'm-copart'
 ];
@@ -1131,7 +1131,7 @@ document.addEventListener('input', function(e) {
 
 // ── Cálculo financeiro ────────────────────────────────────────────
 function calcFinanceiro() {
-  var auc   = parseFloat(document.getElementById('m-auc-cust').value) || 0;
+  var auc   = parseBRL(document.getElementById('m-auc-cust').value);
   var cli   = parseInt(document.getElementById('m-clientes').value)   || 0;
   var rem   = parseBRL(document.getElementById('m-rem-bruta').value);
   var bon   = parseBRL(document.getElementById('m-bonus-bruto').value);
@@ -1207,7 +1207,7 @@ function renderRenovacao(valoresSalvos) {
       + '</div>'
       + '<div class="f-row">'
       + '<label>Checkpoint ' + (i+1) + ' — Custódia mín. (MM)</label>'
-      + '<input type="number" id="m-ren-cust-' + i + '" value="' + custVal + '" step="0.1" placeholder="0">'
+      + '<input type="text" id="m-ren-cust-' + i + '" value="' + custVal + '" placeholder="R$ 0,00">'
       + '</div>';
   }).join('');
 
