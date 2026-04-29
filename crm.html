@@ -457,8 +457,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         <div class="sec-lbl" style="margin-top:0">Condições Base</div>
         <div class="fgrid">
           <div class="f-row"><label>Piso R$/mês</label><input id="m-piso" type="number" placeholder="0" oninput="calcProposta()"></div>
-          <div class="f-row"><label>Período (meses)</label><input id="m-periodo" type="number" placeholder="12" oninput="calcProposta()"></div>
+          <div class="f-row"><label>Período (meses)</label><input id="m-periodo" type="number" placeholder="12" oninput="calcProposta(); renderRenovacao()"></div>
           <div class="f-row"><label>Sign-in / Upfront R$</label><input id="m-upfront" type="number" placeholder="0" oninput="calcProposta()"></div>
+        </div>
+
+        <!-- Condições de Renovação — geradas dinamicamente pelo período -->
+        <div id="m-renovacao-wrap" style="display:none;">
+          <div class="sec-lbl">Condições de Renovação do Piso</div>
+          <div id="m-renovacao-grid" class="fgrid"></div>
         </div>
 
         <div class="sec-lbl">Gatilhos de Captação</div>
@@ -782,6 +788,11 @@ function abrirEdicao(id) {
   document.getElementById('m-vavr').value          = r.vavr||'';
   calcFinanceiro();
   calcProposta();
+  // Carregar condições de renovação salvas
+  try {
+    var renSalvas = r.condicoes_renovacao ? JSON.parse(r.condicoes_renovacao) : [];
+    renderRenovacao(renSalvas);
+  } catch(e) { renderRenovacao([]); }
   document.getElementById('overlay-cand').classList.add('open');
 }
 
@@ -814,6 +825,8 @@ function limparModal() {
   document.getElementById('m-rem-total-box').style.display = 'none';
   var ptb = document.getElementById('m-prop-total-box'); if (ptb) ptb.style.display = 'none';
   var aucEl = document.getElementById('m-auc'); if (aucEl) aucEl.value = '';
+  var renWrap = document.getElementById('m-renovacao-wrap'); if (renWrap) renWrap.style.display = 'none';
+  var renGrid = document.getElementById('m-renovacao-grid'); if (renGrid) renGrid.innerHTML = '';
   _histAtual = [];
   document.getElementById('m-obs').value = '';
   renderHistorico();
@@ -844,6 +857,7 @@ function salvarCandidato() {
     // Operacional
     setup: g('m-setup'), codigo_a: g('m-codigo-a'), cs: g('m-cs'),
     prev_inicio: g('m-prev-inicio')||null,
+    condicoes_renovacao: getRenovacaoPayload(),
     // Status
     mou: g('m-mou'), status_ancord: g('m-ancord'),
     data_entrada: g('m-data-ent')||null, data_inicio: g('m-data-ini')||null,
@@ -1111,6 +1125,62 @@ function calcFinanceiro() {
   } else {
     totalBox.style.display = 'none';
   }
+}
+
+// ── Condições de Renovação ────────────────────────────────────────
+// Checkpoints padrão por período (mês de referência)
+function checkpointsPadrao(periodo) {
+  if (periodo <= 0) return [];
+  if (periodo <= 6)  return [3];
+  if (periodo <= 12) return [6];
+  if (periodo <= 18) return [6, 12];
+  return [6, 12, 18]; // 24+
+}
+
+function renderRenovacao(valoresSalvos) {
+  var wrap = document.getElementById('m-renovacao-wrap');
+  var grid = document.getElementById('m-renovacao-grid');
+  if (!wrap || !grid) return;
+
+  var periodo = gi('m-periodo');
+  if (!periodo) { wrap.style.display = 'none'; grid.innerHTML = ''; return; }
+
+  var checkpoints = checkpointsPadrao(periodo);
+  if (!checkpoints.length) { wrap.style.display = 'none'; grid.innerHTML = ''; return; }
+
+  // valoresSalvos: array [{mes, custodia}] vindo do Supabase
+  var saved = Array.isArray(valoresSalvos) ? valoresSalvos : [];
+
+  grid.innerHTML = checkpoints.map(function(mesPadrao, i) {
+    var sv = saved[i] || {};
+    var mesVal    = sv.mes      !== undefined ? sv.mes      : mesPadrao;
+    var custVal   = sv.custodia !== undefined ? sv.custodia : '';
+    return '<div class="f-row">'
+      + '<label>Checkpoint ' + (i+1) + ' — Mês</label>'
+      + '<input type="number" id="m-ren-mes-' + i + '" value="' + mesVal + '" min="1" max="' + periodo + '" placeholder="' + mesPadrao + '">'
+      + '</div>'
+      + '<div class="f-row">'
+      + '<label>Checkpoint ' + (i+1) + ' — Custódia mín. (MM)</label>'
+      + '<input type="number" id="m-ren-cust-' + i + '" value="' + custVal + '" step="0.1" placeholder="0">'
+      + '</div>';
+  }).join('');
+
+  wrap.style.display = 'block';
+}
+
+function getRenovacaoPayload() {
+  var periodo = gi('m-periodo');
+  var checkpoints = checkpointsPadrao(periodo);
+  if (!checkpoints.length) return null;
+  var result = checkpoints.map(function(mesPadrao, i) {
+    var mesEl  = document.getElementById('m-ren-mes-'  + i);
+    var custEl = document.getElementById('m-ren-cust-' + i);
+    return {
+      mes:      mesEl  ? (parseInt(mesEl.value)   || mesPadrao) : mesPadrao,
+      custodia: custEl ? (parseFloat(custEl.value) || 0)        : 0
+    };
+  });
+  return JSON.stringify(result);
 }
 
 function calcProposta() {
