@@ -574,6 +574,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 7H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-2" stroke-linecap="round"/><path d="M13 5h6v6" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 5l-8 8" stroke-linecap="round"/></svg>
             Gerar Proposta no Simulador
           </button>
+          <!-- Mini histórico de propostas -->
+          <div id="crm-prop-hist" style="margin-top:12px;display:none;">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:6px;">Propostas salvas</div>
+            <div id="crm-prop-hist-lista"></div>
+          </div>
         </div>
 
         <!-- Botões de ação -->
@@ -826,6 +831,8 @@ function abrirEdicao(id) {
   renEl.value = r.condicoes_renovacao || '';
   calcFinanceiro();
   calcProposta();
+  // Carregar mini histórico de propostas
+  carregarPropostasCRM(r.telefone || '');
   // Carregar condições de renovação salvas
   try {
     var renSalvas = r.condicoes_renovacao ? JSON.parse(r.condicoes_renovacao) : [];
@@ -884,6 +891,8 @@ function limparModal() {
   var aucEl = document.getElementById('m-auc'); if (aucEl) aucEl.value = '';
   var renWrap = document.getElementById('m-renovacao-wrap'); if (renWrap) renWrap.style.display = 'none';
   var renGrid = document.getElementById('m-renovacao-grid'); if (renGrid) renGrid.innerHTML = '';
+  var ph = document.getElementById('crm-prop-hist'); if (ph) ph.style.display='none';
+  var pl = document.getElementById('crm-prop-hist-lista'); if (pl) pl.innerHTML='';
   var dd = document.getElementById('m-data-declinio'); if (dd) dd.value = '';
   toggleDeclinio('Prospecção');
   _histAtual = [];
@@ -1460,6 +1469,64 @@ function switchTab(id, btn) {
 }
 
 // ── Gerar Proposta no Simulador ────────────────────────────────────
+// ── Mini histórico de propostas no card ──────────────────────────
+function carregarPropostasCRM(telefone) {
+  var wrap  = document.getElementById('crm-prop-hist');
+  var lista = document.getElementById('crm-prop-hist-lista');
+  if (!wrap || !lista || !telefone) return;
+
+  var tel = telefone.replace(/\D/g,'');
+  if (!tel) { wrap.style.display='none'; return; }
+
+  var corStatus = { 'Em negociação':'#92400E;background:#FEF3C7',
+                    'Aceita':'#166534;background:#DCFCE7',
+                    'Declinada':'#991B1B;background:#FEE2E2',
+                    'Expirada':'#64748B;background:#F1F5F9' };
+
+  fetch(SUPA_URL+'/rest/v1/propostas?telefone=eq.'+tel+'&order=versao.desc', {
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json' }
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(rows) {
+    if (!rows || !rows.length) { wrap.style.display='none'; return; }
+    wrap.style.display = 'block';
+    lista.innerHTML = rows.map(function(p) {
+      var cor = corStatus[p.status] || '64748B;background:#F1F5F9';
+      var resumo = p.resumo || (p.dados && p.dados.piso ? 'Piso R$'+p.dados.piso+'/mês' : '—');
+      var data = p.criado_em ? new Date(p.criado_em).toLocaleDateString('pt-BR') : '';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;background:#f7f9ff;border:1px solid #e8edf5;margin-bottom:4px;font-size:11px;">'
+        + '<span style="background:#1A3BAD;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:4px;flex-shrink:0;">v'+p.versao+'</span>'
+        + '<span style="flex:1;color:#3a4268;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+resumo+'</span>'
+        + '<span style="font-size:9px;color:#a0aacc;flex-shrink:0;">'+data+'</span>'
+        + '<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;color:'+cor+';flex-shrink:0;">'+p.status+'</span>'
+        + '<select style="font-size:9px;border:1px solid #d0d7e8;border-radius:4px;padding:2px 4px;cursor:pointer;background:#fff;" onchange="atualizarStatusCRM(\''+p.id+'\',this.value,this)">'
+        + ['Em negociação','Aceita','Declinada','Expirada'].map(function(s){
+            return '<option value="'+s+'"'+(s===p.status?' selected':'')+'>'+s+'</option>';
+          }).join('')
+        + '</select>'
+        + '</div>';
+    }).join('');
+  })
+  .catch(function(){ wrap.style.display='none'; });
+}
+
+function atualizarStatusCRM(id, status, el) {
+  el.disabled = true;
+  fetch(SUPA_URL+'/rest/v1/propostas?id=eq.'+id, {
+    method: 'PATCH',
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY,
+               'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ status: status, atualizado_em: new Date().toISOString() })
+  })
+  .then(function(r){
+    el.disabled = false;
+    // Recarregar mini histórico
+    var tel = g('m-tel');
+    carregarPropostasCRM(tel);
+  })
+  .catch(function(){ el.disabled = false; });
+}
+
 function gerarProposta() {
   var nome  = g('m-nome').trim();
   var tel   = g('m-tel').trim();
