@@ -815,6 +815,15 @@ function abrirEdicao(id) {
   document.getElementById('m-tipo-bonus').value  = r.tipo_bonus||'Semestral';
   document.getElementById('m-saude').value       = r.plano_saude       ? formatBRL(r.plano_saude)       : '';
   document.getElementById('m-vavr').value        = r.vavr              ? formatBRL(r.vavr)              : '';
+  // Armazenar condicoes_renovacao em campo oculto para uso no gerarProposta
+  var renEl = document.getElementById('m-renov-data');
+  if (!renEl) {
+    renEl = document.createElement('input');
+    renEl.type = 'hidden';
+    renEl.id = 'm-renov-data';
+    document.body.appendChild(renEl);
+  }
+  renEl.value = r.condicoes_renovacao || '';
   calcFinanceiro();
   calcProposta();
   // Carregar condições de renovação salvas
@@ -1493,6 +1502,10 @@ function gerarProposta() {
     nome:     nome,
     praca:    pracaVal,
     hunter:   g('m-hunter'),
+    condicoes_renovacao: (function(){
+      var el = document.getElementById('m-renov-data');
+      try { return el && el.value ? JSON.parse(el.value) : null; } catch(e){ return null; }
+    })(),
     dados:    dados
   };
 
