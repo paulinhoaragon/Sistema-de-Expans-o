@@ -2311,8 +2311,10 @@ document.addEventListener('DOMContentLoaded',function(){
   if(typeof renderRegTranches==='function') renderRegTranches();
   if(typeof renderTranchesSimForm==='function') renderTranchesSimForm();
 });
-document.getElementById('reg-estrategica').addEventListener('change',function(){
-  document.getElementById('reg-estrat-fields').style.display=this.checked?'block':'none';
+var _regEstrat = document.getElementById('reg-estrategica');
+if (_regEstrat) _regEstrat.addEventListener('change',function(){
+  var f = document.getElementById('reg-estrat-fields');
+  if (f) f.style.display = this.checked ? 'block' : 'none';
 });
 </script>
 
