@@ -71,7 +71,7 @@ body{font-family:'Inter',sans-serif;font-size:12px;background:#e8ecf3;color:#1a2
 .btn-v{border:none;border-radius:5px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;display:flex;align-items:center;gap:4px}
 .btn-abrir{background:#EEF2FD;color:#1A3BAD}.btn-abrir:hover{background:#1A3BAD;color:#fff}
 .btn-pdf{background:#f9f3e8;color:#92400E}.btn-pdf:hover{background:#B8962E;color:#fff}
-.btn-status{background:#f1f5f9;color:#64748b;font-size:9px}.btn-status:hover{background:#e2e8f0}
+.btn-del{background:#FEE2E2;color:#991B1B}.btn-del:hover{background:#991B1B;color:#fff}
 
 /* ── EMPTY ── */
 .empty{text-align:center;padding:60px 20px;color:#a0aacc}
@@ -317,6 +317,7 @@ function renderLista(rows) {
         + '<select class="btn-v btn-status" onchange="alterarStatus(\''+v.id+'\',this.value,this)" title="Alterar status">'
         + ['Em negociação','Aceita','Declinada','Expirada'].map(function(s){ return '<option value="'+s+'"'+(s===v.status?' selected':'')+'>'+s+'</option>'; }).join('')
         + '</select>'
+        + '<button class="btn-v btn-del" onclick="deletarProposta(\''+v.id+'\',\''+v.telefone+'\',event)" title="Excluir esta versão">🗑</button>'
         + '</div></div>';
     }).join('');
 
@@ -448,7 +449,25 @@ function salvarProposta() {
       if (!r.ok) throw new Error(r.status);
       return r.json();
     })
-    .then(function(){
+    .then(function(rows){
+      var novaId = rows && rows[0] && rows[0].id;
+      gravarLog('salvar_proposta', { proposta_id: novaId, telefone: tel, nome: nome, versao: _versaoAtual });
+      // Sync CRM se crm_id disponível
+      var crmId = window._b3CrmId || '';
+      if (crmId && dadosSim) {
+        var mesParaGatilho = {3:'trigger1_tri',6:'trigger1',12:'trigger2',18:'trigger3',24:'trigger4'};
+        var cp = { piso:dadosSim.piso, periodo:dadosSim.pisoMeses, upfront:dadosSim.luva,
+          trigger1_tri_meta:0,trigger1_tri_val:0,trigger1_meta:0,trigger1_val:0,
+          trigger2_meta:0,trigger2_val:0,trigger3_meta:0,trigger3_val:0,trigger4_meta:0,trigger4_val:0,
+          atualizado_em:new Date().toISOString() };
+        (dadosSim.tranches||[]).forEach(function(t){
+          var base=mesParaGatilho[t.mes]; if(base){cp[base+'_meta']=t.aucAlvo;cp[base+'_val']=t.valor;}
+        });
+        supa('crm_candidatos?id=eq.'+crmId,{method:'PATCH',body:JSON.stringify(cp)})
+          .catch(function(e){console.warn('Sync CRM:',e);});
+        window._b3CrmId='';
+        sessionStorage.removeItem('b3_pacote_salvar');
+      }
       fecharModal();
       document.getElementById('btn-conf-txt').textContent = 'Salvar no histórico';
       buscar();
@@ -498,16 +517,59 @@ function abrirPDF(id, e) {
     });
 }
 
+// ── Excluir proposta ─────────────────────────────────────────────
+function deletarProposta(id, telefone, e) {
+  if (e) e.stopPropagation();
+  if (!confirm('Excluir esta versão da proposta? A ação não pode ser desfeita.')) return;
+  supa('propostas?id=eq.'+id, { method:'DELETE' })
+    .then(function(r){
+      if (!r.ok) throw new Error(r.status);
+      gravarLog('delete_proposta', { proposta_id: id, telefone: telefone });
+      buscar();
+    })
+    .catch(function(e){ alert('Erro ao excluir: '+e); });
+}
+
+// ── Log de auditoria ─────────────────────────────────────────────
+function gravarLog(acao, meta) {
+  var usuario = (window.Blue3Data && window.Blue3Data.usuario) || 'desconhecido';
+  var payload = {
+    acao: acao,
+    usuario: usuario,
+    meta: JSON.stringify(meta || {}),
+    criado_em: new Date().toISOString()
+  };
+  supa('logs_auditoria', { method:'POST', body: JSON.stringify(payload) })
+    .catch(function(){/* log não bloqueia o fluxo */});
+}
+
 // ── Alterar status ────────────────────────────────────────────────
 function alterarStatus(id, novoStatus, el) {
   el.disabled = true;
   supa('propostas?id=eq.'+id, { method:'PATCH', body: JSON.stringify({ status: novoStatus, atualizado_em: new Date().toISOString() }) })
-    .then(function(r){ el.disabled = false; if (!r.ok) throw new Error(r.status); })
+    .then(function(r){
+      el.disabled = false;
+      if (!r.ok) throw new Error(r.status);
+      gravarLog('status_proposta', { proposta_id: id, novo_status: novoStatus });
+    })
     .catch(function(e){ el.disabled = false; alert('Erro ao atualizar status: '+e); });
 }
 
 // ── Init ──────────────────────────────────────────────────────────
 (function(){
+  // Ler pacote completo do simulador (inclui crm_id, telefone, hunter)
+  var pacoteRaw = sessionStorage.getItem('b3_pacote_salvar');
+  if (pacoteRaw) {
+    try {
+      var pac = JSON.parse(pacoteRaw);
+      if (pac.telefone) { var el=document.getElementById('m-tel');    if(el) el.value=pac.telefone; }
+      if (pac.nome)     { var el=document.getElementById('m-nome');   if(el) el.value=pac.nome; }
+      if (pac.praca)    { var el=document.getElementById('m-praca');  if(el) el.value=pac.praca; }
+      if (pac.hunter)   { var el=document.getElementById('m-hunter'); if(el) el.value=pac.hunter; }
+      // Guardar crm_id para uso no salvarProposta
+      window._b3CrmId = pac.crm_id || '';
+    } catch(e){}
+  }
   // Se veio do simulador com ?salvar=1
   var params = new URLSearchParams(window.location.search);
   if (params.get('salvar') === '1') {
