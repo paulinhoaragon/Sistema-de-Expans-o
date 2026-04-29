@@ -197,11 +197,11 @@ table.tot tr.r-pb td{background:#00915A;color:#fff!important;border-radius:2px}
       <div style="font-size:7.5px;color:#bbb;font-weight:700;padding-left:7px">AuC Total (MM)</div>
       <div style="font-size:7.5px;color:#bbb;font-weight:700;padding-left:7px">Prêmio (R$)</div>
     </div>
-    <div class="tr-row" id="tr3-row"><div class="tr-cb"><input type="checkbox" id="t3-on"></div><div class="tr-m">M3</div><div class="tr-f"><div class="tl">AuC acumulado</div><input type="number" id="t3-auc" value="6" min="0" step="1"></div><div class="tr-f"><div class="tl">Pagamento</div><input type="number" id="t3-pay" value="0" min="0" step="1000"></div></div>
-    <div class="tr-row on" id="tr6-row"><div class="tr-cb"><input type="checkbox" id="t6-on" checked></div><div class="tr-m">M6</div><div class="tr-f"><div class="tl">AuC acumulado</div><input type="number" id="t6-auc" value="10" min="0" step="1"></div><div class="tr-f"><div class="tl">Pagamento</div><input type="number" id="t6-pay" value="30000" min="0" step="1000"></div></div>
-    <div class="tr-row on" id="tr12-row"><div class="tr-cb"><input type="checkbox" id="t12-on" checked></div><div class="tr-m">M12</div><div class="tr-f"><div class="tl">AuC acumulado</div><input type="number" id="t12-auc" value="22" min="0" step="1"></div><div class="tr-f"><div class="tl">Pagamento</div><input type="number" id="t12-pay" value="35000" min="0" step="1000"></div></div>
-    <div class="tr-row on" id="tr18-row"><div class="tr-cb"><input type="checkbox" id="t18-on" checked></div><div class="tr-m">M18</div><div class="tr-f"><div class="tl">AuC acumulado</div><input type="number" id="t18-auc" value="35" min="0" step="1"></div><div class="tr-f"><div class="tl">Pagamento</div><input type="number" id="t18-pay" value="40000" min="0" step="1000"></div></div>
-    <div class="tr-row" id="tr24-row"><div class="tr-cb"><input type="checkbox" id="t24-on"></div><div class="tr-m">M24</div><div class="tr-f"><div class="tl">AuC acumulado</div><input type="number" id="t24-auc" value="50" min="0" step="1"></div><div class="tr-f"><div class="tl">Pagamento</div><input type="number" id="t24-pay" value="50000" min="0" step="1000"></div></div>
+    <div class="tr-row" id="tr3-row"><div class="tr-cb"><input type="checkbox" id="t3-on"></div><div class="tr-m">M3</div><div class="tr-f"><div class="tl">AuC acumulado</div><input type="number" id="t3-auc" value="0" min="0" step="1"></div><div class="tr-f"><div class="tl">Pagamento</div><input type="number" id="t3-pay" value="0" min="0" step="1000"></div></div>
+    <div class="tr-row" id="tr6-row"><div class="tr-cb"><input type="checkbox" id="t6-on"></div><div class="tr-m">M6</div><div class="tr-f"><div class="tl">AuC acumulado</div><input type="number" id="t6-auc" value="0" min="0" step="1"></div><div class="tr-f"><div class="tl">Pagamento</div><input type="number" id="t6-pay" value="0" min="0" step="1000"></div></div>
+    <div class="tr-row" id="tr12-row"><div class="tr-cb"><input type="checkbox" id="t12-on"></div><div class="tr-m">M12</div><div class="tr-f"><div class="tl">AuC acumulado</div><input type="number" id="t12-auc" value="0" min="0" step="1"></div><div class="tr-f"><div class="tl">Pagamento</div><input type="number" id="t12-pay" value="0" min="0" step="1000"></div></div>
+    <div class="tr-row" id="tr18-row"><div class="tr-cb"><input type="checkbox" id="t18-on"></div><div class="tr-m">M18</div><div class="tr-f"><div class="tl">AuC acumulado</div><input type="number" id="t18-auc" value="0" min="0" step="1"></div><div class="tr-f"><div class="tl">Pagamento</div><input type="number" id="t18-pay" value="0" min="0" step="1000"></div></div>
+    <div class="tr-row" id="tr24-row"><div class="tr-cb"><input type="checkbox" id="t24-on"></div><div class="tr-m">M24</div><div class="tr-f"><div class="tl">AuC acumulado</div><input type="number" id="t24-auc" value="0" min="0" step="1"></div><div class="tr-f"><div class="tl">Pagamento</div><input type="number" id="t24-pay" value="0" min="0" step="1000"></div></div>
     <div class="f" style="margin-top:8px"><label>Captação padrão pós-gatilhos (R$ MM/mês)</label><input class="fi yl" type="number" id="f-cap-def" value="2" min="0" step="0.5"></div>
     <div class="cap-info" id="cap-preview">Calculando...</div>
   </div>
@@ -796,6 +796,13 @@ document.addEventListener('DOMContentLoaded',function(){
       if (d.luva)      { var el=document.getElementById('f-luva'); if(el) el.value = d.luva; }
       if (d.roa)       { var el=document.getElementById('f-roa');  if(el) el.value = (d.roa*100).toFixed(2); }
       if (d.obs)       { var el=document.getElementById('f-obs');  if(el) el.value = d.obs; }
+      // Limpar todos os gatilhos antes de aplicar os do CRM
+      [3,6,12,18,24].forEach(function(m){
+        var cb=document.getElementById('t'+m+'-on');
+        if(cb){ cb.checked=false; toggleTr(m); }
+        var ea=document.getElementById('t'+m+'-auc'); if(ea) ea.value='';
+        var ep=document.getElementById('t'+m+'-pay'); if(ep) ep.value='';
+      });
       if (d.tranches) {
         d.tranches.forEach(function(t){
           var cb=document.getElementById('t'+t.mes+'-on');
