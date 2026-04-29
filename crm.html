@@ -224,6 +224,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
       <div class="tab-bar">
         <button class="tab-btn active" onclick="switchTab('aba1',this)">Candidato</button>
         <button class="tab-btn" onclick="switchTab('aba2',this)">Remuneração</button>
+        <button class="tab-btn" onclick="switchTab('aba3',this)">Proposta Comercial</button>
       </div>
 
       <!-- ══ ABA 1 — Candidato ══ -->
@@ -346,7 +347,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           </div>
         </div>
 
-        <div class="sec-lbl">Etapa & Proposta</div>
+        <div class="sec-lbl">Etapa</div>
         <div class="fgrid">
           <div class="f-row"><label>Etapa</label>
             <select id="m-etapa">
@@ -356,10 +357,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
               <option>Contato Futuro</option>
             </select>
           </div>
-          <div class="f-row"><label>AuC Meta (MM)</label><input id="m-auc" type="number" step="0.1" placeholder="0"></div>
-          <div class="f-row"><label>Piso R$/mês</label><input id="m-piso" type="number" placeholder="0"></div>
-          <div class="f-row"><label>Período (meses)</label><input id="m-periodo" type="number" placeholder="12"></div>
-          <div class="f-row"><label>Upfront R$</label><input id="m-upfront" type="number" placeholder="0"></div>
           <div class="f-row"><label>MOU</label>
             <select id="m-mou"><option>Pendente</option><option>Assinado</option></select>
           </div>
@@ -370,10 +367,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           </div>
           <div class="f-row"><label>Data de entrada</label><input id="m-data-ent" type="date"></div>
           <div class="f-row"><label>Data início trabalho</label><input id="m-data-ini" type="date"></div>
-          <div class="f-row"><label>Trigger 1 Meta (MM)</label><input id="m-t1m" type="number" placeholder="0"></div>
-          <div class="f-row"><label>Trigger 1 Valor (R$)</label><input id="m-t1v" type="number" placeholder="0"></div>
-          <div class="f-row"><label>Trigger 2 Meta (MM)</label><input id="m-t2m" type="number" placeholder="0"></div>
-          <div class="f-row"><label>Trigger 2 Valor (R$)</label><input id="m-t2v" type="number" placeholder="0"></div>
         </div>
 
         <div class="sec-lbl">Histórico de Contatos</div>
@@ -388,16 +381,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         </div>
         <input type="hidden" id="m-obs">
 
-        <!-- Botão Gerar Proposta -->
-        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);">
-          <button onclick="gerarProposta()" style="background:var(--cobalt);color:#fff;border:none;border-radius:var(--r8);padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:7px;transition:all .15s;width:100%;justify-content:center;" onmouseover="this.style.background='var(--cobalt-br)'" onmouseout="this.style.background='var(--cobalt)'">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 7H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-2" stroke-linecap="round"/><path d="M13 5h6v6" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 5l-8 8" stroke-linecap="round"/></svg>
-            Gerar Proposta no Simulador
-          </button>
-        </div>
-
-        <!-- Botões de ação — dentro do card, abaixo do botão de proposta -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--rule);gap:8px;">
+        <!-- Botões de ação -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--rule);gap:8px;">
           <button class="btn-excluir" id="btn-excluir" style="display:none;" onclick="excluirCandidato()">Excluir</button>
           <div style="display:flex;gap:8px;margin-left:auto;">
             <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
@@ -465,8 +450,89 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         </div>
 
       </div>
-    </div>
-    </div>
+
+      <!-- ══ ABA 3 — Proposta Comercial ══ -->
+      <div class="tab-pane" id="aba3">
+
+        <div class="sec-lbl" style="margin-top:0">Condições Base</div>
+        <div class="fgrid">
+          <div class="f-row"><label>AuC Meta (MM)</label><input id="m-auc" type="number" step="0.1" placeholder="0"></div>
+          <div class="f-row"><label>Piso R$/mês</label><input id="m-piso" type="number" placeholder="0" oninput="calcProposta()"></div>
+          <div class="f-row"><label>Período (meses)</label><input id="m-periodo" type="number" placeholder="12" oninput="calcProposta()"></div>
+          <div class="f-row"><label>Sign-in / Upfront R$</label><input id="m-upfront" type="number" placeholder="0" oninput="calcProposta()"></div>
+        </div>
+
+        <div class="sec-lbl">Gatilhos de Captação</div>
+        <div class="fgrid">
+          <div class="f-row"><label>1º Tri — Meta (MM)</label><input id="m-t1tri-m" type="number" placeholder="0"></div>
+          <div class="f-row"><label>1º Tri — Bônus R$</label><input id="m-t1tri-v" type="number" placeholder="0" oninput="calcProposta()"></div>
+          <div class="f-row"><label>1º Sem — Meta (MM)</label><input id="m-t1m" type="number" placeholder="0"></div>
+          <div class="f-row"><label>1º Sem — Bônus R$</label><input id="m-t1v" type="number" placeholder="0" oninput="calcProposta()"></div>
+          <div class="f-row"><label>2º Sem — Meta (MM)</label><input id="m-t2m" type="number" placeholder="0"></div>
+          <div class="f-row"><label>2º Sem — Bônus R$</label><input id="m-t2v" type="number" placeholder="0" oninput="calcProposta()"></div>
+          <div class="f-row"><label>3º Sem — Meta (MM)</label><input id="m-t3m" type="number" placeholder="0"></div>
+          <div class="f-row"><label>3º Sem — Bônus R$</label><input id="m-t3v" type="number" placeholder="0" oninput="calcProposta()"></div>
+          <div class="f-row"><label>4º Sem — Meta (MM)</label><input id="m-t4m" type="number" placeholder="0"></div>
+          <div class="f-row"><label>4º Sem — Bônus R$</label><input id="m-t4v" type="number" placeholder="0" oninput="calcProposta()"></div>
+        </div>
+
+        <div class="sec-lbl">Coparticipação XP</div>
+        <div class="fgrid">
+          <div class="f-row"><label>Coparticipação R$</label><input id="m-copart" type="number" placeholder="0" oninput="calcProposta()"></div>
+          <div class="f-row"><label>Detalhe / Condição</label><input id="m-copart-det" type="text" placeholder="ex: 50% XP · 24 meses"></div>
+        </div>
+
+        <div class="sec-lbl">Operacional</div>
+        <div class="fgrid">
+          <div class="f-row"><label>Setup</label>
+            <select id="m-setup">
+              <option value="">— Selecione —</option>
+              <option>SIM</option><option>NÃO</option>
+            </select>
+          </div>
+          <div class="f-row"><label>Código A</label><input id="m-codigo-a" type="text" placeholder="—"></div>
+          <div class="f-row"><label>CS Responsável</label><input id="m-cs" type="text" placeholder="—"></div>
+          <div class="f-row"><label>Prev. Início</label><input id="m-prev-inicio" type="date"></div>
+        </div>
+
+        <!-- Totalizador da proposta -->
+        <div id="m-prop-total-box" style="background:linear-gradient(135deg,#EEF2FD,#F5F7FF);border:1px solid var(--rule);border-radius:var(--r8);padding:16px 18px;margin-top:16px;display:none;">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--cobalt);margin-bottom:10px;">Resumo da Proposta</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+            <div>
+              <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px;">Total Comp.</div>
+              <div id="m-prop-comp" style="font-size:16px;font-weight:700;color:var(--cobalt-br);">—</div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px;">Total Captação</div>
+              <div id="m-prop-cap" style="font-size:16px;font-weight:700;color:var(--g);">—</div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px;">Custo/MM captado</div>
+              <div id="m-prop-custo" style="font-size:16px;font-weight:700;color:var(--am);">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botão Gerar Proposta no Simulador -->
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--rule);">
+          <button onclick="gerarProposta()" style="background:var(--cobalt);color:#fff;border:none;border-radius:var(--r8);padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:7px;transition:all .15s;width:100%;justify-content:center;" onmouseover="this.style.background='var(--cobalt-br)'" onmouseout="this.style.background='var(--cobalt)'">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 7H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-2" stroke-linecap="round"/><path d="M13 5h6v6" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 5l-8 8" stroke-linecap="round"/></svg>
+            Gerar Proposta no Simulador
+          </button>
+        </div>
+
+        <!-- Botões de ação -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--rule);gap:8px;">
+          <div style="display:flex;gap:8px;margin-left:auto;">
+            <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+            <button class="btn-salvar" onclick="salvarCandidato()">
+              <span>Salvar proposta</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
 
   </div>
 </div>
@@ -658,6 +724,19 @@ function abrirEdicao(id) {
   document.getElementById('m-t1v').value      = r.trigger1_val||'';
   document.getElementById('m-t2m').value      = r.trigger2_meta||'';
   document.getElementById('m-t2v').value      = r.trigger2_val||'';
+  // Campos novos aba3
+  var t1tri = document.getElementById('m-t1tri-m'); if(t1tri) t1tri.value = r.trigger1_tri_meta||'';
+  var t1triv = document.getElementById('m-t1tri-v'); if(t1triv) t1triv.value = r.trigger1_tri_val||'';
+  var t3m = document.getElementById('m-t3m'); if(t3m) t3m.value = r.trigger3_meta||'';
+  var t3v = document.getElementById('m-t3v'); if(t3v) t3v.value = r.trigger3_val||'';
+  var t4m = document.getElementById('m-t4m'); if(t4m) t4m.value = r.trigger4_meta||'';
+  var t4v = document.getElementById('m-t4v'); if(t4v) t4v.value = r.trigger4_val||'';
+  var copart = document.getElementById('m-copart'); if(copart) copart.value = r.coparticipacao||'';
+  var copartDet = document.getElementById('m-copart-det'); if(copartDet) copartDet.value = r.detalhe_coparticipacao||'';
+  var setup = document.getElementById('m-setup'); if(setup) setup.value = r.setup||'';
+  var codA = document.getElementById('m-codigo-a'); if(codA) codA.value = r.codigo_a||'';
+  var cs = document.getElementById('m-cs'); if(cs) cs.value = r.cs||'';
+  var prevIni = document.getElementById('m-prev-inicio'); if(prevIni) prevIni.value = r.prev_inicio||'';
   document.getElementById('m-mou').value      = r.mou||'Pendente';
   document.getElementById('m-ancord').value   = r.status_ancord||'Pendente';
   document.getElementById('m-data-ent').value = r.data_entrada||'';
@@ -678,24 +757,33 @@ function abrirEdicao(id) {
 function fecharModal() { document.getElementById('overlay-cand').classList.remove('open'); }
 
 function limparModal() {
-  ['m-id','m-nome','m-tel','m-email','m-inst','m-auc','m-piso','m-periodo','m-upfront','m-t1m','m-t1v','m-t2m','m-t2v','m-data-ent','m-data-ini','m-obs','m-auc-cust','m-clientes','m-rem-bruta','m-bonus-bruto','m-saude','m-vavr','m-saude-anual','m-vavr-anual','m-obs-nova'].forEach(function(id){
-    document.getElementById(id).value='';
+  ['m-id','m-nome','m-tel','m-email','m-inst',
+   'm-auc','m-piso','m-periodo','m-upfront',
+   'm-t1tri-m','m-t1tri-v','m-t1m','m-t1v','m-t2m','m-t2v','m-t3m','m-t3v','m-t4m','m-t4v',
+   'm-copart','m-copart-det','m-codigo-a','m-cs','m-prev-inicio',
+   'm-data-ent','m-data-ini','m-obs',
+   'm-auc-cust','m-clientes','m-rem-bruta','m-bonus-bruto','m-saude','m-vavr',
+   'm-saude-anual','m-vavr-anual','m-obs-nova'
+  ].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = '';
   });
-  document.getElementById('m-hunter').value='';
-  document.getElementById('m-nivel').value='';
-  document.getElementById('m-etapa').value='Prospecção';
-  document.getElementById('m-mou').value='Pendente';
-  document.getElementById('m-ancord').value='Pendente';
-  document.getElementById('m-praca').value='';
-  document.getElementById('m-lider').value='';
-  document.getElementById('m-tipo-bonus').value='Semestral';
+  document.getElementById('m-hunter').value  = '';
+  document.getElementById('m-nivel').value   = '';
+  document.getElementById('m-etapa').value   = 'Prospecção';
+  document.getElementById('m-mou').value     = 'Pendente';
+  document.getElementById('m-ancord').value  = 'Pendente';
+  document.getElementById('m-praca').value   = '';
+  document.getElementById('m-lider').value   = '';
+  document.getElementById('m-tipo-bonus').value = 'Semestral';
+  var setup = document.getElementById('m-setup'); if (setup) setup.value = '';
   // limpar campos calculados (readonly)
-  document.getElementById('m-ticket').value='';
-  document.getElementById('m-rem-liq').value='';
-  document.getElementById('m-bonus-liq').value='';
-  document.getElementById('m-rem-total-box').style.display='none';
+  document.getElementById('m-ticket').value  = '';
+  document.getElementById('m-rem-liq').value = '';
+  document.getElementById('m-bonus-liq').value = '';
+  document.getElementById('m-rem-total-box').style.display = 'none';
+  var ptb = document.getElementById('m-prop-total-box'); if (ptb) ptb.style.display = 'none';
   _histAtual = [];
-  document.getElementById('m-obs').value='';
+  document.getElementById('m-obs').value = '';
   renderHistorico();
   // Reset abas
   switchTab('aba1', document.querySelector('.tab-btn'));
@@ -711,13 +799,27 @@ function salvarCandidato() {
   var payload = {
     nome: nome, telefone: g('m-tel'), email: g('m-email'), instituicao: g('m-inst'), praca: g('m-praca'),
     hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), etapa: g('m-etapa'),
+    // Proposta base
     auc_mm: gn('m-auc'), piso: gn('m-piso'), periodo: gi('m-periodo'), upfront: gn('m-upfront'),
-    trigger1_meta: gn('m-t1m'), trigger1_val: gn('m-t1v'), trigger2_meta: gn('m-t2m'), trigger2_val: gn('m-t2v'),
+    // Gatilhos
+    trigger1_tri_meta: gn('m-t1tri-m'), trigger1_tri_val: gn('m-t1tri-v'),
+    trigger1_meta: gn('m-t1m'),  trigger1_val: gn('m-t1v'),
+    trigger2_meta: gn('m-t2m'),  trigger2_val: gn('m-t2v'),
+    trigger3_meta: gn('m-t3m'),  trigger3_val: gn('m-t3v'),
+    trigger4_meta: gn('m-t4m'),  trigger4_val: gn('m-t4v'),
+    // Coparticipação
+    coparticipacao: gn('m-copart'), detalhe_coparticipacao: g('m-copart-det'),
+    // Operacional
+    setup: g('m-setup'), codigo_a: g('m-codigo-a'), cs: g('m-cs'),
+    prev_inicio: g('m-prev-inicio')||null,
+    // Status
     mou: g('m-mou'), status_ancord: g('m-ancord'),
     data_entrada: g('m-data-ent')||null, data_inicio: g('m-data-ini')||null,
     comentarios: g('m-obs'),
+    // Carteira atual
     auc_custodia_mm:   gn('m-auc-cust'),
     num_clientes:      gi('m-clientes'),
+    // Remuneração atual
     remuneracao_bruta: gn('m-rem-bruta'),
     bonus_bruto:       gn('m-bonus-bruto'),
     tipo_bonus:        g('m-tipo-bonus') || 'Semestral',
@@ -761,23 +863,40 @@ function excluirCandidato() {
 
 // ── Import CSV ────────────────────────────────────────────────────
 var CAMPOS_CRM = [
-  {key:'nome',       label:'Nome'},
-  {key:'telefone',   label:'Telefone'},
-  {key:'instituicao',label:'Instituição'},
-  {key:'praca',      label:'Praça'},
-  {key:'hunter',     label:'Hunter'},
-  {key:'lider',      label:'Líder'},
-  {key:'nivel',      label:'Senioridade'},
-  {key:'etapa',      label:'Etapa/Status'},
-  {key:'auc_mm',     label:'AuC (MM)'},
-  {key:'piso',       label:'Piso R$'},
-  {key:'periodo',    label:'Período (meses)'},
-  {key:'upfront',    label:'Upfront R$'},
-  {key:'mou',        label:'MOU'},
-  {key:'status_ancord',label:'Status Ancord'},
-  {key:'data_entrada',label:'Data Entrada'},
-  {key:'data_inicio', label:'Data Início'},
-  {key:'comentarios', label:'Comentários'},
+  {key:'nome',                  label:'Nome'},
+  {key:'telefone',              label:'Telefone'},
+  {key:'instituicao',           label:'Instituição'},
+  {key:'praca',                 label:'Praça'},
+  {key:'hunter',                label:'Hunter'},
+  {key:'lider',                 label:'Líder'},
+  {key:'nivel',                 label:'Senioridade'},
+  {key:'etapa',                 label:'Etapa/Status'},
+  {key:'auc_mm',                label:'AuC Meta (MM)'},
+  {key:'piso',                  label:'Piso R$'},
+  {key:'periodo',               label:'Período (meses)'},
+  {key:'upfront',               label:'Sign-in / Upfront R$'},
+  {key:'trigger1_tri_meta',     label:'1º Tri Meta (MM)'},
+  {key:'trigger1_tri_val',      label:'1º Tri Bônus R$'},
+  {key:'trigger1_meta',         label:'1º Sem Meta (MM)'},
+  {key:'trigger1_val',          label:'1º Sem Bônus R$'},
+  {key:'trigger2_meta',         label:'2º Sem Meta (MM)'},
+  {key:'trigger2_val',          label:'2º Sem Bônus R$'},
+  {key:'trigger3_meta',         label:'3º Sem Meta (MM)'},
+  {key:'trigger3_val',          label:'3º Sem Bônus R$'},
+  {key:'trigger4_meta',         label:'4º Sem Meta (MM)'},
+  {key:'trigger4_val',          label:'4º Sem Bônus R$'},
+  {key:'coparticipacao',        label:'Coparticipação R$'},
+  {key:'detalhe_coparticipacao',label:'Detalhe Coparticipação'},
+  {key:'setup',                 label:'Setup'},
+  {key:'codigo_a',              label:'Código A'},
+  {key:'cs',                    label:'CS Responsável'},
+  {key:'prev_inicio',           label:'Prev. Início'},
+  {key:'mou',                   label:'MOU'},
+  {key:'status_ancord',         label:'Status Ancord'},
+  {key:'data_entrada',          label:'Data Entrada'},
+  {key:'data_inicio',           label:'Data Início'},
+  {key:'comentarios',           label:'Comentários'},
+];
   {key:'_ignorar',   label:'— Ignorar coluna —'},
 ];
 
@@ -963,7 +1082,47 @@ function calcFinanceiro() {
   }
 }
 
-function fmtBRL(n) {
+function calcProposta() {
+  var piso    = gn('m-piso');
+  var periodo = gi('m-periodo') || 12;
+  var upfront = gn('m-upfront');
+  var t1tri   = gn('m-t1tri-v');
+  var t1v     = gn('m-t1v');
+  var t2v     = gn('m-t2v');
+  var t3v     = gn('m-t3v');
+  var t4v     = gn('m-t4v');
+  var copart  = gn('m-copart');
+
+  var t1trim  = gn('m-t1tri-m');
+  var t1m     = gn('m-t1m');
+  var t2m     = gn('m-t2m');
+  var t3m     = gn('m-t3m');
+  var t4m     = gn('m-t4m');
+
+  if (!piso && !upfront && !t1v && !t2v) {
+    var ptb = document.getElementById('m-prop-total-box');
+    if (ptb) ptb.style.display = 'none';
+    return;
+  }
+
+  var totalComp = (piso * periodo) + upfront + t1tri + t1v + t2v + t3v + t4v + copart;
+  var totalCap  = (t1trim + t1m + t2m + t3m + t4m); // em MM
+
+  var ptb = document.getElementById('m-prop-total-box');
+  if (ptb) {
+    ptb.style.display = 'block';
+    var compEl  = document.getElementById('m-prop-comp');
+    var capEl   = document.getElementById('m-prop-cap');
+    var custoEl = document.getElementById('m-prop-custo');
+    if (compEl)  compEl.textContent  = 'R$ ' + fmtBRL(totalComp);
+    if (capEl)   capEl.textContent   = totalCap > 0 ? totalCap.toFixed(0) + ' MM' : '—';
+    if (custoEl) custoEl.textContent = (totalCap > 0 && totalComp > 0)
+      ? 'R$ ' + fmtBRL(totalComp / totalCap) + '/MM'
+      : '—';
+  }
+}
+
+
   return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
