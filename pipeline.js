@@ -168,7 +168,7 @@ function blue3LoadData(callback){
                     + (parseFloat(r.trigger1_meta)||0)
                     + (parseFloat(r.trigger2_meta)||0)
                     + (parseFloat(r.trigger3_meta)||0)
-                    + (parseFloat(r.trigger4_meta)||0)) * 1e6; // MM → R$
+                    + (parseFloat(r.trigger4_meta)||0)); // em MM
       var totalComp = ((parseFloat(r.piso)||0) * (parseInt(r.periodo)||12))
                     + (parseFloat(r.upfront)||0)
                     + (parseFloat(r.trigger1_tri_val)||0)
@@ -185,7 +185,7 @@ function blue3LoadData(callback){
       o['Sign in']               = parseFloat(r.upfront)||0;
       o['Piso']                  = parseFloat(r.piso)||0;
       o['Período']               = parseInt(r.periodo)||12;
-      o['Total Captação (MM)']   = totalCap;
+      o['Total Captação (MM)']   = totalCap * 1e6; // MM → R$ para Blue3_dataLoader dividir de volta
       o['Total Comp.']           = totalComp;
       o['Data de Contratação']   = r.data_entrada
         ? r.data_entrada.split('-').reverse().join('/') // yyyy-mm-dd → dd/mm/yyyy
