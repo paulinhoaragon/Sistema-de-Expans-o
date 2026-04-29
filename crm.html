@@ -680,7 +680,15 @@ function cardHTML(r) {
   if ((r.mou||'').toLowerCase()==='assinado')    tags += '<span class="tag t-mou">MOU</span>';
   if ((r.status_ancord||'').toLowerCase()==='aprovada') tags += '<span class="tag t-anc">Ancord</span>';
 
-  var auc = r.auc_mm > 0 ? '<div class="kc-auc">R$ '+Number(r.auc_mm).toLocaleString('pt-BR')+'MM</div>' : '';
+  // AuC Meta = soma de todas as metas de gatilho salvas, com fallback para auc_mm
+  var aucMM = (parseFloat(r.trigger1_tri_meta)||0)
+            + (parseFloat(r.trigger1_meta)||0)
+            + (parseFloat(r.trigger2_meta)||0)
+            + (parseFloat(r.trigger3_meta)||0)
+            + (parseFloat(r.trigger4_meta)||0);
+  if (!aucMM) aucMM = parseFloat(r.auc_mm) || 0;
+
+  var auc = aucMM > 0 ? '<div class="kc-auc">R$ ' + Number(aucMM).toLocaleString('pt-BR') + ' MM</div>' : '';
   var ini = r.data_inicio ? '<div class="kc-ini">Início: '+fmtDate(r.data_inicio)+'</div>' : '';
 
   return '<div class="kcard" id="kc-'+r.id+'" draggable="true" ondragstart="dragStart(event,\''+r.id+'\')" onclick="abrirEdicao(\''+r.id+'\')">'
