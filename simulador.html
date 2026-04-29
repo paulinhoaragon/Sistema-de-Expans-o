@@ -156,6 +156,11 @@ table.tot tr.r-pb td{background:#00915A;color:#fff!important;border-radius:2px}
       <div class="f"><label>Cidade / Praça</label><input class="fi" type="text" id="f-city" placeholder="Belém"></div>
       <div class="f"><label>Data da Proposta</label><input class="fi" type="date" id="f-date"></div>
     </div>
+    <div class="fr">
+      <div class="f"><label>Telefone</label><input class="fi" type="text" id="f-tel" placeholder="(11) 99999-9999" maxlength="15" oninput="maskTelSim(this)"></div>
+      <div class="f"><label>Hunter</label><input class="fi" type="text" id="f-hunter" placeholder="ex: Eduarda"></div>
+    </div>
+    <input type="hidden" id="f-crm-id" value="">
   </div>
 
   <div class="sec">
@@ -781,13 +786,16 @@ document.addEventListener('DOMContentLoaded',function(){
     try {
       var prop = JSON.parse(raw);
       var d = prop.dados || {};
-      if (d.nome  || prop.nome)  { var el=document.getElementById('f-name');  if(el) el.value = d.nome  || prop.nome  || ''; }
-      if (d.praca || prop.praca) { var el=document.getElementById('f-city');  if(el) el.value = d.praca || prop.praca || ''; }
-      if (d.piso)  { var el=document.getElementById('f-piso');  if(el) el.value = d.piso; }
-      if (d.pisoMeses) { var el=document.getElementById('f-dur'); if(el) el.value = d.pisoMeses; }
-      if (d.luva)  { var el=document.getElementById('f-luva');  if(el) el.value = d.luva; }
-      if (d.roa)   { var el=document.getElementById('f-roa');   if(el) el.value = (d.roa*100).toFixed(2); }
-      if (d.obs)   { var el=document.getElementById('f-obs');   if(el) el.value = d.obs; }
+      if (d.nome  || prop.nome)    { var el=document.getElementById('f-name');    if(el) el.value = d.nome    || prop.nome    || ''; }
+      if (d.praca || prop.praca)   { var el=document.getElementById('f-city');    if(el) el.value = d.praca   || prop.praca   || ''; }
+      if (prop.telefone)           { var el=document.getElementById('f-tel');     if(el) el.value = prop.telefone; }
+      if (prop.hunter)             { var el=document.getElementById('f-hunter');  if(el) el.value = prop.hunter; }
+      if (prop.crm_id)             { var el=document.getElementById('f-crm-id');  if(el) el.value = prop.crm_id; }
+      if (d.piso)      { var el=document.getElementById('f-piso'); if(el) el.value = d.piso; }
+      if (d.pisoMeses) { var el=document.getElementById('f-dur');  if(el) el.value = d.pisoMeses; pisoHint(); }
+      if (d.luva)      { var el=document.getElementById('f-luva'); if(el) el.value = d.luva; }
+      if (d.roa)       { var el=document.getElementById('f-roa');  if(el) el.value = (d.roa*100).toFixed(2); }
+      if (d.obs)       { var el=document.getElementById('f-obs');  if(el) el.value = d.obs; }
       if (d.tranches) {
         d.tranches.forEach(function(t){
           var cb=document.getElementById('t'+t.mes+'-on');
@@ -796,7 +804,6 @@ document.addEventListener('DOMContentLoaded',function(){
           var ep=document.getElementById('t'+t.mes+'-pay'); if(ep) ep.value=t.valor||'';
         });
       }
-      // Parâmetros adicionais: PDF auto?
       var params = new URLSearchParams(window.location.search);
       if (params.get('pdf')==='1') { setTimeout(exportPDF, 800); }
     } catch(e) { console.warn('Erro ao carregar proposta:', e); }
@@ -805,30 +812,79 @@ document.addEventListener('DOMContentLoaded',function(){
   calc();
 });
 
+// ── Máscara telefone simulador ───────────────────────────────────
+function maskTelSim(el) {
+  var d = el.value.replace(/\D/g, '').slice(0,11);
+  if (!d.length) { el.value=''; return; }
+  if (d.length<=2)       el.value='('+d;
+  else if (d.length<=6)  el.value='('+d.slice(0,2)+') '+d.slice(2);
+  else if (d.length<=10) el.value='('+d.slice(0,2)+') '+d.slice(2,6)+'-'+d.slice(6);
+  else                   el.value='('+d.slice(0,2)+') '+d.slice(2,7)+'-'+d.slice(7);
+}
+
 // ── Salvar no Histórico ──────────────────────────────────────────
 function salvarNoHistorico() {
-  // Capturar estado atual do simulador
   var d = {
-    nome:      (document.getElementById('f-name')  ||{}).value || '',
-    praca:     (document.getElementById('f-city')  ||{}).value || '',
-    piso:      parseFloat((document.getElementById('f-piso') ||{}).value)||0,
-    pisoMeses: parseInt((document.getElementById('f-dur')  ||{}).value)||12,
-    luva:      parseFloat((document.getElementById('f-luva') ||{}).value)||0,
-    roa:       parseFloat((document.getElementById('f-roa')  ||{}).value||0)/100,
-    obs:       (document.getElementById('f-obs')   ||{}).value || '',
-    tranches: []
+    nome:      (document.getElementById('f-name')    ||{}).value || '',
+    praca:     (document.getElementById('f-city')    ||{}).value || '',
+    piso:      parseFloat((document.getElementById('f-piso')  ||{}).value)||0,
+    pisoMeses: parseInt((document.getElementById('f-dur')     ||{}).value)||12,
+    luva:      parseFloat((document.getElementById('f-luva')  ||{}).value)||0,
+    roa:       parseFloat((document.getElementById('f-roa')   ||{}).value||0)/100,
+    obs:       (document.getElementById('f-obs')     ||{}).value || '',
+    tranches:  []
   };
   [3,6,12,18,24].forEach(function(m){
     var cb=document.getElementById('t'+m+'-on');
     if(cb&&cb.checked){
       d.tranches.push({
-        mes: m,
-        aucAlvo: parseFloat((document.getElementById('t'+m+'-auc')||{}).value)||0,
-        valor:   parseFloat((document.getElementById('t'+m+'-pay')||{}).value)||0
+        mes:    m,
+        aucAlvo:parseFloat((document.getElementById('t'+m+'-auc')||{}).value)||0,
+        valor:  parseFloat((document.getElementById('t'+m+'-pay')||{}).value)||0
       });
     }
   });
+
+  var tel   = ((document.getElementById('f-tel')     ||{}).value||'').replace(/\D/g,'');
+  var hunter= (document.getElementById('f-hunter')   ||{}).value||'';
+  var crmId = (document.getElementById('f-crm-id')   ||{}).value||'';
+
   sessionStorage.setItem('b3_proposta_atual', JSON.stringify(d));
+
+  // Pacote completo para propostas.html
+  var pacote = { crm_id: crmId, telefone: tel, hunter: hunter, nome: d.nome, praca: d.praca, dados: d };
+  sessionStorage.setItem('b3_pacote_salvar', JSON.stringify(pacote));
+
+  // Sync CRM: se veio pelo botão do CRM (crm_id preenchido), atualiza proposta no card
+  if (crmId && typeof SUPA_URL !== 'undefined') {
+    var supaKey = typeof SUPA_KEY !== 'undefined' ? SUPA_KEY : '';
+    var payload = {
+      piso:             d.piso,
+      periodo:          d.pisoMeses,
+      upfront:          d.luva,
+      trigger1_tri_meta: 0, trigger1_tri_val: 0,
+      trigger1_meta: 0,     trigger1_val: 0,
+      trigger2_meta: 0,     trigger2_val: 0,
+      trigger3_meta: 0,     trigger3_val: 0,
+      trigger4_meta: 0,     trigger4_val: 0,
+      atualizado_em: new Date().toISOString()
+    };
+    var mesParaGatilho = { 3:'trigger1_tri', 6:'trigger1', 12:'trigger2', 18:'trigger3', 24:'trigger4' };
+    d.tranches.forEach(function(t){
+      var base = mesParaGatilho[t.mes];
+      if (base) {
+        payload[base+'_meta'] = t.aucAlvo;
+        payload[base+'_val']  = t.valor;
+      }
+    });
+    fetch(SUPA_URL+'/rest/v1/crm_candidatos?id=eq.'+crmId, {
+      method: 'PATCH',
+      headers: { 'apikey': supaKey, 'Authorization': 'Bearer '+supaKey,
+                 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(payload)
+    }).catch(function(e){ console.warn('Sync CRM falhou:', e); });
+  }
+
   window.location.href = 'propostas.html?salvar=1';
 }
 </script>
