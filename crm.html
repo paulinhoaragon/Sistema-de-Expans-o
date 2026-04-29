@@ -1453,13 +1453,52 @@ function switchTab(id, btn) {
 // ── Gerar Proposta no Simulador ────────────────────────────────────
 function gerarProposta() {
   var nome  = g('m-nome').trim();
-  var praca = document.getElementById('m-praca');
-  var pracaVal = praca ? (praca.options[praca.selectedIndex] ? praca.options[praca.selectedIndex].text : '') : '';
-  // Se valor tem "Blue3 - " prefixo, usar o texto visível
+  var tel   = g('m-tel').trim();
+  var pracaEl = document.getElementById('m-praca');
+  var pracaVal = pracaEl ? (pracaEl.options[pracaEl.selectedIndex] ? pracaEl.options[pracaEl.selectedIndex].text : '') : '';
   if (pracaVal === '— Selecione —') pracaVal = '';
-  var dados = { nome: nome, praca: pracaVal };
-  sessionStorage.setItem('b3_proposta_atual', JSON.stringify(dados));
-  // Navegar — dentro do iframe, sobe para o parent
+
+  var crmId = g('m-id'); // ID do registro no Supabase
+
+  // Montar objeto compatível com b3_carregar_proposta do simulador
+  var dados = {
+    nome:      nome,
+    praca:     pracaVal,
+    piso:      parseBRL(g('m-piso')),
+    pisoMeses: gi('m-periodo') || 12,
+    luva:      parseBRL(g('m-upfront')),
+    tranches:  []
+  };
+
+  // Mapear gatilhos CRM → meses do simulador
+  var mapaGatilhos = [
+    { mes: 3,  metaId: 'm-t1tri-m', valId: 'm-t1tri-v' },
+    { mes: 6,  metaId: 'm-t1m',     valId: 'm-t1v'     },
+    { mes: 12, metaId: 'm-t2m',     valId: 'm-t2v'     },
+    { mes: 18, metaId: 'm-t3m',     valId: 'm-t3v'     },
+    { mes: 24, metaId: 'm-t4m',     valId: 'm-t4v'     }
+  ];
+  mapaGatilhos.forEach(function(g_) {
+    var meta = gn(g_.metaId);
+    var val  = parseBRL(g(g_.valId));
+    if (meta > 0 || val > 0) {
+      dados.tranches.push({ mes: g_.mes, aucAlvo: meta, valor: val });
+    }
+  });
+
+  // Pacote completo para o simulador
+  var pacote = {
+    crm_id:   crmId,
+    telefone: tel,
+    nome:     nome,
+    praca:    pracaVal,
+    hunter:   g('m-hunter'),
+    dados:    dados
+  };
+
+  sessionStorage.setItem('b3_carregar_proposta', JSON.stringify(pacote));
+  sessionStorage.setItem('b3_proposta_atual',    JSON.stringify(dados));
+
   try {
     if (window.parent && window.parent.navTo) {
       fecharModal();
