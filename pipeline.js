@@ -141,12 +141,7 @@ function blue3LoadData(callback){
   supaFetch('crm_candidatos?order=data_entrada.desc&limit=500',{prefer:'return=representation'})
   .then(function(r){return r.json();})
   .then(function(rows){
-    if(!rows||!rows.length){
-      var local=localStorage.getItem('B3D');
-      if(local){try{callback(JSON.parse(local));return;}catch(e){}}
-      callback([]);
-      return;
-    }
+    if(!rows||!rows.length){ callback([]); return; }
     // Capturar data da última atualização
     if(rows[0] && rows[0].atualizado_em){
       var d = new Date(rows[0].atualizado_em);
@@ -212,7 +207,7 @@ function blue3LoadData(callback){
       o['_crm_id']               = r.id || '';
       return o;
     });
-    localStorage.setItem('B3D', JSON.stringify(converted));
+    // Não salvar em localStorage — dados sempre frescos do Supabase
     callback(converted);
   })
   .catch(function(){
@@ -401,33 +396,7 @@ function Blue3_runPipeline(rows){
     _pipelineNeg: prevPN
   };
 
-  if (!rows || !rows.length) {
-    var local = localStorage.getItem('B3D');
-    if (local) {
-      try { window.Blue3Data._rawRows = JSON.parse(local); }
-      catch(e) { return false; }
-    } else { return false; }
-  }
-
-  // Complementar _rawRows com desistentes do B3D_RAW (salvo no upload do CSV)
-  try {
-    var rawAll = localStorage.getItem('B3D_RAW');
-    if (rawAll) {
-      var allParsed = JSON.parse(rawAll);
-      var nomesAtivos = {};
-      window.Blue3Data._rawRows.forEach(function(r){ nomesAtivos[(r['Candidato']||'').trim().toLowerCase()] = true; });
-      allParsed.forEach(function(r) {
-        var nome = (r['Candidato'] || '').trim();
-        if (!nome) return;
-        var st = (r['Status'] || '').trim();
-        var sNorm = norm(st);
-        if (sNorm !== 'desistência' && sNorm !== 'desistencia') return;
-        if (!nomesAtivos[nome.toLowerCase()]) {
-          window.Blue3Data._rawRows.push(r);
-        }
-      });
-    }
-  } catch(e) {}
+  if (!rows || !rows.length) { return false; }
 
   if (!Blue3_dataLoader())   return false;
   Blue3_financeMetrics();
@@ -492,12 +461,5 @@ window.b3OnCSVLoaded=function(rows){
     if(typeof renderPage==='function')renderPage();
   }
 };
-
-window.addEventListener('storage',function(e){
-  if(e.key==='B3D'){
-    var local=localStorage.getItem('B3D');
-    if(local){try{var r=JSON.parse(local);if(Blue3_runPipeline(r)&&typeof renderPage==='function')renderPage();}catch(ex){}}
-  }
-});
 
 console.log('[Blue3] pipeline.js v6 carregado — fonte: crm_candidatos (Supabase).');
