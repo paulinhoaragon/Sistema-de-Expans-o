@@ -246,8 +246,17 @@ function Blue3_dataLoader(){
       _id:(r['_crm_id']||'')
     };
   });
+  // Desduplicar por nome — previne soma dupla se Supabase retornar duplicatas
+  var seen = {};
+  var deduped = all.filter(function(r){
+    if (!r.n) return false;
+    var key = r.n.trim().toLowerCase();
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
   // Contar brutas e desistências antes do filtro de ativos
-  var validAll = all.filter(function(r){ return !!r.n; });
+  var validAll = deduped;
   window.Blue3Data._brutas = validAll.length;
   window.Blue3Data._desist = validAll.filter(function(r){
     var s=norm(r.st); return s==='desistência'||s==='desistencia';
