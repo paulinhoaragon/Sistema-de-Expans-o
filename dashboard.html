@@ -106,147 +106,166 @@ function pct(a,b){ return b>0?Math.round(a/b*100)+'%':'—'; }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ── Renderizar dashboard ──
-function renderDash(G, H, crm, propostas, ma) {
+function renderDash(G, H, crm, propostas, _ma) {
   var root = document.getElementById('dash-root');
   var C = window.Blue3Data.candidatos || [];
 
-  // Filtrar só assessores para funil e pace
-  var assessores = C.filter(function(r){
-    return ['assessor','assessores'].indexOf((r.area||'Assessores').toLowerCase()) !== -1;
-  });
-  var AT = assessores.filter(function(r){
-    var s = (r.st||'').toLowerCase(); return s === 'trabalhando' || s === 'contratado(a)';
-  }).length;
-
-  var G = window.Blue3Data.resumoGeral || {};
-  var mouOk  = assessores.filter(function(r){ return (r.mou||'').toLowerCase() === 'assinado'; }).length;
-  var mouPend= AT - mouOk;
-  var trab   = assessores.filter(function(r){ return (r.st||'').toLowerCase() === 'trabalhando'; }).length;
-
-  // CRM stats
-  var crmTotal = crm ? crm.length : 0;
-  var crmEtapas = {};
-  (crm||[]).forEach(function(r){ crmEtapas[r.etapa] = (crmEtapas[r.etapa]||0)+1; });
-
-  // Propostas stats
-  var propTotal = propostas ? propostas.length : 0;
-  var propStatus = {};
-  (propostas||[]).forEach(function(r){ propStatus[r.status] = (propStatus[r.status]||0)+1; });
-
-  // M&A stats
-  var maAtivos = ma ? ma.filter(function(r){ return r.s !== 'Declinou' && !r.declinado; }) : [];
-  var maAuC = maAtivos.reduce(function(s,r){ return s + (parseFloat(r.a)||parseFloat(r.auc_b)||0); },0);
-
-  // Custo por MM
+  var isAss = function(r){ return ['assessor','assessores'].indexOf((r.area||'assessores').toLowerCase()) !== -1; };
+  var AT    = C.filter(function(r){ return isAss(r); }).length;
+  var mouOk = C.filter(function(r){ return isAss(r) && (r.mou||'').toLowerCase()==='assinado'; }).length;
+  var mouPend = AT - mouOk;
+  var trab  = C.filter(function(r){ return isAss(r) && (r.st||'').toLowerCase()==='trabalhando'; }).length;
+  var seniors = C.filter(function(r){ return (r.sen||'').toLowerCase()==='sênior'; }).length;
+  var plenos  = C.filter(function(r){ return (r.sen||'').toLowerCase()==='pleno'; }).length;
+  var juniors = C.filter(function(r){ var s=(r.sen||'').toLowerCase(); return s==='júnior'||s==='junior'; }).length;
   var capTotal = G.aucTotal || 0;
   var custoMM  = capTotal > 0 ? Math.round(G.compTotal / capTotal) : 0;
 
-  // Senioridade
-  var seniors = C.filter(function(r){ return (r.sen||'').toLowerCase() === 'sênior'; }).length;
-  var plenos  = C.filter(function(r){ return (r.sen||'').toLowerCase() === 'pleno'; }).length;
-  var juniors = C.filter(function(r){ var s=(r.sen||'').toLowerCase(); return s==='júnior'||s==='junior'; }).length;
-  var totalSen = seniors + plenos + juniors || 1;
+  var crmTotal = crm ? crm.length : 0;
+  var crmEtapas = {};
+  (crm||[]).forEach(function(r){ crmEtapas[r.etapa] = (crmEtapas[r.etapa]||0)+1; });
+  var propTotal = propostas ? propostas.length : 0;
+  var propStatusMap = {};
+  (propostas||[]).forEach(function(r){ propStatusMap[r.status]=(propStatusMap[r.status]||0)+1; });
 
-  // Próximos inícios (30 dias)
-  var hoje = new Date();
-  var em30 = new Date(); em30.setDate(hoje.getDate() + 30);
+  var hoje = new Date(); var em30 = new Date(); em30.setDate(hoje.getDate()+30);
   var proximos = C.filter(function(r){
     if (!r.inicio) return false;
-    var d = new Date(r.inicio);
-    return d >= hoje && d <= em30;
-  }).sort(function(a,b){ return new Date(a.inicio) - new Date(b.inicio); });
+    var d = new Date(r.inicio); return d>=hoje && d<=em30;
+  }).sort(function(a,b){ return new Date(a.inicio)-new Date(b.inicio); });
+
+  var META=40, MESES=6;
+  var DEC = Math.min(MESES, Math.max(1, new Date().getMonth()+1));
+  var proj = Math.round(AT/Math.max(1,DEC)*MESES);
+  var esp  = Math.round(DEC/MESES*META);
+  var saldo= AT - esp;
+  var pctPace = Math.min(100, Math.round(AT/META*100));
+  var paceOk  = proj >= META;
+  var mLabels=['Jan','Fev','Mar','Abr','Mai','Jun'];
+
+  function mbox(val,lbl,bg,bdr,vc,lc){
+    return '<div style="background:'+bg+';border:1px solid '+bdr+';border-radius:6px;padding:8px 10px;text-align:center;">'
+      +'<div style="font-size:18px;font-weight:700;color:'+vc+';">'+val+'</div>'
+      +'<div style="font-size:9px;text-transform:uppercase;color:'+lc+';letter-spacing:.06em;margin-top:2px;">'+lbl+'</div></div>';
+  }
 
   root.innerHTML = [
-    // ── KPIs linha 1 ──
-    '<div class="kpi-grid">',
-      kpiCard('Assessores Ativos','green', AT, (G.brutas||AT)+' brutas · '+(G.desist||0)+' desist.', pct(AT,G.brutas||AT)+' taxa aproveit.'),
-      kpiCard('AuC Mapeado','cobalt', 'R$'+(G.aucB||'0')+'B', C.filter(function(r){return r.cap>0;}).length+' candidatos com carteira', seniors+' perfil sênior'),
-      kpiCard('Custo Total','gold', fmt(G.compTotal), fmt(G.blue3Liq)+' líquido Blue3', fmt(G.xpTotal)+' coberto XP'),
-      kpiCard('CRM · Pipeline','purple', crmTotal, 'candidatos em funil', (crmEtapas['Negociação']||0)+' em negociação'),
-      kpiCard('Propostas','',  propTotal, 'versões registradas', (propStatus['Em negociação']||0)+' em andamento'),
-      kpiCard('M&A Pipeline','red', maAtivos.length, 'operações ativas', 'AuC: R$'+maAuC.toFixed(1)+'B'),
+
+    // ── BLOCO 1: Expansão ──
+    '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t4);margin-bottom:10px;">Expansão</div>',
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">',
+
+      '<div class="kpi green">',
+        '<div class="kpi-label">Assessores Ativos</div>',
+        '<div class="kpi-value">'+AT+'</div>',
+        '<div class="kpi-sub">'+(G.brutas||AT)+' brutas · '+(G.desist||0)+' desistências</div>',
+        '<div class="kpi-trend up">'+pct(AT,G.brutas||AT)+' taxa aproveitamento</div>',
+      '</div>',
+
+      '<div class="kpi" style="border-top-color:var(--cobalt)">',
+        '<div class="kpi-label">AuC Mapeado</div>',
+        '<div class="kpi-value" style="font-size:22px">R$'+(G.aucB||'0')+'B</div>',
+        '<div class="kpi-sub">'+C.filter(function(r){return r.cap>0;}).length+' candidatos com carteira</div>',
+        '<div class="kpi-trend up">'+seniors+' Sênior · '+plenos+' Pleno · '+juniors+' Júnior</div>',
+      '</div>',
+
+      '<div class="kpi gold">',
+        '<div class="kpi-label">Custo Total</div>',
+        '<div class="kpi-value" style="font-size:22px">'+fmt(G.compTotal)+'</div>',
+        '<div class="kpi-sub">'+fmt(G.blue3Liq)+' líquido Blue3</div>',
+        '<div class="kpi-sub">'+fmt(G.xpTotal)+' coberto XP</div>',
+      '</div>',
+
+      '<div class="kpi" style="border-top-color:#7C3AED">',
+        '<div class="kpi-label">Custo por MM Captado</div>',
+        '<div class="kpi-value" style="font-size:22px">'+(custoMM>0?'R$'+custoMM.toLocaleString('pt-BR'):'—')+'</div>',
+        '<div class="kpi-sub">por R$1M de captação acordada</div>',
+        '<div class="kpi-sub">'+capTotal+' MM meta total</div>',
+      '</div>',
+
     '</div>',
 
-    // ── KPIs linha 2: métricas financeiras ──
-    '<div class="kpi-grid" style="margin-top:12px;">',
-      kpiCard('Custo por MM Captado','cobalt', custoMM > 0 ? 'R$'+custoMM.toLocaleString('pt-BR') : '—', 'por R$1M de captação', capTotal > 0 ? capTotal+' MM acordados' : '—'),
-      kpiCard('Sênior','green', seniors, pct(seniors,totalSen)+' do total', plenos+' Plenos · '+juniors+' Júnior'),
-      kpiCard('Próximos Inícios','gold', proximos.length, 'assessores em 30 dias', proximos.length > 0 ? proximos[0].n.split(' ')[0]+' e outros' : 'nenhum previsto'),
-      kpiCard('MOU Pendente','red', mouPend, 'aguardando assinatura', mouOk+' assinados ('+pct(mouOk,AT)+')'),
-    '</div>',
+    // ── BLOCO 2: Pipeline Operacional ──
+    '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t4);margin-bottom:10px;">Pipeline Operacional</div>',
+    '<div class="row2" style="margin-bottom:24px;">',
 
-    // ── Linha 1: Funil + Hunters ──
-    '<div class="row2">',
-
-      // Funil de conversão — só assessores
       '<div class="card">',
-        '<div class="card-title">Funil de Conversão · Assessores</div>',
-        '<div class="funil">',
+        '<div class="card-title">Funil de Conversão — Assessores</div>',
+        '<div class="funil" style="margin-bottom:14px;">',
           funilStage('Contratados', AT, AT, '#1A3BAD'),
           funilStage('MOU', mouOk, AT, '#2952E3'),
           funilStage('Trabalhando', trab, AT, '#16A34A'),
         '</div>',
-        '<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">',
-          '<div style="flex:1;background:#FFF7ED;border:1px solid #FED7AA;border-radius:6px;padding:8px 12px;text-align:center;">',
-            '<div style="font-size:18px;font-weight:700;color:#C2410C;">'+mouPend+'</div>',
-            '<div style="font-size:9px;text-transform:uppercase;color:#92400E;letter-spacing:.06em;margin-top:2px;">MOU Pendente</div>',
-          '</div>',
-          '<div style="flex:1;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:8px 12px;text-align:center;">',
-            '<div style="font-size:18px;font-weight:700;color:#1A3BAD;">'+pct(mouOk,AT)+'</div>',
-            '<div style="font-size:9px;text-transform:uppercase;color:#1E3A5F;letter-spacing:.06em;margin-top:2px;">Taxa MOU</div>',
-          '</div>',
-          '<div style="flex:1;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:8px 12px;text-align:center;">',
-            '<div style="font-size:18px;font-weight:700;color:#16A34A;">'+pct(trab,AT)+'</div>',
-            '<div style="font-size:9px;text-transform:uppercase;color:#166534;letter-spacing:.06em;margin-top:2px;">Taxa Ativação</div>',
-          '</div>',
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">',
+          mbox(mouPend,'MOU Pendente','#FFF7ED','#FED7AA','#C2410C','#92400E'),
+          mbox(pct(mouOk,AT),'Taxa MOU','#EFF6FF','#BFDBFE','#1A3BAD','#1E3A5F'),
+          mbox(pct(trab,AT),'Taxa Ativação','#F0FDF4','#BBF7D0','#16A34A','#166534'),
         '</div>',
       '</div>',
 
-      // Top Hunters
       '<div class="card">',
-        '<div class="card-title">Performance Hunters · Contratações Ativas</div>',
+        '<div class="card-title">Performance Hunters</div>',
         renderHunters(H),
       '</div>',
+
     '</div>',
 
-    // ── Linha 2: CRM + Propostas + Pace ──
-    '<div class="row3">',
+    // ── BLOCO 3: Controle e Metas ──
+    '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t4);margin-bottom:10px;">Controle e Metas</div>',
+    '<div class="row3" style="margin-bottom:24px;">',
 
-      // CRM por etapa
+      '<div class="card">',
+        '<div class="card-title">Pace · Meta 40 no Semestre</div>',
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">',
+          '<span style="font-size:28px;font-weight:700;font-family:Playfair Display,serif;color:var(--t1);">'+AT+'</span>',
+          '<span style="font-size:12px;color:var(--t3);">meta <strong>'+META+'</strong></span>',
+        '</div>',
+        '<div style="background:#E8EDF8;border-radius:10px;height:8px;margin-bottom:10px;position:relative;overflow:hidden;">',
+          '<div style="position:absolute;left:50%;top:0;width:2px;height:8px;background:#94A3B8;z-index:1;"></div>',
+          '<div style="width:'+pctPace+'%;height:8px;border-radius:10px;background:linear-gradient(90deg,#1A3BAD,'+(paceOk?'#16A34A':'#DC2626')+');"></div>',
+        '</div>',
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">',
+          '<div style="background:#F4F6FB;border-radius:6px;padding:8px;text-align:center;"><div style="font-size:16px;font-weight:700;color:var(--cobalt);">'+pctPace+'%</div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;">Do Pace</div></div>',
+          '<div style="background:#F4F6FB;border-radius:6px;padding:8px;text-align:center;"><div style="font-size:16px;font-weight:700;color:'+(paceOk?'var(--g)':'var(--red)')+';">'+proj+'</div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;">Projeção Jun</div></div>',
+        '</div>',
+        '<div style="padding:8px 12px;border-radius:6px;background:'+(paceOk?'#F0FDF4':'#FFF7ED')+';border:1px solid '+(paceOk?'#BBF7D0':'#FED7AA')+';font-size:11px;color:'+(paceOk?'#166534':'#92400E')+';">',
+          (paceOk?'✓ No pace. ':'⚠ ')+'Saldo de '+(saldo>=0?'+':'')+saldo+' vs esperado ('+esp+' até '+mLabels[DEC-1]+').',
+        '</div>',
+      '</div>',
+
       '<div class="card">',
         '<div class="card-title">CRM · Distribuição por Etapa</div>',
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">',
+          '<span style="font-size:24px;font-weight:700;font-family:Playfair Display,serif;">'+crmTotal+'</span>',
+          '<span style="font-size:10px;color:var(--t3);">candidatos no funil</span>',
+        '</div>',
         renderCRMEtapas(crmEtapas),
       '</div>',
 
-      // Propostas por status
       '<div class="card">',
-        '<div class="card-title">Propostas Comerciais · Status</div>',
-        renderPropStatus(propStatus, propTotal),
-      '</div>',
-
-      // Pace — só assessores
-      '<div class="card">',
-        '<div class="card-title">Pace · Meta 40 no Semestre</div>',
-        renderPace(AT),
+        '<div class="card-title">Propostas Comerciais</div>',
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">',
+          '<span style="font-size:24px;font-weight:700;font-family:Playfair Display,serif;">'+propTotal+'</span>',
+          '<span style="font-size:10px;color:var(--t3);">versões registradas</span>',
+        '</div>',
+        renderPropStatus(propStatusMap, propTotal),
       '</div>',
 
     '</div>',
 
-    // ── Linha 3: Próximos inícios ──
+    // ── BLOCO 4: Próximos Inícios ──
     proximos.length > 0 ? [
-      '<div class="card" style="margin-top:12px;">',
-        '<div class="card-title">Próximos Inícios — 30 dias</div>',
-        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:4px;">',
-          proximos.map(function(r){
-            var d = new Date(r.inicio);
-            var ds = d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0');
-            return '<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 14px;">'
-              +'<div style="font-size:12px;font-weight:700;color:#166534;">'+r.n.split(' ').slice(0,2).join(' ')+'</div>'
-              +'<div style="font-size:10px;color:#4B5563;margin-top:2px;">'+r.p+'</div>'
-              +'<div style="font-size:11px;font-weight:600;color:#16A34A;margin-top:4px;">Início: '+ds+'</div>'
-              +'</div>';
-          }).join(''),
-        '</div>',
+      '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t4);margin-bottom:10px;">Próximos Inícios — 30 dias</div>',
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px;margin-bottom:24px;">',
+        proximos.map(function(r){
+          var d = new Date(r.inicio);
+          var ds = d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0');
+          return '<div style="background:#fff;border:1px solid #BBF7D0;border-left:3px solid #16A34A;border-radius:8px;padding:12px 14px;">'
+            +'<div style="font-size:12px;font-weight:700;color:var(--t1);">'+r.n.split(' ').slice(0,2).join(' ')+'</div>'
+            +'<div style="font-size:10px;color:var(--t3);margin-top:2px;">'+r.p+'</div>'
+            +'<div style="font-size:11px;font-weight:600;color:#16A34A;margin-top:6px;">📅 Início '+ds+'</div>'
+            +'</div>';
+        }).join(''),
       '</div>',
     ].join('') : '',
 
