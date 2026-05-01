@@ -514,11 +514,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 <div style="margin-bottom:32px;">
   <div class="sh"><span class="sn">06</span><span class="st">Contratações estratégicas — assessores com carteira confirmada</span></div>
   <div class="sgrid" id="strat-cards"></div>
-  <div class="card">
+  <!-- Rodapé total consolidado -->
+  <div id="strat-total" style="display:none;justify-content:space-between;align-items:center;margin-top:12px;padding:12px 16px;background:var(--cobalt-pl);border-radius:var(--r8);border:1px solid var(--rule);">
+    <span style="font-size:11px;font-weight:700;color:var(--cobalt);text-transform:uppercase;letter-spacing:.08em;">AuC total estratégico confirmado</span>
+    <span id="strat-total-val" style="font-size:15px;font-weight:700;color:var(--cobalt);">—</span>
+  </div>
+  <!-- Em negociação — dinâmico -->
+  <div class="card" id="neg-card" style="margin-top:16px;display:none;">
     <div class="ch">Em negociação</div>
-    <div class="row"><div><div class="rn">Thiago Lima</div><div class="rd">XP - FAMI</div></div><div style="display:flex;align-items:center;gap:10px;"><span class="tag t-neg">Em negociação</span><span class="rv">R$ 100M</span></div></div>
-    <div class="row"><div><div class="rn">Fernando</div><div class="rd">XP - 3ARiva</div></div><div style="display:flex;align-items:center;gap:10px;"><span class="tag t-neg">Em negociação</span><span class="rv">R$ 500M</span></div></div>
-    <div class="tf"><span class="tfl">AuC em negociação</span><span class="tfv">R$ 600M</span></div>
+    <div id="neg-rows"></div>
+    <div class="tf"><span class="tfl">AuC em negociação</span><span class="tfv" id="neg-total">—</span></div>
   </div>
 </div>
 
@@ -1106,6 +1111,7 @@ function fmtM(v) {
   // ── Pipeline estratégico ──
   var sEl = document.getElementById('strat-cards');
   if (sEl && D.pipeline && D.pipeline.length) {
+    var totalEstrat = D.pipeline.reduce(function(s,p){ return s + (parseFloat(p.a)||0); }, 0);
     sEl.innerHTML = D.pipeline.map(function(p) {
       return '<div class="hc" style="background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:14px 16px;">'
         +'<div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:4px;">'+p.n+'</div>'
@@ -1113,6 +1119,34 @@ function fmtM(v) {
         +'<div style="font-size:12px;font-weight:600;color:var(--cobalt);">R$ '+p.a+'MM</div>'
         +'</div>';
     }).join('');
+    // Rodapé com total consolidado
+    var totalBox = document.getElementById('strat-total');
+    if (totalBox) {
+      totalBox.style.display = 'flex';
+      var totalEl = document.getElementById('strat-total-val');
+      if (totalEl) totalEl.textContent = 'R$ ' + totalEstrat.toLocaleString('pt-BR') + 'MM';
+    }
+  }
+
+  // ── Em Negociação (dinâmico) ──
+  var negEl = document.getElementById('neg-rows');
+  var negTotal = document.getElementById('neg-total');
+  if (negEl && D._pipelineNeg && D._pipelineNeg.length) {
+    var aucNeg = D._pipelineNeg.reduce(function(s,p){ return s + (parseFloat(p.auc_mm)||0); }, 0);
+    negEl.innerHTML = D._pipelineNeg.map(function(p) {
+      return '<div class="row"><div><div class="rn">'+(p.nome||p.n||'')+'</div>'
+        +'<div class="rd">'+(p.instituicao||p.i||p.praca||p.p||'')+'</div></div>'
+        +'<div style="display:flex;align-items:center;gap:10px;">'
+        +'<span class="tag t-neg">Em negociação</span>'
+        +'<span class="rv">R$ '+((parseFloat(p.auc_mm)||0)).toLocaleString('pt-BR')+'M</span>'
+        +'</div></div>';
+    }).join('');
+    if (negTotal) negTotal.textContent = 'R$ ' + aucNeg.toLocaleString('pt-BR') + 'M';
+    var negCard = document.getElementById('neg-card');
+    if (negCard) negCard.style.display = D._pipelineNeg.length ? 'block' : 'none';
+  } else {
+    var negCard = document.getElementById('neg-card');
+    if (negCard) negCard.style.display = 'none';
   }
 
   // ── Sign-in list ──
