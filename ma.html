@@ -135,6 +135,7 @@ tfoot td:last-child{text-align:right}
           <option>NDA</option>
           <option>Documentação Valuation</option>
           <option>Deal</option>
+          <option>Declinou</option>
         </select>
       </div>
       <div class="ma-frow"><label>AuC Potencial (R$ Bilhões)</label><input id="ma-auc" type="number" step="0.1" placeholder="ex: 1.5"></div>
@@ -355,13 +356,14 @@ function showEmptyState(msg) {
 }
 
 // ── CRUD M&A ─────────────────────────────────────────────────────
-var SUPA_URL_MA = (typeof SUPA_URL !== 'undefined') ? SUPA_URL : '';
-var SUPA_KEY_MA = (typeof SUPA_KEY !== 'undefined') ? SUPA_KEY : '';
+function getSupaURL(){ return (typeof SUPA_URL !== 'undefined') ? SUPA_URL : ''; }
+function getSupaKEY(){ return (typeof SUPA_KEY !== 'undefined') ? SUPA_KEY : ''; }
 
 function supaMA(path, opts) {
-  var h = { 'apikey': SUPA_KEY_MA, 'Authorization': 'Bearer '+SUPA_KEY_MA,
+  var url = getSupaURL(); var key = getSupaKEY();
+  var h = { 'apikey': key, 'Authorization': 'Bearer '+key,
             'Content-Type': 'application/json', 'Prefer': 'return=representation' };
-  return fetch(SUPA_URL_MA+'/rest/v1/'+path, Object.assign({ headers: h }, opts||{}));
+  return fetch(url+'/rest/v1/'+path, Object.assign({ headers: h }, opts||{}));
 }
 
 function abrirModalMA(op) {
@@ -386,7 +388,8 @@ function salvarMA() {
   var status = document.getElementById('ma-status').value;
   var auc    = parseFloat(document.getElementById('ma-auc').value)||0;
   if (!nome) { alert('Informe o nome da operação.'); return; }
-  var payload = { nome: nome, praca: praca||null, status: status, auc_b: auc };
+  var payload = { nome: nome, praca: praca||null, status: status, auc_b: auc,
+                  declinado: status === 'Declinou' };
   var method = id ? 'PATCH' : 'POST';
   var path   = id ? 'ma_pipeline?id=eq.'+id : 'ma_pipeline';
   supaMA(path, { method: method, body: JSON.stringify(payload) })
@@ -411,9 +414,10 @@ function declinarMA(id) {
 
 function excluirMA(id) {
   if (!confirm('Excluir esta operação? A ação não pode ser desfeita.')) return;
-  fetch(SUPA_URL_MA+'/rest/v1/ma_pipeline?id=eq.'+id, {
+  var url = getSupaURL(); var key = getSupaKEY();
+  fetch(url+'/rest/v1/ma_pipeline?id=eq.'+id, {
     method: 'DELETE',
-    headers: { 'apikey': SUPA_KEY_MA, 'Authorization': 'Bearer '+SUPA_KEY_MA }
+    headers: { 'apikey': key, 'Authorization': 'Bearer '+key }
   })
   .then(function(r){ if (r.status===204||r.ok) recarregarMA(); else throw new Error(r.status); })
   .catch(function(e){ alert('Erro ao excluir: '+e); });
