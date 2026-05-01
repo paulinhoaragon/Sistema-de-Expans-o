@@ -980,23 +980,34 @@ function b3AdminClose() {
   document.getElementById('b3-admin-modal').classList.remove('open');
 }
 function b3AdminRender() {
-  supaUsers('usuarios?order=id.asc')
+  var tb = document.getElementById('admin-tbody');
+  if (tb) tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:12px;color:#94A3B8;font-size:11px;">Carregando...</td></tr>';
+  supaUsers('usuarios?order=id.asc&select=id,nome,email,perfil,ativo')
     .then(function(r){ return r.json(); })
     .then(function(users){
-      var tb = document.getElementById('admin-tbody');
       if (!tb) return;
+      if (!users || !users.length) {
+        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:12px;color:#94A3B8;font-size:11px;">Nenhum usuário encontrado.</td></tr>';
+        return;
+      }
       var rm = { master:'Master', gerente:'Gerente', hunter:'Hunter', viewer:'Viewer' };
+      var curId = B3CU ? String(B3CU.id) : '';
       tb.innerHTML = users.map(function(u){
-        return '<tr>'
-          +'<td>'+u.nome+'</td>'
-          +'<td style="color:var(--t3)">'+u.email+'</td>'
+        var isMe = String(u.id) === curId;
+        var inativo = u.ativo === false || u.ativo === 'false';
+        return '<tr style="'+(inativo?'opacity:.45;':'')+'">'
+          +'<td style="font-weight:600;">'+u.nome+(inativo?' <span style="font-size:9px;color:#DC2626;">(inativo)</span>':'')+'</td>'
+          +'<td style="color:var(--t3);font-size:11px;">'+u.email+'</td>'
           +'<td><span style="background:#EEF2FD;color:#1A3BAD;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">'+(rm[u.perfil]||u.perfil)+'</span></td>'
-          +'<td style="display:flex;gap:6px;">'
+          +'<td style="display:flex;gap:6px;flex-wrap:wrap;">'
             +'<button class="admin-action" onclick="b3ResetPw(\''+u.id+'\')">Reset senha</button>'
-            +(u.id !== B3CU.id ? '<button class="admin-action danger" onclick="b3DeleteUser(\''+u.id+'\')">Remover</button>' : '')
+            +(!isMe?'<button class="admin-action danger" onclick="b3DeleteUser(\''+u.id+'\')">Remover</button>':'')
           +'</td>'
           +'</tr>';
       }).join('');
+    })
+    .catch(function(e){
+      if (tb) tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:12px;color:#DC2626;font-size:11px;">Erro ao carregar: '+e+'</td></tr>';
     });
 }
 
