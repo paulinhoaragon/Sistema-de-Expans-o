@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nexus · Relatório CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="pipeline.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0A0F1E;--cobalt:#1A3BAD;--cobalt-br:#2952E3;--cobalt-gl:#4A70F5;
+  --gold:#B8962E;--g:#16A34A;--am:#B45309;--red:#DC2626;--purple:#7C3AED;
+  --canvas:#F0F2FA;--surface:#fff;--rule:#E2E5F0;
+  --t1:#0A0F1E;--t2:#3A4268;--t3:#7A82A8;--t4:#A8B0CC;
+  --r8:8px;--r12:12px;--sh:0 1px 4px rgba(10,15,30,.07),0 4px 16px rgba(10,15,30,.05);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:13px;}
+.page{padding:24px 28px;max-width:1300px;}
+.cover{background:var(--ink);padding:28px 32px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:0;}
+.cover-title{font-family:'Playfair Display',serif;font-size:24px;color:#fff;}
+.cover-sub{font-size:10px;color:rgba(255,255,255,.4);margin-top:4px;letter-spacing:.1em;text-transform:uppercase;}
+.cover-rule{height:2px;background:linear-gradient(90deg,var(--cobalt-gl),var(--gold),transparent);}
+.sec-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t4);margin-bottom:10px;margin-top:28px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+@media(max-width:900px){.grid2,.grid3,.grid4{grid-template-columns:1fr;}}
+.card{background:var(--surface);border-radius:var(--r12);padding:18px 20px;box-shadow:var(--sh);}
+.card-title{font-size:11px;font-weight:700;color:var(--t2);margin-bottom:14px;text-transform:uppercase;letter-spacing:.06em;}
+.kpi{background:var(--surface);border-radius:var(--r12);padding:16px 18px;box-shadow:var(--sh);border-top:3px solid var(--cobalt);}
+.kpi.g{border-top-color:var(--g)}.kpi.gold{border-top-color:var(--gold)}.kpi.red{border-top-color:var(--red)}.kpi.purple{border-top-color:var(--purple)}
+.kpi-lbl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;}
+.kpi-val{font-family:'Playfair Display',serif;font-size:28px;font-weight:600;color:var(--t1);line-height:1;}
+.kpi-sub{font-size:10px;color:var(--t4);margin-top:4px;}
+/* Funil visual */
+.funnel-wrap{display:flex;flex-direction:column;gap:6px;padding:4px 0;}
+.funnel-stage{display:flex;align-items:center;gap:12px;cursor:default;}
+.funnel-bar-wrap{flex:1;position:relative;}
+.funnel-bar-bg{background:#EEF1FA;border-radius:6px;height:36px;overflow:hidden;}
+.funnel-bar-fill{height:36px;border-radius:6px;transition:width .6s ease;display:flex;align-items:center;padding-left:12px;}
+.funnel-bar-label{font-size:11px;font-weight:700;color:#fff;white-space:nowrap;}
+.funnel-count{font-size:18px;font-weight:700;color:var(--t1);min-width:36px;text-align:right;}
+.funnel-lbl{font-size:10px;color:var(--t3);min-width:90px;}
+.funnel-pct{font-size:9px;color:var(--t4);min-width:32px;text-align:right;}
+/* Alertas */
+.alert-row{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:8px;margin-bottom:8px;border:1px solid;}
+.alert-row:last-child{margin-bottom:0;}
+.alert-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.alert-body{flex:1;}
+.alert-name{font-size:12px;font-weight:600;color:var(--t1);}
+.alert-detail{font-size:11px;color:var(--t3);margin-top:2px;}
+/* Tabela hunters */
+.htable{width:100%;border-collapse:collapse;font-size:12px;}
+.htable th{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);padding:6px 10px;border-bottom:2px solid var(--rule);text-align:left;}
+.htable td{padding:9px 10px;border-bottom:1px solid var(--rule);}
+.htable tr:last-child td{border-bottom:none;}
+.htable td:first-child{font-weight:600;color:var(--t1);}
+/* Pipeline cards */
+.pipe-card{background:#F8FAFF;border:1px solid var(--rule);border-left:3px solid var(--cobalt);border-radius:8px;padding:12px 14px;margin-bottom:8px;}
+.pipe-card:last-child{margin-bottom:0;}
+.pipe-name{font-size:13px;font-weight:700;color:var(--t1);}
+.pipe-detail{font-size:11px;color:var(--t3);margin-top:3px;}
+.pipe-meta{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;}
+.t-neg{background:#FEF3C7;color:#92400E}
+.t-cont{background:#EEF2FD;color:#1A3BAD}
+.t-trab{background:#DCFCE7;color:#15803D}
+.t-dec{background:#FEE2E2;color:#991B1B}
+.t-qual{background:#F5F3FF;color:#6D28D9}
+.t-prosp{background:#F1F5F9;color:#475569}
+/* Barra de conversão */
+.conv-bar{display:flex;height:6px;border-radius:6px;overflow:hidden;margin:8px 0;}
+/* Loading */
+.loading{text-align:center;padding:60px 20px;color:var(--t4);}
+.loading-icon{font-size:36px;margin-bottom:12px;}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div>
+    <div class="cover-title">Relatório CRM</div>
+    <div class="cover-sub">Pipeline de Candidatos · Blue3 Expansão</div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:12px;color:rgba(255,255,255,.5);" id="crm-updated">Carregando...</div>
+    <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:2px;">Confidencial · Acesso restrito</div>
+  </div>
+</div>
+<div class="cover-rule"></div>
+
+<div class="page" id="crm-root">
+  <div class="loading">
+    <div class="loading-icon">⏳</div>
+    <div style="font-size:14px;font-weight:600;color:var(--t2);">Carregando dados do CRM...</div>
+  </div>
+</div>
+
+<script>
+var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+
+function supa(path){
+  return fetch(SUPA_URL+'/rest/v1/'+path,{
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'}
+  }).then(function(r){return r.json();});
+}
+
+function norm(s){return String(s||'').trim().toLowerCase();}
+function pct(a,b){return b>0?Math.round(a/b*100)+'%':'—';}
+function fmt(n){
+  if(!n||n===0)return '—';
+  var a=Math.abs(n);
+  if(a>=1e9) return 'R$'+(n/1e9).toFixed(1).replace('.',',')+'B';
+  if(a>=1e6) return 'R$'+(n/1e6).toFixed(1).replace('.',',')+'M';
+  if(a>=1e3) return 'R$'+Math.round(n/1e3)+'K';
+  return 'R$'+n;
+}
+function esc(s){return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function diasAtras(d){
+  if(!d)return null;
+  var diff = Date.now()-new Date(d).getTime();
+  return Math.floor(diff/(1000*60*60*24));
+}
+
+// Ordem das etapas do funil
+var ETAPAS = ['Prospecção','Qualificação','Negociação','Contratação','Trabalhando','Declinou','Contato Futuro'];
+var ETAPA_COLORS = {
+  'Prospecção':'#94A3B8','Qualificação':'#7C3AED','Negociação':'#B45309',
+  'Contratação':'#1A3BAD','Trabalhando':'#16A34A','Declinou':'#DC2626','Contato Futuro':'#0891B2'
+};
+var ETAPA_TAGS = {
+  'Prospecção':'t-prosp','Qualificação':'t-qual','Negociação':'t-neg',
+  'Contratação':'t-cont','Trabalhando':'t-trab','Declinou':'t-dec','Contato Futuro':'t-prosp'
+};
+
+function renderCRM(cands) {
+  var root = document.getElementById('crm-root');
+  if (!cands||!cands.length){
+    root.innerHTML='<div class="loading"><div class="loading-icon">📭</div><div>Nenhum candidato encontrado no CRM.</div></div>';
+    return;
+  }
+
+  // Data de atualização
+  var updated = document.getElementById('crm-updated');
+  if(updated) updated.textContent = 'Atualizado '+new Date().toLocaleDateString('pt-BR');
+
+  // ── Contagens por etapa ──
+  var byEtapa = {};
+  ETAPAS.forEach(function(e){ byEtapa[e]=0; });
+  cands.forEach(function(c){ if(byEtapa[c.etapa]!==undefined) byEtapa[c.etapa]++; else byEtapa[c.etapa]=(byEtapa[c.etapa]||0)+1; });
+
+  var ativos = cands.filter(function(c){ return c.etapa==='Trabalhando'||c.etapa==='Contratação'; });
+  var trabalhando = cands.filter(function(c){ return c.etapa==='Trabalhando'; });
+  var negociacao  = cands.filter(function(c){ return c.etapa==='Negociação'; });
+  var contratacao = cands.filter(function(c){ return c.etapa==='Contratação'; });
+  var declinados  = cands.filter(function(c){ return c.etapa==='Declinou'; });
+  var total = cands.length;
+
+  // ── Métricas por hunter ──
+  var hunters = {};
+  cands.forEach(function(c){
+    if(!c.hunter) return;
+    var h = c.hunter.trim();
+    if(!hunters[h]) hunters[h] = {total:0,ativos:0,trabalhando:0,negociacao:0,auc:0,comp:0,declinados:0};
+    hunters[h].total++;
+    if(c.etapa==='Trabalhando'||c.etapa==='Contratação') hunters[h].ativos++;
+    if(c.etapa==='Trabalhando') hunters[h].trabalhando++;
+    if(c.etapa==='Negociação') hunters[h].negociacao++;
+    if(c.etapa==='Declinou') hunters[h].declinados++;
+    hunters[h].auc  += parseFloat(c.auc_mm)||0;
+    hunters[h].comp += (parseFloat(c.piso)||0)*(parseInt(c.periodo)||12);
+  });
+
+  // ── Distribuição por senioridade (ativos) ──
+  var senMap = {senior:0,pleno:0,junior:0};
+  ativos.forEach(function(c){
+    var s=norm(c.nivel||'');
+    if(s==='sênior') senMap.senior++;
+    else if(s==='pleno') senMap.pleno++;
+    else if(s==='júnior'||s==='junior') senMap.junior++;
+  });
+
+  // ── Distribuição por vaga (ativos) ──
+  var vagaMap = {};
+  ativos.forEach(function(c){
+    var v = c.vaga||'Não informado';
+    vagaMap[v]=(vagaMap[v]||0)+1;
+  });
+
+  // ── Distribuição por praça (ativos) ──
+  var pracaMap = {};
+  ativos.forEach(function(c){
+    var p = c.praca||'Não informado';
+    pracaMap[p]=(pracaMap[p]||0)+1;
+  });
+  var pracasTop = Object.keys(pracaMap).sort(function(a,b){return pracaMap[b]-pracaMap[a];}).slice(0,8);
+
+  // ── Pipeline próximo (60 dias) ──
+  var hoje = new Date(); var em60 = new Date(); em60.setDate(hoje.getDate()+60);
+  var pipeline60 = cands.filter(function(c){
+    return (c.etapa==='Negociação'||c.etapa==='Contratação');
+  }).sort(function(a,b){
+    return (new Date(a.prev_inicio||'2099')-new Date(b.prev_inicio||'2099'));
+  });
+
+  // ── Alertas operacionais ──
+  var semMOU = ativos.filter(function(c){ return norm(c.mou)!=='assinado'; });
+  var semData = contratacao.filter(function(c){ return !c.data_entrada; });
+
+  // ── Taxa de conversão funil ──
+  var prosTotal = (byEtapa['Prospecção']||0)+(byEtapa['Qualificação']||0)+(byEtapa['Negociação']||0)+
+                  (byEtapa['Contratação']||0)+(byEtapa['Trabalhando']||0)+(byEtapa['Declinou']||0);
+  var txContrat = prosTotal>0?Math.round(ativos.length/prosTotal*100):0;
+  var txTrabalh = ativos.length>0?Math.round(trabalhando.length/ativos.length*100):0;
+
+  root.innerHTML = [
+
+    // ════════════════════════════════
+    // BLOCO 1 — VISÃO GERAL DO FUNIL
+    // ════════════════════════════════
+    '<div class="sec-label" style="margin-top:8px;">Visão Geral do Funil</div>',
+    '<div class="grid4">',
+      kpi('Total no CRM', total, 'candidatos cadastrados', 'cobalt'),
+      kpi('Em Negociação', negociacao.length, pct(negociacao.length,total)+' do funil', 'gold'),
+      kpi('Contratados', ativos.length, pct(ativos.length,total)+' conversão', 'g'),
+      kpi('Trabalhando', trabalhando.length, pct(trabalhando.length,ativos.length)+' dos contratados', 'g'),
+    '</div>',
+
+    // ── Funil Visual ──
+    '<div class="card" style="margin-bottom:20px;">',
+      '<div class="card-title">Pipeline — Distribuição por Etapa</div>',
+      '<div class="funnel-wrap">',
+        ETAPAS.filter(function(e){ return e!=='Contato Futuro'||byEtapa[e]>0; }).map(function(etapa){
+          var n = byEtapa[etapa]||0;
+          if(n===0) return '';
+          var barPct = total>0?Math.round(n/total*100):0;
+          var color  = ETAPA_COLORS[etapa]||'#94A3B8';
+          return '<div class="funnel-stage">'
+            +'<div class="funnel-lbl">'+esc(etapa)+'</div>'
+            +'<div class="funnel-bar-wrap">'
+              +'<div class="funnel-bar-bg">'
+                +'<div class="funnel-bar-fill" style="width:'+Math.max(barPct,3)+'%;background:'+color+';">'
+                  +'<span class="funnel-bar-label">'+pct(n,total)+'</span>'
+                +'</div>'
+              +'</div>'
+            +'</div>'
+            +'<div class="funnel-count">'+n+'</div>'
+            +'</div>';
+        }).join(''),
+      '</div>',
+      // Taxa de conversão
+      '<div style="display:flex;gap:20px;margin-top:16px;padding-top:14px;border-top:1px solid var(--rule);">',
+        '<div style="text-align:center;flex:1;"><div style="font-size:20px;font-weight:700;color:var(--cobalt);">'+txContrat+'%</div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-top:2px;">Taxa Contratação</div></div>',
+        '<div style="text-align:center;flex:1;"><div style="font-size:20px;font-weight:700;color:var(--g);">'+txTrabalh+'%</div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-top:2px;">Taxa Ativação</div></div>',
+        '<div style="text-align:center;flex:1;"><div style="font-size:20px;font-weight:700;color:var(--red);">'+declinados.length+'</div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-top:2px;">Declinaram</div></div>',
+        '<div style="text-align:center;flex:1;"><div style="font-size:20px;font-weight:700;color:var(--am);">'+pct(declinados.length,total)+'</div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-top:2px;">Taxa Declínio</div></div>',
+      '</div>',
+    '</div>',
+
+    // ════════════════════════════════
+    // BLOCO 2 — PERFIL DOS CONTRATADOS
+    // ════════════════════════════════
+    '<div class="sec-label">Perfil dos Contratados</div>',
+    '<div class="grid3">',
+
+      // Senioridade
+      '<div class="card">',
+        '<div class="card-title">Senioridade</div>',
+        barRow('Sênior', senMap.senior, ativos.length, '#1A3BAD'),
+        barRow('Pleno',  senMap.pleno,  ativos.length, '#7C3AED'),
+        barRow('Júnior', senMap.junior, ativos.length, '#B45309'),
+      '</div>',
+
+      // Vaga
+      '<div class="card">',
+        '<div class="card-title">Por Tipo de Vaga</div>',
+        Object.keys(vagaMap).sort(function(a,b){return vagaMap[b]-vagaMap[a];}).map(function(v){
+          return barRow(v, vagaMap[v], ativos.length, '#1A3BAD');
+        }).join(''),
+      '</div>',
+
+      // Praças
+      '<div class="card">',
+        '<div class="card-title">Top Praças</div>',
+        pracasTop.map(function(p){
+          return barRow(p, pracaMap[p], ativos.length, '#16A34A');
+        }).join(''),
+      '</div>',
+
+    '</div>',
+
+    // ════════════════════════════════
+    // BLOCO 3 — PERFORMANCE HUNTERS
+    // ════════════════════════════════
+    '<div class="sec-label">Performance por Hunter</div>',
+    '<div class="card" style="margin-bottom:20px;">',
+      '<div class="card-title">Indicadores por Hunter</div>',
+      '<table class="htable">',
+        '<thead><tr>',
+          '<th>Hunter</th><th>Total Funil</th><th>Contratados</th><th>Trabalhando</th>',
+          '<th>Em Negociação</th><th>Declinados</th><th>Taxa Conv.</th><th>AuC Médio (MM)</th>',
+        '</tr></thead>',
+        '<tbody>',
+          Object.keys(hunters).sort(function(a,b){return hunters[b].ativos-hunters[a].ativos;}).map(function(h){
+            var hd = hunters[h];
+            var txH = hd.total>0?Math.round(hd.ativos/hd.total*100):0;
+            var aucMed = hd.ativos>0?(hd.auc/hd.ativos).toFixed(1):0;
+            return '<tr>'
+              +'<td>'+esc(h)+'</td>'
+              +'<td style="text-align:center">'+hd.total+'</td>'
+              +'<td style="text-align:center;font-weight:700;color:var(--cobalt)">'+hd.ativos+'</td>'
+              +'<td style="text-align:center;color:var(--g)">'+hd.trabalhando+'</td>'
+              +'<td style="text-align:center;color:var(--am)">'+hd.negociacao+'</td>'
+              +'<td style="text-align:center;color:var(--red)">'+hd.declinados+'</td>'
+              +'<td style="text-align:center"><span style="font-weight:700;color:'+(txH>=60?'var(--g)':txH>=40?'var(--am)':'var(--red)')+'">'+txH+'%</span></td>'
+              +'<td style="text-align:center;font-weight:700">'+aucMed+' MM</td>'
+              +'</tr>';
+          }).join(''),
+        '</tbody>',
+      '</table>',
+    '</div>',
+
+    // ════════════════════════════════
+    // BLOCO 4 — PIPELINE PROSPECTIVO
+    // ════════════════════════════════
+    '<div class="sec-label">Pipeline Prospectivo — Próximos 60 dias</div>',
+    '<div class="grid2">',
+
+      // Em negociação
+      '<div class="card">',
+        '<div class="card-title">Em Negociação ('+negociacao.length+')</div>',
+        negociacao.length ? negociacao.map(function(c){
+          return '<div class="pipe-card">'
+            +'<div class="pipe-name">'+esc(c.nome)+'</div>'
+            +'<div class="pipe-detail">'+esc(c.praca||'—')+' · '+esc(c.instituicao||'—')+'</div>'
+            +'<div class="pipe-meta">'
+              +'<span class="tag t-neg">Negociação</span>'
+              +(c.nivel?'<span class="tag t-cont" style="background:#F0FDF4;color:#166534;">'+esc(c.nivel)+'</span>':'')
+              +(c.hunter?'<span style="font-size:10px;color:var(--t3);">Hunter: '+esc(c.hunter)+'</span>':'')
+            +'</div>'
+            +'</div>';
+        }).join('') : '<div style="padding:20px;text-align:center;color:var(--t4);font-size:12px;">Nenhum em negociação</div>',
+      '</div>',
+
+      // Em contratação
+      '<div class="card">',
+        '<div class="card-title">Em Contratação ('+contratacao.length+')</div>',
+        contratacao.length ? contratacao.map(function(c){
+          var prevIni = c.prev_inicio ? new Date(c.prev_inicio).toLocaleDateString('pt-BR') : null;
+          return '<div class="pipe-card" style="border-left-color:var(--g);">'
+            +'<div class="pipe-name">'+esc(c.nome)+'</div>'
+            +'<div class="pipe-detail">'+esc(c.praca||'—')+' · '+esc(c.nivel||'—')+'</div>'
+            +'<div class="pipe-meta">'
+              +'<span class="tag t-cont">Contratação</span>'
+              +(norm(c.mou)==='assinado'?'<span class="tag" style="background:#DCFCE7;color:#15803D;">MOU ✓</span>':'<span class="tag" style="background:#FEF3C7;color:#92400E;">MOU Pend.</span>')
+              +(prevIni?'<span style="font-size:10px;color:var(--g);font-weight:600;">Início: '+prevIni+'</span>':'')
+            +'</div>'
+            +'</div>';
+        }).join('') : '<div style="padding:20px;text-align:center;color:var(--t4);font-size:12px;">Nenhum em contratação</div>',
+      '</div>',
+
+    '</div>',
+
+    // ════════════════════════════════
+    // BLOCO 5 — SAÚDE OPERACIONAL
+    // ════════════════════════════════
+    '<div class="sec-label">Saúde Operacional — Alertas</div>',
+    '<div class="grid2">',
+
+      // MOU pendente
+      '<div class="card">',
+        '<div class="card-title">MOU Pendente ('+semMOU.length+')</div>',
+        semMOU.length ? semMOU.slice(0,8).map(function(c){
+          var dias = diasAtras(c.data_entrada);
+          return '<div class="alert-row" style="background:#FFF7ED;border-color:#FED7AA;">'
+            +'<div class="alert-icon">⚠️</div>'
+            +'<div class="alert-body">'
+              +'<div class="alert-name">'+esc(c.nome)+'</div>'
+              +'<div class="alert-detail">'+esc(c.praca||'—')+(dias?' · Entrada há '+dias+' dias':'')+'</div>'
+            +'</div></div>';
+        }).join('')+(semMOU.length>8?'<div style="text-align:center;font-size:11px;color:var(--t4);padding:8px;">+ '+(semMOU.length-8)+' outros</div>':'')
+        : '<div style="padding:20px;text-align:center;color:var(--g);font-size:12px;">✓ Nenhum MOU pendente</div>',
+      '</div>',
+
+      // Desistências — perfil
+      '<div class="card">',
+        '<div class="card-title">Desistências — Perfil ('+declinados.length+')</div>',
+        declinados.length ? [
+          // Distribuição por hunter
+          (function(){
+            var decH={};
+            declinados.forEach(function(c){ var h=c.hunter||'N/I'; decH[h]=(decH[h]||0)+1; });
+            return '<div style="margin-bottom:12px;">'
+              +'<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Por Hunter</div>'
+              +Object.keys(decH).sort(function(a,b){return decH[b]-decH[a];}).map(function(h){
+                return barRow(h, decH[h], declinados.length, '#DC2626');
+              }).join('')
+              +'</div>';
+          })(),
+          // Lista
+          '<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Candidatos</div>',
+          declinados.slice(0,6).map(function(c){
+            return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--rule);">'
+              +'<div><div style="font-size:12px;font-weight:600;color:#991B1B;">'+esc(c.nome)+'</div><div style="font-size:10px;color:var(--t3);">'+esc(c.praca||'—')+'</div></div>'
+              +(c.data_declinio?'<div style="font-size:10px;color:var(--t4);">'+new Date(c.data_declinio).toLocaleDateString('pt-BR')+'</div>':'')
+              +'</div>';
+          }).join('')+(declinados.length>6?'<div style="text-align:center;font-size:11px;color:var(--t4);padding:8px;">+ '+(declinados.length-6)+' outros</div>':''),
+        ].join('')
+        : '<div style="padding:20px;text-align:center;color:var(--g);font-size:12px;">✓ Nenhuma desistência</div>',
+      '</div>',
+
+    '</div>',
+
+  ].join('');
+
+  // Renderizar canvas charts
+  renderCharts(byEtapa, senMap, hunters);
+}
+
+function kpi(lbl, val, sub, cls){
+  return '<div class="kpi '+(cls||'')+'">'
+    +'<div class="kpi-lbl">'+esc(lbl)+'</div>'
+    +'<div class="kpi-val">'+val+'</div>'
+    +'<div class="kpi-sub">'+sub+'</div>'
+    +'</div>';
+}
+
+function barRow(lbl, val, total, color){
+  var p = total>0?Math.round(val/total*100):0;
+  return '<div style="margin-bottom:8px;">'
+    +'<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">'
+      +'<span style="color:var(--t2);font-weight:500;">'+esc(lbl)+'</span>'
+      +'<span style="font-weight:700;color:var(--t1);">'+val+'<span style="font-weight:400;color:var(--t4);"> ('+p+'%)</span></span>'
+    +'</div>'
+    +'<div style="background:#EEF1FA;border-radius:4px;height:5px;">'
+      +'<div style="width:'+p+'%;height:5px;border-radius:4px;background:'+color+';transition:width .5s;"></div>'
+    +'</div>'
+    +'</div>';
+}
+
+function renderCharts(byEtapa, senMap, hunters) {
+  // Nenhum canvas nesta versão — barras feitas em CSS
+}
+
+// ── Inicialização ──
+(function(){
+  try { localStorage.removeItem('B3D'); localStorage.removeItem('B3D_RAW'); } catch(e){}
+  supa('crm_candidatos?order=criado_em.desc&limit=500&select=id,nome,etapa,nivel,vaga,praca,hunter,mou,status_ancord,data_entrada,data_inicio,prev_inicio,data_declinio,auc_mm,piso,periodo,upfront,trigger1_meta,trigger2_meta,trigger3_meta,trigger4_meta,instituicao,estrategico')
+    .then(function(rows){
+      if(!rows||!rows.length){
+        document.getElementById('crm-root').innerHTML='<div class="loading"><div class="loading-icon">📭</div><div style="font-size:14px;font-weight:600;color:var(--t2);">Nenhum candidato no CRM.</div></div>';
+        return;
+      }
+      renderCRM(rows);
+    })
+    .catch(function(e){
+      document.getElementById('crm-root').innerHTML='<div class="loading"><div class="loading-icon">❌</div><div style="font-size:14px;font-weight:600;color:var(--red);">Erro ao carregar: '+e+'</div></div>';
+    });
+})();
+
+window.b3OnCSVLoaded = function(){};
+</script>
+</body>
+</html>
