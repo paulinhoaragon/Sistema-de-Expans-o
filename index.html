@@ -571,6 +571,10 @@ body{
 
       <!-- Configurações -->
       <div class="sb-section">Configurações</div>
+      <a class="sb-item b3-sb-admin" onclick="b3AdminOpen(event)" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        <span class="sb-label">Usuários</span>
+      </a>
       <a class="sb-item b3-sb-admin" onclick="navTo('configuracoes.html','Configurações')" href="#">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3"/><path d="M6 20v-1a6 6 0 0112 0v1" stroke-linecap="round"/></svg>
         <span class="sb-label">Hunters & Parâmetros</span>
@@ -975,25 +979,6 @@ function b3AdminOpen(e) {
 function b3AdminClose() {
   document.getElementById('b3-admin-modal').classList.remove('open');
 }
-function b3AdminRender() {
-  var users = getB3Users();
-  var roleLabel = { master: 'Master', gerente: 'Gerente', paulo: 'Gerente', viewer: 'Viewer' };
-  var html = '';
-  users.forEach(function(u) {
-    html += '<tr>'
-      + '<td>' + u.n + '</td>'
-      + '<td style="color:#7A82A8">' + u.l + '</td>'
-      + '<td><span class="admin-badge ' + u.r + '">' + (roleLabel[u.r]||u.r) + '</span></td>'
-      + '<td style="display:flex;gap:6px;">';
-    if (u.l !== 'master') {
-      html += '<button class="admin-action danger" onclick="b3DeleteUser(\'' + u.id + '\')">Remover</button>';
-      html += '<button class="admin-action" onclick="b3ResetPw(\'' + u.id + '\')">Reset senha</button>';
-    }
-    html += '</td></tr>';
-  });
-  document.getElementById('admin-tbody').innerHTML = html;
-}
-
 function b3AdminRender() {
   supaUsers('usuarios?order=id.asc')
     .then(function(r){ return r.json(); })
