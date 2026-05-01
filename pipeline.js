@@ -334,8 +334,8 @@ function Blue3_pipelineStrategic(){
 
 function Blue3_maPipeline(){
   var all = window.Blue3Data._ma || [];
-  window.Blue3Data.ma          = all.filter(function(r){ return !r.dec; });
-  window.Blue3Data.maDeclinados = all.filter(function(r){ return r.dec; });
+  window.Blue3Data.ma          = all.filter(function(r){ return !r.dec && r.s !== 'Declinou'; });
+  window.Blue3Data.maDeclinados = all.filter(function(r){ return r.dec || r.s === 'Declinou'; });
 }
 
 // ── Upload CSV ──
@@ -486,7 +486,7 @@ function Blue3_init(callback){
   .then(function(r){ return r.json(); })
   .then(function(rows){
     resultMA = (rows||[]).map(function(r){
-      return {n:r.nome||'',p:r.praca||'',a:parseFloat(r.auc_b)||0,s:r.status||'',dec:r.declinado||false};
+      return {id:r.id||'',n:r.nome||'',p:r.praca||'',a:parseFloat(r.auc_b)||0,s:r.status||'',dec:r.declinado||false};
     });
     finish();
   })
