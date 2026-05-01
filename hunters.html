@@ -223,22 +223,16 @@ function showEmptyState(msg) {
 // ────────────────────────────────────────────────────────────
 function Blue3_dataLoader() {
   console.log('[Blue3] dataLoader iniciado...');
-  var raw = localStorage.getItem('B3D');
-  if (!raw) {
-    console.warn('[Blue3] B3D não encontrado no localStorage');
-    return false;
-  }
+  // Ler de _rawRows (populado pelo blue3LoadData do Supabase) ou localStorage como fallback
   var rows;
-  try {
-    rows = JSON.parse(raw);
-  } catch (e) {
-    console.error('[Blue3] JSON inválido em B3D:', e);
-    return false;
+  if (window.Blue3Data && window.Blue3Data._rawRows && window.Blue3Data._rawRows.length) {
+    rows = window.Blue3Data._rawRows;
+  } else {
+    var raw = localStorage.getItem('B3D');
+    if (!raw) { console.warn('[Blue3] Sem dados'); return false; }
+    try { rows = JSON.parse(raw); } catch(e) { return false; }
   }
-  if (!Array.isArray(rows) || !rows.length) {
-    console.warn('[Blue3] B3D vazio');
-    return false;
-  }
+  if (!Array.isArray(rows) || !rows.length) { console.warn('[Blue3] B3D vazio'); return false; }
 
   window.Blue3Data.candidatos = rows.map(function (r) {
     return {
@@ -862,26 +856,42 @@ function uploadCSV(input){
 
 document.addEventListener('DOMContentLoaded',function(){
   diag('Iniciando hunters — buscando do Supabase...');
-  // Limpar cache antigo
   try { localStorage.removeItem('B3D'); localStorage.removeItem('B3D_RAW'); } catch(e){}
-  // Usar Blue3_init do pipeline.js externo se disponível
-  if (typeof Blue3_init === 'function') {
-    Blue3_init(function(ok) {
-      if (ok) renderPage();
-      else showEmptyState('Não foi possível carregar os dados do Supabase.');
+
+  // Usar blue3LoadData do pipeline.js externo
+  if (typeof blue3LoadData === 'function') {
+    blue3LoadData(function(rows) {
+      if (!rows || !rows.length) {
+        showEmptyState('Sem dados no Supabase.');
+        return;
+      }
+      // Popular Blue3Data com os dados do Supabase
+      window.Blue3Data = {
+        candidatos: [], financeiros: [], paybacks: [],
+        hunters: [], pipeline: [], ma: [], resumoGeral: {},
+        _rawRows: rows,
+        _ma: [], _pipeline: [], _pipelineNeg: []
+      };
+      if (Blue3_dataLoader()) {
+        Blue3_financeMetrics();
+        Blue3_payback();
+        Blue3_huntersPerformance();
+        window.Blue3Ready = true;
+        renderPage();
+      } else {
+        showEmptyState('Falha ao processar dados.');
+      }
     });
   } else {
-    // Fallback: pipeline interno com localStorage
+    // Fallback localStorage
     var raw = localStorage.getItem('B3D');
-    if (!raw) { showEmptyState(); diag('CSV não encontrado'); return; }
-    var ok = Blue3_runPipeline();
-    if (ok) renderPage();
+    if (!raw) { showEmptyState(); diag('Sem dados'); return; }
+    if (Blue3_runPipeline()) renderPage();
     else showEmptyState('Pipeline falhou.');
   }
 });
 
 window.b3OnCSVLoaded = function() {
-  // Ignorado — usando Supabase
   console.log('[Hunters] b3OnCSVLoaded ignorado — usando Supabase.');
 };
 </script>
