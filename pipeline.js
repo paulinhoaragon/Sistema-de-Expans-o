@@ -423,13 +423,21 @@ function Blue3_init(callback){
   try { localStorage.removeItem('B3D'); localStorage.removeItem('B3D_RAW'); } catch(e){}
   var resultCand=[], resultMA=[], resultPE=[], done=0;
 
+  var _finished = false;
   function finish(){
     done++;
     if(done < 3) return;
-    window.Blue3Data = window.Blue3Data || {};
-    window.Blue3Data._pipeline    = resultPE.filter(function(r){return r.tipo==='Contratado';});
-    window.Blue3Data._pipelineNeg = resultPE.filter(function(r){return r.tipo==='Negociação';});
-    window.Blue3Data._ma          = resultMA;
+    if(_finished) return; // previne execução dupla
+    _finished = true;
+    // Recriar Blue3Data do zero — sem herdar estado anterior
+    window.Blue3Data = {
+      candidatos:[], financeiros:[], paybacks:[],
+      hunters:[], pipeline:[], ma:[], resumoGeral:{},
+      _rawRows: resultCand,
+      _ma:          resultMA,
+      _pipeline:    resultPE.filter(function(r){return r.tipo==='Contratado';}),
+      _pipelineNeg: resultPE.filter(function(r){return r.tipo==='Negociação';})
+    };
     var ok = Blue3_runPipeline(resultCand);
     if(callback) callback(ok, resultCand.length);
   }
