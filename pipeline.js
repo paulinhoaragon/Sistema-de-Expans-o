@@ -13,7 +13,14 @@ window.Blue3Ready = false;
 // ── Utilitários ──
 function norm(s){ return String(s||'').trim().toLowerCase(); }
 function pn(v){
-  var s=String(v||'0').replace(/R\$|\s/g,'').replace(/\./g,'').replace(',','.').trim();
+  var s=String(v||'0').replace(/R\$|\s/g,'').trim();
+  // Formato Supabase (americano): 9265.82 — ponto é decimal, sem vírgula
+  // Formato CSV PT-BR: 9.265,82 — ponto é milhar, vírgula é decimal
+  if(s.indexOf(',')>-1){
+    // PT-BR: remove pontos de milhar, troca vírgula por ponto
+    s=s.replace(/\./g,'').replace(',','.');
+  }
+  // Se não tem vírgula, ponto já é decimal — não remove
   return parseFloat(s)||0;
 }
 function getMonth(d){ if(!d)return null; var p=d.split('/'); if(p.length===3)return parseInt(p[1]); var p2=d.split('-'); return p2.length>=2?parseInt(p2[1]):null; }
