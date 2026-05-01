@@ -261,8 +261,89 @@ function renderCRM(cands) {
     '</div>',
 
     // ════════════════════════════════
-    // BLOCO 2 — PERFIL DOS CONTRATADOS
+    // BLOCO 0.5 — VELOCIDADE DO FUNIL
     // ════════════════════════════════
+    '<div class="sec-label">Velocidade do Funil — Tempo Médio por Etapa</div>',
+    '<div class="card" style="margin-bottom:20px;">',
+      '<div class="card-title">Dias médios que candidatos passam em cada etapa</div>',
+      (function(){
+        // Calcular tempo médio por etapa usando historico_etapas
+        var tempoEtapa = {};
+        var contagemEtapa = {};
+        ETAPAS.forEach(function(e){ tempoEtapa[e]=0; contagemEtapa[e]=0; });
+
+        cands.forEach(function(c){
+          var hist = c.historico_etapas;
+          if (!hist || !hist.length || hist.length < 2) return;
+          // Ordenar por timestamp
+          var sorted = hist.slice().sort(function(a,b){ return new Date(a.timestamp)-new Date(b.timestamp); });
+          for (var i=0; i<sorted.length-1; i++){
+            var etapa = sorted[i].etapa;
+            var inicio = new Date(sorted[i].timestamp);
+            var fim    = new Date(sorted[i+1].timestamp);
+            var dias   = Math.round((fim-inicio)/(1000*60*60*24));
+            if (dias >= 0 && dias < 365 && ETAPAS.indexOf(etapa) > -1) {
+              tempoEtapa[etapa]  += dias;
+              contagemEtapa[etapa]++;
+            }
+          }
+          // Última etapa: calcular até hoje ou data_declinio
+          var ultima = sorted[sorted.length-1];
+          var fimUltima = c.data_declinio ? new Date(c.data_declinio) : new Date();
+          var diasUltima = Math.round((fimUltima-new Date(ultima.timestamp))/(1000*60*60*24));
+          if (diasUltima >= 0 && diasUltima < 365 && ETAPAS.indexOf(ultima.etapa) > -1) {
+            tempoEtapa[ultima.etapa]  += diasUltima;
+            contagemEtapa[ultima.etapa]++;
+          }
+        });
+
+        // Calcular médias
+        var etapasComDados = ETAPAS.filter(function(e){ return contagemEtapa[e]>0 && e!=='Trabalhando'; });
+        if (!etapasComDados.length) {
+          return '<div style="padding:20px;text-align:center;color:var(--t4);font-size:12px;">Histórico de etapas ainda sendo construído. Dados disponíveis após movimentações no CRM.</div>';
+        }
+        var maxDias = Math.max.apply(null, etapasComDados.map(function(e){ return tempoEtapa[e]/contagemEtapa[e]; }));
+
+        return etapasComDados.map(function(e){
+          var med = Math.round(tempoEtapa[e]/contagemEtapa[e]);
+          var pBar = maxDias > 0 ? Math.round(med/maxDias*100) : 0;
+          var color = ETAPA_COLORS[e]||'#94A3B8';
+          return '<div style="margin-bottom:12px;">'
+            +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">'
+              +'<span style="font-size:12px;font-weight:600;color:var(--t2);">'+esc(e)+'</span>'
+              +'<span style="font-size:13px;font-weight:700;color:var(--t1);">'+med+' dias<span style="font-size:10px;font-weight:400;color:var(--t4);"> ('+contagemEtapa[e]+' candidatos)</span></span>'
+            +'</div>'
+            +'<div style="background:#EEF1FA;border-radius:4px;height:8px;">'
+              +'<div style="width:'+pBar+'%;height:8px;border-radius:4px;background:'+color+';transition:width .5s;"></div>'
+            +'</div>'
+            +'</div>';
+        }).join('');
+      })(),
+      // Tempo total médio de prospecção até contratação
+      (function(){
+        var tempos = [];
+        cands.filter(function(c){ return c.etapa==='Trabalhando'||c.etapa==='Contratação'; }).forEach(function(c){
+          var hist = c.historico_etapas;
+          if (!hist||!hist.length) return;
+          var sorted = hist.slice().sort(function(a,b){ return new Date(a.timestamp)-new Date(b.timestamp); });
+          var inicio = new Date(sorted[0].timestamp);
+          var dias = Math.round((Date.now()-inicio.getTime())/(1000*60*60*24));
+          if (dias>0&&dias<500) tempos.push(dias);
+        });
+        if (!tempos.length) return '';
+        var med = Math.round(tempos.reduce(function(s,v){return s+v;},0)/tempos.length);
+        return '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--rule);display:flex;gap:20px;">'
+          +'<div style="flex:1;background:#EEF2FD;border-radius:8px;padding:12px 16px;text-align:center;">'
+            +'<div style="font-size:24px;font-weight:700;color:var(--cobalt);">'+med+' dias</div>'
+            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:3px;">Tempo médio até contratação</div>'
+          +'</div>'
+          +'<div style="flex:1;background:#F0FDF4;border-radius:8px;padding:12px 16px;text-align:center;">'
+            +'<div style="font-size:24px;font-weight:700;color:var(--g);">'+tempos.length+'</div>'
+            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-top:3px;">Candidatos com histórico</div>'
+          +'</div>'
+          +'</div>';
+      })(),
+    '</div>',
     '<div class="sec-label">Perfil dos Contratados</div>',
     '<div class="grid3">',
 
@@ -326,12 +407,12 @@ function renderCRM(cands) {
     // ════════════════════════════════
     // BLOCO 4 — PIPELINE PROSPECTIVO
     // ════════════════════════════════
-    '<div class="sec-label">Pipeline Prospectivo — Próximos 60 dias</div>',
+    '<div class="sec-label">Pipeline Prospectivo — Em Negociação e Contratação</div>',
     '<div class="grid2">',
 
-      // Em negociação
       '<div class="card">',
         '<div class="card-title">Em Negociação ('+negociacao.length+')</div>',
+        '<div style="max-height:320px;overflow-y:auto;padding-right:4px;">',
         negociacao.length ? negociacao.map(function(c){
           return '<div class="pipe-card">'
             +'<div class="pipe-name">'+esc(c.nome)+'</div>'
@@ -343,11 +424,12 @@ function renderCRM(cands) {
             +'</div>'
             +'</div>';
         }).join('') : '<div style="padding:20px;text-align:center;color:var(--t4);font-size:12px;">Nenhum em negociação</div>',
+        '</div>',
       '</div>',
 
-      // Em contratação
       '<div class="card">',
         '<div class="card-title">Em Contratação ('+contratacao.length+')</div>',
+        '<div style="max-height:320px;overflow-y:auto;padding-right:4px;">',
         contratacao.length ? contratacao.map(function(c){
           var prevIni = c.prev_inicio ? new Date(c.prev_inicio).toLocaleDateString('pt-BR') : null;
           return '<div class="pipe-card" style="border-left-color:var(--g);">'
@@ -360,8 +442,36 @@ function renderCRM(cands) {
             +'</div>'
             +'</div>';
         }).join('') : '<div style="padding:20px;text-align:center;color:var(--t4);font-size:12px;">Nenhum em contratação</div>',
+        '</div>',
       '</div>',
 
+    '</div>',
+
+    // ════════════════════════════════
+    // BLOCO 4.5 — CUSTO POR CONTRATAÇÃO
+    // ════════════════════════════════
+    '<div class="sec-label">Custo por Contratação</div>',
+    '<div class="grid4" style="margin-bottom:20px;">',
+      (function(){
+        var compTotal = ativos.reduce(function(s,c){
+          return s + ((parseFloat(c.piso)||0)*(parseInt(c.periodo)||12));
+        },0);
+        var upfrontTotal = ativos.reduce(function(s,c){ return s+(parseFloat(c.upfront)||0); },0);
+        var trigsTotal = ativos.reduce(function(s,c){
+          return s+(parseFloat(c.trigger1_meta)||0)+(parseFloat(c.trigger2_meta)||0)
+                  +(parseFloat(c.trigger3_meta)||0)+(parseFloat(c.trigger4_meta)||0);
+        },0);
+        var total = compTotal + upfrontTotal;
+        var capTotal = trigsTotal; // MM
+        var custoMed = ativos.length>0?Math.round(total/ativos.length):0;
+        var custoMM  = capTotal>0?Math.round(total/capTotal):0;
+        return [
+          kpi('Custo Médio / Contratação', fmt(custoMed), ativos.length+' contratados', 'cobalt'),
+          kpi('Total Comprometido', fmt(total), 'piso + sign-in', 'gold'),
+          kpi('Captação Alvo Total', capTotal+' MM', 'meta contratual agregada', 'g'),
+          kpi('Custo por MM', custoMM>0?'R$'+custoMM.toLocaleString('pt-BR'):'—', 'R$ por MM de captação', 'purple'),
+        ].join('');
+      })(),
     '</div>',
 
     // ════════════════════════════════
@@ -448,7 +558,7 @@ function renderCharts(byEtapa, senMap, hunters) {
 // ── Inicialização ──
 (function(){
   try { localStorage.removeItem('B3D'); localStorage.removeItem('B3D_RAW'); } catch(e){}
-  supa('crm_candidatos?order=criado_em.desc&limit=500&select=id,nome,etapa,nivel,vaga,praca,hunter,mou,status_ancord,data_entrada,data_inicio,prev_inicio,data_declinio,auc_mm,piso,periodo,upfront,trigger1_meta,trigger2_meta,trigger3_meta,trigger4_meta,instituicao,estrategico')
+  supa('crm_candidatos?order=criado_em.desc&limit=500&select=id,nome,etapa,nivel,vaga,praca,hunter,mou,status_ancord,data_entrada,data_inicio,prev_inicio,data_declinio,auc_mm,piso,periodo,upfront,trigger1_meta,trigger2_meta,trigger3_meta,trigger4_meta,instituicao,estrategico,historico_etapas')
     .then(function(rows){
       if(!rows||!rows.length){
         document.getElementById('crm-root').innerHTML='<div class="loading"><div class="loading-icon">📭</div><div style="font-size:14px;font-weight:600;color:var(--t2);">Nenhum candidato no CRM.</div></div>';
