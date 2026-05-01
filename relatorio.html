@@ -984,7 +984,7 @@ function fmtM(v) {
     var mesLabel = mLabels[DEC-1] || 'Abr';
     var pctSem = Math.round(DEC/MESES*100);
     var proj=Math.round(AT/Math.max(1,DEC)*MESES), pct=Math.min(100,Math.round(AT/META*100));
-    var esp=Math.round(DEC/MESES*META), saldo=AT-esp, falt=Math.max(0,META-AT), nec=Math.ceil(falt/Math.max(1,MESES-DEC)), ok=proj>=META;
+    var esp=Math.round(DEC/MESES*META), saldo=AT-esp, falt=Math.max(0,META-AT), nec=Math.ceil(falt/Math.max(1,MESES-DEC+1)), ok=proj>=META;
     var el=document.getElementById('pace-card'); if(!el)return;
     el.innerHTML='<div class="pstats">'
       +'<div class="ps"><div class="psl">Ativas realizadas</div><div class="psv">'+AT+'</div><div class="psn">de '+META+' na meta</div></div>'
