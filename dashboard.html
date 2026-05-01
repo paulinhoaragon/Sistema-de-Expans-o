@@ -131,6 +131,7 @@ function renderDash(G, H, crm, propostas, _ma) {
   var hoje = new Date(); var em30 = new Date(); em30.setDate(hoje.getDate()+30);
   var proximos = C.filter(function(r){
     if (!r.inicio) return false;
+    if ((r.st||'').toLowerCase() === 'trabalhando') return false;
     var d = new Date(r.inicio); return d>=hoje && d<=em30;
   }).sort(function(a,b){ return new Date(a.inicio)-new Date(b.inicio); });
 
