@@ -108,10 +108,20 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 // ── Renderizar dashboard ──
 function renderDash(G, H, crm, propostas, ma) {
   var root = document.getElementById('dash-root');
-  var AT = G.total || 0;
-  var mouOk = G.mouOk || 0;
-  var ancord = G.ancord || 0;
-  var trab = G.trab || 0;
+  var C = window.Blue3Data.candidatos || [];
+
+  // Filtrar só assessores para funil e pace
+  var assessores = C.filter(function(r){
+    return ['assessor','assessores'].indexOf((r.area||'Assessores').toLowerCase()) !== -1;
+  });
+  var AT = assessores.filter(function(r){
+    var s = (r.st||'').toLowerCase(); return s === 'trabalhando' || s === 'contratado(a)';
+  }).length;
+
+  var G = window.Blue3Data.resumoGeral || {};
+  var mouOk  = assessores.filter(function(r){ return (r.mou||'').toLowerCase() === 'assinado'; }).length;
+  var mouPend= AT - mouOk;
+  var trab   = assessores.filter(function(r){ return (r.st||'').toLowerCase() === 'trabalhando'; }).length;
 
   // CRM stats
   var crmTotal = crm ? crm.length : 0;
@@ -124,40 +134,66 @@ function renderDash(G, H, crm, propostas, ma) {
   (propostas||[]).forEach(function(r){ propStatus[r.status] = (propStatus[r.status]||0)+1; });
 
   // M&A stats
-  var maTotal = ma ? ma.filter(function(r){ return !r.declinado; }).length : 0;
-  var maAuC = (ma||[]).reduce(function(s,r){ return s + (r.auc_b||0); },0);
+  var maAtivos = ma ? ma.filter(function(r){ return r.s !== 'Declinou' && !r.declinado; }) : [];
+  var maAuC = maAtivos.reduce(function(s,r){ return s + (parseFloat(r.a)||parseFloat(r.auc_b)||0); },0);
+
+  // Custo por MM
+  var capTotal = G.aucTotal || 0;
+  var custoMM  = capTotal > 0 ? Math.round(G.compTotal / capTotal) : 0;
+
+  // Senioridade
+  var seniors = C.filter(function(r){ return (r.sen||'').toLowerCase() === 'sênior'; }).length;
+  var plenos  = C.filter(function(r){ return (r.sen||'').toLowerCase() === 'pleno'; }).length;
+  var juniors = C.filter(function(r){ var s=(r.sen||'').toLowerCase(); return s==='júnior'||s==='junior'; }).length;
+  var totalSen = seniors + plenos + juniors || 1;
+
+  // Próximos inícios (30 dias)
+  var hoje = new Date();
+  var em30 = new Date(); em30.setDate(hoje.getDate() + 30);
+  var proximos = C.filter(function(r){
+    if (!r.inicio) return false;
+    var d = new Date(r.inicio);
+    return d >= hoje && d <= em30;
+  }).sort(function(a,b){ return new Date(a.inicio) - new Date(b.inicio); });
 
   root.innerHTML = [
-    // ── KPIs ──
+    // ── KPIs linha 1 ──
     '<div class="kpi-grid">',
       kpiCard('Assessores Ativos','green', AT, (G.brutas||AT)+' brutas · '+(G.desist||0)+' desist.', pct(AT,G.brutas||AT)+' taxa aproveit.'),
-      kpiCard('AuC Mapeado','cobalt', 'R$'+(G.aucB||'0')+'B', AT+' candidatos com carteira', (G.seniors||0)+' perfil sênior'),
+      kpiCard('AuC Mapeado','cobalt', 'R$'+(G.aucB||'0')+'B', C.filter(function(r){return r.cap>0;}).length+' candidatos com carteira', seniors+' perfil sênior'),
       kpiCard('Custo Total','gold', fmt(G.compTotal), fmt(G.blue3Liq)+' líquido Blue3', fmt(G.xpTotal)+' coberto XP'),
       kpiCard('CRM · Pipeline','purple', crmTotal, 'candidatos em funil', (crmEtapas['Negociação']||0)+' em negociação'),
       kpiCard('Propostas','',  propTotal, 'versões registradas', (propStatus['Em negociação']||0)+' em andamento'),
-      kpiCard('M&A Pipeline','red', maTotal, 'operações ativas', 'AuC: R$'+maAuC.toFixed(1)+'B'),
+      kpiCard('M&A Pipeline','red', maAtivos.length, 'operações ativas', 'AuC: R$'+maAuC.toFixed(1)+'B'),
+    '</div>',
+
+    // ── KPIs linha 2: métricas financeiras ──
+    '<div class="kpi-grid" style="margin-top:12px;">',
+      kpiCard('Custo por MM Captado','cobalt', custoMM > 0 ? 'R$'+custoMM.toLocaleString('pt-BR') : '—', 'por R$1M de captação', capTotal > 0 ? capTotal+' MM acordados' : '—'),
+      kpiCard('Sênior','green', seniors, pct(seniors,totalSen)+' do total', plenos+' Plenos · '+juniors+' Júnior'),
+      kpiCard('Próximos Inícios','gold', proximos.length, 'assessores em 30 dias', proximos.length > 0 ? proximos[0].n.split(' ')[0]+' e outros' : 'nenhum previsto'),
+      kpiCard('MOU Pendente','red', mouPend, 'aguardando assinatura', mouOk+' assinados ('+pct(mouOk,AT)+')'),
     '</div>',
 
     // ── Linha 1: Funil + Hunters ──
     '<div class="row2">',
 
-      // Funil de conversão
+      // Funil de conversão — só assessores
       '<div class="card">',
         '<div class="card-title">Funil de Conversão · Assessores</div>',
         '<div class="funil">',
           funilStage('Contratados', AT, AT, '#1A3BAD'),
           funilStage('MOU', mouOk, AT, '#2952E3'),
-          funilStage('Ancord', ancord, AT, '#0EA5E9'),
           funilStage('Trabalhando', trab, AT, '#16A34A'),
         '</div>',
         '<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">',
           '<div style="flex:1;background:#FFF7ED;border:1px solid #FED7AA;border-radius:6px;padding:8px 12px;text-align:center;">',
-            '<div style="font-size:18px;font-weight:700;color:#C2410C;">'+(G.mouPend||0)+'</div>',
+            '<div style="font-size:18px;font-weight:700;color:#C2410C;">'+mouPend+'</div>',
             '<div style="font-size:9px;text-transform:uppercase;color:#92400E;letter-spacing:.06em;margin-top:2px;">MOU Pendente</div>',
           '</div>',
           '<div style="flex:1;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:8px 12px;text-align:center;">',
-            '<div style="font-size:18px;font-weight:700;color:#1A3BAD;">'+pct(ancord,AT)+'</div>',
-            '<div style="font-size:9px;text-transform:uppercase;color:#1E3A5F;letter-spacing:.06em;margin-top:2px;">Taxa Formalização</div>',
+            '<div style="font-size:18px;font-weight:700;color:#1A3BAD;">'+pct(mouOk,AT)+'</div>',
+            '<div style="font-size:9px;text-transform:uppercase;color:#1E3A5F;letter-spacing:.06em;margin-top:2px;">Taxa MOU</div>',
           '</div>',
           '<div style="flex:1;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:8px 12px;text-align:center;">',
             '<div style="font-size:18px;font-weight:700;color:#16A34A;">'+pct(trab,AT)+'</div>',
@@ -188,13 +224,31 @@ function renderDash(G, H, crm, propostas, ma) {
         renderPropStatus(propStatus, propTotal),
       '</div>',
 
-      // Pace
+      // Pace — só assessores
       '<div class="card">',
         '<div class="card-title">Pace · Meta 40 no Semestre</div>',
         renderPace(AT),
       '</div>',
 
     '</div>',
+
+    // ── Linha 3: Próximos inícios ──
+    proximos.length > 0 ? [
+      '<div class="card" style="margin-top:12px;">',
+        '<div class="card-title">Próximos Inícios — 30 dias</div>',
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:4px;">',
+          proximos.map(function(r){
+            var d = new Date(r.inicio);
+            var ds = d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0');
+            return '<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 14px;">'
+              +'<div style="font-size:12px;font-weight:700;color:#166534;">'+r.n.split(' ').slice(0,2).join(' ')+'</div>'
+              +'<div style="font-size:10px;color:#4B5563;margin-top:2px;">'+r.p+'</div>'
+              +'<div style="font-size:11px;font-weight:600;color:#16A34A;margin-top:4px;">Início: '+ds+'</div>'
+              +'</div>';
+          }).join(''),
+        '</div>',
+      '</div>',
+    ].join('') : '',
 
   ].join('');
 }
@@ -269,12 +323,16 @@ function renderPropStatus(status, total) {
 }
 
 function renderPace(AT) {
-  var META = 40, DEC = 4, MESES = 6;
-  var proj = Math.round(AT/DEC*MESES);
+  var META = 40, MESES = 6;
+  var DEC = new Date().getMonth() + 1;
+  if (DEC < 1) DEC = 1; if (DEC > MESES) DEC = MESES;
+  var proj = Math.round(AT / Math.max(1,DEC) * MESES);
   var pct_pace = Math.min(100, Math.round(AT/META*100));
   var ok = proj >= META;
   var esp = Math.round(DEC/MESES*META);
   var saldo = AT - esp;
+  var mLabels = ['Jan','Fev','Mar','Abr','Mai','Jun'];
+  var mesLabel = mLabels[DEC-1] || 'Mai';
   return '<div>'
     +'<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">'
     +'<span style="color:var(--t2);">Contratados: <strong>'+AT+'</strong></span>'
@@ -310,16 +368,16 @@ function showEmpty() {
 
 // ── Init ──
 (function(){
+  try { localStorage.removeItem('B3D'); localStorage.removeItem('B3D_RAW'); } catch(e){}
   if (typeof Blue3_init === 'function') {
     Blue3_init(function(ok){
       if (ok && window.Blue3Data) {
         var G = window.Blue3Data.resumoGeral || {};
         var H = window.Blue3Data.hunters || [];
-        // Carregar CRM e Propostas do Supabase em paralelo
         Promise.all([
           supa('crm_candidatos?select=etapa&limit=500').catch(function(){ return []; }),
           supa('propostas?select=status&limit=500').catch(function(){ return []; }),
-          supa('ma_pipeline?select=auc_b,declinado&limit=200').catch(function(){ return []; })
+          supa('ma_pipeline?select=id,nome,praca,auc_b,status&limit=200').catch(function(){ return []; })
         ]).then(function(results){
           renderDash(G, H, results[0], results[1], results[2]);
         });
@@ -328,21 +386,11 @@ function showEmpty() {
       }
     });
   } else {
-    var raw = localStorage.getItem('B3D');
-    if (!raw) { showEmpty(); return; }
-    if (Blue3_runPipeline && Blue3_runPipeline()) {
-      var G = window.Blue3Data.resumoGeral || {};
-      var H = window.Blue3Data.hunters || [];
-      Promise.all([
-        supa('crm_candidatos?select=etapa&limit=500').catch(function(){ return []; }),
-        supa('propostas?select=status&limit=500').catch(function(){ return []; }),
-        supa('ma_pipeline?select=auc_b,declinado&limit=200').catch(function(){ return []; })
-      ]).then(function(results){
-        renderDash(G, H, results[0], results[1], results[2]);
-      });
-    } else { showEmpty(); }
+    showEmpty();
   }
 })();
+
+window.b3OnCSVLoaded = function(){ /* ignorado — usando Supabase */ };
 </script>
 </body>
 </html>
