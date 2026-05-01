@@ -388,8 +388,7 @@ function salvarMA() {
   var status = document.getElementById('ma-status').value;
   var auc    = parseFloat(document.getElementById('ma-auc').value)||0;
   if (!nome) { alert('Informe o nome da operação.'); return; }
-  var payload = { nome: nome, praca: praca||null, status: status, auc_b: auc,
-                  declinado: status === 'Declinou' };
+  var payload = { nome: nome, praca: praca||null, status: status, auc_b: auc };
   var method = id ? 'PATCH' : 'POST';
   var path   = id ? 'ma_pipeline?id=eq.'+id : 'ma_pipeline';
   supaMA(path, { method: method, body: JSON.stringify(payload) })
@@ -407,7 +406,7 @@ function editarMA(id) {
 
 function declinarMA(id) {
   if (!confirm('Declinar esta operação? Ela será movida para a seção de declinados.')) return;
-  supaMA('ma_pipeline?id=eq.'+id, { method:'PATCH', body: JSON.stringify({ status:'Declinado', declinado: true }) })
+  supaMA('ma_pipeline?id=eq.'+id, { method:'PATCH', body: JSON.stringify({ status:'Declinou' }) })
     .then(function(r){ if (!r.ok) throw new Error(r.status); recarregarMA(); })
     .catch(function(e){ alert('Erro ao declinar: '+e); });
 }
@@ -424,15 +423,16 @@ function excluirMA(id) {
 }
 
 function recarregarMA() {
-  // Buscar dados frescos e re-renderizar
   supaMA('ma_pipeline?order=id.asc')
     .then(function(r){ return r.json(); })
     .then(function(rows){
       if (!rows) return;
-      window.Blue3Data.ma          = rows.filter(function(r){ return !r.declinado; })
-        .map(function(r){ return { id:r.id, n:r.nome||'', p:r.praca||'—', s:r.status||'Prospecção', a:parseFloat(r.auc_b)||0, dec:false }; });
-      window.Blue3Data.maDeclinados = rows.filter(function(r){ return r.declinado; })
-        .map(function(r){ return { id:r.id, n:r.nome||'', p:r.praca||'—', s:r.status||'', a:parseFloat(r.auc_b)||0, dec:true }; });
+      window.Blue3Data.ma = rows
+        .filter(function(r){ return r.status !== 'Declinou'; })
+        .map(function(r){ return {id:r.id, n:r.nome||'', p:r.praca||'—', s:r.status||'Prospecção', a:parseFloat(r.auc_b)||0, dec:false}; });
+      window.Blue3Data.maDeclinados = rows
+        .filter(function(r){ return r.status === 'Declinou'; })
+        .map(function(r){ return {id:r.id, n:r.nome||'', p:r.praca||'—', s:r.status||'', a:parseFloat(r.auc_b)||0, dec:true}; });
       renderPage();
     })
     .catch(function(e){ console.error('Erro ao recarregar MA:', e); });
