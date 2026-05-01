@@ -644,7 +644,13 @@ var _B3_SESSION_RAW = sessionStorage.getItem('b3s');
 function supaUsers(path, opts) {
   var url = typeof SUPA_URL !== 'undefined' ? SUPA_URL : '';
   var key = typeof SUPA_KEY !== 'undefined' ? SUPA_KEY : '';
-  var h = { 'apikey': key, 'Authorization': 'Bearer '+key, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+  var h = {
+    'apikey': key,
+    'Authorization': 'Bearer '+key,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    'Accept': 'application/json'
+  };
   return fetch(url+'/rest/v1/'+path, Object.assign({ headers: h }, opts||{}));
 }
 
