@@ -274,7 +274,10 @@ function renderCRM(cands) {
 
         cands.forEach(function(c){
           var hist = c.historico_etapas;
-          if (!hist || !hist.length || hist.length < 2) return;
+          if (!hist) return;
+          // Supabase pode retornar como string ou array
+          if (typeof hist === 'string') { try { hist = JSON.parse(hist); } catch(e){ return; } }
+          if (!Array.isArray(hist) || hist.length < 2) return;
           // Ordenar por timestamp
           var sorted = hist.slice().sort(function(a,b){ return new Date(a.timestamp)-new Date(b.timestamp); });
           for (var i=0; i<sorted.length-1; i++){
@@ -324,7 +327,9 @@ function renderCRM(cands) {
         var tempos = [];
         cands.filter(function(c){ return c.etapa==='Trabalhando'||c.etapa==='Contratação'; }).forEach(function(c){
           var hist = c.historico_etapas;
-          if (!hist||!hist.length) return;
+          if (!hist) return;
+          if (typeof hist === 'string') { try { hist = JSON.parse(hist); } catch(e){ return; } }
+          if (!Array.isArray(hist)||!hist.length) return;
           var sorted = hist.slice().sort(function(a,b){ return new Date(a.timestamp)-new Date(b.timestamp); });
           var inicio = new Date(sorted[0].timestamp);
           var dias = Math.round((Date.now()-inicio.getTime())/(1000*60*60*24));
