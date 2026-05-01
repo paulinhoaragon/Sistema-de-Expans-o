@@ -406,12 +406,13 @@ function blue3SavePipelines(contratados, negociacao, ma){
   })
   .catch(function(e){console.error('[Blue3] M&A save erro:',e);});
 }
+var __B3_LOCKED__ = false;
 function Blue3_runPipeline(rows){
-  if (window.__B3_PIPELINE_LOCK__) {
-    console.warn('Pipeline já executado, abortando nova execução');
+  if (__B3_LOCKED__) {
+    console.warn('[PIPELINE] Bloqueado — já executou uma vez.');
     return false;
   }
-  window.__B3_PIPELINE_LOCK__ = true;
+  __B3_LOCKED__ = true;
   window.Blue3Ready = false;
 
   // Preservar dados do Supabase antes de recriar Blue3Data
