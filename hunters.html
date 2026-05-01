@@ -79,6 +79,7 @@ tbody td:first-child{text-align:left;font-weight:600;color:var(--t1)}
 .bd{width:5px;height:5px;border-radius:50%;background:currentColor}
 </style>
 <script src="config.js"></script>
+<script src="pipeline.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -860,15 +861,29 @@ function uploadCSV(input){
 }
 
 document.addEventListener('DOMContentLoaded',function(){
-  diag('Iniciando hunters...');
-  var raw=localStorage.getItem('B3D');
-  if(!raw){showEmptyState();diag('CSV nao encontrado - faca upload acima');return;}
-  var ok=Blue3_runPipeline();
-  if(ok){renderPage();}
-  else{showEmptyState('Pipeline falhou. Faca o upload do CSV novamente.');}
+  diag('Iniciando hunters — buscando do Supabase...');
+  // Limpar cache antigo
+  try { localStorage.removeItem('B3D'); localStorage.removeItem('B3D_RAW'); } catch(e){}
+  // Usar Blue3_init do pipeline.js externo se disponível
+  if (typeof Blue3_init === 'function') {
+    Blue3_init(function(ok) {
+      if (ok) renderPage();
+      else showEmptyState('Não foi possível carregar os dados do Supabase.');
+    });
+  } else {
+    // Fallback: pipeline interno com localStorage
+    var raw = localStorage.getItem('B3D');
+    if (!raw) { showEmptyState(); diag('CSV não encontrado'); return; }
+    var ok = Blue3_runPipeline();
+    if (ok) renderPage();
+    else showEmptyState('Pipeline falhou.');
+  }
 });
 
-window.b3OnCSVLoaded=function(){if(Blue3_runPipeline())renderPage();};
+window.b3OnCSVLoaded = function() {
+  // Ignorado — usando Supabase
+  console.log('[Hunters] b3OnCSVLoaded ignorado — usando Supabase.');
+};
 </script>
 <script>
 
