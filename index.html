@@ -634,62 +634,45 @@ body{
 
 // ── Estado global ──
 var B3CU = null;
-
-// ── Sessão persistente — tratada pelo shell abaixo ──
-// (desativada aqui para evitar execução antes do override de b3Start)
 var _B3_SESSION_RAW = sessionStorage.getItem('b3s');
 
-// ── Usuários ──
-function getB3Users() {
-  var s = localStorage.getItem('b3users');
-  if (s) return JSON.parse(s);
-  return [
-    {id:'u1', n:'Master Admin', l:'master',  p:'blue3@2026',  r:'master',  mc:false},
-    {id:'u2', n:'Bianca',       l:'bianca',  p:'bianca123',   r:'viewer',  mc:true},
-    {id:'u3', n:'Eduarda',      l:'eduarda', p:'eduarda123',  r:'viewer',  mc:true},
-    {id:'u4', n:'Paulo',        l:'paulo',   p:'paulo123',    r:'gerente', mc:true}
-  ];
+// ── Helpers Supabase ──
+function supaUsers(path, opts) {
+  var url = typeof SUPA_URL !== 'undefined' ? SUPA_URL : '';
+  var key = typeof SUPA_KEY !== 'undefined' ? SUPA_KEY : '';
+  var h = { 'apikey': key, 'Authorization': 'Bearer '+key, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+  return fetch(url+'/rest/v1/'+path, Object.assign({ headers: h }, opts||{}));
 }
 
-// ── Login ──
+// ── Login — autentica direto no Supabase ──
 function b3Login() {
-  var l = document.getElementById('b3u').value.trim();
+  var l = document.getElementById('b3u').value.trim().toLowerCase();
   var p = document.getElementById('b3p').value;
   var errEl = document.getElementById('b3err');
   errEl.classList.remove('show');
-  if (typeof blue3Login === 'function') {
-    blue3Login(l + (l.indexOf('@') < 0 ? '@blue3.com.br' : ''), p, function(ok, u) {
-      if (!ok) {
-        var local = getB3Users().find(function(x){ return x.l===l && x.p===p; });
-        if (!local) { errEl.classList.add('show'); return; }
-        B3CU = local;
-      } else {
-        B3CU = {id:u.id||'', n:u.nome||l, l:l, p:p, r:u.perfil||'viewer', mc:(u.perfil==='hunter')};
-      }
+  if (!l || !p) { errEl.classList.add('show'); return; }
+
+  // Aceita email completo ou só o nome (adiciona @blue3.com.br)
+  var email = l.indexOf('@') > -1 ? l : l+'@blue3.com.br';
+
+  supaUsers('usuarios?email=eq.'+encodeURIComponent(email)+'&ativo=eq.true')
+    .then(function(r){ return r.json(); })
+    .then(function(rows) {
+      var u = rows && rows[0];
+      if (!u || u.senha !== p) { errEl.classList.add('show'); return; }
+      B3CU = { id: u.id, n: u.nome, l: email, r: u.perfil, mc: false };
+      sessionStorage.setItem('b3s', JSON.stringify(B3CU));
       document.getElementById('b3lo').style.display = 'none';
-      if (B3CU.mc) { document.getElementById('b3-pw-modal').style.display = 'flex'; return; }
       b3Start();
-    });
-  } else {
-    var u = getB3Users().find(function(x){ return x.l===l && x.p===p; });
-    if (!u) { errEl.classList.add('show'); return; }
-    B3CU = u;
-    document.getElementById('b3lo').style.display = 'none';
-    if (u.mc) { document.getElementById('b3-pw-modal').style.display = 'flex'; return; }
-    b3Start();
-  }
+    })
+    .catch(function(){ errEl.classList.add('show'); });
 }
 
 function b3Start() {
   sessionStorage.setItem('b3s', JSON.stringify(B3CU));
-
   var r = B3CU.r;
-
-  // ── Ativar shell SaaS ──
   document.getElementById('nexus-shell').classList.add('active');
   document.getElementById('b3lo').style.display = 'none';
-
-  // User info na sidebar
   var name = B3CU.n || B3CU.l || '?';
   var av = document.getElementById('sb-avatar');
   var un = document.getElementById('sb-user-name');
@@ -697,30 +680,18 @@ function b3Start() {
   if (av) av.textContent = name.charAt(0).toUpperCase();
   if (un) un.textContent = name;
   if (ur) {
-    var rm = {master:'Master',gerente:'Gerente',paulo:'Gerente',viewer:'Viewer',hunter:'Hunter'};
+    var rm = { master:'Master', gerente:'Gerente', hunter:'Hunter', viewer:'Viewer' };
     ur.textContent = rm[r] || r;
   }
-
-  // Controle de acesso na sidebar
   var isMaster  = r === 'master';
-  var isGerente = r === 'master' || r === 'gerente' || r === 'paulo';
-  var isCf      = r === 'master' || r === 'gerente' || r === 'paulo' || r === 'viewer';
-
-  document.querySelectorAll('.b3-sb-ma').forEach(function(el){
-    el.style.display = isGerente ? '' : 'none';
-  });
-  document.querySelectorAll('.b3-sb-cf').forEach(function(el){
-    el.style.display = isCf ? '' : 'none';
-  });
-  document.querySelectorAll('.b3-sb-admin').forEach(function(el){
-    el.style.display = isMaster ? '' : 'none';
-  });
-  document.querySelectorAll('.b3-sb-upload').forEach(function(el){
-    el.style.display = isMaster ? '' : 'none';
-  });
+  var isGerente = r === 'master' || r === 'gerente';
+  var isCf      = r !== 'hunter';
+  document.querySelectorAll('.b3-sb-ma').forEach(function(el){ el.style.display = isGerente ? '' : 'none'; });
+  document.querySelectorAll('.b3-sb-cf').forEach(function(el){ el.style.display = isCf ? '' : 'none'; });
+  document.querySelectorAll('.b3-sb-admin').forEach(function(el){ el.style.display = isMaster ? '' : 'none'; });
+  document.querySelectorAll('.b3-sb-upload').forEach(function(el){ el.style.display = isMaster ? '' : 'none'; });
   var maSection = document.getElementById('sb-ma-section');
   if (maSection) maSection.style.display = isGerente ? '' : 'none';
-
   updateCSVStatus();
 }
 
@@ -734,7 +705,6 @@ function b3Logout(e) {
   document.getElementById('b3p').value = '';
 }
 
-// ── Teclas de atalho login ──
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('b3p').addEventListener('keydown', function(e){ if(e.key==='Enter') b3Login(); });
   document.getElementById('b3u').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('b3p').focus(); });
@@ -764,22 +734,15 @@ function saveNewPw() {
   var msg = document.getElementById('pw-msg');
   if (!checkPwModal(np)) {
     msg.style.cssText = 'display:block;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:12px;background:#FEE2E2;color:#B91C1C';
-    msg.textContent = 'Senha não atende à política.';
-    return;
+    msg.textContent = 'Senha não atende à política.'; return;
   }
   if (np !== cp) {
     msg.style.cssText = 'display:block;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:12px;background:#FEE2E2;color:#B91C1C';
-    msg.textContent = 'Senhas não coincidem.';
-    return;
+    msg.textContent = 'Senhas não coincidem.'; return;
   }
-  var users = getB3Users();
-  var idx = users.findIndex(function(u){ return u.l === B3CU.l; });
-  if (idx > -1) { users[idx].p = np; users[idx].mc = false; }
-  localStorage.setItem('b3users', JSON.stringify(users));
-  B3CU.p = np; B3CU.mc = false;
-  sessionStorage.setItem('b3s', JSON.stringify(B3CU));
-  document.getElementById('b3-pw-modal').style.display = 'none';
-  b3Start();
+  supaUsers('usuarios?id=eq.'+B3CU.id, { method:'PATCH', body: JSON.stringify({ senha: np }) })
+    .then(function(){ B3CU.mc=false; sessionStorage.setItem('b3s', JSON.stringify(B3CU)); document.getElementById('b3-pw-modal').style.display='none'; b3Start(); })
+    .catch(function(){ msg.textContent='Erro ao salvar senha.'; });
 }
 
 // ── Upload CSV ──
@@ -1031,39 +994,59 @@ function b3AdminRender() {
   document.getElementById('admin-tbody').innerHTML = html;
 }
 
+function b3AdminRender() {
+  supaUsers('usuarios?order=id.asc')
+    .then(function(r){ return r.json(); })
+    .then(function(users){
+      var tb = document.getElementById('admin-tbody');
+      if (!tb) return;
+      var rm = { master:'Master', gerente:'Gerente', hunter:'Hunter', viewer:'Viewer' };
+      tb.innerHTML = users.map(function(u){
+        return '<tr>'
+          +'<td>'+u.nome+'</td>'
+          +'<td style="color:var(--t3)">'+u.email+'</td>'
+          +'<td><span style="background:#EEF2FD;color:#1A3BAD;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">'+(rm[u.perfil]||u.perfil)+'</span></td>'
+          +'<td style="display:flex;gap:6px;">'
+            +'<button class="admin-action" onclick="b3ResetPw(\''+u.id+'\')">Reset senha</button>'
+            +(u.id !== B3CU.id ? '<button class="admin-action danger" onclick="b3DeleteUser(\''+u.id+'\')">Remover</button>' : '')
+          +'</td>'
+          +'</tr>';
+      }).join('');
+    });
+}
+
 function b3AddUser() {
   var n = document.getElementById('add-name').value.trim();
   var l = document.getElementById('add-login').value.trim().toLowerCase().replace(/\s/g,'');
   var p = document.getElementById('add-pw').value;
   var r = document.getElementById('add-role').value;
   if (!n || !l || !p) { alert('Preencha todos os campos.'); return; }
-  var users = getB3Users();
-  if (users.find(function(u){ return u.l === l; })) { alert('Login já existe.'); return; }
-  var newId = 'u' + Date.now();
-  users.push({ id: newId, n: n, l: l, p: p, r: r, mc: false });
-  localStorage.setItem('b3users', JSON.stringify(users));
-  document.getElementById('add-name').value = '';
-  document.getElementById('add-login').value = '';
-  document.getElementById('add-pw').value = '';
-  b3AdminRender();
-  alert('Usuário "' + n + '" adicionado com sucesso.');
+  var email = l.indexOf('@') > -1 ? l : l+'@blue3.com.br';
+  supaUsers('usuarios', { method:'POST', body: JSON.stringify({ nome:n, email:email, senha:p, perfil:r, ativo:true }) })
+    .then(function(res){ if(!res.ok) throw new Error(res.status); return res.json(); })
+    .then(function(){
+      document.getElementById('add-name').value='';
+      document.getElementById('add-login').value='';
+      document.getElementById('add-pw').value='';
+      b3AdminRender();
+      alert('Usuário "'+n+'" adicionado.');
+    })
+    .catch(function(e){ alert('Erro ao adicionar: '+e); });
 }
 
 function b3DeleteUser(id) {
   if (!confirm('Remover este usuário?')) return;
-  var users = getB3Users().filter(function(u){ return u.id !== id; });
-  localStorage.setItem('b3users', JSON.stringify(users));
-  b3AdminRender();
+  supaUsers('usuarios?id=eq.'+id, { method:'PATCH', body: JSON.stringify({ ativo: false }) })
+    .then(function(){ b3AdminRender(); })
+    .catch(function(e){ alert('Erro: '+e); });
 }
 
 function b3ResetPw(id) {
   var np = prompt('Nova senha para o usuário:');
   if (!np) return;
-  var users = getB3Users();
-  var idx = users.findIndex(function(u){ return u.id === id; });
-  if (idx > -1) { users[idx].p = np; users[idx].mc = true; }
-  localStorage.setItem('b3users', JSON.stringify(users));
-  alert('Senha redefinida. O usuário deverá alterar no próximo login.');
+  supaUsers('usuarios?id=eq.'+id, { method:'PATCH', body: JSON.stringify({ senha: np }) })
+    .then(function(){ alert('Senha redefinida.'); })
+    .catch(function(e){ alert('Erro: '+e); });
 }
 
 // ── Overlay legacy (compatibilidade) ──
