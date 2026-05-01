@@ -52,7 +52,28 @@ tfoot td:last-child{text-align:right}
 .t-prop{background:#FEF3C7;color:#92400E}
 .t-pros{background:#F1F5F9;color:#475569}
 .t-doc{background:#FDF2F8;color:#86198F}
+.t-dec{background:#FEE2E2;color:#991B1B}
 .confid{display:inline-flex;align-items:center;gap:6px;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;margin-bottom:16px}
+/* Botão nova operação */
+.btn-nova-ma{display:inline-flex;align-items:center;gap:7px;background:var(--cobalt);color:#fff;border:none;border-radius:var(--r8);padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-nova-ma:hover{background:#2952E3}
+/* Botões de ação na tabela */
+.btn-act{border:none;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-edit{background:#EEF2FD;color:#1A3BAD}.btn-edit:hover{background:#1A3BAD;color:#fff}
+.btn-dec{background:#FEF3C7;color:#92400E}.btn-dec:hover{background:#B45309;color:#fff}
+.btn-del{background:#FEE2E2;color:#991B1B}.btn-del:hover{background:#991B1B;color:#fff}
+/* Modal overlay */
+.ma-overlay{display:none;position:fixed;inset:0;background:rgba(10,15,30,.6);z-index:1000;align-items:center;justify-content:center;padding:16px}
+.ma-overlay.open{display:flex}
+.ma-modal{background:#fff;border-radius:var(--r16);padding:28px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.ma-modal h3{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:20px}
+.ma-frow{margin-bottom:14px}
+.ma-frow label{display:block;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.ma-frow input,.ma-frow select{width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r8);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--t1);outline:none}
+.ma-frow input:focus,.ma-frow select:focus{border-color:var(--cobalt)}
+.ma-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--rule)}
+.btn-cancel{background:#f1f5f9;color:#64748b;border:none;border-radius:var(--r8);padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-save-ma{background:var(--cobalt);color:#fff;border:none;border-radius:var(--r8);padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
 </style>
 </head>
 <body>
@@ -86,13 +107,42 @@ tfoot td:last-child{text-align:right}
     </div>
   </div>
 
-  <div class="sh"><div class="sn">01</div><div class="st">Operações do Pipeline</div><div class="ss" id="ma-count">—</div></div>
+  <div class="sh"><div class="sn">01</div><div class="st">Operações do Pipeline</div><div class="ss" id="ma-count">—</div>
+    <button class="btn-nova-ma" onclick="abrirModalMA()" style="margin-left:12px;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nova operação
+    </button>
+  </div>
   <div class="tbl-wrap">
     <table>
-      <thead><tr><th>Operação</th><th>Praça</th><th>Status</th><th>AuC Potencial</th></tr></thead>
+      <thead><tr><th>Operação</th><th>Praça</th><th>Status</th><th>AuC Potencial</th><th style="text-align:center">Ações</th></tr></thead>
       <tbody id="ma-tbody"></tbody>
-      <tfoot><tr><td colspan="3">Total Pipeline</td><td id="ma-tfoot-total">—</td></tr></tfoot>
+      <tfoot><tr><td colspan="4">Total Pipeline</td><td id="ma-tfoot-total" style="text-align:right">—</td></tr></tfoot>
     </table>
+  </div>
+
+  <!-- Modal Nova/Editar Operação -->
+  <div class="ma-overlay" id="ma-overlay">
+    <div class="ma-modal">
+      <h3 id="ma-modal-title">Nova Operação M&A</h3>
+      <input type="hidden" id="ma-edit-id">
+      <div class="ma-frow"><label>Nome da Operação *</label><input id="ma-nome" type="text" placeholder="ex: Grupo XYZ"></div>
+      <div class="ma-frow"><label>Praça</label><input id="ma-praca" type="text" placeholder="ex: São Paulo"></div>
+      <div class="ma-frow"><label>Status</label>
+        <select id="ma-status">
+          <option>Prospecção</option>
+          <option>Proposta Apresentada</option>
+          <option>NDA</option>
+          <option>Documentação Valuation</option>
+          <option>Deal</option>
+        </select>
+      </div>
+      <div class="ma-frow"><label>AuC Potencial (R$ Bilhões)</label><input id="ma-auc" type="number" step="0.1" placeholder="ex: 1.5"></div>
+      <div class="ma-btns">
+        <button class="btn-cancel" onclick="fecharModalMA()">Cancelar</button>
+        <button class="btn-save-ma" onclick="salvarMA()"><span id="ma-btn-txt">Salvar operação</span></button>
+      </div>
+    </div>
   </div>
 
   <!-- Seção declinados -->
@@ -169,18 +219,27 @@ function renderPage() {
            + (byStatus['Proposta Apresentada']||0)
            + (byStatus['Documentação Valuation']||0);
   set('ma-pros',  fmtB(pros));
-  set('ma-count', maOps.length + ' operações · 28 assessores');
+  set('ma-count', maOps.length + ' operações');
 
   // Tabela ativa
   var tbEl = document.getElementById('ma-tbody');
   if (tbEl) {
     tbEl.innerHTML = maOps.map(function(o) {
       var tagCls = stT[o.s] || 't-pros';
-      var praca = o.p === 'nan' ? '—' : o.p;
-      return '<tr><td>'+o.n+'</td><td style="color:var(--t3)">'+praca+'</td>'
+      var praca = o.p === 'nan' ? '—' : (o.p||'—');
+      var id = o.id || '';
+      return '<tr>'
+        +'<td>'+o.n+'</td>'
+        +'<td style="color:var(--t3)">'+praca+'</td>'
         +'<td><span class="tag '+tagCls+'">'+o.s+'</span></td>'
-        +'<td>'+fmtB(o.a)+'</td></tr>';
-    }).join('') || '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--t3);font-size:12px;">Nenhuma operação ativa no pipeline</td></tr>';
+        +'<td style="text-align:right;font-weight:700">'+fmtB(o.a)+'</td>'
+        +'<td style="text-align:center;white-space:nowrap">'
+        +'<button class="btn-act btn-edit" onclick="editarMA(\''+id+'\')">Editar</button> '
+        +'<button class="btn-act btn-dec" onclick="declinarMA(\''+id+'\')">Declinar</button> '
+        +'<button class="btn-act btn-del" onclick="excluirMA(\''+id+'\')">Excluir</button>'
+        +'</td>'
+        +'</tr>';
+    }).join('') || '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--t3);font-size:12px;">Nenhuma operação ativa no pipeline</td></tr>';
   }
   set('ma-tfoot-total', fmtB(total));
 
@@ -295,24 +354,106 @@ function showEmptyState(msg) {
     +'</div>';
 }
 
+// ── CRUD M&A ─────────────────────────────────────────────────────
+var SUPA_URL_MA = (typeof SUPA_URL !== 'undefined') ? SUPA_URL : '';
+var SUPA_KEY_MA = (typeof SUPA_KEY !== 'undefined') ? SUPA_KEY : '';
+
+function supaMA(path, opts) {
+  var h = { 'apikey': SUPA_KEY_MA, 'Authorization': 'Bearer '+SUPA_KEY_MA,
+            'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+  return fetch(SUPA_URL_MA+'/rest/v1/'+path, Object.assign({ headers: h }, opts||{}));
+}
+
+function abrirModalMA(op) {
+  document.getElementById('ma-edit-id').value = op ? (op.id||'') : '';
+  document.getElementById('ma-nome').value    = op ? (op.n||'') : '';
+  document.getElementById('ma-praca').value   = op ? (op.p === 'nan' ? '' : (op.p||'')) : '';
+  document.getElementById('ma-status').value  = op ? (op.s||'Prospecção') : 'Prospecção';
+  document.getElementById('ma-auc').value     = op ? (op.a||'') : '';
+  document.getElementById('ma-modal-title').textContent = op ? 'Editar Operação' : 'Nova Operação M&A';
+  document.getElementById('ma-btn-txt').textContent = op ? 'Salvar alterações' : 'Salvar operação';
+  document.getElementById('ma-overlay').classList.add('open');
+}
+
+function fecharModalMA() {
+  document.getElementById('ma-overlay').classList.remove('open');
+}
+
+function salvarMA() {
+  var id     = document.getElementById('ma-edit-id').value;
+  var nome   = document.getElementById('ma-nome').value.trim();
+  var praca  = document.getElementById('ma-praca').value.trim();
+  var status = document.getElementById('ma-status').value;
+  var auc    = parseFloat(document.getElementById('ma-auc').value)||0;
+  if (!nome) { alert('Informe o nome da operação.'); return; }
+  var payload = { nome: nome, praca: praca||null, status: status, auc_b: auc };
+  var method = id ? 'PATCH' : 'POST';
+  var path   = id ? 'ma_pipeline?id=eq.'+id : 'ma_pipeline';
+  supaMA(path, { method: method, body: JSON.stringify(payload) })
+    .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function() { fecharModalMA(); recarregarMA(); })
+    .catch(function(e){ alert('Erro ao salvar: '+e); });
+}
+
+function editarMA(id) {
+  var D = window.Blue3Data;
+  var op = (D && D.ma) ? D.ma.find(function(o){ return String(o.id)===String(id); }) : null;
+  if (!op) { alert('Operação não encontrada.'); return; }
+  abrirModalMA(op);
+}
+
+function declinarMA(id) {
+  if (!confirm('Declinar esta operação? Ela será movida para a seção de declinados.')) return;
+  supaMA('ma_pipeline?id=eq.'+id, { method:'PATCH', body: JSON.stringify({ status:'Declinado', declinado: true }) })
+    .then(function(r){ if (!r.ok) throw new Error(r.status); recarregarMA(); })
+    .catch(function(e){ alert('Erro ao declinar: '+e); });
+}
+
+function excluirMA(id) {
+  if (!confirm('Excluir esta operação? A ação não pode ser desfeita.')) return;
+  fetch(SUPA_URL_MA+'/rest/v1/ma_pipeline?id=eq.'+id, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPA_KEY_MA, 'Authorization': 'Bearer '+SUPA_KEY_MA }
+  })
+  .then(function(r){ if (r.status===204||r.ok) recarregarMA(); else throw new Error(r.status); })
+  .catch(function(e){ alert('Erro ao excluir: '+e); });
+}
+
+function recarregarMA() {
+  // Buscar dados frescos e re-renderizar
+  supaMA('ma_pipeline?order=id.asc')
+    .then(function(r){ return r.json(); })
+    .then(function(rows){
+      if (!rows) return;
+      window.Blue3Data.ma          = rows.filter(function(r){ return !r.declinado; })
+        .map(function(r){ return { id:r.id, n:r.nome||'', p:r.praca||'—', s:r.status||'Prospecção', a:parseFloat(r.auc_b)||0, dec:false }; });
+      window.Blue3Data.maDeclinados = rows.filter(function(r){ return r.declinado; })
+        .map(function(r){ return { id:r.id, n:r.nome||'', p:r.praca||'—', s:r.status||'', a:parseFloat(r.auc_b)||0, dec:true }; });
+      renderPage();
+    })
+    .catch(function(e){ console.error('Erro ao recarregar MA:', e); });
+}
+
+// Fechar modal com ESC
+document.addEventListener('keydown', function(e){
+  if (e.key==='Escape') fecharModalMA();
+});
+
 // ── Inicialização ──
 (function() {
+  try { localStorage.removeItem('B3D'); localStorage.removeItem('B3D_RAW'); } catch(e){}
   if (typeof Blue3_init === 'function') {
     Blue3_init(function(ok) {
       if (ok) renderPage();
       else showEmptyState();
     });
   } else {
-    var raw = localStorage.getItem('B3D');
-    if (!raw) { showEmptyState(); return; }
-    if (Blue3_runPipeline()) renderPage();
+    showEmptyState();
   }
 })();
 
-window.b3OnCSVLoaded = function(rows) {
-  if (typeof Blue3_runPipeline === 'function') {
-    if (Blue3_runPipeline(rows)) renderPage();
-  }
+window.b3OnCSVLoaded = function() {
+  // Ignorado — usando Supabase
 };
 </script>
 </body>
