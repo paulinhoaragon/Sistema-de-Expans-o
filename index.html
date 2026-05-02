@@ -680,10 +680,17 @@ function b3Login() {
   var email = l.indexOf('@') > -1 ? l : l+'@blue3.com.br';
 
   function doLogin(u) {
-    B3CU = {id: u.id, n: u.nome||u.n, l: u.email||u.l, r: u.perfil||u.r, mc: false};
+    var mustChange = u.must_change_pw === true || u.must_change_pw === 'true';
+    B3CU = {id: u.id, n: u.nome||u.n, l: u.email||u.l, r: u.perfil||u.r, mc: mustChange};
     sessionStorage.setItem('b3s', JSON.stringify(B3CU));
     document.getElementById('b3lo').style.display = 'none';
-    b3Start();
+    if (mustChange) {
+      // Forçar troca de senha antes de entrar
+      var modal = document.getElementById('b3-pw-modal');
+      modal.style.display = 'flex';
+    } else {
+      b3Start();
+    }
   }
 
   supaUsers('usuarios?email=eq.'+encodeURIComponent(email))
@@ -770,7 +777,7 @@ function saveNewPw() {
     msg.style.cssText = 'display:block;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:12px;background:#FEE2E2;color:#B91C1C';
     msg.textContent = 'Senhas não coincidem.'; return;
   }
-  supaUsers('usuarios?id=eq.'+B3CU.id, { method:'PATCH', body: JSON.stringify({ senha: np }) })
+  supaUsers('usuarios?id=eq.'+B3CU.id, { method:'PATCH', body: JSON.stringify({ senha: np, must_change_pw: false }) })
     .then(function(){ B3CU.mc=false; sessionStorage.setItem('b3s', JSON.stringify(B3CU)); document.getElementById('b3-pw-modal').style.display='none'; b3Start(); })
     .catch(function(){ msg.textContent='Erro ao salvar senha.'; });
 }
@@ -1044,7 +1051,7 @@ function b3AddUser() {
   var r = document.getElementById('add-role').value;
   if (!n || !l || !p) { alert('Preencha todos os campos.'); return; }
   var email = l.indexOf('@') > -1 ? l : l+'@blue3.com.br';
-  supaUsers('usuarios', { method:'POST', body: JSON.stringify({ nome:n, email:email, senha:p, perfil:r, ativo:true }) })
+  supaUsers('usuarios', { method:'POST', body: JSON.stringify({ nome:n, email:email, senha:p, perfil:r, ativo:true, must_change_pw:true }) })
     .then(function(res){ if(!res.ok) throw new Error(res.status); return res.json(); })
     .then(function(){
       document.getElementById('add-name').value='';
@@ -1066,8 +1073,9 @@ function b3DeleteUser(id) {
 function b3ResetPw(id) {
   var np = prompt('Nova senha para o usuário:');
   if (!np) return;
-  supaUsers('usuarios?id=eq.'+id, { method:'PATCH', body: JSON.stringify({ senha: np }) })
-    .then(function(){ alert('Senha redefinida.'); })
+  // must_change_pw: true força o usuário a redefinir na próxima entrada
+  supaUsers('usuarios?id=eq.'+id, { method:'PATCH', body: JSON.stringify({ senha: np, must_change_pw: true }) })
+    .then(function(){ alert('Senha redefinida. O usuário será obrigado a trocar na próxima entrada.'); })
     .catch(function(e){ alert('Erro: '+e); });
 }
 
