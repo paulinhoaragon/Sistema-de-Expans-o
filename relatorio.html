@@ -125,6 +125,18 @@ function diasAtras(d){
   return Math.floor(diff/(1000*60*60*24));
 }
 
+// Garante que historico_etapas seja sempre um array,
+// independente de vir como string JSON ou já como array do Supabase
+function parseHist(h){
+  if (!h) return [];
+  if (Array.isArray(h)) return h;
+  if (typeof h === 'string') {
+    try { var p = JSON.parse(h); return Array.isArray(p) ? p : []; }
+    catch(e) { return []; }
+  }
+  return [];
+}
+
 // Ordem das etapas do funil
 var ETAPAS = ['Prospecção','Qualificação','Negociação','Contratação','Trabalhando','Declinou','Contato Futuro'];
 var ETAPA_COLORS = {
@@ -273,7 +285,7 @@ function renderCRM(cands) {
         ETAPAS.forEach(function(e){ tempoEtapa[e]=0; contagemEtapa[e]=0; });
 
         cands.forEach(function(c){
-          var hist = c.historico_etapas;
+          var hist = parseHist(c.historico_etapas);
           if (!hist || !hist.length || hist.length < 2) return;
           // Ordenar por timestamp
           var sorted = hist.slice().sort(function(a,b){ return new Date(a.timestamp)-new Date(b.timestamp); });
@@ -323,7 +335,7 @@ function renderCRM(cands) {
       (function(){
         var tempos = [];
         cands.filter(function(c){ return c.etapa==='Trabalhando'||c.etapa==='Contratação'; }).forEach(function(c){
-          var hist = c.historico_etapas;
+          var hist = parseHist(c.historico_etapas);
           if (!hist||!hist.length) return;
           var sorted = hist.slice().sort(function(a,b){ return new Date(a.timestamp)-new Date(b.timestamp); });
           var inicio = new Date(sorted[0].timestamp);
