@@ -622,13 +622,15 @@ function carregarUsuarios() {
       var perfilCor = { master:'#1A3BAD', gerente:'#7C3AED', hunter:'#B45309', viewer:'#475569' };
       tb.innerHTML = users.map(function(u){
         var ativo = u.ativo !== false;
+        var rm = { master:'Master', gerente:'Gerente', hunter:'Hunter', viewer:'Viewer' };
+        var perfilCor = { master:'#1A3BAD', gerente:'#7C3AED', hunter:'#B45309', viewer:'#475569' };
         return '<tr style="border-bottom:1px solid var(--rule);">'
           +'<td style="padding:10px;font-weight:600;">'+u.nome+'</td>'
           +'<td style="padding:10px;color:var(--t3);font-size:11px;">'+u.email+'</td>'
           +'<td style="padding:10px;"><span style="background:'+(perfilCor[u.perfil]||'#475569')+'22;color:'+(perfilCor[u.perfil]||'#475569')+';padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">'+(rm[u.perfil]||u.perfil)+'</span></td>'
           +'<td style="padding:10px;"><span style="font-size:10px;font-weight:700;color:'+(ativo?'#16A34A':'#DC2626')+'">'+(ativo?'● Ativo':'● Inativo')+'</span></td>'
           +'<td style="padding:10px;display:flex;gap:6px;">'
-            +'<button onclick="editarUsuario('+JSON.stringify(u)+')" style="background:#EEF2FD;color:#1A3BAD;border:none;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;">Editar</button>'
+            +'<button onclick="editarUsuarioById(\''+u.id+'\',\''+encodeURIComponent(u.nome)+'\',\''+encodeURIComponent(u.email)+'\',\''+u.perfil+'\')" style="background:#EEF2FD;color:#1A3BAD;border:none;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;">Editar</button>'
             +(ativo
               ? '<button onclick="toggleUsuario(\''+u.id+'\',false)" style="background:#FEE2E2;color:#991B1B;border:none;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;">Desativar</button>'
               : '<button onclick="toggleUsuario(\''+u.id+'\',true)" style="background:#DCFCE7;color:#15803D;border:none;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;">Reativar</button>'
@@ -665,14 +667,17 @@ function salvarUsuario() {
     .catch(function(e){ toast('Erro ao salvar: '+e, 'erro'); });
 }
 
-function editarUsuario(u) {
-  document.getElementById('usr-edit-id').value  = u.id;
-  document.getElementById('usr-nome').value     = u.nome;
-  document.getElementById('usr-email').value    = u.email;
+function editarUsuarioById(id, nomeEnc, emailEnc, perfil) {
+  document.getElementById('usr-edit-id').value  = id;
+  document.getElementById('usr-nome').value     = decodeURIComponent(nomeEnc);
+  document.getElementById('usr-email').value    = decodeURIComponent(emailEnc);
   document.getElementById('usr-senha').value    = '';
-  document.getElementById('usr-perfil').value   = u.perfil;
+  document.getElementById('usr-perfil').value   = perfil;
   document.getElementById('btn-usr-txt').textContent = 'Salvar alterações';
-  window.scrollTo(0,0);
+  window.scrollTo(0, 0);
+  // Highlight formulário
+  var card = document.querySelector('#tab-wl .card');
+  if (card) { card.style.border = '2px solid var(--cobalt)'; setTimeout(function(){ card.style.border=''; }, 2000); }
 }
 
 function limparFormUsuario() {
