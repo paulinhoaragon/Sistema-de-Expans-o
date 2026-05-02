@@ -660,37 +660,17 @@ function b3Login() {
 
   var email = l.indexOf('@') > -1 ? l : l+'@blue3.com.br';
 
-  // Fallback local — garante acesso mesmo se Supabase falhar
-  var LOCAL_USERS = [
-    {id:1, nome:'Master', email:'master@blue3.com.br', senha:'blue3@2026', perfil:'master'},
-    {id:2, nome:'Paulo',  email:'paulo@blue3.com.br',  senha:'blue3@2026', perfil:'gerente'},
-    {id:3, nome:'Eduarda',email:'eduarda@blue3.com.br',senha:'blue3@2026', perfil:'hunter'},
-    {id:4, nome:'Bianca', email:'bianca@blue3.com.br', senha:'blue3@2026', perfil:'hunter'}
-  ];
-
-  function doLogin(u) {
-    if (!u) { errEl.classList.add('show'); return; }
-    B3CU = {id: u.id, n: u.nome, l: u.email, r: u.perfil, mc: false};
-    sessionStorage.setItem('b3s', JSON.stringify(B3CU));
-    document.getElementById('b3lo').style.display = 'none';
-    b3Start();
-  }
-
-  // Tentar Supabase primeiro
-  supaUsers('usuarios?email=eq.'+encodeURIComponent(email))
+  supaUsers('usuarios?email=eq.'+encodeURIComponent(email)+'&ativo=eq.true')
     .then(function(r){ return r.json(); })
     .then(function(rows){
       var u = rows && rows[0];
-      if (u && u.senha === p) { doLogin(u); return; }
-      // Tentar fallback local
-      var local = LOCAL_USERS.find(function(x){ return x.email===email && x.senha===p; });
-      doLogin(local || null);
+      if (!u || u.senha !== p) { errEl.classList.add('show'); return; }
+      B3CU = {id: u.id, n: u.nome, l: u.email, r: u.perfil, mc: false};
+      sessionStorage.setItem('b3s', JSON.stringify(B3CU));
+      document.getElementById('b3lo').style.display = 'none';
+      b3Start();
     })
-    .catch(function(){
-      // Supabase falhou — usar apenas local
-      var local = LOCAL_USERS.find(function(x){ return x.email===email && x.senha===p; });
-      doLogin(local || null);
-    });
+    .catch(function(){ errEl.classList.add('show'); });
 }
 
 function b3Start() {
