@@ -636,10 +636,26 @@ body{
 var B3CU = null;
 var _B3_SESSION_RAW = sessionStorage.getItem('b3s');
 
+// ── Supabase Config ──
+var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+
+// ── supaFetch: helper genérico para qualquer tabela ──
+function supaFetch(path, opts) {
+  var h = {
+    'apikey': SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY,
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  };
+  if (opts && opts.prefer) h['Prefer'] = opts.prefer;
+  return fetch(SUPA_URL + '/rest/v1/' + path, Object.assign({ headers: h }, opts || {}));
+}
+
 // ── Helpers Supabase ──
 function supaUsers(path, opts) {
-  var url = typeof SUPA_URL !== 'undefined' ? SUPA_URL : '';
-  var key = typeof SUPA_KEY !== 'undefined' ? SUPA_KEY : '';
+  var url = SUPA_URL;
+  var key = SUPA_KEY;
   var h = {
     'apikey': key,
     'Authorization': 'Bearer '+key,
