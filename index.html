@@ -665,7 +665,7 @@ function b3Login() {
   // Aceita email completo ou só o nome (adiciona @blue3.com.br)
   var email = l.indexOf('@') > -1 ? l : l+'@blue3.com.br';
 
-  supaUsers('usuarios?email=eq.'+encodeURIComponent(email)+'&ativo=eq.true')
+  supaUsers('usuarios?email=eq.'+encodeURIComponent(email))
     .then(function(r){ return r.json(); })
     .then(function(rows) {
       var u = rows && rows[0];
