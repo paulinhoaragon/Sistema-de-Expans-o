@@ -128,7 +128,7 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
 <div class="main-tabs">
   <button class="main-tab active" onclick="showTab('tab-hunters',this)">Hunters</button>
   <button class="main-tab" onclick="showTab('tab-params',this)">Parâmetros</button>
-  <button class="main-tab" onclick="showTab('tab-wl',this)">Usuários</button>
+  <button class="main-tab" onclick="showTab('tab-wl',this);carregarUsuarios()">Usuários</button>
 </div>
 
 <!-- Toast de feedback -->
@@ -601,8 +601,8 @@ carregarWL();
 
 // ── Gestão de Usuários ─────────────────────────────────────────
 function supaUsrCfg(path, opts) {
-  var url = typeof SUPA_URL !== 'undefined' ? SUPA_URL : (typeof NexusConfig !== 'undefined' ? NexusConfig.getSupaURL() : '');
-  var key = typeof SUPA_KEY !== 'undefined' ? SUPA_KEY : (typeof NexusConfig !== 'undefined' ? NexusConfig.getSupaKEY() : '');
+  var url = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+  var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
   var h = { 'apikey': key, 'Authorization': 'Bearer '+key, 'Content-Type': 'application/json', 'Prefer': 'return=representation', 'Accept': 'application/json' };
   return fetch(url+'/rest/v1/'+path, Object.assign({ headers: h }, opts||{}));
 }
@@ -692,11 +692,8 @@ function toggleUsuario(id, ativo) {
     .catch(function(e){ toast('Erro: '+e, 'erro'); });
 }
 
-// Carregar usuários ao clicar na aba
-var tabWlBtn = document.querySelector('[onclick*="tab-wl"]');
-if (tabWlBtn) {
-  tabWlBtn.addEventListener('click', carregarUsuarios);
-}
+// Carregar usuários automaticamente se já estiver na aba
+if (window.location.hash === '#usuarios') carregarUsuarios();
 </script>
 </body>
 </html>
