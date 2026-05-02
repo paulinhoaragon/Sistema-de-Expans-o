@@ -660,17 +660,23 @@ function b3Login() {
 
   var email = l.indexOf('@') > -1 ? l : l+'@blue3.com.br';
 
-  supaUsers('usuarios?email=eq.'+encodeURIComponent(email)+'&ativo=eq.true')
+  function doLogin(u) {
+    B3CU = {id: u.id, n: u.nome||u.n, l: u.email||u.l, r: u.perfil||u.r, mc: false};
+    sessionStorage.setItem('b3s', JSON.stringify(B3CU));
+    document.getElementById('b3lo').style.display = 'none';
+    b3Start();
+  }
+
+  supaUsers('usuarios?email=eq.'+encodeURIComponent(email))
     .then(function(r){ return r.json(); })
     .then(function(rows){
       var u = rows && rows[0];
-      if (!u || u.senha !== p) { errEl.classList.add('show'); return; }
-      B3CU = {id: u.id, n: u.nome, l: u.email, r: u.perfil, mc: false};
-      sessionStorage.setItem('b3s', JSON.stringify(B3CU));
-      document.getElementById('b3lo').style.display = 'none';
-      b3Start();
+      if (u && u.senha === p) { doLogin(u); return; }
+      errEl.classList.add('show');
     })
-    .catch(function(){ errEl.classList.add('show'); });
+    .catch(function(){
+      errEl.classList.add('show');
+    });
 }
 
 function b3Start() {
