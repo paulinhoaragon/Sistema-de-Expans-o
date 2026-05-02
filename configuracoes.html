@@ -128,7 +128,7 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
 <div class="main-tabs">
   <button class="main-tab active" onclick="showTab('tab-hunters',this)">Hunters</button>
   <button class="main-tab" onclick="showTab('tab-params',this)">Parâmetros</button>
-  <button class="main-tab" onclick="showTab('tab-wl',this)">White Label</button>
+  <button class="main-tab" onclick="showTab('tab-wl',this)">Usuários</button>
 </div>
 
 <!-- Toast de feedback -->
@@ -266,70 +266,57 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
 ══════════════════════════════════════════════════ -->
 <div class="tab-content page" id="tab-wl">
 
-  <div class="card">
-    <div class="card-title">Identidade Visual · White Label</div>
-    <div class="card-sub">Customize o sistema com a identidade da sua empresa. As alterações são aplicadas em tempo real.</div>
-
+  <!-- Formulário adicionar/editar -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title">Adicionar / Editar Usuário</div>
+    <div class="card-sub">Gerencie os acessos ao sistema Blue3 Expansão.</div>
+    <input type="hidden" id="usr-edit-id">
     <div class="fgrid">
       <div class="f-row">
-        <label>Nome da Empresa</label>
-        <input id="wl-nome" placeholder="Nexus" oninput="previewWL()">
+        <label>Nome completo *</label>
+        <input id="usr-nome" placeholder="Nome completo">
       </div>
       <div class="f-row">
-        <label>URL da Logo</label>
-        <input id="wl-logo" placeholder="https://sua-empresa.com/logo.png" oninput="previewWL()">
-        <span class="f-hint">URL pública da imagem (PNG ou SVG recomendado)</span>
+        <label>E-mail (login) *</label>
+        <input id="usr-email" type="email" placeholder="usuario@blue3.com.br">
+      </div>
+      <div class="f-row">
+        <label>Senha *</label>
+        <input id="usr-senha" type="password" placeholder="Mín. 8 caracteres">
+      </div>
+      <div class="f-row">
+        <label>Perfil de acesso *</label>
+        <select id="usr-perfil">
+          <option value="viewer">Viewer — Relatórios e Simulador</option>
+          <option value="hunter">Hunter — Acesso ao próprio funil</option>
+          <option value="gerente">Gerente — Tudo exceto Admin</option>
+          <option value="master">Master — Acesso total</option>
+        </select>
       </div>
     </div>
-
-    <div style="margin-top:12px;">
-      <div style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">Paleta de Cores</div>
-      <div class="fgrid3">
-        <div class="f-row">
-          <label>Cor Primária</label>
-          <div class="color-row">
-            <div class="color-preview" id="prev-cor1" onclick="document.getElementById('wl-cor1').click()" style="background:#1A3BAD;"></div>
-            <input type="color" id="wl-cor1" value="#1A3BAD" oninput="syncColor('wl-cor1','prev-cor1');previewWL()">
-            <input id="wl-cor1-hex" style="flex:1;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;" value="#1A3BAD" oninput="syncHex('wl-cor1-hex','wl-cor1','prev-cor1');previewWL()" placeholder="#1A3BAD">
-          </div>
-        </div>
-        <div class="f-row">
-          <label>Cor Secundária</label>
-          <div class="color-row">
-            <div class="color-preview" id="prev-cor2" onclick="document.getElementById('wl-cor2').click()" style="background:#4A70F5;"></div>
-            <input type="color" id="wl-cor2" value="#4A70F5" oninput="syncColor('wl-cor2','prev-cor2');previewWL()">
-            <input id="wl-cor2-hex" style="flex:1;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;" value="#4A70F5" oninput="syncHex('wl-cor2-hex','wl-cor2','prev-cor2');previewWL()" placeholder="#4A70F5">
-          </div>
-        </div>
-        <div class="f-row">
-          <label>Cor de Acento</label>
-          <div class="color-row">
-            <div class="color-preview" id="prev-cor3" onclick="document.getElementById('wl-cor3').click()" style="background:#B8962E;"></div>
-            <input type="color" id="wl-cor3" value="#B8962E" oninput="syncColor('wl-cor3','prev-cor3');previewWL()">
-            <input id="wl-cor3-hex" style="flex:1;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;" value="#B8962E" oninput="syncHex('wl-cor3-hex','wl-cor3','prev-cor3');previewWL()" placeholder="#B8962E">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Preview -->
-    <div class="wl-preview" id="wl-preview-box">
-      <div class="wl-prev-logo" id="wl-prev-logo-box">N</div>
-      <div>
-        <div class="wl-prev-name" id="wl-prev-nome">Nexus</div>
-        <div class="wl-prev-sub">Expansão Suite</div>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:6px;">
-        <div style="width:24px;height:24px;border-radius:4px;" id="wl-prev-c1"></div>
-        <div style="width:24px;height:24px;border-radius:4px;" id="wl-prev-c2"></div>
-        <div style="width:24px;height:24px;border-radius:4px;" id="wl-prev-c3"></div>
-      </div>
-    </div>
-
     <div class="btn-row">
-      <button class="btn-primary" onclick="salvarWL()"><span id="btn-wl-txt">Salvar identidade visual</span></button>
-      <button class="btn-secondary" onclick="resetarWL()">Restaurar padrão</button>
+      <button class="btn-primary" onclick="salvarUsuario()"><span id="btn-usr-txt">Salvar usuário</span></button>
+      <button class="btn-secondary" onclick="limparFormUsuario()">Limpar</button>
     </div>
+  </div>
+
+  <!-- Lista de usuários -->
+  <div class="card">
+    <div class="card-title">Usuários Cadastrados</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead>
+        <tr style="border-bottom:2px solid var(--rule);">
+          <th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Nome</th>
+          <th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">E-mail</th>
+          <th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Perfil</th>
+          <th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Status</th>
+          <th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="usr-tbody">
+        <tr><td colspan="5" style="padding:20px;text-align:center;color:var(--t3);">Carregando...</td></tr>
+      </tbody>
+    </table>
   </div>
 
 </div>
@@ -611,6 +598,105 @@ function atualizarInicialFoto() {
 carregarHunters();
 carregarParametros();
 carregarWL();
+
+// ── Gestão de Usuários ─────────────────────────────────────────
+function supaUsrCfg(path, opts) {
+  var url = typeof SUPA_URL !== 'undefined' ? SUPA_URL : (typeof NexusConfig !== 'undefined' ? NexusConfig.getSupaURL() : '');
+  var key = typeof SUPA_KEY !== 'undefined' ? SUPA_KEY : (typeof NexusConfig !== 'undefined' ? NexusConfig.getSupaKEY() : '');
+  var h = { 'apikey': key, 'Authorization': 'Bearer '+key, 'Content-Type': 'application/json', 'Prefer': 'return=representation', 'Accept': 'application/json' };
+  return fetch(url+'/rest/v1/'+path, Object.assign({ headers: h }, opts||{}));
+}
+
+function carregarUsuarios() {
+  var tb = document.getElementById('usr-tbody');
+  if (!tb) return;
+  tb.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--t3);">Carregando...</td></tr>';
+  supaUsrCfg('usuarios?order=id.asc&select=id,nome,email,perfil,ativo')
+    .then(function(r){ return r.json(); })
+    .then(function(users){
+      if (!users || !users.length) {
+        tb.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--t3);">Nenhum usuário cadastrado.</td></tr>';
+        return;
+      }
+      var rm = { master:'Master', gerente:'Gerente', hunter:'Hunter', viewer:'Viewer' };
+      var perfilCor = { master:'#1A3BAD', gerente:'#7C3AED', hunter:'#B45309', viewer:'#475569' };
+      tb.innerHTML = users.map(function(u){
+        var ativo = u.ativo !== false;
+        return '<tr style="border-bottom:1px solid var(--rule);">'
+          +'<td style="padding:10px;font-weight:600;">'+u.nome+'</td>'
+          +'<td style="padding:10px;color:var(--t3);font-size:11px;">'+u.email+'</td>'
+          +'<td style="padding:10px;"><span style="background:'+(perfilCor[u.perfil]||'#475569')+'22;color:'+(perfilCor[u.perfil]||'#475569')+';padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">'+(rm[u.perfil]||u.perfil)+'</span></td>'
+          +'<td style="padding:10px;"><span style="font-size:10px;font-weight:700;color:'+(ativo?'#16A34A':'#DC2626')+'">'+(ativo?'● Ativo':'● Inativo')+'</span></td>'
+          +'<td style="padding:10px;display:flex;gap:6px;">'
+            +'<button onclick="editarUsuario('+JSON.stringify(u)+')" style="background:#EEF2FD;color:#1A3BAD;border:none;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;">Editar</button>'
+            +(ativo
+              ? '<button onclick="toggleUsuario(\''+u.id+'\',false)" style="background:#FEE2E2;color:#991B1B;border:none;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;">Desativar</button>'
+              : '<button onclick="toggleUsuario(\''+u.id+'\',true)" style="background:#DCFCE7;color:#15803D;border:none;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;">Reativar</button>'
+            )
+          +'</td>'
+          +'</tr>';
+      }).join('');
+    })
+    .catch(function(e){
+      tb.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:#DC2626;">Erro: '+e+'</td></tr>';
+    });
+}
+
+function salvarUsuario() {
+  var id    = document.getElementById('usr-edit-id').value;
+  var nome  = document.getElementById('usr-nome').value.trim();
+  var email = document.getElementById('usr-email').value.trim().toLowerCase();
+  var senha = document.getElementById('usr-senha').value;
+  var perf  = document.getElementById('usr-perfil').value;
+  if (!nome || !email) { toast('Preencha nome e e-mail.', 'erro'); return; }
+  if (!id && !senha) { toast('Informe uma senha.', 'erro'); return; }
+  var payload = { nome: nome, email: email, perfil: perf };
+  if (senha) payload.senha = senha;
+  var method = id ? 'PATCH' : 'POST';
+  var path   = id ? 'usuarios?id=eq.'+id : 'usuarios';
+  if (!id) payload.ativo = true;
+  supaUsrCfg(path, { method: method, body: JSON.stringify(payload) })
+    .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function(){
+      toast(id ? 'Usuário atualizado.' : 'Usuário criado.', 'ok');
+      limparFormUsuario();
+      carregarUsuarios();
+    })
+    .catch(function(e){ toast('Erro ao salvar: '+e, 'erro'); });
+}
+
+function editarUsuario(u) {
+  document.getElementById('usr-edit-id').value  = u.id;
+  document.getElementById('usr-nome').value     = u.nome;
+  document.getElementById('usr-email').value    = u.email;
+  document.getElementById('usr-senha').value    = '';
+  document.getElementById('usr-perfil').value   = u.perfil;
+  document.getElementById('btn-usr-txt').textContent = 'Salvar alterações';
+  window.scrollTo(0,0);
+}
+
+function limparFormUsuario() {
+  document.getElementById('usr-edit-id').value = '';
+  document.getElementById('usr-nome').value    = '';
+  document.getElementById('usr-email').value   = '';
+  document.getElementById('usr-senha').value   = '';
+  document.getElementById('usr-perfil').value  = 'viewer';
+  document.getElementById('btn-usr-txt').textContent = 'Salvar usuário';
+}
+
+function toggleUsuario(id, ativo) {
+  var msg = ativo ? 'Reativar este usuário?' : 'Desativar este usuário?';
+  if (!confirm(msg)) return;
+  supaUsrCfg('usuarios?id=eq.'+id, { method:'PATCH', body: JSON.stringify({ ativo: ativo }) })
+    .then(function(){ carregarUsuarios(); })
+    .catch(function(e){ toast('Erro: '+e, 'erro'); });
+}
+
+// Carregar usuários ao clicar na aba
+var tabWlBtn = document.querySelector('[onclick*="tab-wl"]');
+if (tabWlBtn) {
+  tabWlBtn.addEventListener('click', carregarUsuarios);
+}
 </script>
 </body>
 </html>
