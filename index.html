@@ -656,14 +656,17 @@ function supaFetch(path, opts) {
 function supaUsers(path, opts) {
   var url = SUPA_URL;
   var key = SUPA_KEY;
+  var method = (opts && opts.method) ? opts.method.toUpperCase() : 'GET';
   var h = {
     'apikey': key,
-    'Authorization': 'Bearer '+key,
+    'Authorization': 'Bearer ' + key,
     'Content-Type': 'application/json',
-    'Prefer': 'return=representation',
-    'Accept': 'application/json'
+    'Accept': 'application/json',
+    'Prefer': (method === 'GET' || method === 'POST') ? 'return=representation' : 'return=minimal'
   };
-  return fetch(url+'/rest/v1/'+path, Object.assign({ headers: h }, opts||{}));
+  var fetchOpts = { method: method, headers: h };
+  if (opts && opts.body) fetchOpts.body = opts.body;
+  return fetch(url + '/rest/v1/' + path, fetchOpts);
 }
 
 // ── Login ──
