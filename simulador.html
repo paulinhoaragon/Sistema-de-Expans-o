@@ -887,10 +887,11 @@ function salvarNoHistorico() {
   var hunter= (document.getElementById('f-hunter')   ||{}).value||'';
   var crmId = (document.getElementById('f-crm-id')   ||{}).value||'';
 
+  var _pb = parseInt(document.getElementById('k-pb').textContent); d.payback_meses = isNaN(_pb) ? null : _pb;
   sessionStorage.setItem('b3_proposta_atual', JSON.stringify(d));
 
   // Pacote completo para propostas.html
-  var pacote = { crm_id: crmId, telefone: tel, hunter: hunter, nome: d.nome, praca: d.praca, dados: d };
+  var pacote = { crm_id: crmId, telefone: tel, hunter: hunter, nome: d.nome, praca: d.praca, dados: d, payback_meses: d.payback_meses };
   sessionStorage.setItem('b3_pacote_salvar', JSON.stringify(pacote));
 
   // Sync CRM: se veio pelo botão do CRM (crm_id preenchido), atualiza proposta no card
