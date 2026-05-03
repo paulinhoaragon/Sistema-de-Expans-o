@@ -631,6 +631,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 </div>
 
 
+<!-- CUSTO DE EXPANSÃO -->
+<div style="margin:28px 0 0;">
+  <div class="sh"><span class="sn">08</span><span class="st">Custo de Expansão — Propostas Orçadas</span><span class="ss">Payback médio, proposta média e moda · dados do simulador</span></div>
+  <div class="g4" style="margin-bottom:16px;">
+    <div class="kc"><div class="ktr" style="background:#00915A;"></div><div class="kl">Payback Médio Orçado</div><div class="kv" id="exp-pb-med">—</div><div class="ks">meses para break-even</div></div>
+    <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Piso Médio</div><div class="kv" id="exp-piso-med">—</div><div class="ks">R$/mês</div></div>
+    <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">Piso Moda</div><div class="kv" id="exp-piso-moda">—</div><div class="ks">valor mais frequente</div></div>
+    <div class="kc"><div class="ktr" style="background:var(--purple);"></div><div class="kl">Propostas com Payback</div><div class="kv" id="exp-count">—</div><div class="ks">propostas analisadas</div></div>
+  </div>
+</div>
+
+
 <hr class="rule">
 </div>
 
@@ -2371,6 +2383,41 @@ if (_regEstrat) _regEstrat.addEventListener('change',function(){
   var f = document.getElementById('reg-estrat-fields');
   if (f) f.style.display = this.checked ? 'block' : 'none';
 });
+
+// ── Custo de Expansão: busca propostas no Supabase ──────────────
+(function(){
+  var URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+  var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+  fetch(URL+'/rest/v1/propostas?select=dados,payback_meses,status&status=neq.Declinada&status=neq.Expirada&limit=500', {
+    headers: { 'apikey': KEY, 'Authorization': 'Bearer '+KEY, 'Accept': 'application/json' }
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(rows){
+    if (!rows || !rows.length) return;
+    var pisos = [], paybacks = [];
+    rows.forEach(function(r){
+      var piso = r.dados && r.dados.piso ? parseFloat(r.dados.piso) : 0;
+      if (piso > 0) pisos.push(piso);
+      if (r.payback_meses) paybacks.push(parseInt(r.payback_meses));
+    });
+    // Piso médio
+    var pisoMed = pisos.length ? Math.round(pisos.reduce(function(a,b){return a+b;},0)/pisos.length) : 0;
+    // Piso moda
+    var freq = {};
+    pisos.forEach(function(p){ freq[p]=(freq[p]||0)+1; });
+    var moda = pisos.length ? pisos.reduce(function(a,b){ return (freq[a]||0)>=(freq[b]||0)?a:b; }) : 0;
+    // Payback médio
+    var pbMed = paybacks.length ? Math.round(paybacks.reduce(function(a,b){return a+b;},0)/paybacks.length) : 0;
+
+    var fmt = function(v){ return v >= 1000 ? 'R$'+Math.round(v/1000)+'K' : 'R$'+v.toLocaleString('pt-BR'); };
+    var el = function(id){ return document.getElementById(id); };
+    if(el('exp-pb-med'))   el('exp-pb-med').textContent   = pbMed   ? pbMed+' m'   : '—';
+    if(el('exp-piso-med')) el('exp-piso-med').textContent = pisoMed  ? fmt(pisoMed) : '—';
+    if(el('exp-piso-moda'))el('exp-piso-moda').textContent= moda     ? fmt(moda)    : '—';
+    if(el('exp-count'))    el('exp-count').textContent    = paybacks.length ? paybacks.length+' / '+rows.length : rows.length;
+  })
+  .catch(function(e){ console.warn('Custo Expansão:', e); });
+})();
 </script>
 
 <!-- MODAL NOVA CONTRATAÇÃO -->
