@@ -1105,11 +1105,33 @@ function aplicarWhiteLabel() {
     var cor2    = wl.cor_secundaria || '#4A70F5';
     var cor3    = wl.cor_acento     || '#B8962E';
 
-    // Aplicar cores via CSS vars em todo o documento
+    // Aplicar cores via CSS vars no documento principal
     var r = document.documentElement;
     r.style.setProperty('--cobalt',    cor1);
     r.style.setProperty('--cobalt-br', cor2);
     r.style.setProperty('--gold',      cor3);
+
+    // Propagar cores para o iframe via postMessage
+    var iframe = document.getElementById('nexus-iframe');
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({
+        type: 'wl-cores',
+        cobalt:   cor1,
+        cobaltBr: cor2,
+        gold:     cor3,
+      }, '*');
+    }
+    // Reaplicar sempre que o iframe carregar nova página
+    if (iframe) {
+      iframe.onload = function() {
+        iframe.contentWindow.postMessage({
+          type: 'wl-cores',
+          cobalt:   cor1,
+          cobaltBr: cor2,
+          gold:     cor3,
+        }, '*');
+      };
+    }
 
     // Aplicar na tela de login
     var elNome     = document.getElementById('wl-login-nome');
