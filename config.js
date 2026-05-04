@@ -190,6 +190,15 @@ var NexusConfig = (function() {
     });
   }
 
+  // ── Listener: recebe cores do index.html via postMessage ─────────
+  window.addEventListener('message', function(e) {
+    if (!e.data || e.data.type !== 'wl-cores') return;
+    var r = document.documentElement;
+    if (e.data.cobalt)   r.style.setProperty('--cobalt',    e.data.cobalt);
+    if (e.data.cobaltBr) r.style.setProperty('--cobalt-br', e.data.cobaltBr);
+    if (e.data.gold)     r.style.setProperty('--gold',      e.data.gold);
+  });
+
   // Limpa o cache forçando nova leitura do banco na próxima chamada
   function clearCache() {
     _cache.parametros = null;
