@@ -363,9 +363,39 @@ function renderCheckpoints(checkpoints) {
   }
   wrap.innerHTML=checkpoints.map(function(cp,i){
     var v = parseFloat(cp.custodia) || 0;
-    return '<div class="f"><label>AuC mínimo — Checkpoint '+(i+1)+' · Mês '+cp.mes+' (MM)</label>'
-      +'<input class="fi" type="number" id="f-renov'+(i===0?'':'_'+i)+'" value="'+v+'" min="0" step="0.5"></div>';
+    var mesLabel = cp.mes ? ' · Mês '+cp.mes : '';
+    return '<div class="f"><label>AuC mínimo — Checkpoint '+(i+1)+mesLabel+' (MM)</label>'
+      +'<input class="fi" type="number" id="f-renov'+(i===0?'':'_'+i)+'" value="'+v+'" min="0" step="0.5" '
+      +'data-mes="'+(cp.mes||'')+'" oninput="calc()"></div>';
   }).join('');
+  // Guardar JSON completo para salvar depois
+  var hidEl = document.getElementById('f-renov-data');
+  if (!hidEl) {
+    hidEl = document.createElement('input');
+    hidEl.type = 'hidden'; hidEl.id = 'f-renov-data';
+    wrap.appendChild(hidEl);
+  }
+  hidEl.value = JSON.stringify(checkpoints);
+}
+
+// Coleta todos os checkpoints dinâmicos como array [{mes, custodia}]
+function getCheckpoints() {
+  var wrap = document.getElementById('renov-wrap');
+  if (!wrap) return [];
+  var inputs = wrap.querySelectorAll('input[type="number"]');
+  if (!inputs.length) return [];
+  // Se há só 1 campo sem data-mes, é o modo simples (f-renov)
+  if (inputs.length === 1 && !inputs[0].getAttribute('data-mes')) {
+    var v = parseFloat(inputs[0].value) || 0;
+    return v > 0 ? [{mes: 6, custodia: v}] : [];
+  }
+  var result = [];
+  inputs.forEach(function(el) {
+    var mes = parseInt(el.getAttribute('data-mes')) || 0;
+    var cust = parseFloat(el.value) || 0;
+    if (mes > 0) result.push({mes: mes, custodia: cust});
+  });
+  return result;
 }
 
 /* ── simulation ── */
@@ -854,15 +884,7 @@ document.addEventListener('DOMContentLoaded',function(){
       if (prop.telefone)           { var el=document.getElementById('f-tel');     if(el) el.value = prop.telefone; }
       if (prop.hunter)             { var el=document.getElementById('f-hunter');  if(el) el.value = prop.hunter; }
       if (prop.crm_id)             { var el=document.getElementById('f-crm-id');  if(el) el.value = prop.crm_id; }
-      // Checkpoints de renovação do CRM
-      if (prop.condicoes_renovacao) {
-        try {
-          var cps = typeof prop.condicoes_renovacao === 'string'
-            ? JSON.parse(prop.condicoes_renovacao)
-            : prop.condicoes_renovacao;
-          renderCheckpoints(cps);
-        } catch(e) {}
-      }
+      // Checkpoints: já tratados acima junto com dados salvos
       if (d.piso)      { var el=document.getElementById('f-piso'); if(el) el.value = d.piso; }
       if (d.pisoMeses) { var el=document.getElementById('f-dur');  if(el) el.value = d.pisoMeses; pisoHint(); }
       if (d.luva)      { var el=document.getElementById('f-luva'); if(el) el.value = d.luva; }
@@ -873,6 +895,11 @@ document.addEventListener('DOMContentLoaded',function(){
         var cb = document.getElementById('chk-'+id);
         if (cb) { cb.checked = !!d['chk'+id.charAt(0).toUpperCase()+id.slice(1)]; toggleChk(id); }
       });
+      // Restaurar checkpoints — prioriza dados salvos na proposta, senão usa condicoes_renovacao do CRM
+      var cpsData = d.checkpoints || (prop.condicoes_renovacao ? (function(){
+        try { return typeof prop.condicoes_renovacao==='string' ? JSON.parse(prop.condicoes_renovacao) : prop.condicoes_renovacao; } catch(e){ return null; }
+      })() : null);
+      if (cpsData && cpsData.length) renderCheckpoints(cpsData);
       // Limpar todos os gatilhos antes de aplicar os do CRM
       [3,6,12,18,24].forEach(function(m){
         var cb=document.getElementById('t'+m+'-on');
@@ -919,6 +946,7 @@ function salvarNoHistorico() {
     chkSeguros: !!(document.getElementById('chk-seguros')||{}).checked,
     chkCons:    !!(document.getElementById('chk-cons')   ||{}).checked,
     chkB3w:     !!(document.getElementById('chk-b3w')    ||{}).checked,
+    checkpoints: getCheckpoints(),
     tranches:  []
   };
   [3,6,12,18,24].forEach(function(m){
@@ -955,6 +983,7 @@ function salvarNoHistorico() {
       trigger2_meta: 0,     trigger2_val: 0,
       trigger3_meta: 0,     trigger3_val: 0,
       trigger4_meta: 0,     trigger4_val: 0,
+      condicoes_renovacao: d.checkpoints && d.checkpoints.length ? JSON.stringify(d.checkpoints) : null,
       atualizado_em: new Date().toISOString()
     };
     var mesParaGatilho = { 3:'trigger1_tri', 6:'trigger1', 12:'trigger2', 18:'trigger3', 24:'trigger4' };
