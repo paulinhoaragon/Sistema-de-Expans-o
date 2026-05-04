@@ -458,7 +458,7 @@ function buildTotals(){
   var el=document.getElementById('trig-list');
   if(!S.trigs.length){el.innerHTML='<span style="color:#ccc;font-size:10px">Nenhum gatilho ativo</span>';return;}
   var prev=0,html='';
-  for(var i=0;i<S.trigs.length;i++){var t=S.trigs[i];var delta=(t.auc-prev).toFixed(1);html+='<div class="tl-item"><span>M'+t.m+' → AuC '+t.auc+' MM <span style="color:#aaa">(+'+delta+' MM)</span></span><strong>'+fmt(t.pay)+'</strong></div>';prev=t.auc;}
+  for(var i=0;i<S.trigs.length;i++){var t=S.trigs[i];var acum=t.aucAcum||t.auc;var delta=(t.auc).toFixed(1);html+='<div class="tl-item"><span>M'+t.m+' → AuC '+acum.toFixed(1)+' MM <span style="color:#aaa">(+'+delta+' MM)</span></span><strong>'+fmt(t.pay)+'</strong></div>';prev=acum;}
   el.innerHTML=html;
 }
 
