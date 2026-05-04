@@ -190,6 +190,13 @@ var NexusConfig = (function() {
     });
   }
 
+  // Limpa o cache forçando nova leitura do banco na próxima chamada
+  function clearCache() {
+    _cache.parametros = null;
+    _cache.whiteLabel = null;
+    _cache.hunters    = null;
+  }
+
   // API pública
   return {
     init:                   init,
@@ -203,6 +210,7 @@ var NexusConfig = (function() {
     deleteHunter:           deleteHunter,
     registrarMudancaEtapa:  registrarMudancaEtapa,
     calcularTempoEtapas:    calcularTempoEtapas,
+    clearCache:             clearCache,
     TENANT:                 TENANT,
   };
 
