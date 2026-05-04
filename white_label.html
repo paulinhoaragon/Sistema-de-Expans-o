@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nexus · White Label</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0A0F1E;--cobalt:#1A3BAD;--cobalt-br:#2952E3;--cobalt-gl:#4A70F5;
+  --gold:#B8962E;--g:#16A34A;--am:#B45309;--red:#DC2626;
+  --canvas:#F0F2FA;--surface:#fff;--rule:#E2E5F0;
+  --t1:#0A0F1E;--t2:#3A4268;--t3:#7A82A8;--t4:#A8B0CC;
+  --r8:8px;--r12:12px;--sh:0 1px 4px rgba(10,15,30,.07),0 4px 16px rgba(10,15,30,.05);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:13px;}
+
+/* ── COVER ── */
+.cover{background:var(--ink);padding:24px 28px 20px;position:relative;overflow:hidden;}
+.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+.cover-rule{height:3px;background:linear-gradient(90deg,var(--cobalt),var(--cobalt-gl),transparent)}
+.cv-t{font-family:'Playfair Display',serif;font-size:20px;color:#fff;letter-spacing:-.02em;}
+.cv-s{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.14em;margin-top:3px;}
+
+/* ── LAYOUT ── */
+.page{max-width:900px;padding:24px;}
+
+/* ── CARD ── */
+.card{background:var(--surface);border-radius:var(--r12);padding:22px 24px;box-shadow:var(--sh);margin-bottom:16px;}
+.card-title{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:4px;}
+.card-sub{font-size:11px;color:var(--t3);margin-bottom:18px;}
+
+/* ── FORM ── */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.f-row{display:flex;flex-direction:column;gap:4px;margin-bottom:2px;}
+.f-row label{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;}
+.f-row input,.f-row select,.f-row textarea{
+  padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r8);
+  font-size:12px;font-family:'DM Sans',sans-serif;color:var(--t1);
+  background:#fafbfd;outline:none;transition:border .15s;width:100%;}
+.f-row input:focus,.f-row select:focus,.f-row textarea:focus{border-color:var(--cobalt);}
+.f-hint{font-size:10px;color:var(--t4);margin-top:3px;}
+
+/* ── BOTÕES ── */
+.btn-primary{background:var(--cobalt);color:#fff;border:none;border-radius:var(--r8);
+  padding:10px 22px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.btn-primary:hover{background:var(--cobalt-br);}
+.btn-secondary{background:var(--canvas);color:var(--t2);border:1px solid var(--rule);border-radius:var(--r8);
+  padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.btn-row{display:flex;gap:8px;margin-top:16px;align-items:center;}
+
+/* ── COLOR PICKER ── */
+.color-row{display:flex;align-items:center;gap:10px;}
+.color-preview{width:36px;height:36px;border-radius:6px;border:1px solid var(--rule);flex-shrink:0;cursor:pointer;}
+input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
+
+/* ── PREVIEW WHITE LABEL ── */
+.wl-preview{background:var(--ink);border-radius:var(--r8);padding:14px 18px;
+  display:flex;align-items:center;gap:12px;}
+.wl-prev-logo{width:36px;height:36px;background:var(--cobalt);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;
+  color:#fff;flex-shrink:0;overflow:hidden;}
+.wl-prev-logo img{width:100%;height:100%;object-fit:contain;border-radius:6px;}
+.wl-prev-name{font-size:13px;font-weight:700;color:#fff;}
+.wl-prev-sub{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;}
+
+/* ── UPLOAD LOGO ── */
+.logo-upload-wrap{display:flex;align-items:center;gap:14px;}
+.logo-preview-box{width:72px;height:72px;border-radius:var(--r8);border:1px solid var(--rule);
+  background:#fafbfd;display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:700;color:var(--cobalt);overflow:hidden;flex-shrink:0;}
+.logo-preview-box img{width:100%;height:100%;object-fit:contain;}
+.logo-upload-btn{background:var(--canvas);color:var(--cobalt);border:1px dashed var(--cobalt-gl);
+  border-radius:var(--r8);padding:9px 16px;font-size:11px;font-weight:600;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .15s;}
+.logo-upload-btn:hover{background:#EEF2FD;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:#1A3BAD;color:#fff;
+  padding:12px 20px;border-radius:var(--r8);font-size:12px;font-weight:600;
+  box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:999;opacity:0;
+  transform:translateY(10px);transition:all .25s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.ok{background:#16A34A;}
+.toast.err{background:var(--red);}
+
+/* ── INFO BOXES ── */
+.info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:8px;}
+.info-box{background:var(--canvas);border-radius:var(--r8);padding:12px;}
+.info-box-label{font-size:10px;font-weight:700;color:var(--cobalt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+.info-box-text{font-size:11px;color:var(--t2);}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cg"></div>
+  <div class="cv-t">White Label</div>
+  <div class="cv-s">Nexus · Blue3 Expansão Suite · Identidade Visual</div>
+</div>
+<div class="cover-rule"></div>
+
+<div class="toast" id="toast"></div>
+
+<div class="page">
+
+  <!-- Card principal -->
+  <div class="card">
+    <div class="card-title">Identidade Visual do Sistema</div>
+    <div class="card-sub">Personalize o sistema com a marca da sua empresa. As configurações são aplicadas na tela de login e em todo o sistema.</div>
+
+    <!-- Nome e Subtítulo -->
+    <div class="fgrid" style="margin-bottom:14px;">
+      <div class="f-row">
+        <label>Nome da Empresa</label>
+        <input id="wl-nome" type="text" placeholder="Ex: Nexus" value="Nexus" oninput="previewWL()">
+        <span class="f-hint">Exibido no cabeçalho e na tela de login</span>
+      </div>
+      <div class="f-row">
+        <label>Subtítulo / Suite</label>
+        <input id="wl-sub" type="text" placeholder="Ex: Blue3 Expansão Suite" value="Blue3 Expansão Suite" oninput="previewWL()">
+        <span class="f-hint">Exibido abaixo do nome na tela de login</span>
+      </div>
+    </div>
+
+    <!-- Upload de Logo -->
+    <div class="f-row" style="margin-bottom:14px;">
+      <label>Logo da Empresa</label>
+      <div class="logo-upload-wrap">
+        <div class="logo-preview-box" id="wl-logo-preview">N</div>
+        <div style="flex:1;">
+          <input type="file" id="wl-logo-file" accept="image/*" style="display:none" onchange="processarLogo(this)">
+          <button type="button" class="logo-upload-btn" onclick="document.getElementById('wl-logo-file').click()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;vertical-align:middle;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span id="wl-logo-label">Selecionar logo...</span>
+          </button>
+          <div id="wl-logo-hint" style="font-size:9px;color:var(--t4);margin-top:4px;">PNG, SVG ou JPG · máx 2MB · fundo transparente recomendado</div>
+          <button type="button" id="wl-logo-clear" onclick="limparLogo()" style="display:none;margin-top:6px;background:none;border:none;color:var(--t4);cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;">× Remover logo</button>
+        </div>
+      </div>
+      <input type="hidden" id="wl-logo-data">
+    </div>
+
+    <!-- Cores -->
+    <div class="fgrid3" style="margin-bottom:16px;">
+      <div class="f-row">
+        <label>Cor Primária</label>
+        <div class="color-row">
+          <div class="color-preview" id="prev-cor1" style="background:#1A3BAD;" onclick="document.getElementById('wl-cor1').click()"></div>
+          <input type="color" id="wl-cor1" value="#1A3BAD" oninput="syncColor('wl-cor1','prev-cor1');document.getElementById('wl-cor1-hex').value=this.value;previewWL()">
+          <input class="f-row" id="wl-cor1-hex" type="text" value="#1A3BAD" maxlength="7" oninput="syncHex('wl-cor1-hex','wl-cor1','prev-cor1');previewWL()" style="flex:1;padding:8px 10px;">
+        </div>
+        <span class="f-hint">Cor principal — sidebar, botões</span>
+      </div>
+      <div class="f-row">
+        <label>Cor Secundária</label>
+        <div class="color-row">
+          <div class="color-preview" id="prev-cor2" style="background:#4A70F5;" onclick="document.getElementById('wl-cor2').click()"></div>
+          <input type="color" id="wl-cor2" value="#4A70F5" oninput="syncColor('wl-cor2','prev-cor2');document.getElementById('wl-cor2-hex').value=this.value;previewWL()">
+          <input class="f-row" id="wl-cor2-hex" type="text" value="#4A70F5" maxlength="7" oninput="syncHex('wl-cor2-hex','wl-cor2','prev-cor2');previewWL()" style="flex:1;padding:8px 10px;">
+        </div>
+        <span class="f-hint">Hover e destaques</span>
+      </div>
+      <div class="f-row">
+        <label>Cor de Acento</label>
+        <div class="color-row">
+          <div class="color-preview" id="prev-cor3" style="background:#B8962E;" onclick="document.getElementById('wl-cor3').click()"></div>
+          <input type="color" id="wl-cor3" value="#B8962E" oninput="syncColor('wl-cor3','prev-cor3');document.getElementById('wl-cor3-hex').value=this.value;previewWL()">
+          <input class="f-row" id="wl-cor3-hex" type="text" value="#B8962E" maxlength="7" oninput="syncHex('wl-cor3-hex','wl-cor3','prev-cor3');previewWL()" style="flex:1;padding:8px 10px;">
+        </div>
+        <span class="f-hint">Elementos dourados e KPIs</span>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Preview do cabeçalho</div>
+      <div class="wl-preview">
+        <div class="wl-prev-logo" id="wl-prev-logo-box">N</div>
+        <div>
+          <div class="wl-prev-name" id="wl-prev-nome">Nexus</div>
+          <div class="wl-prev-sub" id="wl-prev-sub-preview">Blue3 Expansão Suite</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+          <div id="wl-prev-c1" style="width:16px;height:16px;border-radius:4px;background:#1A3BAD;"></div>
+          <div id="wl-prev-c2" style="width:16px;height:16px;border-radius:4px;background:#4A70F5;"></div>
+          <div id="wl-prev-c3" style="width:16px;height:16px;border-radius:4px;background:#B8962E;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" onclick="salvarWL()"><span id="btn-wl-txt">Salvar identidade visual</span></button>
+      <button class="btn-secondary" onclick="resetarWL()">Restaurar padrão</button>
+      <span id="wl-saved-at" style="font-size:10px;color:var(--t4);"></span>
+    </div>
+  </div>
+
+  <!-- Como é aplicado -->
+  <div class="card">
+    <div class="card-title">Como é aplicado</div>
+    <div class="info-grid">
+      <div class="info-box">
+        <div class="info-box-label">Tela de Login</div>
+        <div class="info-box-text">Nome, subtítulo, logo e cores aplicados automaticamente ao carregar o sistema.</div>
+      </div>
+      <div class="info-box">
+        <div class="info-box-label">Sistema Interno</div>
+        <div class="info-box-text">Cores da sidebar, botões e destaques refletem a paleta configurada.</div>
+      </div>
+      <div class="info-box">
+        <div class="info-box-label">Multi-tenant</div>
+        <div class="info-box-text">Cada cliente tem sua própria identidade visual — preparado para expansão SaaS.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Toast ─────────────────────────────────────────────────────────
+function toast(msg, tipo) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (tipo||'');
+  clearTimeout(t._t);
+  t._t = setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+// ── Upload de Logo ────────────────────────────────────────────────
+function processarLogo(input) {
+  var file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { toast('Imagem muito grande. Use até 2MB.','err'); return; }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var base64 = e.target.result;
+    document.getElementById('wl-logo-data').value = base64;
+    // Preview da logo no box
+    var prev = document.getElementById('wl-logo-preview');
+    prev.innerHTML = '<img src="'+base64+'" alt="logo">';
+    document.getElementById('wl-logo-label').textContent = file.name;
+    document.getElementById('wl-logo-hint').textContent = 'Logo carregada · ' + (file.size/1024).toFixed(0) + 'KB';
+    document.getElementById('wl-logo-clear').style.display = 'inline-block';
+    previewWL();
+  };
+  reader.readAsDataURL(file);
+}
+
+function limparLogo() {
+  document.getElementById('wl-logo-data').value = '';
+  document.getElementById('wl-logo-file').value = '';
+  document.getElementById('wl-logo-label').textContent = 'Selecionar logo...';
+  document.getElementById('wl-logo-hint').textContent = 'PNG, SVG ou JPG · máx 2MB · fundo transparente recomendado';
+  document.getElementById('wl-logo-clear').style.display = 'none';
+  var nome = document.getElementById('wl-nome').value || 'N';
+  document.getElementById('wl-logo-preview').innerHTML = nome.charAt(0).toUpperCase();
+  previewWL();
+}
+
+// ── Preview em tempo real ─────────────────────────────────────────
+function previewWL() {
+  var nome  = document.getElementById('wl-nome').value || 'Nexus';
+  var sub   = document.getElementById('wl-sub').value  || 'Blue3 Expansão Suite';
+  var c1    = document.getElementById('wl-cor1-hex').value || '#1A3BAD';
+  var c2    = document.getElementById('wl-cor2-hex').value || '#4A70F5';
+  var c3    = document.getElementById('wl-cor3-hex').value || '#B8962E';
+  var logo  = document.getElementById('wl-logo-data').value;
+
+  document.getElementById('wl-prev-nome').textContent = nome;
+  document.getElementById('wl-prev-sub-preview').textContent = sub;
+  document.getElementById('wl-prev-c1').style.background = c1;
+  document.getElementById('wl-prev-c2').style.background = c2;
+  document.getElementById('wl-prev-c3').style.background = c3;
+
+  var lb = document.getElementById('wl-prev-logo-box');
+  lb.style.background = c1;
+  if (logo) {
+    lb.innerHTML = '<img src="'+logo+'" style="width:36px;height:36px;object-fit:contain;" onerror="this.remove()">';
+  } else {
+    lb.textContent = nome.charAt(0).toUpperCase();
+  }
+
+  // Aplicar cores em tempo real na própria página
+  document.documentElement.style.setProperty('--cobalt', c1);
+  document.documentElement.style.setProperty('--cobalt-br', c2);
+  document.documentElement.style.setProperty('--gold', c3);
+}
+
+// ── Salvar ────────────────────────────────────────────────────────
+function salvarWL() {
+  var dados = {
+    nome_empresa:   (document.getElementById('wl-nome').value||'').trim() || 'Nexus',
+    subtitulo:      (document.getElementById('wl-sub').value||'').trim()  || 'Blue3 Expansão Suite',
+    logo_url:       document.getElementById('wl-logo-data').value || '',
+    cor_primaria:   document.getElementById('wl-cor1-hex').value || '#1A3BAD',
+    cor_secundaria: document.getElementById('wl-cor2-hex').value || '#4A70F5',
+    cor_acento:     document.getElementById('wl-cor3-hex').value || '#B8962E',
+  };
+  document.getElementById('btn-wl-txt').textContent = 'Salvando...';
+  NexusConfig.saveWhiteLabel(dados, function(err) {
+    document.getElementById('btn-wl-txt').textContent = 'Salvar identidade visual';
+    if (err) { toast('Erro ao salvar. Tente novamente.','err'); return; }
+    NexusConfig.applyWhiteLabel(dados);
+    document.getElementById('wl-saved-at').textContent = 'Atualizado agora';
+    toast('Identidade visual salva!','ok');
+  });
+}
+
+// ── Restaurar padrão ─────────────────────────────────────────────
+function resetarWL() {
+  document.getElementById('wl-nome').value = 'Nexus';
+  document.getElementById('wl-sub').value  = 'Blue3 Expansão Suite';
+  limparLogo();
+  setColor('wl-cor1','prev-cor1','wl-cor1-hex','#1A3BAD');
+  setColor('wl-cor2','prev-cor2','wl-cor2-hex','#4A70F5');
+  setColor('wl-cor3','prev-cor3','wl-cor3-hex','#B8962E');
+  previewWL();
+}
+
+// ── Helpers cor ───────────────────────────────────────────────────
+function setColor(pickerId, prevId, hexId, value) {
+  document.getElementById(pickerId).value = value;
+  document.getElementById(prevId).style.background = value;
+  document.getElementById(hexId).value = value;
+}
+function syncColor(pickerId, prevId) {
+  var v = document.getElementById(pickerId).value;
+  document.getElementById(prevId).style.background = v;
+}
+function syncHex(hexId, pickerId, prevId) {
+  var v = document.getElementById(hexId).value;
+  if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
+    document.getElementById(pickerId).value = v;
+    document.getElementById(prevId).style.background = v;
+  }
+}
+
+// ── Carregar dados do banco ao abrir ─────────────────────────────
+if (typeof NexusConfig !== 'undefined') {
+  NexusConfig.getWhiteLabel(function(err, wl) {
+    if (err || !wl) return;
+
+    // Defaults = valores hardcoded atuais — sistema não muda se banco estiver vazio
+    document.getElementById('wl-nome').value = wl.nome_empresa || 'Nexus';
+    document.getElementById('wl-sub').value  = wl.subtitulo    || 'Blue3 Expansão Suite';
+
+    // Logo
+    if (wl.logo_url) {
+      document.getElementById('wl-logo-data').value = wl.logo_url;
+      var prev = document.getElementById('wl-logo-preview');
+      prev.innerHTML = '<img src="'+wl.logo_url+'" alt="logo">';
+      document.getElementById('wl-logo-label').textContent = 'Logo carregada';
+      document.getElementById('wl-logo-clear').style.display = 'inline-block';
+    }
+
+    // Cores
+    setColor('wl-cor1','prev-cor1','wl-cor1-hex', wl.cor_primaria    || '#1A3BAD');
+    setColor('wl-cor2','prev-cor2','wl-cor2-hex', wl.cor_secundaria  || '#4A70F5');
+    setColor('wl-cor3','prev-cor3','wl-cor3-hex', wl.cor_acento      || '#B8962E');
+
+    if (wl.atualizado_em) {
+      document.getElementById('wl-saved-at').textContent =
+        'Atualizado em ' + new Date(wl.atualizado_em).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    }
+
+    previewWL();
+  });
+}
+</script>
+</body>
+</html>
