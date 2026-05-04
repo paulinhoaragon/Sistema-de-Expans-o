@@ -58,6 +58,7 @@ var NexusConfig = (function() {
       .then(function(rows) {
         var wl = (rows && rows[0]) ? rows[0] : {
           nome_empresa: 'Nexus',
+          subtitulo: 'Blue3 Expansão Suite',
           cor_primaria: '#1A3BAD',
           cor_secundaria: '#4A70F5',
           cor_acento: '#B8962E',
