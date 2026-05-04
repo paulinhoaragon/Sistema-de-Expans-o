@@ -128,7 +128,6 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
 <div class="main-tabs">
   <button class="main-tab active" onclick="showTab('tab-hunters',this)">Hunters</button>
   <button class="main-tab" onclick="showTab('tab-params',this)">Parâmetros</button>
-  <button class="main-tab" onclick="showTab('tab-wl',this);carregarWL()">White Label</button>
   <button class="main-tab" onclick="showTab('tab-usuarios',this);carregarUsuarios()">Usuários</button>
 </div>
 
@@ -263,89 +262,8 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
 </div>
 
 <!-- ══════════════════════════════════════════════════
-     TAB 3 — WHITE LABEL
+     TAB 3 — USUÁRIOS
 ══════════════════════════════════════════════════ -->
-<div class="tab-content page" id="tab-wl">
-
-  <div class="card">
-    <div class="card-title">Identidade Visual</div>
-    <div class="card-sub">Personalize o sistema com a marca da sua empresa. Essas configurações são aplicadas na tela de login e em todo o sistema.</div>
-
-    <div class="fgrid" style="margin-bottom:12px;">
-      <div class="f-row">
-        <label>Nome da Empresa</label>
-        <input id="wl-nome" type="text" placeholder="Ex: Nexus" value="Nexus" oninput="previewWL()">
-        <span class="f-hint">Exibido no cabeçalho e na tela de login</span>
-      </div>
-      <div class="f-row">
-        <label>Subtítulo / Suite</label>
-        <input id="wl-sub" type="text" placeholder="Ex: Blue3 Expansão Suite" value="Blue3 Expansão Suite" oninput="previewWL()">
-        <span class="f-hint">Exibido abaixo do nome na tela de login</span>
-      </div>
-    </div>
-
-    <div class="f-row" style="margin-bottom:12px;">
-      <label>Logo (URL da imagem)</label>
-      <input id="wl-logo" type="text" placeholder="https://..." oninput="previewWL()">
-      <span class="f-hint">URL pública da imagem (PNG ou SVG recomendado). Deixe em branco para usar a inicial do nome.</span>
-    </div>
-
-    <div class="fgrid3" style="margin-bottom:16px;">
-      <div class="f-row">
-        <label>Cor Primária</label>
-        <div class="color-row">
-          <div class="color-preview" id="prev-cor1" style="background:#1A3BAD;" onclick="document.getElementById('wl-cor1').click()"></div>
-          <input type="color" id="wl-cor1" value="#1A3BAD" oninput="syncColor('wl-cor1','prev-cor1');document.getElementById('wl-cor1-hex').value=this.value;previewWL()">
-          <input class="f-row" id="wl-cor1-hex" type="text" value="#1A3BAD" maxlength="7" oninput="syncHex('wl-cor1-hex','wl-cor1','prev-cor1');previewWL()" style="flex:1;padding:8px 10px;">
-        </div>
-        <span class="f-hint">Cor principal do sistema</span>
-      </div>
-      <div class="f-row">
-        <label>Cor Secundária</label>
-        <div class="color-row">
-          <div class="color-preview" id="prev-cor2" style="background:#4A70F5;" onclick="document.getElementById('wl-cor2').click()"></div>
-          <input type="color" id="wl-cor2" value="#4A70F5" oninput="syncColor('wl-cor2','prev-cor2');document.getElementById('wl-cor2-hex').value=this.value;previewWL()">
-          <input class="f-row" id="wl-cor2-hex" type="text" value="#4A70F5" maxlength="7" oninput="syncHex('wl-cor2-hex','wl-cor2','prev-cor2');previewWL()" style="flex:1;padding:8px 10px;">
-        </div>
-        <span class="f-hint">Hover e destaques</span>
-      </div>
-      <div class="f-row">
-        <label>Cor de Acento</label>
-        <div class="color-row">
-          <div class="color-preview" id="prev-cor3" style="background:#B8962E;" onclick="document.getElementById('wl-cor3').click()"></div>
-          <input type="color" id="wl-cor3" value="#B8962E" oninput="syncColor('wl-cor3','prev-cor3');document.getElementById('wl-cor3-hex').value=this.value;previewWL()">
-          <input class="f-row" id="wl-cor3-hex" type="text" value="#B8962E" maxlength="7" oninput="syncHex('wl-cor3-hex','wl-cor3','prev-cor3');previewWL()" style="flex:1;padding:8px 10px;">
-        </div>
-        <span class="f-hint">Elementos dourados e KPIs</span>
-      </div>
-    </div>
-
-    <!-- Preview -->
-    <div style="margin-bottom:16px;">
-      <div style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Preview do cabeçalho</div>
-      <div class="wl-preview">
-        <div class="wl-prev-logo" id="wl-prev-logo-box">N</div>
-        <div>
-          <div class="wl-prev-name" id="wl-prev-nome">Nexus</div>
-          <div class="wl-prev-sub" id="wl-prev-sub-preview">Blue3 Expansão Suite</div>
-        </div>
-        <div style="margin-left:auto;display:flex;gap:8px;">
-          <div id="wl-prev-c1" style="width:16px;height:16px;border-radius:4px;background:#1A3BAD;"></div>
-          <div id="wl-prev-c2" style="width:16px;height:16px;border-radius:4px;background:#4A70F5;"></div>
-          <div id="wl-prev-c3" style="width:16px;height:16px;border-radius:4px;background:#B8962E;"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="btn-row">
-      <button class="btn-primary" onclick="salvarWL()"><span id="btn-wl-txt">Salvar identidade visual</span></button>
-      <button class="btn-secondary" onclick="resetarWL()">Restaurar padrão</button>
-      <span id="wl-saved-at" style="font-size:10px;color:var(--t4);"></span>
-    </div>
-  </div>
-
-</div>
-
 <!-- ══════════════════════════════════════════════════
      TAB 4 — USUÁRIOS
 ══════════════════════════════════════════════════ -->
