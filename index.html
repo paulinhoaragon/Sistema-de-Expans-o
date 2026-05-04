@@ -1090,42 +1090,38 @@ function closeOverlay() {
 // ── Shell SaaS integrado diretamente no b3Start ──
 
 // ════════ WHITE LABEL — aplicar ao carregar ════════
-if (typeof NexusConfig !== 'undefined') {
+function aplicarWhiteLabel() {
+  if (typeof NexusConfig === 'undefined') return;
+  if (NexusConfig.clearCache) NexusConfig.clearCache(); // forçar releitura do banco
   NexusConfig.getWhiteLabel(function(err, wl) {
     if (err || !wl) return;
 
-    // Defaults = valores hardcoded atuais — sistema permanece idêntico se banco estiver vazio
-    var nome     = wl.nome_empresa || 'NEXUS';
-    var sub      = wl.subtitulo    || 'Blue3 Expansão Suite';
-    var logoUrl  = wl.logo_url     || '';
-    var cor1     = wl.cor_primaria    || '#1A3BAD';
-    var cor2     = wl.cor_secundaria  || '#4A70F5';
-    var cor3     = wl.cor_acento      || '#B8962E';
+    var nome    = wl.nome_empresa  || 'NEXUS';
+    var sub     = wl.subtitulo     || 'Blue3 Expansão Suite';
+    var logoUrl = wl.logo_url      || '';
+    var cor2    = wl.cor_secundaria || '#4A70F5';
 
-    // Aplicar cores via CSS vars (sidebar, botões, destaques)
+    // Aplicar cores via CSS vars
     NexusConfig.applyWhiteLabel(wl);
 
     // Aplicar na tela de login
-    var elNome = document.getElementById('wl-login-nome');
-    var elSub  = document.getElementById('wl-login-sub');
-    var elLogo = document.getElementById('wl-login-logo');
+    var elNome     = document.getElementById('wl-login-nome');
+    var elSub      = document.getElementById('wl-login-sub');
+    var elLogo     = document.getElementById('wl-login-logo');
     var elLogoWrap = document.getElementById('wl-login-logo-wrap');
 
     if (elNome) elNome.textContent = nome.toUpperCase();
-    if (elSub)  elSub.textContent  = sub;
+    if (elSub)  { elSub.textContent = sub; elSub.style.color = cor2; }
 
-    // Logo: se informada, substitui imagem; senão mantém a atual
     if (logoUrl && elLogo) {
       elLogo.src = logoUrl;
       elLogo.onerror = function() { this.style.display = 'none'; };
-    } else if (!logoUrl && elLogoWrap) {
-      // Sem logo configurada — mantém imagem padrão Blue3
     }
-
-    // Cor secundária no subtítulo do login
-    if (elSub) elSub.style.color = cor2;
   });
 }
+
+// Executar após DOM pronto
+document.addEventListener('DOMContentLoaded', aplicarWhiteLabel);
 
 // ════════ NAVEGAÇÃO VIA IFRAME ════════
 function navTo(page, title) {
