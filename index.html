@@ -502,8 +502,8 @@ body{
         </svg>
       </div>
       <div class="sb-logo-txt">
-        <div class="sb-logo-name">NEXUS</div>
-        <div class="sb-logo-sub">Blue3 Expansão</div>
+        <div class="sb-logo-name" id="wl-sb-nome">NEXUS</div>
+        <div class="sb-logo-sub" id="wl-sb-sub">Blue3 Expansão</div>
       </div>
       <button id="sb-toggle" onclick="sbToggle()" title="Recolher/expandir menu" style="flex-shrink:0;margin-left:auto;">
         <svg id="sb-toggle-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -1097,27 +1097,37 @@ function aplicarWhiteLabel() {
   NexusConfig.getWhiteLabel(function(err, wl) {
     if (err || !wl) return;
 
-    var nome    = wl.nome_empresa  || 'NEXUS';
-    var sub     = wl.subtitulo     || 'Blue3 Expansão Suite';
-    var logoUrl = wl.logo_url      || '';
+    var nome    = wl.nome_empresa   || 'NEXUS';
+    var sub     = wl.subtitulo      || 'Blue3 Expansão Suite';
+    var subSB   = wl.subtitulo      || 'Blue3 Expansão';
+    var logoUrl = wl.logo_url       || '';
+    var cor1    = wl.cor_primaria   || '#1A3BAD';
     var cor2    = wl.cor_secundaria || '#4A70F5';
+    var cor3    = wl.cor_acento     || '#B8962E';
 
-    // Aplicar cores via CSS vars
-    NexusConfig.applyWhiteLabel(wl);
+    // Aplicar cores via CSS vars em todo o documento
+    var r = document.documentElement;
+    r.style.setProperty('--cobalt',    cor1);
+    r.style.setProperty('--cobalt-br', cor2);
+    r.style.setProperty('--gold',      cor3);
 
     // Aplicar na tela de login
     var elNome     = document.getElementById('wl-login-nome');
     var elSub      = document.getElementById('wl-login-sub');
     var elLogo     = document.getElementById('wl-login-logo');
-    var elLogoWrap = document.getElementById('wl-login-logo-wrap');
 
     if (elNome) elNome.textContent = nome.toUpperCase();
     if (elSub)  { elSub.textContent = sub; elSub.style.color = cor2; }
-
     if (logoUrl && elLogo) {
       elLogo.src = logoUrl;
       elLogo.onerror = function() { this.style.display = 'none'; };
     }
+
+    // Aplicar na sidebar
+    var elSbNome = document.getElementById('wl-sb-nome');
+    var elSbSub  = document.getElementById('wl-sb-sub');
+    if (elSbNome) elSbNome.textContent = nome.toUpperCase();
+    if (elSbSub)  elSbSub.textContent  = subSB;
   });
 }
 
