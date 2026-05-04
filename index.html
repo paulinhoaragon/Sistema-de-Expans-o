@@ -971,13 +971,7 @@ function updateCSVStatus() {
   if (!dot || !label) return;
   // Verificar Supabase primeiro
   if (typeof supaFetch === 'function') {
-    supaFetch('candidatos?select=count', {prefer:'return=representation'})
-      .then(function(r){ return r.json(); })
-      .then(function(d){
-        var count = Array.isArray(d) ? d.length : 0;
-        // Também verificar via HEAD para pegar o count real
-        return supaFetch('candidatos?select=id&limit=1', {prefer:'count=exact'});
-      })
+    supaFetch('crm_candidatos?select=id', {prefer:'count=exact'})
       .then(function(r){
         var count = r.headers.get('content-range');
         if (count) {
@@ -1097,59 +1091,27 @@ function aplicarWhiteLabel() {
   NexusConfig.getWhiteLabel(function(err, wl) {
     if (err || !wl) return;
 
-    var nome    = wl.nome_empresa   || 'NEXUS';
-    var sub     = wl.subtitulo      || 'Blue3 Expansão Suite';
-    var subSB   = wl.subtitulo      || 'Blue3 Expansão';
-    var logoUrl = wl.logo_url       || '';
-    var cor1    = wl.cor_primaria   || '#1A3BAD';
+    var nome    = wl.nome_empresa  || 'NEXUS';
+    var sub     = wl.subtitulo     || 'Blue3 Expansão Suite';
+    var logoUrl = wl.logo_url      || '';
     var cor2    = wl.cor_secundaria || '#4A70F5';
-    var cor3    = wl.cor_acento     || '#B8962E';
 
-    // Aplicar cores via CSS vars no documento principal
-    var r = document.documentElement;
-    r.style.setProperty('--cobalt',    cor1);
-    r.style.setProperty('--cobalt-br', cor2);
-    r.style.setProperty('--gold',      cor3);
-
-    // Propagar cores para o iframe via postMessage
-    var iframe = document.getElementById('nexus-iframe');
-    if (iframe && iframe.contentWindow) {
-      iframe.contentWindow.postMessage({
-        type: 'wl-cores',
-        cobalt:   cor1,
-        cobaltBr: cor2,
-        gold:     cor3,
-      }, '*');
-    }
-    // Reaplicar sempre que o iframe carregar nova página
-    if (iframe) {
-      iframe.onload = function() {
-        iframe.contentWindow.postMessage({
-          type: 'wl-cores',
-          cobalt:   cor1,
-          cobaltBr: cor2,
-          gold:     cor3,
-        }, '*');
-      };
-    }
+    // Aplicar cores via CSS vars
+    NexusConfig.applyWhiteLabel(wl);
 
     // Aplicar na tela de login
     var elNome     = document.getElementById('wl-login-nome');
     var elSub      = document.getElementById('wl-login-sub');
     var elLogo     = document.getElementById('wl-login-logo');
+    var elLogoWrap = document.getElementById('wl-login-logo-wrap');
 
     if (elNome) elNome.textContent = nome.toUpperCase();
     if (elSub)  { elSub.textContent = sub; elSub.style.color = cor2; }
+
     if (logoUrl && elLogo) {
       elLogo.src = logoUrl;
       elLogo.onerror = function() { this.style.display = 'none'; };
     }
-
-    // Aplicar na sidebar
-    var elSbNome = document.getElementById('wl-sb-nome');
-    var elSbSub  = document.getElementById('wl-sb-sub');
-    if (elSbNome) elSbNome.textContent = nome.toUpperCase();
-    if (elSbSub)  elSbSub.textContent  = subSB;
   });
 }
 
