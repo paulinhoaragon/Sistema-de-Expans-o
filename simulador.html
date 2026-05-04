@@ -868,6 +868,11 @@ document.addEventListener('DOMContentLoaded',function(){
       if (d.luva)      { var el=document.getElementById('f-luva'); if(el) el.value = d.luva; }
       if (d.roa)       { var el=document.getElementById('f-roa');  if(el) el.value = (d.roa*100).toFixed(2); }
       if (d.obs)       { var el=document.getElementById('f-obs');  if(el) el.value = d.obs; }
+      // Restaurar condições negociadas
+      ['seguros','cons','b3w'].forEach(function(id){
+        var cb = document.getElementById('chk-'+id);
+        if (cb) { cb.checked = !!d['chk'+id.charAt(0).toUpperCase()+id.slice(1)]; toggleChk(id); }
+      });
       // Limpar todos os gatilhos antes de aplicar os do CRM
       [3,6,12,18,24].forEach(function(m){
         var cb=document.getElementById('t'+m+'-on');
@@ -911,6 +916,9 @@ function salvarNoHistorico() {
     luva:      parseFloat((document.getElementById('f-luva')  ||{}).value)||0,
     roa:       parseFloat((document.getElementById('f-roa')   ||{}).value||0)/100,
     obs:       (document.getElementById('f-obs')     ||{}).value || '',
+    chkSeguros: !!(document.getElementById('chk-seguros')||{}).checked,
+    chkCons:    !!(document.getElementById('chk-cons')   ||{}).checked,
+    chkB3w:     !!(document.getElementById('chk-b3w')    ||{}).checked,
     tranches:  []
   };
   [3,6,12,18,24].forEach(function(m){
