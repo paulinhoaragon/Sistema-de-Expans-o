@@ -219,9 +219,9 @@ function renderCRM(cands) {
   root.innerHTML = [
 
     // ════════════════════════════════
-    // BLOCO 1 — VISÃO GERAL + CUSTOS
+    // BLOCO 1 — VISÃO GERAL DO FUNIL
     // ════════════════════════════════
-    '<div class="sec-label" style="margin-top:8px;">01 · Visão Geral do Funil</div>',
+    '<div class="sec-label" style="margin-top:8px;">Visão Geral do Funil</div>',
     '<div class="grid4">',
       kpi('Total no CRM', total, 'candidatos cadastrados', 'cobalt'),
       kpi('Em Negociação', negociacao.length, pct(negociacao.length,total)+' do funil', 'gold'),
@@ -263,7 +263,7 @@ function renderCRM(cands) {
     // ════════════════════════════════
     // BLOCO 0.5 — VELOCIDADE DO FUNIL
     // ════════════════════════════════
-    '<div class="sec-label">02 · Velocidade do Funil — Tempo Médio por Etapa</div>',
+    '<div class="sec-label">Velocidade do Funil — Tempo Médio por Etapa</div>',
     '<div class="card" style="margin-bottom:20px;">',
       '<div class="card-title">Dias médios que candidatos passam em cada etapa</div>',
       (function(){
@@ -274,30 +274,21 @@ function renderCRM(cands) {
 
         cands.forEach(function(c){
           var hist = c.historico_etapas;
-          if (!hist) return;
-          // Supabase pode retornar como string ou array
-          if (typeof hist === 'string') { try { hist = JSON.parse(hist); } catch(e){ return; } }
-          if (!Array.isArray(hist) || hist.length < 2) return;
-          // Ordenar por timestamp
-          var sorted = hist.slice().sort(function(a,b){ return new Date(a.timestamp)-new Date(b.timestamp); });
-          for (var i=0; i<sorted.length-1; i++){
-            var etapa = sorted[i].etapa;
-            var inicio = new Date(sorted[i].timestamp);
-            var fim    = new Date(sorted[i+1].timestamp);
-            var dias   = Math.round((fim-inicio)/(1000*60*60*24));
-            if (dias >= 0 && dias < 365 && ETAPAS.indexOf(etapa) > -1) {
+          if (!hist || !hist.length) return;
+          // Suporta Formato B: {etapa, entrada, saida}
+          var sorted = hist.slice().sort(function(a,b){
+            return new Date(a.entrada||a.timestamp) - new Date(b.entrada||b.timestamp);
+          });
+          sorted.forEach(function(h){
+            var etapa  = h.etapa;
+            var inicio = new Date(h.entrada || h.timestamp);
+            var fim    = h.saida ? new Date(h.saida) : (c.data_declinio ? new Date(c.data_declinio) : new Date());
+            var dias   = Math.round((fim - inicio) / (1000*60*60*24));
+            if (dias >= 0 && dias < 730 && ETAPAS.indexOf(etapa) > -1) {
               tempoEtapa[etapa]  += dias;
               contagemEtapa[etapa]++;
             }
-          }
-          // Última etapa: calcular até hoje ou data_declinio
-          var ultima = sorted[sorted.length-1];
-          var fimUltima = c.data_declinio ? new Date(c.data_declinio) : new Date();
-          var diasUltima = Math.round((fimUltima-new Date(ultima.timestamp))/(1000*60*60*24));
-          if (diasUltima >= 0 && diasUltima < 365 && ETAPAS.indexOf(ultima.etapa) > -1) {
-            tempoEtapa[ultima.etapa]  += diasUltima;
-            contagemEtapa[ultima.etapa]++;
-          }
+          });
         });
 
         // Calcular médias
@@ -327,11 +318,11 @@ function renderCRM(cands) {
         var tempos = [];
         cands.filter(function(c){ return c.etapa==='Trabalhando'||c.etapa==='Contratação'; }).forEach(function(c){
           var hist = c.historico_etapas;
-          if (!hist) return;
-          if (typeof hist === 'string') { try { hist = JSON.parse(hist); } catch(e){ return; } }
-          if (!Array.isArray(hist)||!hist.length) return;
-          var sorted = hist.slice().sort(function(a,b){ return new Date(a.timestamp)-new Date(b.timestamp); });
-          var inicio = new Date(sorted[0].timestamp);
+          if (!hist||!hist.length) return;
+          var sorted = hist.slice().sort(function(a,b){
+            return new Date(a.entrada||a.timestamp) - new Date(b.entrada||b.timestamp);
+          });
+          var inicio = new Date(sorted[0].entrada || sorted[0].timestamp);
           var dias = Math.round((Date.now()-inicio.getTime())/(1000*60*60*24));
           if (dias>0&&dias<500) tempos.push(dias);
         });
@@ -349,7 +340,7 @@ function renderCRM(cands) {
           +'</div>';
       })(),
     '</div>',
-    '<div class="sec-label">03 · Perfil dos Contratados</div>',
+    '<div class="sec-label">Perfil dos Contratados</div>',
     '<div class="grid3">',
 
       // Senioridade
@@ -381,7 +372,7 @@ function renderCRM(cands) {
     // ════════════════════════════════
     // BLOCO 3 — PERFORMANCE HUNTERS
     // ════════════════════════════════
-    '<div class="sec-label">04 · Performance por Hunter</div>',
+    '<div class="sec-label">Performance por Hunter</div>',
     '<div class="card" style="margin-bottom:20px;">',
       '<div class="card-title">Indicadores por Hunter</div>',
       '<table class="htable">',
@@ -412,12 +403,12 @@ function renderCRM(cands) {
     // ════════════════════════════════
     // BLOCO 4 — PIPELINE PROSPECTIVO
     // ════════════════════════════════
-    '<div class="sec-label">06 · Pipeline Prospectivo</div>',
+    '<div class="sec-label">Pipeline Prospectivo — Próximos 60 dias</div>',
     '<div class="grid2">',
 
+      // Em negociação
       '<div class="card">',
         '<div class="card-title">Em Negociação ('+negociacao.length+')</div>',
-        '<div style="max-height:320px;overflow-y:auto;padding-right:4px;">',
         negociacao.length ? negociacao.map(function(c){
           return '<div class="pipe-card">'
             +'<div class="pipe-name">'+esc(c.nome)+'</div>'
@@ -429,12 +420,11 @@ function renderCRM(cands) {
             +'</div>'
             +'</div>';
         }).join('') : '<div style="padding:20px;text-align:center;color:var(--t4);font-size:12px;">Nenhum em negociação</div>',
-        '</div>',
       '</div>',
 
+      // Em contratação
       '<div class="card">',
         '<div class="card-title">Em Contratação ('+contratacao.length+')</div>',
-        '<div style="max-height:320px;overflow-y:auto;padding-right:4px;">',
         contratacao.length ? contratacao.map(function(c){
           var prevIni = c.prev_inicio ? new Date(c.prev_inicio).toLocaleDateString('pt-BR') : null;
           return '<div class="pipe-card" style="border-left-color:var(--g);">'
@@ -447,48 +437,14 @@ function renderCRM(cands) {
             +'</div>'
             +'</div>';
         }).join('') : '<div style="padding:20px;text-align:center;color:var(--t4);font-size:12px;">Nenhum em contratação</div>',
-        '</div>',
       '</div>',
 
     '</div>',
 
     // ════════════════════════════════
-    // BLOCO 4.5 — CUSTO POR CONTRATAÇÃO
-    // ════════════════════════════════
-    '<div class="sec-label">05 · Custo por Contratação</div>',
-    '<div class="grid4" style="margin-bottom:20px;">',
-      (function(){
-        var compTotal = ativos.reduce(function(s,c){
-          return s + ((parseFloat(c.piso)||0)*(parseInt(c.periodo)||12))
-                   + (parseFloat(c.upfront)||0)
-                   + (parseFloat(c.trigger1_tri_val)||0)
-                   + (parseFloat(c.trigger1_val)||0)
-                   + (parseFloat(c.trigger2_val)||0)
-                   + (parseFloat(c.trigger3_val)||0)
-                   + (parseFloat(c.trigger4_val)||0);
-        },0);
-        var capTotal = ativos.reduce(function(s,c){
-          return s+(parseFloat(c.trigger1_tri_meta)||0)
-                  +(parseFloat(c.trigger1_meta)||0)
-                  +(parseFloat(c.trigger2_meta)||0)
-                  +(parseFloat(c.trigger3_meta)||0)
-                  +(parseFloat(c.trigger4_meta)||0);
-        },0);
-        var custoMed = ativos.length>0?Math.round(compTotal/ativos.length):0;
-        var custoMM  = capTotal>0?Math.round(compTotal/capTotal):0;
-        return [
-          kpi('Custo Médio / Contratação', fmt(custoMed), ativos.length+' contratados', 'cobalt'),
-          kpi('Total Comprometido', fmt(compTotal), 'piso + sign-in + gatilhos', 'gold'),
-          kpi('Captação Alvo Total', capTotal+' MM', 'meta contratual agregada', 'g'),
-          kpi('Custo por MM', custoMM>0?'R$'+custoMM.toLocaleString('pt-BR'):'—', 'R$ por MM de captação', 'purple'),
-        ].join('');
-      })(),
-    '</div>',
-
-    // ════════════════════════════════
     // BLOCO 5 — SAÚDE OPERACIONAL
     // ════════════════════════════════
-    '<div class="sec-label">07 · Saúde Operacional</div>',
+    '<div class="sec-label">Saúde Operacional — Alertas</div>',
     '<div class="grid2">',
 
       // MOU pendente
@@ -569,7 +525,7 @@ function renderCharts(byEtapa, senMap, hunters) {
 // ── Inicialização ──
 (function(){
   try { localStorage.removeItem('B3D'); localStorage.removeItem('B3D_RAW'); } catch(e){}
-  supa('crm_candidatos?order=criado_em.desc&limit=500&select=id,nome,etapa,nivel,vaga,praca,hunter,mou,status_ancord,data_entrada,data_inicio,prev_inicio,data_declinio,auc_mm,piso,periodo,upfront,trigger1_tri_meta,trigger1_tri_val,trigger1_meta,trigger1_val,trigger2_meta,trigger2_val,trigger3_meta,trigger3_val,trigger4_meta,trigger4_val,instituicao,estrategico,historico_etapas')
+  supa('crm_candidatos?order=criado_em.desc&limit=500&select=id,nome,etapa,nivel,vaga,praca,hunter,mou,status_ancord,data_entrada,data_inicio,prev_inicio,data_declinio,auc_mm,piso,periodo,upfront,trigger1_meta,trigger2_meta,trigger3_meta,trigger4_meta,instituicao,estrategico,historico_etapas')
     .then(function(rows){
       if(!rows||!rows.length){
         document.getElementById('crm-root').innerHTML='<div class="loading"><div class="loading-icon">📭</div><div style="font-size:14px;font-weight:600;color:var(--t2);">Nenhum candidato no CRM.</div></div>';
