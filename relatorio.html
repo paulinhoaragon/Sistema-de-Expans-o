@@ -395,7 +395,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   <div class="krow" style="grid-template-columns:repeat(3,1fr);">
     <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Contratações líquidas ativas</div><div class="kv"><span id="dyn-liq">28</span></div><div class="ks" id="dyn-liq-sub-el">Jan–Abr 2026 · 4 meses (31 brutas − 3 desist.)</div><div class="kp pu">↑ Ritmo: 6,75 líquidas/mês</div></div>
     <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">AuC total mapeado</div><div class="kv"><span id="dyn-auc">R$1,88B</span></div><div class="ks" id="dyn-auc-sub-el">27 candidatos com carteira</div><div class="kp pu">↑ Média R$148M / pessoa</div></div>
-    <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">AuC estratégico confirmado</div><div class="kv">R$655M</div><div class="ks">7 assessores estratégicos</div><div class="kp pu">↑ R$600M em negociação</div></div>
+    <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">AuC estratégico confirmado</div><div class="kv"><span id="dyn-auc-estrat">—</span></div><div class="ks" id="dyn-auc-estrat-sub">— assessores estratégicos</div><div class="kp pu" id="dyn-auc-neg-label">—</div></div>
   </div>
   <!-- Breakdown por área -->
   <div id="area-breakdown" style="display:none;margin-bottom:16px;"></div>
@@ -884,6 +884,24 @@ function fmtM(v) {
     set('dyn-maior', 'R$'+G.maiorCand.cap+'M');
     set('dyn-maior-label-el', 'Maior carteira — '+(G.maiorCand.n||'').split(' ')[0]+' · '+(G.maiorCand.p||''));
   }
+  // ── KPI AuC estratégico: soma dos candidatos com cap > 0 (pipeline confirmado) ──
+  (function(){
+    var candsPipeline = C.filter(function(r){ return r.cap > 0 && (r.estrategico||"Não").toLowerCase() === "sim"; });
+    var aucEstrat = candsPipeline.reduce(function(s,r){ return s+(r.cap||0); }, 0);
+    var negPipeline = (D._pipelineNeg||[]).reduce(function(s,p){ return s+(parseFloat(p.auc_mm)||0); }, 0);
+    var countEstrat = candsPipeline.length;
+    // Formatar
+    var fmtAuc = aucEstrat >= 1000
+      ? 'R$'+(aucEstrat/1000).toFixed(2).replace('.',',')+' B'
+      : 'R$'+aucEstrat+'M';
+    set('dyn-auc-estrat', fmtAuc);
+    set('dyn-auc-estrat-sub', countEstrat+' assessor'+(countEstrat!==1?'es':'')+' com carteira');
+    if(negPipeline > 0){
+      var elNeg = document.getElementById('dyn-auc-neg-label');
+      if(elNeg){ elNeg.textContent = '↑ R$'+negPipeline+'M em negociação'; }
+    }
+  })();
+
   set('dyn-periodo-label',  periodoLabel.split(' · ')[0] || 'Jan–Abr');
   set('dyn-periodo-chart',  periodoLabel || 'Jan–Abr 2026');
   set('dyn-auc-footer', 'R$'+G.aucB+'B');
