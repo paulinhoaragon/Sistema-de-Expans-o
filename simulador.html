@@ -651,14 +651,15 @@ function exportPDF(){
   if(d.luva>0)propHtml+='<p class="pt-line" style="margin-top:5px"><strong>Luva / Sign-in:</strong> '+fmt(d.luva)+' — pago no ingresso</p>';
   if(d.trigs.length>0){
     propHtml+='<div style="margin-top:7px"></div>';
-    var prev=0;
     for(var ti=0;ti<d.trigs.length;ti++){
-      var t=d.trigs[ti];var delta=(t.auc-prev).toFixed(0);
-      var suffix=ti>0?' ('+t.auc+' MM acumulado)':'';
-      propHtml+='<p class="pt-tranche">Tranche '+(ti+1)+': '+t.m+' meses = captação '+delta+' MM = '+fmt(t.pay)+suffix+'</p>';
-      prev=t.auc;
+      var t=d.trigs[ti];
+      var deltaInc=t.auc.toFixed(0);
+      var acum=t.aucAcum||t.auc;
+      var suffix=ti>0?' ('+acum.toFixed(0)+' MM acumulado)':'';
+      propHtml+='<p class="pt-tranche">Tranche '+(ti+1)+': '+t.m+' meses = captação '+deltaInc+' MM = '+fmt(t.pay)+suffix+'</p>';
     }
-    propHtml+='<p class="pt-total">Total AuC ('+d.trigs[d.trigs.length-1].m+' meses) = '+d.trigs[d.trigs.length-1].auc+' MM</p>';
+    var lastAcum=d.trigs[d.trigs.length-1].aucAcum||d.trigs[d.trigs.length-1].auc;
+    propHtml+='<p class="pt-total">Total AuC ('+d.trigs[d.trigs.length-1].m+' meses) = '+lastAcum.toFixed(0)+' MM</p>';
   }
   var negItems=[];
   if(d.chkSeguros)negItems.push('Seguros: a comissão gerada será paga a parte do Piso negociado.');
