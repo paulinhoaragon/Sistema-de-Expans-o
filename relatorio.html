@@ -1433,7 +1433,8 @@ function renderAssessoresMensal(candidatos) {
   if (!mgEl || !grid) return;
 
   var base = candidatos || window.Blue3Data.candidatos || [];
-  var extras = getDesistentesExtras(base);
+  var temFiltro = _activeFilters && (_activeFilters.hunter || _activeFilters.praca || _activeFilters.sen || _activeFilters.status || _activeFilters.area);
+  var extras = temFiltro ? [] : getDesistentesExtras(base);
   var C = base.concat(extras).filter(function(r) {
     return !r.area || ['assessor','assessores'].indexOf(r.area.toLowerCase()) !== -1;
   });
@@ -1461,7 +1462,7 @@ function renderAssessoresMensal(candidatos) {
   var mesMax = mesesOrdenados[mesesOrdenados.length - 1];
 
   grid.innerHTML = mesesOrdenados.map(function(mes) {
-    var cands   = meses[mes];
+    var cands   = temFiltro ? meses[mes].filter(function(r){ var s=norm(r.st||""); return s==="trabalhando"||s==="contratado(a)"; }) : meses[mes];
     var ativos  = cands.filter(function(r) { var s = norm(r.st || ''); return s === 'trabalhando' || s === 'contratado(a)'; });
     var desist  = cands.filter(function(r) { var s = norm(r.st || ''); return s === 'desistência' || s === 'desistencia'; });
     var senior  = ativos.filter(function(r) { return norm(r.sen || '') === 'sênior'; }).length;
