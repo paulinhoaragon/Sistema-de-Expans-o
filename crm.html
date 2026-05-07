@@ -199,6 +199,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   <select class="f-sel" id="f-praca" onchange="renderBoard()">
     <option value="">Todas as praças</option>
   </select>
+  <select class="f-sel" id="f-mou" onchange="renderBoard()">
+    <option value="">MOU — Todos</option>
+    <option value="Assinado">MOU Assinado</option>
+    <option value="Pendente">MOU Pendente</option>
+  </select>
+  <select class="f-sel" id="f-lider" onchange="renderBoard()">
+    <option value="">Todos os líderes</option>
+  </select>
   <span class="f-count" id="f-count"></span>
 </div>
 
@@ -378,6 +386,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
               <option>Contato Futuro</option>
             </select>
           </div>
+          <div class="f-row"><label>Data da Contratação</label><input id="m-data-ent" type="date"></div>
           <div class="f-row"><label>MOU</label>
             <select id="m-mou" onchange="toggleDataMou(this.value)"><option>Pendente</option><option>Assinado</option></select>
           </div>
@@ -389,7 +398,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
               <option>Pendente</option><option>Em preparo</option><option>Aprovada</option><option>Isento</option>
             </select>
           </div>
-          <div class="f-row"><label>Data de entrada</label><input id="m-data-ent" type="date"></div>
           <div class="f-row"><label>Data início trabalho</label><input id="m-data-ini" type="date"></div>
           <div class="f-row" id="row-declinio" style="display:none;">
             <label>Data de declínio</label>
@@ -676,6 +684,12 @@ function popularFiltrosPraca() {
   var sel = document.getElementById('f-praca');
   var cur = sel.value;
   sel.innerHTML = '<option value="">Todas as praças</option>' + pracas.map(function(p){ return '<option'+(p===cur?' selected':'')+'>'+p+'</option>'; }).join('');
+
+  // Popular líderes
+  var lideres = [...new Set(_todos.map(function(r){ return r.lider||''; }).filter(Boolean))].sort();
+  var selLider = document.getElementById('f-lider');
+  var curLider = selLider ? selLider.value : '';
+  if (selLider) selLider.innerHTML = '<option value="">Todos os líderes</option>' + lideres.map(function(l){ return '<option'+(l===curLider?' selected':'')+'>'+esc(l)+'</option>'; }).join('');
 }
 
 // ── Board ─────────────────────────────────────────────────────────
@@ -684,12 +698,16 @@ function renderBoard() {
   var hunter  = document.getElementById('f-hunter').value;
   var nivel   = document.getElementById('f-nivel').value;
   var praca   = document.getElementById('f-praca').value;
+  var mou     = document.getElementById('f-mou').value;
+  var lider   = document.getElementById('f-lider').value;
 
   var filtrados = _todos.filter(function(r){
     if (q && !(r.nome||'').toLowerCase().includes(q) && !(r.instituicao||'').toLowerCase().includes(q)) return false;
     if (hunter && r.hunter !== hunter) return false;
     if (nivel  && r.nivel  !== nivel)  return false;
     if (praca  && r.praca  !== praca)  return false;
+    if (mou    && (r.mou||'') !== mou) return false;
+    if (lider  && (r.lider||'') !== lider) return false;
     return true;
   });
 
