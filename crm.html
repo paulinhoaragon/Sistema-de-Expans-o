@@ -207,6 +207,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   <select class="f-sel" id="f-lider" onchange="renderBoard()">
     <option value="">Todos os líderes</option>
   </select>
+  <select class="f-sel" id="f-vaga" onchange="renderBoard()">
+    <option value="">Todas as vagas</option>
+    <option value="assessor">Assessores</option>
+    <option value="outras">Outras Vagas</option>
+  </select>
   <span class="f-count" id="f-count"></span>
 </div>
 
@@ -700,6 +705,7 @@ function renderBoard() {
   var praca   = document.getElementById('f-praca').value;
   var mou     = document.getElementById('f-mou').value;
   var lider   = document.getElementById('f-lider').value;
+  var fvaga   = document.getElementById('f-vaga').value;
 
   var filtrados = _todos.filter(function(r){
     if (q && !(r.nome||'').toLowerCase().includes(q) && !(r.instituicao||'').toLowerCase().includes(q)) return false;
@@ -708,6 +714,8 @@ function renderBoard() {
     if (praca  && r.praca  !== praca)  return false;
     if (mou    && (r.mou||'') !== mou) return false;
     if (lider  && (r.lider||'') !== lider) return false;
+    if (fvaga === 'assessor' && (r.vaga||'').toLowerCase() !== 'assessor') return false;
+    if (fvaga === 'outras'   && (r.vaga||'').toLowerCase() === 'assessor') return false;
     return true;
   });
 
