@@ -379,7 +379,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
             </select>
           </div>
           <div class="f-row"><label>MOU</label>
-            <select id="m-mou"><option>Pendente</option><option>Assinado</option></select>
+            <select id="m-mou" onchange="toggleDataMou(this.value)"><option>Pendente</option><option>Assinado</option></select>
+          </div>
+          <div class="f-row" id="row-data-mou" style="display:none;"><label>Data assinatura MOU</label>
+            <input id="m-data-mou" type="date">
           </div>
           <div class="f-row"><label>Status Ancord</label>
             <select id="m-ancord">
@@ -814,6 +817,8 @@ function abrirEdicao(id) {
   var cs = document.getElementById('m-cs'); if(cs) cs.value = r.cs||'';
   var prevIni = document.getElementById('m-prev-inicio'); if(prevIni) prevIni.value = r.prev_inicio||'';
   document.getElementById('m-mou').value      = r.mou||'Pendente';
+  toggleDataMou(r.mou||'Pendente');
+  var dmou = document.getElementById('m-data-mou'); if(dmou) dmou.value = r.data_mou||'';
   document.getElementById('m-ancord').value   = r.status_ancord||'Pendente';
   document.getElementById('m-data-ent').value = r.data_entrada||'';
   document.getElementById('m-data-ini').value = r.data_inicio||'';
@@ -884,6 +889,8 @@ function limparModal() {
   document.getElementById('m-nivel').value   = '';
   document.getElementById('m-etapa').value   = 'Prospecção';
   document.getElementById('m-mou').value     = 'Pendente';
+  toggleDataMou('Pendente');
+  var dmou2 = document.getElementById('m-data-mou'); if(dmou2) dmou2.value = '';
   document.getElementById('m-ancord').value  = 'Pendente';
   document.getElementById('m-praca').value   = '';
   document.getElementById('m-lider').value   = '';
@@ -938,7 +945,7 @@ function salvarCandidato() {
     prev_inicio: g('m-prev-inicio')||null,
     condicoes_renovacao: getRenovacaoPayload(),
     // Status
-    mou: g('m-mou'), status_ancord: g('m-ancord'),
+    mou: g('m-mou'), data_mou: g('m-data-mou')||null, status_ancord: g('m-ancord'),
     data_entrada: g('m-data-ent')||null, data_inicio: g('m-data-ini')||null,
     data_declinio: g('m-data-declinio')||null,
     comentarios: g('m-obs'),
@@ -1629,6 +1636,11 @@ if (typeof NexusConfig !== 'undefined') {
   });
 }
 carregar();
+
+function toggleDataMou(val){
+  var row = document.getElementById('row-data-mou');
+  if(row) row.style.display = (val||'').toLowerCase()==='assinado' ? '' : 'none';
+}
 </script>
 </body>
 </html>
