@@ -425,22 +425,90 @@ function renderCRM(cands) {
         }).join('') : '<div style="padding:20px;text-align:center;color:var(--t4);font-size:12px;">Nenhum em negociação</div>',
       '</div>',
 
-      // Em contratação
-      '<div class="card">',
-        '<div class="card-title">Em Contratação ('+contratacao.length+')</div>',
-        contratacao.length ? contratacao.map(function(c){
-          var prevIni = c.prev_inicio ? new Date(c.prev_inicio).toLocaleDateString('pt-BR') : null;
-          return '<div class="pipe-card" style="border-left-color:var(--g);">'
-            +'<div class="pipe-name">'+esc(c.nome)+'</div>'
-            +'<div class="pipe-detail">'+esc(c.praca||'—')+' · '+esc(c.nivel||'—')+'</div>'
-            +'<div class="pipe-meta">'
-              +'<span class="tag t-cont">Contratação</span>'
-              +(norm(c.mou)==='assinado'?'<span class="tag" style="background:#DCFCE7;color:#15803D;">MOU ✓</span>':'<span class="tag" style="background:#FEF3C7;color:#92400E;">MOU Pend.</span>')
-              +(prevIni?'<span style="font-size:10px;color:var(--g);font-weight:600;">Início: '+prevIni+'</span>':'')
+      // Em contratação — lista compacta com previsão de ativação
+      (function(){
+        if (!contratacao.length) return '<div class="card"><div class="card-title">Em Contratação (0)</div><div style="padding:20px;text-align:center;color:var(--t4);font-size:12px;">Nenhum em contratação</div></div>';
+
+        function scoreRisco(c) {
+          // Verde = ok | Amarelo = atenção | Vermelho = risco
+          var ancordOk = ['aprovada','isento'].indexOf((c.status_ancord||'').toLowerCase()) > -1;
+          if (ancordOk) return {cor:'#16A34A', bg:'#DCFCE7', label:'Pronto p/ Onboarding', emoji:'✅'};
+          var mouAssinado = norm(c.mou) === 'assinado';
+          if (!mouAssinado) return {cor:'#DC2626', bg:'#FEE2E2', label:'Sem MOU', emoji:'🔴'};
+          // Calcular dias desde MOU
+          if (c.data_mou) {
+            var diasMou = Math.round((Date.now() - new Date(c.data_mou)) / (1000*60*60*24));
+            if (diasMou > 90) return {cor:'#DC2626', bg:'#FEE2E2', label:'Prazo expirado ('+diasMou+'d)', emoji:'🔴'};
+            if (diasMou > 60) return {cor:'#B45309', bg:'#FEF3C7', label:'Prazo adicional ('+diasMou+'d/90)', emoji:'🟡'};
+            return {cor:'#16A34A', bg:'#DCFCE7', label:'No prazo ('+diasMou+'d/60)', emoji:'🟢'};
+          }
+          return {cor:'#B45309', bg:'#FEF3C7', label:'MOU sem data', emoji:'🟡'};
+        }
+
+        function previsaoAtivacao(c) {
+          var ancordOk = ['aprovada','isento'].indexOf((c.status_ancord||'').toLowerCase()) > -1;
+          if (ancordOk) return '<span style="font-size:10px;color:#16A34A;font-weight:600;">Aguarda próximo onboarding RH</span>';
+          if (!c.data_mou) return '<span style="font-size:10px;color:var(--t4);">Sem data MOU cadastrada</span>';
+          var d = new Date(c.data_mou);
+          var otimista = new Date(d); otimista.setDate(otimista.getDate()+60);
+          var maxima   = new Date(d); maxima.setDate(maxima.getDate()+90);
+          return '<span style="font-size:10px;color:var(--t2);">Ativação: '
+            +'<strong style="color:#1A3BAD;">'+otimista.toLocaleDateString('pt-BR')+'</strong>'
+            +' – '+maxima.toLocaleDateString('pt-BR')+'</span>';
+        }
+
+        // Ordenar: vermelho primeiro, depois amarelo, depois verde
+        var sorted = contratacao.slice().sort(function(a,b){
+          var ordem = {'🔴':0,'🟡':1,'🟢':2,'✅':3};
+          return (ordem[scoreRisco(a).emoji]||2) - (ordem[scoreRisco(b).emoji]||2);
+        });
+
+        var SHOW = 4; // quantos mostrar inicialmente
+        var id = 'cont-lista-' + Math.random().toString(36).slice(2);
+
+        var cards = sorted.map(function(c, i){
+          var sc = scoreRisco(c);
+          var hidden = i >= SHOW ? 'style="display:none;" class="cont-extra-'+id+'"' : '';
+          return '<div '+hidden+' style="display:'+(i>=SHOW?'none':'flex')+';align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--rule);">'
+            +'<div style="font-size:18px;flex-shrink:0;margin-top:1px;">'+sc.emoji+'</div>'
+            +'<div style="flex:1;min-width:0;">'
+              +'<div style="font-size:12px;font-weight:700;color:var(--t1);">'+esc(c.nome)+'</div>'
+              +'<div style="font-size:10px;color:var(--t3);margin-top:1px;">'+esc(c.praca||'—')+' · '+esc(c.nivel||'—')+'</div>'
+              +'<div style="display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap;">'
+                +'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:'+sc.bg+';color:'+sc.cor+';">'+sc.label+'</span>'
+                +(norm(c.mou)==='assinado'?'<span style="font-size:9px;padding:2px 7px;border-radius:10px;background:#DCFCE7;color:#15803D;font-weight:700;">MOU ✓</span>':'')
+                +(c.hunter?'<span style="font-size:9px;color:var(--t3);">'+esc(c.hunter)+'</span>':'')
+              +'</div>'
+              +'<div style="margin-top:4px;">'+previsaoAtivacao(c)+'</div>'
             +'</div>'
             +'</div>';
-        }).join('') : '<div style="padding:20px;text-align:center;color:var(--t4);font-size:12px;">Nenhum em contratação</div>',
-      '</div>',
+        }).join('');
+
+        var toggleBtn = sorted.length > SHOW
+          ? '<button onclick="'
+              +'var els=document.querySelectorAll(\'.cont-extra-'+id+'\');'
+              +'var btn=this;'
+              +'var hidden=els[0]&&els[0].style.display===\'none\';'
+              +'els.forEach(function(e){e.style.display=hidden?\'flex\':\'none\';});'
+              +'btn.textContent=hidden?\'▾ Ocultar \'+(els.length)+\' candidatos\':\'▸ Ver mais \'+(els.length)+\' candidatos\';"'
+              +' style="width:100%;margin-top:8px;padding:7px;border:1px solid var(--rule);border-radius:var(--r8);'
+              +'background:var(--canvas);font-size:11px;font-weight:600;color:var(--cobalt);cursor:pointer;">'
+              +'▸ Ver mais '+(sorted.length - SHOW)+' candidatos'
+            +'</button>'
+          : '';
+
+        return '<div class="card">'
+          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
+            +'<div class="card-title" style="margin-bottom:0;">Em Contratação ('+contratacao.length+')</div>'
+            +'<div style="display:flex;gap:6px;">'
+              +'<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#DCFCE7;color:#15803D;">✅ '+sorted.filter(function(c){return scoreRisco(c).emoji==='✅';}).length+' prontos</span>'
+              +'<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FEE2E2;color:#DC2626;">🔴 '+sorted.filter(function(c){return scoreRisco(c).emoji==='🔴';}).length+' risco</span>'
+            +'</div>'
+          +'</div>'
+          +cards
+          +toggleBtn
+          +'</div>';
+      })(),
 
     '</div>',
 
@@ -528,7 +596,7 @@ function renderCharts(byEtapa, senMap, hunters) {
 // ── Inicialização ──
 (function(){
   try { localStorage.removeItem('B3D'); localStorage.removeItem('B3D_RAW'); } catch(e){}
-  supa('crm_candidatos?order=criado_em.desc&limit=500&select=id,nome,etapa,nivel,vaga,praca,hunter,mou,status_ancord,data_entrada,data_inicio,prev_inicio,data_declinio,auc_mm,piso,periodo,upfront,trigger1_meta,trigger2_meta,trigger3_meta,trigger4_meta,instituicao,estrategico,historico_etapas')
+  supa('crm_candidatos?order=criado_em.desc&limit=500&select=id,nome,etapa,nivel,vaga,praca,hunter,mou,data_mou,status_ancord,data_entrada,data_inicio,prev_inicio,data_declinio,auc_mm,piso,periodo,upfront,trigger1_meta,trigger2_meta,trigger3_meta,trigger4_meta,instituicao,estrategico,historico_etapas')
     .then(function(rows){
       if(!rows||!rows.length){
         document.getElementById('crm-root').innerHTML='<div class="loading"><div class="loading-icon">📭</div><div style="font-size:14px;font-weight:600;color:var(--t2);">Nenhum candidato no CRM.</div></div>';
