@@ -435,12 +435,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <div id="mg-outras-grid" class="mg"></div>
   </div>
 
-  <!-- Consolidador de Praças -->
-  <div id="consolidador-pracas" style="display:none;margin-top:24px;padding:18px;background:var(--s2);border-radius:var(--r12);border:1px solid var(--rule);">
-    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--rule);">Contratações por Praça — Consolidado</div>
-    <div id="consolidador-pracas-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;"></div>
-  </div>
-
   <div class="g2">
     <div class="card">
       <div class="ch">Volume mensal × % sênior</div>
@@ -644,12 +638,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Piso Médio</div><div class="kv" id="exp-piso-med">—</div><div class="ks">R$/mês</div></div>
     <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">Piso Moda</div><div class="kv" id="exp-piso-moda">—</div><div class="ks">valor mais frequente</div></div>
     <div class="kc"><div class="ktr" style="background:var(--purple);"></div><div class="kl">Propostas com Payback</div><div class="kv" id="exp-count">—</div><div class="ks">propostas analisadas</div></div>
-  </div>
-
-  <!-- Breakdown por canal/senioridade -->
-  <div id="exp-breakdown-wrap" style="display:none;">
-    <div class="ch" style="margin-bottom:12px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);">Custo por Canal × Senioridade</div>
-    <div id="exp-breakdown-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;"></div>
   </div>
 </div>
 
@@ -1645,7 +1633,6 @@ function populateFilters(){
   renderPracasTooltip(C);
   renderAssessoresMensal(C);
   renderOutrasAreas(C);
-  renderConsolidadorPracas(C);
 }
 
 function getFilteredCandidatos(){
@@ -1756,70 +1743,6 @@ function renderWithFilter(filteredC){
   renderPracasTooltip(filteredC);
   renderAssessoresMensal(filteredC);
   renderOutrasAreas(filteredC);
-  renderConsolidadorPracas(filteredC);
-}
-
-
-// ── Consolidador de Praças (Seção 02) ────────────────────────────
-function renderConsolidadorPracas(candidatos) {
-  var wrap = document.getElementById('consolidador-pracas');
-  var grid = document.getElementById('consolidador-pracas-grid');
-  if (!wrap || !grid) return;
-
-  var base = candidatos || (window.Blue3Data && window.Blue3Data.candidatos) || [];
-  var ativos = base.filter(function(r){
-    var s = (r.st||'').toLowerCase();
-    return s === 'trabalhando' || s === 'contratado(a)';
-  });
-  if (!ativos.length) { wrap.style.display = 'none'; return; }
-
-  // Agrupar por praça
-  var porPraca = {};
-  ativos.forEach(function(r){
-    var p = (r.p || 'Sem praça').trim();
-    if (!porPraca[p]) porPraca[p] = { total:0, senior:0, pleno:0, junior:0, outras:0 };
-    porPraca[p].total++;
-    var s = (r.sen||'').toLowerCase();
-    if (s === 'sênior') porPraca[p].senior++;
-    else if (s === 'pleno') porPraca[p].pleno++;
-    else if (s === 'júnior' || s === 'junior') porPraca[p].junior++;
-    else porPraca[p].outras++;
-  });
-
-  var pracas = Object.keys(porPraca).sort(function(a,b){
-    return porPraca[b].total - porPraca[a].total;
-  });
-
-  if (!pracas.length) { wrap.style.display = 'none'; return; }
-
-  grid.innerHTML = pracas.map(function(praca){
-    var d = porPraca[praca];
-    var bars = [
-      { lbl:'S', cnt:d.senior, cor:'#00915A', bg:'#DCFCE7' },
-      { lbl:'P', cnt:d.pleno,  cor:'#92400E', bg:'#FEF3C7' },
-      { lbl:'J', cnt:d.junior, cor:'#9D174D', bg:'#FCE7F3' }
-    ].filter(function(b){ return b.cnt > 0; });
-    var max = d.total || 1;
-    var barsHtml = bars.map(function(b){
-      var w = Math.round(b.cnt/max*100);
-      return '<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;">'
-        + '<span style="font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;background:'+b.bg+';color:'+b.cor+';width:14px;text-align:center;flex-shrink:0;">'+b.lbl+'</span>'
-        + '<div style="flex:1;background:var(--rule);border-radius:3px;height:5px;">'
-        +   '<div style="background:'+b.cor+';width:'+w+'%;height:5px;border-radius:3px;"></div>'
-        + '</div>'
-        + '<span style="font-size:9px;font-weight:700;color:var(--t2);width:14px;text-align:right;flex-shrink:0;">'+b.cnt+'</span>'
-        + '</div>';
-    }).join('');
-    return '<div style="background:var(--surface);border-radius:var(--r8);padding:11px 13px;border:1px solid var(--rule);">'
-      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">'
-      +   '<span style="font-size:11px;font-weight:700;color:var(--t1);line-height:1.3;max-width:80%;">'+praca+'</span>'
-      +   '<span style="font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--cobalt);">'+d.total+'</span>'
-      + '</div>'
-      + barsHtml
-      + '</div>';
-  }).join('');
-
-  wrap.style.display = '';
 }
 
 // ── renderPage ──
@@ -2562,97 +2485,37 @@ if (_regEstrat) _regEstrat.addEventListener('change',function(){
   if (f) f.style.display = this.checked ? 'block' : 'none';
 });
 
-// ── Custo de Expansão: busca propostas + candidatos para breakdown ──
+// ── Custo de Expansão: busca propostas no Supabase ──────────────
 (function(){
   var URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
   var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
-  var hdr = { 'apikey': KEY, 'Authorization': 'Bearer '+KEY, 'Accept': 'application/json' };
-
-  // Buscar propostas (inclui telefone para join)
-  Promise.all([
-    fetch(URL+'/rest/v1/propostas?select=dados,payback_meses,status,telefone&status=neq.Declinada&status=neq.Expirada&limit=500', { headers: hdr }).then(function(r){return r.json();}),
-    fetch(URL+'/rest/v1/crm_candidatos?select=telefone,vaga,nivel&etapa=in.(Contratação,Trabalhando)&limit=500', { headers: hdr }).then(function(r){return r.json();})
-  ]).then(function(results){
-    var propRows  = results[0] || [];
-    var candRows  = results[1] || [];
-
-    // Mapa telefone → {vaga, nivel}
-    var candMap = {};
-    candRows.forEach(function(c){ if(c.telefone) candMap[c.telefone.replace(/\D/g,'')] = c; });
-
-    if (!propRows.length) return;
-
+  fetch(URL+'/rest/v1/propostas?select=dados,payback_meses,status&status=neq.Declinada&status=neq.Expirada&limit=500', {
+    headers: { 'apikey': KEY, 'Authorization': 'Bearer '+KEY, 'Accept': 'application/json' }
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(rows){
+    if (!rows || !rows.length) return;
     var pisos = [], paybacks = [];
-    // canal → nivel → [{piso, payback}]
-    var breakdown = {};
-
-    propRows.forEach(function(r){
+    rows.forEach(function(r){
       var piso = r.dados && r.dados.piso ? parseFloat(r.dados.piso) : 0;
-      var pb   = r.payback_meses ? parseInt(r.payback_meses) : 0;
       if (piso > 0) pisos.push(piso);
-      if (pb > 0)   paybacks.push(pb);
-
-      // Join com candidato pelo telefone
-      var tel = (r.telefone||'').replace(/\D/g,'');
-      var cand = candMap[tel] || {};
-      var vaga  = (cand.vaga  || 'Outros').trim();
-      var nivel = (cand.nivel || '—').trim();
-
-      if (!breakdown[vaga]) breakdown[vaga] = {};
-      if (!breakdown[vaga][nivel]) breakdown[vaga][nivel] = [];
-      breakdown[vaga][nivel].push({ piso: piso, pb: pb });
+      if (r.payback_meses) paybacks.push(parseInt(r.payback_meses));
     });
-
-    // KPIs gerais
+    // Piso médio
     var pisoMed = pisos.length ? Math.round(pisos.reduce(function(a,b){return a+b;},0)/pisos.length) : 0;
+    // Piso moda
     var freq = {};
     pisos.forEach(function(p){ freq[p]=(freq[p]||0)+1; });
     var moda = pisos.length ? pisos.reduce(function(a,b){ return (freq[a]||0)>=(freq[b]||0)?a:b; }) : 0;
+    // Payback médio
     var pbMed = paybacks.length ? Math.round(paybacks.reduce(function(a,b){return a+b;},0)/paybacks.length) : 0;
 
     var fmt = function(v){ return v >= 1000 ? 'R$'+Math.round(v/1000)+'K' : 'R$'+v.toLocaleString('pt-BR'); };
-    var el  = function(id){ return document.getElementById(id); };
+    var el = function(id){ return document.getElementById(id); };
     if(el('exp-pb-med'))   el('exp-pb-med').textContent   = pbMed   ? pbMed+' m'   : '—';
     if(el('exp-piso-med')) el('exp-piso-med').textContent = pisoMed  ? fmt(pisoMed) : '—';
     if(el('exp-piso-moda'))el('exp-piso-moda').textContent= moda     ? fmt(moda)    : '—';
-    if(el('exp-count'))    el('exp-count').textContent    = paybacks.length ? paybacks.length+' / '+propRows.length : propRows.length;
-
-    // Breakdown por canal × senioridade
-    var canais = Object.keys(breakdown).sort();
-    if (canais.length) {
-      var wrap = el('exp-breakdown-wrap');
-      var grid = el('exp-breakdown-grid');
-      if (wrap && grid) {
-        var ordNivel = ['Júnior','Pleno','Sênior','—'];
-        grid.innerHTML = canais.map(function(vaga){
-          var niveis = breakdown[vaga];
-          var linhas = Object.keys(niveis)
-            .sort(function(a,b){ return (ordNivel.indexOf(a)||99)-(ordNivel.indexOf(b)||99); })
-            .map(function(nivel){
-              var arr = niveis[nivel];
-              var pisoArr = arr.map(function(x){return x.piso;}).filter(Boolean);
-              var pbArr   = arr.map(function(x){return x.pb;}).filter(Boolean);
-              var pisoM = pisoArr.length ? Math.round(pisoArr.reduce(function(a,b){return a+b;},0)/pisoArr.length) : 0;
-              var pbM   = pbArr.length   ? Math.round(pbArr.reduce(function(a,b){return a+b;},0)/pbArr.length)   : 0;
-              var cor   = nivel==='Sênior'?'#166534':nivel==='Pleno'?'#92400E':nivel==='Júnior'?'#9D174D':'#475569';
-              var bgcor = nivel==='Sênior'?'#DCFCE7':nivel==='Pleno'?'#FEF3C7':nivel==='Júnior'?'#FCE7F3':'#F1F5F9';
-              return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--rule);">'
-                +'<span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:'+bgcor+';color:'+cor+';">'+nivel+'</span>'
-                +'<span style="font-size:10px;color:var(--t2);">'+(pisoM?fmt(pisoM):'—')+'</span>'
-                +'<span style="font-size:10px;color:#00915A;font-weight:700;">'+(pbM?pbM+'m':'—')+'</span>'
-                +'</div>';
-            }).join('');
-          var total = Object.values(niveis).reduce(function(s,a){return s+a.length;},0);
-          return '<div style="background:var(--surface);border-radius:var(--r8);padding:12px;border:1px solid var(--rule);">'
-            +'<div style="font-size:11px;font-weight:700;color:var(--cobalt);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--rule);">'+vaga
-            +'<span style="float:right;font-size:9px;font-weight:600;color:var(--t4);">'+total+' prop.</span></div>'
-            +'<div style="display:flex;justify-content:space-between;font-size:9px;font-weight:700;color:var(--t4);margin-bottom:4px;"><span>Nível</span><span>Piso Méd.</span><span>Payback</span></div>'
-            +linhas
-            +'</div>';
-        }).join('');
-        wrap.style.display = '';
-      }
-    }
+    if(el('exp-count'))    el('exp-count').textContent    = paybacks.length ? paybacks.length+' / '+rows.length : rows.length;
   })
   .catch(function(e){ console.warn('Custo Expansão:', e); });
 })();
