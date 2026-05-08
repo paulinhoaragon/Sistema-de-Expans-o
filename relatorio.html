@@ -670,9 +670,11 @@ const BIANCA_IMG='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1B
 
 var REL_HUNTER_DB=[],REL_HUNTER_PHOTOS={},REL_HUNTER_METAS={};
 function carregarHuntersRelatorio(cb){
-  if(typeof NexusConfig==='undefined'){if(cb)cb([]);return;}
-  NexusConfig.getHunters(function(err,hunters){
-    var list=(!err&&hunters)?hunters:[];
+  var _cbCalled = false;
+  function _done(list){
+    if(_cbCalled) return;
+    _cbCalled = true;
+    list = list || [];
     REL_HUNTER_DB=list; REL_HUNTER_PHOTOS={}; REL_HUNTER_METAS={};
     list.forEach(function(h){
       var key=(h.nome||'').trim().toLowerCase();
@@ -680,7 +682,24 @@ function carregarHuntersRelatorio(cb){
       if(h.meta!=null&&h.meta!==false) REL_HUNTER_METAS[key]=Number(h.meta);
     });
     if(cb)cb(list);
-  });
+  }
+  // Fallback: se config.js falhar ou getHunters travar, segue em 3s
+  var _timeout = setTimeout(function(){
+    console.warn('[Blue3] carregarHuntersRelatorio timeout — seguindo sem hunters');
+    _done([]);
+  }, 3000);
+  if(typeof NexusConfig==='undefined'||typeof NexusConfig.getHunters!=='function'){
+    clearTimeout(_timeout); _done([]); return;
+  }
+  try {
+    NexusConfig.getHunters(function(err,hunters){
+      clearTimeout(_timeout);
+      _done((!err&&hunters)?hunters:[]);
+    });
+  } catch(e) {
+    console.warn('[Blue3] getHunters erro:', e);
+    clearTimeout(_timeout); _done([]);
+  }
 }
 
 function getBonusTierRel(t,p){
