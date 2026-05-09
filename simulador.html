@@ -488,7 +488,7 @@ function buildTotals(){
   var el=document.getElementById('trig-list');
   if(!S.trigs.length){el.innerHTML='<span style="color:#ccc;font-size:10px">Nenhum gatilho ativo</span>';return;}
   var prev=0,html='';
-  for(var i=0;i<S.trigs.length;i++){var t=S.trigs[i];var acum=t.aucAcum||t.auc;var delta=(t.auc).toFixed(1);html+='<div class="tl-item"><span>M'+t.m+' → AuC '+acum.toFixed(1)+' MM <span style="color:#aaa">(+'+delta+' MM)</span></span><strong>'+fmt(t.pay)+'</strong></div>';prev=acum;}
+  for(var i=0;i<S.trigs.length;i++){var t=S.trigs[i];var acum=t.aucAcum||t.auc;var _inc=acum-prev;var _fmtN=function(n){return(n===Math.floor(n))?String(n):n.toFixed(1).replace(/\.0$/,'');};var _aucFmt=_fmtN(acum);var _incFmt=_fmtN(_inc);html+='<div class="tl-item"><span>M'+t.m+' → AuC '+_aucFmt+' MM <span style="color:#aaa">(+'+_incFmt+' MM)</span></span><strong>'+fmt(t.pay)+'</strong></div>';prev=acum;}
   el.innerHTML=html;
 }
 
@@ -553,7 +553,8 @@ function buildAucChart(allMonths,allTrigs,periodoMeses){
     trDots+='<line x1="'+cx.toFixed(1)+'" y1="'+P.t+'" x2="'+cx.toFixed(1)+'" y2="'+(H-P.b)+'" stroke="#f5a623" stroke-width="1" stroke-dasharray="3,2" opacity=".5"/>';
     trDots+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="5.5" fill="#f5a623" stroke="#fff" stroke-width="2"/>';
     var labelY=Math.max(cy-9,P.t+9);
-    trDots+='<text x="'+cx.toFixed(1)+'" y="'+labelY.toFixed(1)+'" text-anchor="middle" fill="#002855" font-size="8" font-weight="800" font-family="Inter,sans-serif">'+tg.auc+' MM</text>';
+    var _tgAcumStr=(function(n){return(n===Math.floor(n))?String(n):n.toFixed(1).replace(/\.0$/,'');})(tg.aucAcum||tg.auc);
+    trDots+='<text x="'+cx.toFixed(1)+'" y="'+labelY.toFixed(1)+'" text-anchor="middle" fill="#002855" font-size="8" font-weight="800" font-family="Inter,sans-serif">'+_tgAcumStr+' MM</text>';
   }
   var axes='<line x1="'+P.l+'" y1="'+(H-P.b)+'" x2="'+(W-P.r)+'" y2="'+(H-P.b)+'" stroke="#c8d0e0" stroke-width="1"/><line x1="'+P.l+'" y1="'+P.t+'" x2="'+P.l+'" y2="'+(H-P.b)+'" stroke="#c8d0e0" stroke-width="1"/>';
   return'<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="display:block"><defs><linearGradient id="agrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#007CB1" stop-opacity=".28"/><stop offset="100%" stop-color="#007CB1" stop-opacity=".04"/></linearGradient></defs><rect x="'+P.l+'" y="'+P.t+'" width="'+(W-P.l-P.r)+'" height="'+(H-P.t-P.b)+'" fill="#f8fafc" rx="2"/>'+gridLines+'<path d="'+area+'" fill="url(#agrad)"/>'+axes+'<path d="'+line+'" fill="none" stroke="#002855" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+trDots+yLbls+xLbls+'</svg>';
@@ -583,8 +584,9 @@ function buildTimeline(d, periodoMeses) {
   for (var i = 0; i < d.trigs.length; i++) {
     var t = d.trigs[i];
     var isFimPiso = (t.m === d.pisoDur);
-    nodes.push({ type:'tranche', month:t.m, top:fmt(t.pay), bot:'AuC '+t.auc+' MM'+(isFimPiso?' | Fim Piso':'') });
-    prev = t.auc;
+    var _incNode=(t.auc===Math.floor(t.auc))?String(t.auc):t.auc.toFixed(1).replace(/\.0$/,'');
+    nodes.push({ type:'tranche', month:t.m, top:fmt(t.pay), bot:'AuC '+_incNode+' MM'+(isFimPiso?' | Fim Piso':'') });
+    prev = t.aucAcum;
   }
   nodes.sort(function(a,b){ return a.month - b.month; });
   if (nodes.length > 7) {
@@ -651,15 +653,17 @@ function exportPDF(){
   if(d.luva>0)propHtml+='<p class="pt-line" style="margin-top:5px"><strong>Luva / Sign-in:</strong> '+fmt(d.luva)+' — pago no ingresso</p>';
   if(d.trigs.length>0){
     propHtml+='<div style="margin-top:7px"></div>';
+    var _fmtAuC=function(n){return(n===Math.floor(n))?String(n):n.toFixed(1).replace(/\.0$/,'');};
     for(var ti=0;ti<d.trigs.length;ti++){
       var t=d.trigs[ti];
-      var deltaInc=t.auc.toFixed(0);
-      var acum=t.aucAcum||t.auc;
-      var suffix=ti>0?' ('+acum.toFixed(0)+' MM acumulado)':'';
-      propHtml+='<p class="pt-tranche">Tranche '+(ti+1)+': '+t.m+' meses = captação '+deltaInc+' MM = '+fmt(t.pay)+suffix+'</p>';
+      // t.auc = incremental digitado | t.aucAcum = acumulado calculado
+      var _inc=_fmtAuC(t.auc);
+      var _acum=_fmtAuC(t.aucAcum);
+      var suffix=ti>0?' ('+_acum+' MM acumulado)':'';
+      propHtml+='<p class="pt-tranche">Tranche '+(ti+1)+': '+t.m+' meses = captação '+_inc+' MM = '+fmt(t.pay)+suffix+'</p>';
     }
-    var lastAcum=d.trigs[d.trigs.length-1].aucAcum||d.trigs[d.trigs.length-1].auc;
-    propHtml+='<p class="pt-total">Total AuC ('+d.trigs[d.trigs.length-1].m+' meses) = '+lastAcum.toFixed(0)+' MM</p>';
+    var _lastTrig=d.trigs[d.trigs.length-1];
+    propHtml+='<p class="pt-total">Total AuC ('+_lastTrig.m+' meses) = '+_fmtAuC(_lastTrig.aucAcum)+' MM</p>';
   }
   var negItems=[];
   if(d.chkSeguros)negItems.push('Seguros: a comissão gerada será paga a parte do Piso negociado.');
