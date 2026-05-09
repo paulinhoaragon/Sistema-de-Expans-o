@@ -1346,9 +1346,8 @@ function fmtM(v) {
     }).join('');
   }
 
-  // ── Seção 05: Cand list (candidatos com carteiras) ──
-  var clEl = document.getElementById('cand-list');
-  if (clEl) { renderCandList(C, clEl); }
+  // ── Seção 05: Cand list (top10 + colapsável) ──
+  renderCandListSplit(C);
 
     // ── Seção 07: Tabela inv-tbody (top10 + colapsável) ──
   var _invTop = document.getElementById('inv-tbody-top');
@@ -1817,44 +1816,8 @@ function renderWithFilter(filteredC){
         +'</div>';
     }).join('');
   }
-    var _candTop = document.getElementById('cand-list-top');
-  var _candMore = document.getElementById('cand-list-more');
-  if(_candTop){
-    var _sorted05 = filteredC.filter(function(r){return r.cap>0;}).sort(function(a,b){return b.cap-a.cap;});
-    if(!_sorted05.length){_candTop.innerHTML='<p style="color:var(--t3);padding:16px;font-size:13px;">Nenhum candidato encontrado com os filtros selecionados.</p>';}
-    else {
-      var _makeCandRows = function(arr){
-        var senTag=function(s){var m={'sênior':'background:#DCFCE7;color:#166534;','pleno':'background:#FEF3C7;color:#92400E;','júnior':'background:#FCE7F3;color:#9D174D;','junior':'background:#FCE7F3;color:#9D174D;'};return m[(s||'').toLowerCase()]||'background:var(--s2);color:var(--t2);';};
-        var mouTag=function(m){return(m||'').toLowerCase()==='assinado'?'background:#DCFCE7;color:#166534;':'background:#FEF3C7;color:#92400E;';};
-        return arr.map(function(r){
-          return '<tr>'
-            +'<td style="padding:8px 10px;font-size:12px;font-weight:600;color:var(--t1);border-bottom:1px solid var(--rule);">'+r.n+'</td>'
-            +'<td style="padding:8px 10px;font-size:11px;color:var(--t3);border-bottom:1px solid var(--rule);">'+r.p+'</td>'
-            +'<td style="padding:8px 10px;font-size:11px;color:var(--t2);border-bottom:1px solid var(--rule);">'+(r.h||'—')+'</td>'
-            +'<td style="padding:8px 10px;border-bottom:1px solid var(--rule);"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;'+senTag(r.sen)+'">'+r.sen+'</span></td>'
-            +'<td style="padding:8px 10px;font-size:11px;color:var(--t2);border-bottom:1px solid var(--rule);">'+r.st+'</td>'
-            +'<td style="padding:8px 10px;border-bottom:1px solid var(--rule);"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;'+mouTag(r.mou)+'">'+r.mou+'</span></td>'
-            +'<td style="padding:8px 10px;font-size:12px;font-weight:700;color:var(--cobalt);text-align:right;border-bottom:1px solid var(--rule);">R$'+r.cap+'M</td>'
-            +'</tr>';
-        }).join('');
-      };
-      var _thead05 = '<table class="tbl" style="width:100%;border-collapse:collapse;"><thead><tr><th>Candidato</th><th>Praça</th><th>Hunter</th><th>Senioridade</th><th>Status</th><th>MOU</th><th>AuC (MM)</th></tr></thead><tbody>';
-      var _top10 = _sorted05.slice(0,10);
-      var _rest05 = _sorted05.slice(10);
-      _candTop.innerHTML = _thead05 + _makeCandRows(_top10) + '</tbody></table>';
-      if(_candMore){
-        _candMore.innerHTML = _rest05.length
-          ? '<table class="tbl" style="width:100%;border-collapse:collapse;"><tbody>'+_makeCandRows(_rest05)+'</tbody></table>'
-          : '';
-      }
-      // Ajustar botão
-      var _btn05 = document.getElementById('cand-toggle');
-      if(_btn05){
-        if(_rest05.length === 0){ _btn05.style.display='none'; }
-        else { _btn05.style.display=''; _btn05.textContent='▼ Ver todos ('+ _sorted05.length +')'; }
-      }
-    }
-  }
+    // ── Seção 05: Cand list (top10 + colapsável) ──
+  renderCandListSplit(filteredC);
     renderPracasTooltip(filteredC);
   renderAssessoresMensal(filteredC);
   renderOutrasAreas(filteredC);
@@ -1976,6 +1939,91 @@ function showEmptyState(msg) {
   }
 })();
 
+
+// ── renderCandListSplit: top10 visível + resto colapsado ────────
+function renderCandListSplit(candidatos) {
+  var topEl  = document.getElementById('cand-list-top');
+  var moreEl = document.getElementById('cand-list-more');
+  var btn    = document.getElementById('cand-toggle');
+  if (!topEl) return;
+
+  var sorted = (candidatos||[]).filter(function(r){return r.cap>0;})
+                               .sort(function(a,b){return b.cap-a.cap;});
+
+  if (!sorted.length) {
+    topEl.innerHTML = '<p style="color:var(--t3);padding:16px;font-size:13px;">Nenhum candidato encontrado com os filtros selecionados.</p>';
+    if (moreEl) moreEl.innerHTML = '';
+    if (btn) btn.style.display = 'none';
+    return;
+  }
+
+  var top10 = sorted.slice(0, 10);
+  var rest  = sorted.slice(10);
+  var totalAuC = sorted.reduce(function(s,r){return s+(r.cap||0);},0);
+
+  // Cabeçalho da tabela (mesmo estilo de renderCandList)
+  var TH = '<thead><tr style="background:var(--s2);">'
+    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Candidato</th>'
+    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Praça</th>'
+    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Hunter</th>'
+    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Senioridade</th>'
+    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Status</th>'
+    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">MOU</th>'
+    +'<th style="padding:8px 10px;text-align:right;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);white-space:nowrap;min-width:80px;">AuC (MM)</th>'
+    +'</tr></thead>';
+
+  var senTag = function(s){ var m={'sênior':'background:#DCFCE7;color:#166534;','pleno':'background:#FEF3C7;color:#92400E;','júnior':'background:#FCE7F3;color:#9D174D;','junior':'background:#FCE7F3;color:#9D174D;'}; return m[(s||'').toLowerCase()]||'background:var(--s2);color:var(--t2);'; };
+  var mouTag = function(m){ return (m||'').toLowerCase()==='assinado'?'background:#DCFCE7;color:#166534;':'background:#FEF3C7;color:#92400E;'; };
+
+  var makeRows = function(arr) {
+    return arr.map(function(r){
+      return '<tr>'
+        +'<td style="padding:8px 10px;font-size:12px;font-weight:600;color:var(--t1);border-bottom:1px solid var(--rule);">'+r.n+'</td>'
+        +'<td style="padding:8px 10px;font-size:11px;color:var(--t3);border-bottom:1px solid var(--rule);">'+r.p+'</td>'
+        +'<td style="padding:8px 10px;font-size:11px;color:var(--t2);border-bottom:1px solid var(--rule);">'+(r.h||'—')+'</td>'
+        +'<td style="padding:8px 10px;border-bottom:1px solid var(--rule);"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;'+senTag(r.sen)+'">'+r.sen+'</span></td>'
+        +'<td style="padding:8px 10px;font-size:11px;color:var(--t2);border-bottom:1px solid var(--rule);">'+r.st+'</td>'
+        +'<td style="padding:8px 10px;border-bottom:1px solid var(--rule);"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;'+mouTag(r.mou)+'">'+r.mou+'</span></td>'
+        +'<td style="padding:8px 10px;font-size:12px;font-weight:700;color:var(--cobalt);text-align:right;border-bottom:1px solid var(--rule);">R$'+(r.cap||0)+'M</td>'
+        +'</tr>';
+    }).join('');
+  };
+
+  // Rodapé com total AuC — aparece só após os 10 se não houver mais
+  var TFOOT = rest.length === 0
+    ? '<tfoot><tr style="background:var(--s2);">'
+        +'<td colspan="6" style="padding:10px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
+        +'<td style="padding:10px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
+        +'</tr></tfoot>'
+    : '';
+
+  topEl.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
+    + TH + '<tbody>' + makeRows(top10) + '</tbody>' + TFOOT + '</table></div>';
+
+  // Linhas extras
+  if (moreEl) {
+    if (rest.length) {
+      var TFOOT2 = '<tfoot><tr style="background:var(--s2);">'
+        +'<td colspan="6" style="padding:10px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
+        +'<td style="padding:10px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
+        +'</tr></tfoot>';
+      moreEl.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
+        + '<tbody>' + makeRows(rest) + '</tbody>' + TFOOT2 + '</table></div>';
+    } else {
+      moreEl.innerHTML = '';
+    }
+  }
+
+  // Ajustar botão
+  if (btn) {
+    if (rest.length === 0) {
+      btn.style.display = 'none';
+    } else {
+      btn.style.display = '';
+      btn.textContent = '▼ Ver todos (' + sorted.length + ')';
+    }
+  }
+}
 
 // ── Toggle seção 05 (candidatos) ─────────────────────────────
 function toggleCandList(){
