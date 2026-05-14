@@ -158,19 +158,20 @@ tfoot td:first-child{text-align:left}
   <div class="tbl-wrap">
     <table>
       <thead>
-        <tr>
-          <th style="text-align:left">Assessor</th>
-          <th style="text-align:left">Filial</th>
+        <tr id="tb2-head">
+          <th style="text-align:left;cursor:pointer;user-select:none" onclick="sortTable('n')" title="Ordenar por nome">Assessor <span id="si-n"></span></th>
+          <th style="text-align:left;cursor:pointer;user-select:none" onclick="sortTable('p')" title="Ordenar por filial">Filial <span id="si-p"></span></th>
           <th style="text-align:left">Situação</th>
-          <th style="text-align:left">Início</th>
+          <th style="text-align:left;cursor:pointer;user-select:none" onclick="sortTable('inicio')" title="Ordenar por início">Início <span id="si-inicio"></span></th>
           <th>Piso/Mês</th>
           <th>Período</th>
-          <th>Piso Total</th>
+          <th style="cursor:pointer;user-select:none" onclick="sortTable('pisoTotal')" title="Ordenar por piso total">Piso Total <span id="si-pisoTotal"></span></th>
           <th>Sign-in</th>
           <th>Triggers</th>
-          <th>Total</th>
-          <th title="Possui coparticipação XP">Coparcip.</th>
-          <th title="Candidato estratégico">Estratégico</th>
+          <th style="cursor:pointer;user-select:none" onclick="sortTable('custoTotal')" title="Ordenar por total">Total <span id="si-custoTotal"></span></th>
+          <th title="Possui coparticipação XP" style="cursor:pointer;user-select:none" onclick="sortTable('xp')">Coparcip. <span id="si-xp"></span></th>
+          <th title="Candidato estratégico" style="cursor:pointer;user-select:none" onclick="sortTable('estrategico')">Estratégico <span id="si-estrategico"></span></th>
+          <th title="Não assessor (Advisor, Offshore, etc.)" style="cursor:pointer;user-select:none" onclick="sortTable('area')">Não Assessor <span id="si-area"></span></th>
         </tr>
       </thead>
       <tbody id="tb2"></tbody>
@@ -347,9 +348,76 @@ function rP() {
 }
 
 // ── Render tabela por assessor ──
-function rA(financeiros) {
+var _tbSortKey = null;   // coluna atual de ordenação
+var _tbSortAsc = true;   // direção
+var _tbData    = [];     // dados em memória para re-ordenar
+
+function _parseDate(s) {
+  if (!s || s === '—') return null;
+  var p = s.indexOf('/') > -1 ? s.split('/') : s.split('-');
+  if (p.length < 3) return null;
+  // dd/mm/yyyy  ou  yyyy-mm-dd
+  return s.indexOf('/') > -1
+    ? new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]))
+    : new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+}
+
+function _sortData(data, key, asc) {
+  return data.slice().sort(function(a, b) {
+    var va, vb;
+    if (key === 'inicio') {
+      va = _parseDate(a.inicio) || new Date(0);
+      vb = _parseDate(b.inicio) || new Date(0);
+      return asc ? va - vb : vb - va;
+    }
+    if (key === 'n' || key === 'p') {
+      va = (a[key]||'').toLowerCase();
+      vb = (b[key]||'').toLowerCase();
+      return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    }
+    if (key === 'xp') {
+      va = (a.xp && a.xp > 0) ? 1 : 0;
+      vb = (b.xp && b.xp > 0) ? 1 : 0;
+      return asc ? va - vb : vb - va;
+    }
+    if (key === 'estrategico') {
+      va = (a.estrategico||'').toLowerCase() === 'sim' ? 1 : 0;
+      vb = (b.estrategico||'').toLowerCase() === 'sim' ? 1 : 0;
+      return asc ? va - vb : vb - va;
+    }
+    if (key === 'area') {
+      va = (a.area||'Assessores').toLowerCase() === 'assessores' ? 1 : 0;
+      vb = (b.area||'Assessores').toLowerCase() === 'assessores' ? 1 : 0;
+      return asc ? va - vb : vb - va;
+    }
+    va = a[key] || 0; vb = b[key] || 0;
+    return asc ? va - vb : vb - va;
+  });
+}
+
+function _updateSortIcons(key, asc) {
+  var cols = ['n','p','inicio','pisoTotal','custoTotal','xp','estrategico','area'];
+  cols.forEach(function(c) {
+    var el = document.getElementById('si-'+c);
+    if (el) el.textContent = '';
+  });
+  var el = document.getElementById('si-'+key);
+  if (el) el.textContent = asc ? ' ↑' : ' ↓';
+}
+
+function sortTable(key) {
+  if (_tbSortKey === key) {
+    _tbSortAsc = !_tbSortAsc;
+  } else {
+    _tbSortKey = key;
+    _tbSortAsc = key === 'n' || key === 'p' || key === 'inicio'; // texto/data: asc por padrão
+  }
+  _updateSortIcons(_tbSortKey, _tbSortAsc);
+  _renderTb2(_sortData(_tbData, _tbSortKey, _tbSortAsc));
+}
+
+function _renderTb2(sorted) {
   var tp = 0, ts = 0, tt = 0, ta = 0;
-  var sorted = financeiros.slice().sort(function(a,b){ return (b.ativo?1:0) - (a.ativo?1:0) || b.custoTotal - a.custoTotal; });
   document.getElementById('tb2').innerHTML = sorted.map(function(a) {
     tp += a.pisoTotal; ts += a.si; tt += a.trigTotal; ta += a.custoTotal;
     var badge = a.ativo
@@ -357,21 +425,36 @@ function rA(financeiros) {
       : '<span class="badge bg-a"><span class="bd"></span>A confirmar</span>';
     var inicio = a.inicio || '—';
     var _xpCheck = (a.xp && a.xp > 0)
-      ? '<span title="Tem coparticipação" style="color:#16A34A;font-size:14px;">✓</span>'
+      ? '<span title="Tem coparticipação" style="color:#16A34A;font-size:15px;font-weight:700;">✓</span>'
       : '<span style="color:#CBD5E1;font-size:12px;">—</span>';
     var _estCheck = ((a.estrategico||'').toLowerCase() === 'sim')
-      ? '<span title="Candidato estratégico" style="color:#1A3BAD;font-size:14px;">✓</span>'
+      ? '<span title="Candidato estratégico" style="color:#1A3BAD;font-size:15px;font-weight:700;">✓</span>'
+      : '<span style="color:#CBD5E1;font-size:12px;">—</span>';
+    var _areaCheck = ((a.area||'Assessores').toLowerCase() !== 'assessores')
+      ? '<span title="'+((a.area||''))+'" style="color:#B45309;font-size:15px;font-weight:700;">✓</span>'
       : '<span style="color:#CBD5E1;font-size:12px;">—</span>';
     return '<tr><td>'+a.n+'</td><td style="color:var(--t3)">'+a.p+'</td><td>'+badge+'</td>'
       +'<td>'+inicio+'</td><td>'+fmt(a.piso)+'</td><td>'+fmtPer(a.periodo)+'</td>'
       +'<td>'+fmt(a.pisoTotal)+'</td><td>'+fmt(a.si)+'</td><td>'+fmt(a.trigTotal)+'</td>'
       +'<td style="font-weight:700;color:var(--cobalt)">'+fmt(a.custoTotal)+'</td>'
       +'<td style="text-align:center">'+_xpCheck+'</td>'
-      +'<td style="text-align:center">'+_estCheck+'</td></tr>';
+      +'<td style="text-align:center">'+_estCheck+'</td>'
+      +'<td style="text-align:center">'+_areaCheck+'</td></tr>';
   }).join('');
   document.getElementById('tf2').innerHTML = '<tr><td>TOTAL GERAL</td><td></td><td></td><td></td><td></td><td></td>'
     +'<td>'+fmt(tp)+'</td><td>'+fmt(ts)+'</td><td>'+fmt(tt)+'</td><td>'+fmt(ta)+'</td>'
-    +'<td></td><td></td></tr>';
+    +'<td></td><td></td><td></td></tr>';
+}
+
+function rA(financeiros) {
+  _tbData = financeiros;
+  _tbSortKey = null;
+  _tbSortAsc = true;
+  // Ordenação padrão: ativos primeiro, depois por custo total
+  var defaultSorted = financeiros.slice().sort(function(a,b){
+    return (b.ativo?1:0) - (a.ativo?1:0) || b.custoTotal - a.custoTotal;
+  });
+  _renderTb2(defaultSorted);
 }
 
 // ── Render KPIs ──
