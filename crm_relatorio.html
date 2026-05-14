@@ -409,11 +409,12 @@ function renderCRM(cands) {
     '<div class="sec-label">Pipeline Prospectivo — Próximos 60 dias</div>',
     '<div class="grid2">',
 
-      // Em negociação
-      '<div class="card">',
-        '<div class="card-title">Em Negociação ('+negociacao.length+')</div>',
-        negociacao.length ? negociacao.map(function(c){
-          return '<div class="pipe-card">'
+      // Em negociação — top 10 + colapso
+      (function(){
+        var NEG_SHOW = 10;
+        if (!negociacao.length) return '<div class="card"><div class="card-title">Em Negociação (0)</div><div style="padding:20px;text-align:center;color:var(--t4);font-size:12px;">Nenhum em negociação</div></div>';
+        var negCards = negociacao.map(function(c, i){
+          return '<div class="pipe-card neg-xitem" style="'+(i>=NEG_SHOW?'display:none;':'')+'">'
             +'<div class="pipe-name">'+esc(c.nome)+'</div>'
             +'<div class="pipe-detail">'+esc(c.praca||'—')+' · '+esc(c.instituicao||'—')+'</div>'
             +'<div class="pipe-meta">'
@@ -422,8 +423,13 @@ function renderCRM(cands) {
               +(c.hunter?'<span style="font-size:10px;color:var(--t3);">Hunter: '+esc(c.hunter)+'</span>':'')
             +'</div>'
             +'</div>';
-        }).join('') : '<div style="padding:20px;text-align:center;color:var(--t4);font-size:12px;">Nenhum em negociação</div>',
-      '</div>',
+        }).join('');
+        var negExtra = negociacao.length - NEG_SHOW;
+        var negBtn = negExtra > 0
+          ? '<button onclick="(function(b){var items=document.querySelectorAll(\'.neg-xitem\');var open=items['+NEG_SHOW+']&&items['+NEG_SHOW+'].style.display!==\'none\';for(var i='+NEG_SHOW+';i<items.length;i++){items[i].style.display=open?\'none\':\'block\';}b.textContent=open?\'▸ Ver mais '+negExtra+' candidatos\':\'▾ Ocultar candidatos\';})(this)" style="width:100%;margin-top:8px;padding:7px;border:1px solid var(--rule);border-radius:var(--r8);background:var(--canvas);font-size:11px;font-weight:600;color:var(--cobalt);cursor:pointer;">▸ Ver mais '+negExtra+' candidatos</button>'
+          : '';
+        return '<div class="card"><div class="card-title">Em Negociação ('+negociacao.length+')</div>'+negCards+negBtn+'</div>';
+      })(),
 
       // Em contratação — lista compacta com previsão de ativação
       (function(){
@@ -463,7 +469,7 @@ function renderCRM(cands) {
           return (ordem[scoreRisco(a).emoji]||2) - (ordem[scoreRisco(b).emoji]||2);
         });
 
-        var SHOW = 4; // quantos mostrar inicialmente
+        var SHOW = 10; // mostrar 10 por padrão
         var id = 'cont-lista-' + Math.random().toString(36).slice(2);
 
         var cards = sorted.map(function(c, i){
@@ -497,17 +503,14 @@ function renderCRM(cands) {
             +'</button>'
           : '';
 
-        return '<div class="card">'
-          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
-            +'<div class="card-title" style="margin-bottom:0;">Em Contratação ('+contratacao.length+')</div>'
-            +'<div style="display:flex;gap:6px;">'
-              +'<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#DCFCE7;color:#15803D;">✅ '+sorted.filter(function(c){return scoreRisco(c).emoji==='✅';}).length+' prontos</span>'
-              +'<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FEE2E2;color:#DC2626;">🔴 '+sorted.filter(function(c){return scoreRisco(c).emoji==='🔴';}).length+' risco</span>'
-            +'</div>'
-          +'</div>'
-          +cards
-          +toggleBtn
-          +'</div>';
+        // Salvar dados para filtro JS
+        window['_cS_'+id] = sorted;
+        var _nPronto  = sorted.filter(function(c){return scoreRisco(c).emoji==='✅';}).length;
+        var _nRisco   = sorted.filter(function(c){return scoreRisco(c).emoji==='🔴';}).length;
+        var _nAtencao = sorted.filter(function(c){return scoreRisco(c).emoji==='🟡';}).length;
+        var _nPrazo   = sorted.filter(function(c){return scoreRisco(c).emoji==='🟢';}).length;
+
+        return '<div class="card">'          +'<div class="card-title" style="margin-bottom:10px;">Em Contratação ('+contratacao.length+')</div>'          +'<div id="cf-'+id+'" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">'            +'<button onclick="filtCont(this,\''+id+'\',\'todos\')" style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid #1A3BAD;background:#1A3BAD;color:#fff;">Todos ('+sorted.length+')</button>'            +'<button onclick="filtCont(this,\''+id+'\',\'pronto\')" style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--rule);background:var(--canvas);color:var(--t2);">✅ Pronto p/ Onboarding ('+_nPronto+')</button>'            +'<button onclick="filtCont(this,\''+id+'\',\'risco\')" style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--rule);background:var(--canvas);color:var(--t2);">🔴 Em Risco ('+_nRisco+')</button>'            +'<button onclick="filtCont(this,\''+id+'\',\'atencao\')" style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--rule);background:var(--canvas);color:var(--t2);">🟡 Atenção ('+_nAtencao+')</button>'            +'<button onclick="filtCont(this,\''+id+'\',\'prazo\')" style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--rule);background:var(--canvas);color:var(--t2);">🟢 No Prazo ('+_nPrazo+')</button>'          +'</div>'          +'<div id="cb-'+id+'">'          +cards          +toggleBtn          +'</div>'          +'</div>';
       })(),
 
     '</div>',
@@ -610,6 +613,88 @@ function renderCharts(byEtapa, senMap, hunters) {
 })();
 
 window.b3OnCSVLoaded = function(){};
+
+// ── filtCont: filtrar contratação por status ─────────────────
+function filtCont(btn, id, filtro) {
+  // Resetar visual dos botões
+  var btns = document.querySelectorAll('#cf-'+id+' button');
+  btns.forEach(function(b){
+    b.style.background='var(--canvas)'; b.style.color='var(--t2)'; b.style.borderColor='var(--rule)';
+  });
+  btn.style.background='#1A3BAD'; btn.style.color='#fff'; btn.style.borderColor='#1A3BAD';
+
+  var sorted = window['_cS_'+id] || [];
+  var SHOW = 10;
+
+  // Função de score inline (sem depender do closure original)
+  function sc(c) {
+    var ancordOk = ['aprovada','isento'].indexOf((c.status_ancord||'').toLowerCase()) > -1;
+    if (ancordOk) return '✅';
+    var mouOk = (c.mou||'').trim().toLowerCase() === 'assinado';
+    if (!mouOk) return '🔴';
+    if (c.data_mou) {
+      var d = Math.round((Date.now()-new Date(c.data_mou))/(1000*60*60*24));
+      if (d>90) return '🔴';
+      if (d>60) return '🟡';
+      return '🟢';
+    }
+    return '🟡';
+  }
+
+  function scFull(c) {
+    var e = sc(c);
+    var map = {
+      '✅': {emoji:'✅', label:'Pronto p/ Onboarding', cor:'#16A34A', bg:'#DCFCE7'},
+      '🔴': {emoji:'🔴', label:'Em Risco', cor:'#DC2626', bg:'#FEE2E2'},
+      '🟡': {emoji:'🟡', label:'Atenção', cor:'#B45309', bg:'#FEF3C7'},
+      '🟢': {emoji:'🟢', label:'No Prazo', cor:'#16A34A', bg:'#DCFCE7'}
+    };
+    // Label mais detalhado
+    if (e==='🔴' && (c.mou||'').trim().toLowerCase()!=='assinado') map['🔴'].label='Sem MOU';
+    if (e==='🔴' && c.data_mou) { var d=Math.round((Date.now()-new Date(c.data_mou))/(1000*60*60*24)); map['🔴'].label='Prazo expirado ('+d+'d)'; }
+    if (e==='🟡' && c.data_mou) { var d=Math.round((Date.now()-new Date(c.data_mou))/(1000*60*60*24)); map['🟡'].label='Prazo adicional ('+d+'d/90)'; }
+    if (e==='🟢' && c.data_mou) { var d=Math.round((Date.now()-new Date(c.data_mou))/(1000*60*60*24)); map['🟢'].label='No prazo ('+d+'d/60)'; }
+    return map[e] || map['🟡'];
+  }
+
+  var emap = {todos:null, pronto:'✅', risco:'🔴', atencao:'🟡', prazo:'🟢'};
+  var emojiFiltro = emap[filtro];
+  var lista = emojiFiltro ? sorted.filter(function(c){return sc(c)===emojiFiltro;}) : sorted;
+
+  var body = document.getElementById('cb-'+id);
+  if (!body) return;
+
+  if (!lista.length) {
+    body.innerHTML = '<div style="padding:16px;text-align:center;color:#94a3b8;font-size:12px;">Nenhum candidato neste filtro</div>';
+    return;
+  }
+
+  var html = lista.map(function(c, i){
+    var s = scFull(c);
+    var mouOk = (c.mou||'').trim().toLowerCase()==='assinado';
+    var oculto = i >= SHOW;
+    return '<div class="cont-dyn-item" style="display:'+(oculto?'none':'flex')+';align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--rule);">'
+      +'<div style="font-size:18px;flex-shrink:0;margin-top:1px;">'+s.emoji+'</div>'
+      +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-size:12px;font-weight:700;color:var(--t1);">'+(c.nome||'')+'</div>'
+        +'<div style="font-size:10px;color:var(--t3);margin-top:1px;">'+(c.praca||'—')+' · '+(c.nivel||'—')+'</div>'
+        +'<div style="display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap;">'
+          +'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:'+s.bg+';color:'+s.cor+';">'+s.label+'</span>'
+          +(mouOk?'<span style="font-size:9px;padding:2px 7px;border-radius:10px;background:#DCFCE7;color:#15803D;font-weight:700;">MOU ✓</span>':'')
+          +(c.hunter?'<span style="font-size:9px;color:var(--t3);">'+c.hunter+'</span>':'')
+        +'</div>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+
+  var resto = lista.length - SHOW;
+  var toggleHtml = lista.length > SHOW
+    ? '<button onclick="(function(b){var items=document.querySelectorAll(\'.cont-dyn-item\');var open=items['+SHOW+']&&items['+SHOW+'].style.display!==\'none\';for(var i='+SHOW+';i<items.length;i++){items[i].style.display=open?\'none\':\'flex\';}b.textContent=open?\'▸ Ver mais '+resto+' candidatos\':\'▾ Ocultar candidatos\';})(this)" style="width:100%;margin-top:8px;padding:7px;border:1px solid var(--rule);border-radius:var(--r8);background:var(--canvas);font-size:11px;font-weight:600;color:var(--cobalt);cursor:pointer;">▸ Ver mais '+resto+' candidatos</button>'
+    : '';
+
+  body.innerHTML = html + toggleHtml;
+}
+
 </script>
 </body>
 </html>
