@@ -192,9 +192,18 @@ function blue3LoadData(callback){
       o['Total Captação (MM)']   = totalCap * 1e6; // MM → R$ para Blue3_dataLoader dividir de volta
       o['Total Comp.']           = totalComp;
       var _statusFinal = etapaToStatus(r.etapa);
-      // Desistentes usam data_declinio como referência de mês
-      var _dataRef = (_statusFinal === 'Desistência' && r.data_declinio)
-        ? r.data_declinio : r.data_entrada;
+      // Prioridade de data por etapa:
+      // Trabalhando → data_inicio (data real de início)
+      // Desistência → data_declinio
+      // demais      → data_entrada
+      var _dataRef;
+      if (_statusFinal === 'Trabalhando' && r.data_inicio) {
+        _dataRef = r.data_inicio;
+      } else if (_statusFinal === 'Desistência' && r.data_declinio) {
+        _dataRef = r.data_declinio;
+      } else {
+        _dataRef = r.data_entrada;
+      }
       o['Data de Contratação']   = _dataRef
         ? _dataRef.split('-').reverse().join('/')
         : '';
@@ -202,6 +211,7 @@ function blue3LoadData(callback){
       o['MOU']                   = (r.mou||'').trim();
       o['Data MOU']              = r.data_mou || '';
       o['Prev. Inicio']          = r.prev_inicio || '';
+      o['Data Inicio']           = r.data_inicio || '';
       o['Ancord']                = (r.status_ancord||'').trim();
       o['Área']                  = (r.vaga||'Assessores').trim();
       o['Detalhe Coparticipação']= parseFloat(r.coparticipacao)||0;
@@ -248,7 +258,8 @@ function Blue3_dataLoader(){
       periodo:Math.round(parseFloat(String(r['Período']||'12').replace(',','.'))||12),
       trigs:[pn(r['Trigger 1 Tri']),pn(r['Trigger 1']),pn(r['Trigger 2']),pn(r['Trigger 3']),pn(r['Trigger 4'])],
       dt:(r['Data de Contratação']||null),
-      inicio:(r['Prev. Inicio']||null),
+      // data_inicio = data real (Trabalhando); prev_inicio = previsão (Contratação)
+      inicio:(r['Data Inicio']||r['Prev. Inicio']||null),
       estrategico:(r['Estratégico']||'Não').trim(),
       tel:(r['Telefone']||'').trim(),
       _id:(r['_crm_id']||'')
