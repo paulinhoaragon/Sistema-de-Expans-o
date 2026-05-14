@@ -169,6 +169,8 @@ tfoot td:first-child{text-align:left}
           <th>Sign-in</th>
           <th>Triggers</th>
           <th>Total</th>
+          <th title="Possui coparticipação XP">Coparcip.</th>
+          <th title="Candidato estratégico">Estratégico</th>
         </tr>
       </thead>
       <tbody id="tb2"></tbody>
@@ -354,13 +356,22 @@ function rA(financeiros) {
       ? '<span class="badge bg-g"><span class="bd"></span>Ativo</span>'
       : '<span class="badge bg-a"><span class="bd"></span>A confirmar</span>';
     var inicio = a.inicio || '—';
+    var _xpCheck = (a.xp && a.xp > 0)
+      ? '<span title="Tem coparticipação" style="color:#16A34A;font-size:14px;">✓</span>'
+      : '<span style="color:#CBD5E1;font-size:12px;">—</span>';
+    var _estCheck = ((a.estrategico||'').toLowerCase() === 'sim')
+      ? '<span title="Candidato estratégico" style="color:#1A3BAD;font-size:14px;">✓</span>'
+      : '<span style="color:#CBD5E1;font-size:12px;">—</span>';
     return '<tr><td>'+a.n+'</td><td style="color:var(--t3)">'+a.p+'</td><td>'+badge+'</td>'
       +'<td>'+inicio+'</td><td>'+fmt(a.piso)+'</td><td>'+fmtPer(a.periodo)+'</td>'
       +'<td>'+fmt(a.pisoTotal)+'</td><td>'+fmt(a.si)+'</td><td>'+fmt(a.trigTotal)+'</td>'
-      +'<td style="font-weight:700;color:var(--cobalt)">'+fmt(a.custoTotal)+'</td></tr>';
+      +'<td style="font-weight:700;color:var(--cobalt)">'+fmt(a.custoTotal)+'</td>'
+      +'<td style="text-align:center">'+_xpCheck+'</td>'
+      +'<td style="text-align:center">'+_estCheck+'</td></tr>';
   }).join('');
   document.getElementById('tf2').innerHTML = '<tr><td>TOTAL GERAL</td><td></td><td></td><td></td><td></td><td></td>'
-    +'<td>'+fmt(tp)+'</td><td>'+fmt(ts)+'</td><td>'+fmt(tt)+'</td><td>'+fmt(ta)+'</td></tr>';
+    +'<td>'+fmt(tp)+'</td><td>'+fmt(ts)+'</td><td>'+fmt(tt)+'</td><td>'+fmt(ta)+'</td>'
+    +'<td></td><td></td></tr>';
 }
 
 // ── Render KPIs ──
