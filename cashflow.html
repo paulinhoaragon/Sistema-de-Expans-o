@@ -79,6 +79,22 @@ tfoot td:first-child{text-align:left}
 /* EMPTY STATE */
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:16px;text-align:center}
 .empty a{padding:10px 24px;background:var(--cobalt);color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600}
+
+/* ── Tabela Impacto por Assessor — compacta ── */
+#tb2-table thead th { padding: 5px 6px; font-size: 8px; white-space: nowrap; }
+#tb2-table tbody td { padding: 5px 6px; font-size: 10px; white-space: nowrap; }
+#tb2-table tfoot td { padding: 5px 6px; font-size: 10px; }
+/* Colunas de flag: largura mínima */
+#tb2-table thead th:nth-child(11),
+#tb2-table thead th:nth-child(12),
+#tb2-table thead th:nth-child(13) { min-width: 0; width: 54px; text-align: center; }
+#tb2-table tbody td:nth-child(11),
+#tb2-table tbody td:nth-child(12),
+#tb2-table tbody td:nth-child(13) { width: 54px; padding: 5px 4px; }
+/* Coluna nome: não truncar demais */
+#tb2-table tbody td:first-child { min-width: 120px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+/* Hover nos th ordenáveis */
+#tb2-table thead th[onclick]:hover { background: #1a2a4a; color: #fff; }
 </style>
 </head>
 <body>
@@ -155,8 +171,8 @@ tfoot td:first-child{text-align:left}
 
   <!-- Tabela por assessor -->
   <div class="sh"><div class="st">Impacto por Assessor</div><div class="ss">Total comprometido por contrato</div></div>
-  <div class="tbl-wrap">
-    <table>
+  <div class="tbl-wrap" id="tb2-wrap">
+    <table id="tb2-table">
       <thead>
         <tr id="tb2-head">
           <th style="text-align:left;cursor:pointer;user-select:none" onclick="sortTable('n')" title="Ordenar por nome">Assessor <span id="si-n"></span></th>
@@ -386,8 +402,8 @@ function _sortData(data, key, asc) {
       return asc ? va - vb : vb - va;
     }
     if (key === 'area') {
-      va = (a.area||'Assessores').toLowerCase() === 'assessores' ? 1 : 0;
-      vb = (b.area||'Assessores').toLowerCase() === 'assessores' ? 1 : 0;
+      va = (a.area||'Assessor').toLowerCase() === 'assessor' ? 1 : 0;
+      vb = (b.area||'Assessor').toLowerCase() === 'assessor' ? 1 : 0;
       return asc ? va - vb : vb - va;
     }
     va = a[key] || 0; vb = b[key] || 0;
@@ -430,8 +446,9 @@ function _renderTb2(sorted) {
     var _estCheck = ((a.estrategico||'').toLowerCase() === 'sim')
       ? '<span title="Candidato estratégico" style="color:#1A3BAD;font-size:15px;font-weight:700;">✓</span>'
       : '<span style="color:#CBD5E1;font-size:12px;">—</span>';
-    var _areaCheck = ((a.area||'Assessores').toLowerCase() !== 'assessores')
-      ? '<span title="'+((a.area||''))+'" style="color:#B45309;font-size:15px;font-weight:700;">✓</span>'
+    var _areaVal = (a.area||'Assessor').trim();
+    var _areaCheck = (_areaVal.toLowerCase() !== 'assessor')
+      ? '<span title="'+_areaVal+'" style="color:#B45309;font-size:15px;font-weight:700;">✓</span>'
       : '<span style="color:#CBD5E1;font-size:12px;">—</span>';
     return '<tr><td>'+a.n+'</td><td style="color:var(--t3)">'+a.p+'</td><td>'+badge+'</td>'
       +'<td>'+inicio+'</td><td>'+fmt(a.piso)+'</td><td>'+fmtPer(a.periodo)+'</td>'
