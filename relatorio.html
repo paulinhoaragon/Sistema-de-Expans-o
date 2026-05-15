@@ -1854,6 +1854,8 @@ function renderConsolidadorPracas(candidatos) {
   if (!wrap || !grid) return;
 
   var base = candidatos || (window.Blue3Data && window.Blue3Data.candidatos) || [];
+  // Apenas assessores no consolidado por praça
+  base = base.filter(function(r){ return (r.area||'Assessor').trim().toLowerCase() === 'assessor'; });
   var ativos = base.filter(function(r){
     var s = (r.st||'').toLowerCase();
     return s === 'trabalhando' || s === 'contratado(a)';
