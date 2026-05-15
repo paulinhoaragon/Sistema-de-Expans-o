@@ -192,20 +192,14 @@ function blue3LoadData(callback){
       o['Total Captação (MM)']   = totalCap * 1e6; // MM → R$ para Blue3_dataLoader dividir de volta
       o['Total Comp.']           = totalComp;
       var _statusFinal = etapaToStatus(r.etapa);
-      // Prioridade de data por etapa:
-      // Trabalhando → data_inicio (data real de início)
-      // Desistência → data_declinio
-      // demais      → data_entrada
-      var _dataRef;
-      if (_statusFinal === 'Trabalhando' && r.data_inicio) {
-        _dataRef = r.data_inicio;
-      } else if (_statusFinal === 'Desistência' && r.data_declinio) {
-        _dataRef = r.data_declinio;
-      } else {
-        _dataRef = r.data_entrada;
-      }
-      o['Data de Contratação']   = _dataRef
-        ? _dataRef.split('-').reverse().join('/')
+      // 'Data de Contratação' = sempre data_entrada (usado na seção 02 — evolução mensal)
+      // 'Data Inicio'         = data_inicio real (usado no cashflow)
+      // Desistência usa data_declinio como referência de mês
+      var _dataContrat = (_statusFinal === 'Desistência' && r.data_declinio)
+        ? r.data_declinio
+        : r.data_entrada;
+      o['Data de Contratação']   = _dataContrat
+        ? _dataContrat.split('-').reverse().join('/')
         : '';
       o['Status']                = _statusFinal;
       o['MOU']                   = (r.mou||'').trim();
