@@ -337,7 +337,31 @@ function Blue3_huntersPerformance(){
 }
 
 function Blue3_pipelineStrategic(){
-  window.Blue3Data.pipeline    = window.Blue3Data._pipeline    || [];
+  // Construir pipeline estratégico a partir do crm_candidatos
+  // Candidatos marcados como estratégico='Sim' + etapa ativa
+  var C = window.Blue3Data.candidatos || [];
+  var etapasAtivas = ['trabalhando','contratado(a)','contratado'];
+
+  var estrategicos = C.filter(function(r){
+    var isEstrat = (r.estrategico||'').toLowerCase() === 'sim';
+    var isAtivo  = etapasAtivas.indexOf(norm(r.st)) > -1;
+    return isEstrat && isAtivo;
+  }).map(function(r){
+    return {
+      n: r.n,
+      p: r.p,
+      i: r.org || '',
+      a: r.cap || 0,
+      tipo: 'Contratado'
+    };
+  });
+
+  // Mesclar com _pipeline (cadastros manuais) se existirem, evitando duplicatas por nome
+  var manual = (window.Blue3Data._pipeline || []).filter(function(m){
+    return !estrategicos.find(function(e){ return norm(e.n) === norm(m.n||''); });
+  });
+
+  window.Blue3Data.pipeline    = estrategicos.concat(manual);
   window.Blue3Data.pipelineNeg = window.Blue3Data._pipelineNeg || [];
 }
 
