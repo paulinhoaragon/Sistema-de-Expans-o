@@ -1511,7 +1511,7 @@ function renderPracasTooltip(candidatos) {
   var C = base.concat(extras);
 
   // Filtrar apenas assessores para o consolidado por praça
-  C = C.filter(function(r){ return (r.area||'Assessores').toLowerCase() === 'assessores' || (r.area||'Assessor').toLowerCase() === 'assessor'; });
+  C = C.filter(function(r){ return (r.area||'Assessor').trim().toLowerCase() === 'assessor'; });
 
   // Agrupar por praça
   var byPraca = {};
