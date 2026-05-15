@@ -206,7 +206,7 @@ function blue3LoadData(callback){
       o['Prev. Inicio']          = r.prev_inicio || '';
       o['Data Inicio']           = r.data_inicio || '';
       o['Ancord']                = (r.status_ancord||'').trim();
-      o['Área']                  = (r.vaga||'Assessores').trim();
+      o['Área']                  = (r.vaga||'Assessor').trim();
       o['Detalhe Coparticipação']= parseFloat(r.coparticipacao)||0;
       o['Trigger 1 Tri']         = parseFloat(r.trigger1_tri_val)||0;
       o['Trigger 1']             = parseFloat(r.trigger1_val)||0;
@@ -237,7 +237,7 @@ function Blue3_dataLoader(){
       p:(r['Filial']||'').trim(),
       h:(r['Hunter']||'').trim(),
       sen:(r['Senioridade']||'').trim(),
-      area:(r['Área']||r['Area']||'Assessores').trim(),
+      area:(r['Área']||r['Area']||'Assessor').trim(),
       org:(r['Origem']||'').trim(),
       mou:(r['MOU']||'').trim(),
       data_mou:(r['Data MOU']||'').trim(),
@@ -302,7 +302,7 @@ function Blue3_financeMetrics(){
         custoTotal_calculado: Math.round(pt+r.si+tt)
       });
     }
-    return{n:r.n,p:r.p,h:r.h,sen:r.sen,mou:r.mou,st:r.st,piso:r.piso,periodo:r.periodo,si:r.si,xp:r.xp,comp:r.comp,cap:r.cap,pisoTotal:Math.round(pt),trigTotal:Math.round(tt),custoTotal:Math.round(pt+r.si+tt),trigMap:tm,ativo:!!r.inicio,inicio:r.inicio,dt:r.dt,org:r.org,ancord:r.ancord,estrategico:r.estrategico||"Não",data_mou:r.data_mou||'',area:r.area||'Assessores'};
+    return{n:r.n,p:r.p,h:r.h,sen:r.sen,mou:r.mou,st:r.st,piso:r.piso,periodo:r.periodo,si:r.si,xp:r.xp,comp:r.comp,cap:r.cap,pisoTotal:Math.round(pt),trigTotal:Math.round(tt),custoTotal:Math.round(pt+r.si+tt),trigMap:tm,ativo:!!r.inicio,inicio:r.inicio,dt:r.dt,org:r.org,ancord:r.ancord,estrategico:r.estrategico||"Não",data_mou:r.data_mou||'',area:r.area||'Assessor'};
   });
   var F=window.Blue3Data.financeiros,bm={},sbm={};
   F.forEach(function(r){var mo=getMonth(r.dt);if(mo){bm[mo]=(bm[mo]||0)+1;if(norm(r.sen)==='sênior')sbm[mo]=(sbm[mo]||0)+1;}});
