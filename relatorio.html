@@ -1510,6 +1510,9 @@ function renderPracasTooltip(candidatos) {
   var extras = getDesistentesExtras(base);
   var C = base.concat(extras);
 
+  // Filtrar apenas assessores para o consolidado por praça
+  C = C.filter(function(r){ return (r.area||'Assessores').toLowerCase() === 'assessores' || (r.area||'Assessor').toLowerCase() === 'assessor'; });
+
   // Agrupar por praça
   var byPraca = {};
   var semPracaDesist = 0; // desistentes sem praça definida
