@@ -506,6 +506,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         <span>Candidatos com carteiras mapeadas</span>
         <button id="cand-toggle" onclick="toggleCandList()" style="font-size:10px;font-weight:700;color:var(--cobalt);background:var(--cobalt-pl);border:none;padding:4px 12px;border-radius:4px;cursor:pointer;letter-spacing:.04em;">▼ Ver todos</button>
       </div>
+      <!-- Filtros seção 05 -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 0 4px;">
+        <select id="cand-f-periodo" onchange="aplicarFiltrosCand()" style="font-size:10px;padding:4px 8px;border:1px solid var(--rule);border-radius:6px;color:var(--t2);background:var(--canvas);cursor:pointer;font-family:inherit;">
+          <option value="todos">Todos os períodos</option>
+          <option value="mes">Este mês</option>
+          <option value="anterior">Mês anterior</option>
+          <option value="3meses">Últimos 3 meses</option>
+        </select>
+        <select id="cand-f-sen" onchange="aplicarFiltrosCand()" style="font-size:10px;padding:4px 8px;border:1px solid var(--rule);border-radius:6px;color:var(--t2);background:var(--canvas);cursor:pointer;font-family:inherit;">
+          <option value="todos">Todas as senioridades</option>
+          <option value="sênior">Sênior</option>
+          <option value="pleno">Pleno</option>
+          <option value="júnior">Júnior</option>
+        </select>
+        <button onclick="resetFiltrosCand()" style="font-size:10px;padding:4px 10px;border:1px solid var(--rule);border-radius:6px;color:var(--t3);background:var(--canvas);cursor:pointer;font-family:inherit;">✕ Limpar</button>
+      </div>
       <!-- 10 primeiros sempre visíveis -->
       <div id="cand-list-top"></div>
       <!-- restante colapsado -->
@@ -841,14 +857,17 @@ function renderCandList(candidatos, el) {
     return;
   }
   var totalAuC = candsSorted.reduce(function(s,r){return s+(r.cap||0);},0);
+  var _thS = 'padding:8px 10px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);';
+  var _thC = _thS+'cursor:pointer;user-select:none;';
   var TH = '<thead><tr style="background:var(--s2);">'
-    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Candidato</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Praça</th>'
+    +'<th onclick="sortCandTable(\'n\')" style="'+_thC+'text-align:left;">Candidato<span id="csi-n"></span></th>'
+    +'<th onclick="sortCandTable(\'dt\')" style="'+_thC+'text-align:left;white-space:nowrap;">Contratação<span id="csi-dt"></span></th>'
+    +'<th onclick="sortCandTable(\'p\')" style="'+_thC+'text-align:left;">Praça<span id="csi-p"></span></th>'
     +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Hunter</th>'
     +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Senioridade</th>'
     +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Status</th>'
     +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">MOU</th>'
-    +'<th style="padding:8px 10px;text-align:right;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);white-space:nowrap;min-width:80px;">AuC (MM)</th>'
+    +'<th onclick="sortCandTable(\'cap\')" style="'+_thC+'text-align:right;white-space:nowrap;min-width:80px;">AuC (MM)<span id="csi-cap"> ↓</span></th>'
     +'</tr></thead>';
   var senTag = function(s){ var m={'sênior':'background:#DCFCE7;color:#166534;','pleno':'background:#FEF3C7;color:#92400E;','júnior':'background:#FCE7F3;color:#9D174D;','junior':'background:#FCE7F3;color:#9D174D;'}; return m[(s||'').toLowerCase()]||'background:var(--s2);color:var(--t2);'; };
   var mouTag = function(m){ return (m||'').toLowerCase()==='assinado'?'background:#DCFCE7;color:#166534;':'background:#FEF3C7;color:#92400E;'; };
@@ -864,7 +883,7 @@ function renderCandList(candidatos, el) {
       +'</tr>';
   }).join('');
   var TFOOT = '<tfoot><tr style="background:var(--s2);">'
-    +'<td colspan="6" style="padding:10px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
+    +'<td colspan="7" style="padding:10px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
     +'<td style="padding:10px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
     +'</tr></tfoot>';
   el.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'+TH+'<tbody>'+ROWS+'</tbody>'+TFOOT+'</table></div>';
@@ -1940,15 +1959,112 @@ function showEmptyState(msg) {
 })();
 
 
+// ── Estado de ordenação seção 05 ─────────────────────────────
+var _candSortKey = 'cap';
+var _candSortAsc = false;
+var _candDataFull = [];
+
+function _parseDtCand(s) {
+  if (!s || s === '—') return null;
+  var p = s.split('/');
+  return p.length === 3 ? new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0])) : null;
+}
+
+function _sortCand(arr, key, asc) {
+  return arr.slice().sort(function(a, b) {
+    var va, vb;
+    if (key === 'n') {
+      va = (a.n||'').toLowerCase(); vb = (b.n||'').toLowerCase();
+      return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    }
+    if (key === 'p') {
+      va = (a.p||'').toLowerCase(); vb = (b.p||'').toLowerCase();
+      return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    }
+    if (key === 'dt') {
+      va = _parseDtCand(a.dt) || new Date(0);
+      vb = _parseDtCand(b.dt) || new Date(0);
+      return asc ? va - vb : vb - va;
+    }
+    va = a[key] || 0; vb = b[key] || 0;
+    return asc ? va - vb : vb - va;
+  });
+}
+
+function _updateCandSortIcons(key, asc) {
+  ['n','dt','p','cap'].forEach(function(k) {
+    var el = document.getElementById('csi-'+k);
+    if (el) el.textContent = '';
+  });
+  var el = document.getElementById('csi-'+key);
+  if (el) el.textContent = asc ? ' ↑' : ' ↓';
+}
+
+function sortCandTable(key) {
+  if (_candSortKey === key) { _candSortAsc = !_candSortAsc; }
+  else { _candSortKey = key; _candSortAsc = (key === 'n' || key === 'p' || key === 'dt'); }
+  _updateCandSortIcons(_candSortKey, _candSortAsc);
+  renderCandListSplit(_candDataFull, true);
+}
+
+function aplicarFiltrosCand() {
+  var periodo = (document.getElementById('cand-f-periodo')||{}).value || 'todos';
+  var sen     = (document.getElementById('cand-f-sen')||{}).value || 'todos';
+  var now = new Date();
+  var filtered = _candDataFull.filter(function(r) {
+    // Sem filtro de período: mostrar apenas com AuC mapeado (comportamento original)
+    if (periodo === 'todos' && !(r.cap > 0)) return false;
+    if (sen !== 'todos' && (r.sen||'').toLowerCase() !== sen) return false;
+    if (periodo !== 'todos') {
+      var d = _parseDtCand(r.dt);
+      if (!d) return false;
+      var ma = now.getMonth(), aa = now.getFullYear();
+      if (periodo === 'mes') { if (d.getMonth()!==ma||d.getFullYear()!==aa) return false; }
+      else if (periodo === 'anterior') {
+        var mp = ma===0?11:ma-1, ap = ma===0?aa-1:aa;
+        if (d.getMonth()!==mp||d.getFullYear()!==ap) return false;
+      } else if (periodo === '3meses') {
+        var lim = new Date(now); lim.setMonth(lim.getMonth()-3);
+        if (d < lim) return false;
+      }
+    }
+    return true;
+  });
+  _candSortKey = 'cap'; _candSortAsc = false;
+  _updateCandSortIcons('cap', false);
+  renderCandListSplit(filtered, true);
+}
+
+function resetFiltrosCand() {
+  var p = document.getElementById('cand-f-periodo');
+  var s = document.getElementById('cand-f-sen');
+  if (p) p.value = 'todos';
+  if (s) s.value = 'todos';
+  _candSortKey = 'cap'; _candSortAsc = false;
+  _updateCandSortIcons('cap', false);
+  // Ao resetar para "todos os períodos": mostrar só candidatos com AuC mapeado
+  var resetData = _candDataFull.filter(function(r){ return r.cap > 0; });
+  renderCandListSplit(resetData, true);
+}
+
 // ── renderCandListSplit: top10 visível + resto colapsado ────────
-function renderCandListSplit(candidatos) {
+function renderCandListSplit(candidatos, fromFilter) {
   var topEl  = document.getElementById('cand-list-top');
   var moreEl = document.getElementById('cand-list-more');
   var btn    = document.getElementById('cand-toggle');
   if (!topEl) return;
 
-  var sorted = (candidatos||[]).filter(function(r){return r.cap>0;})
-                               .sort(function(a,b){return b.cap-a.cap;});
+  // Armazenar dados completos para filtros (apenas na chamada inicial)
+  if (!fromFilter) {
+    // Apenas assessores — filtro de AuC aplicado só em "todos os períodos"
+  _candDataFull = (candidatos||[]).filter(function(r){ return (r.area||'Assessor').toLowerCase() === 'assessor'; });
+    _candSortKey = 'cap'; _candSortAsc = false;
+  }
+
+  var sorted = _sortCand(
+    fromFilter ? (candidatos||[]) : _candDataFull,
+    _candSortKey, _candSortAsc
+  );
 
   if (!sorted.length) {
     topEl.innerHTML = '<p style="color:var(--t3);padding:16px;font-size:13px;">Nenhum candidato encontrado com os filtros selecionados.</p>';
@@ -1962,14 +2078,17 @@ function renderCandListSplit(candidatos) {
   var totalAuC = sorted.reduce(function(s,r){return s+(r.cap||0);},0);
 
   // Cabeçalho da tabela (mesmo estilo de renderCandList)
+  var _thS2 = 'padding:8px 10px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);';
+  var _thC2 = _thS2+'cursor:pointer;user-select:none;';
   var TH = '<thead><tr style="background:var(--s2);">'
-    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Candidato</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Praça</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Hunter</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Senioridade</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Status</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">MOU</th>'
-    +'<th style="padding:8px 10px;text-align:right;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);white-space:nowrap;min-width:80px;">AuC (MM)</th>'
+    +'<th onclick="sortCandTable(\'n\')" style="'+_thC2+'text-align:left;">Candidato<span id="csi-n"></span></th>'
+    +'<th onclick="sortCandTable(\'dt\')" style="'+_thC2+'text-align:left;white-space:nowrap;">Contratação<span id="csi-dt"></span></th>'
+    +'<th onclick="sortCandTable(\'p\')" style="'+_thC2+'text-align:left;">Praça<span id="csi-p"></span></th>'
+    +'<th style="'+_thS2+'text-align:left;">Hunter</th>'
+    +'<th style="'+_thS2+'text-align:left;">Senioridade</th>'
+    +'<th style="'+_thS2+'text-align:left;">Status</th>'
+    +'<th style="'+_thS2+'text-align:left;">MOU</th>'
+    +'<th onclick="sortCandTable(\'cap\')" style="'+_thC2+'text-align:right;white-space:nowrap;min-width:80px;">AuC (MM)<span id="csi-cap"> ↓</span></th>'
     +'</tr></thead>';
 
   var senTag = function(s){ var m={'sênior':'background:#DCFCE7;color:#166534;','pleno':'background:#FEF3C7;color:#92400E;','júnior':'background:#FCE7F3;color:#9D174D;','junior':'background:#FCE7F3;color:#9D174D;'}; return m[(s||'').toLowerCase()]||'background:var(--s2);color:var(--t2);'; };
@@ -1977,8 +2096,10 @@ function renderCandListSplit(candidatos) {
 
   var makeRows = function(arr) {
     return arr.map(function(r){
+      var _dtFmt = r.dt ? r.dt : '—';
       return '<tr>'
         +'<td style="padding:8px 10px;font-size:12px;font-weight:600;color:var(--t1);border-bottom:1px solid var(--rule);">'+r.n+'</td>'
+        +'<td style="padding:8px 10px;font-size:11px;color:var(--t3);border-bottom:1px solid var(--rule);white-space:nowrap;">'+_dtFmt+'</td>'
         +'<td style="padding:8px 10px;font-size:11px;color:var(--t3);border-bottom:1px solid var(--rule);">'+r.p+'</td>'
         +'<td style="padding:8px 10px;font-size:11px;color:var(--t2);border-bottom:1px solid var(--rule);">'+(r.h||'—')+'</td>'
         +'<td style="padding:8px 10px;border-bottom:1px solid var(--rule);"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;'+senTag(r.sen)+'">'+r.sen+'</span></td>'
@@ -1992,7 +2113,7 @@ function renderCandListSplit(candidatos) {
   // Rodapé com total AuC — aparece só após os 10 se não houver mais
   var TFOOT = rest.length === 0
     ? '<tfoot><tr style="background:var(--s2);">'
-        +'<td colspan="6" style="padding:10px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
+        +'<td colspan="7" style="padding:10px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
         +'<td style="padding:10px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
         +'</tr></tfoot>'
     : '';
