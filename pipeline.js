@@ -192,9 +192,8 @@ function blue3LoadData(callback){
       o['Total Captação (MM)']   = totalCap * 1e6; // MM → R$ para Blue3_dataLoader dividir de volta
       o['Total Comp.']           = totalComp;
       var _statusFinal = etapaToStatus(r.etapa);
-      // 'Data de Contratação' = sempre data_entrada (usado na seção 02 — evolução mensal)
-      // 'Data Inicio'         = data_inicio real (usado no cashflow)
-      // Desistência usa data_declinio como referência de mês
+      // 'Data de Contratação' = sempre data_entrada (seção 02 — evolução mensal)
+      // 'Data Inicio'         = data_inicio real (cashflow)
       var _dataContrat = (_statusFinal === 'Desistência' && r.data_declinio)
         ? r.data_declinio
         : r.data_entrada;
@@ -268,9 +267,12 @@ function Blue3_dataLoader(){
     seen[key] = true;
     return true;
   });
-  // Contar brutas e desistências antes do filtro de ativos
+  // Contar brutas e desistências — excluindo Negociação
   var validAll = deduped;
-  window.Blue3Data._brutas = validAll.length;
+  var brutasStatuses = ['trabalhando','contratado(a)','contratado','desistência','desistencia'];
+  window.Blue3Data._brutas = validAll.filter(function(r){
+    return brutasStatuses.indexOf(norm(r.st)) > -1;
+  }).length;
   window.Blue3Data._desist = validAll.filter(function(r){
     var s=norm(r.st); return s==='desistência'||s==='desistencia';
   }).length;
