@@ -72,6 +72,25 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .b-neg{background:#FEF3C7;color:#92400E;}
 .b-ok{background:#DCFCE7;color:#166534;}
 .b-red{background:#FEE2E2;color:#991B1B;}
+
+/* ── Alertas ── */
+.alerta-bloco{border-radius:10px;margin-bottom:24px;overflow:hidden;border:1px solid var(--rule);}
+.alerta-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;user-select:none;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.alerta-header.crit{background:#FEF2F2;color:#991B1B;border-bottom:1px solid #FECACA;}
+.alerta-header.warn{background:#FFFBEB;color:#92400E;border-bottom:1px solid #FDE68A;}
+.alerta-header.ok{background:#F0FDF4;color:#166534;border-bottom:1px solid #BBF7D0;}
+.alerta-body{background:#fff;}
+.alerta-item{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--rule);transition:background .15s;cursor:pointer;}
+.alerta-item:last-child{border-bottom:none;}
+.alerta-item:hover{background:#F8FAFF;}
+.alerta-item-left{display:flex;align-items:center;gap:10px;}
+.alerta-emoji{font-size:16px;flex-shrink:0;}
+.alerta-nome{font-size:12px;font-weight:600;color:var(--t1);}
+.alerta-desc{font-size:10px;color:var(--t3);margin-top:1px;}
+.alerta-badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap;}
+.alerta-badge.crit{background:#FEE2E2;color:#DC2626;}
+.alerta-badge.warn{background:#FEF3C7;color:#B45309;}
+.alerta-toggle{font-size:11px;color:inherit;opacity:.6;}
 </style>
 </head>
 <body>
@@ -150,7 +169,160 @@ function renderDash(G, H, crm, propostas, _ma) {
       +'<div style="font-size:9px;text-transform:uppercase;color:'+lc+';letter-spacing:.06em;margin-top:2px;">'+lbl+'</div></div>';
   }
 
-  root.innerHTML = [
+  // ══════════════════════════════════════════════
+  // ALERTAS
+  // ══════════════════════════════════════════════
+  var hoje2 = new Date(); hoje2.setHours(0,0,0,0);
+
+  function diasDesde(campo) {
+    if (!campo) return null;
+    var fmt = campo.indexOf('/') > -1;
+    var d;
+    if (fmt) {
+      var p = campo.split('/');
+      d = new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]));
+    } else {
+      d = new Date(campo);
+    }
+    if (isNaN(d)) return null;
+    return Math.floor((hoje2 - d) / 86400000);
+  }
+
+  var alertasCrit = [];
+  var alertasWarn = [];
+
+  C.filter(isAss).forEach(function(r) {
+    var nome = r.n || '—';
+    var praca = r.p || '—';
+    var st = (r.st||'').toLowerCase();
+    var mou = (r.mou||'').toLowerCase();
+    var isContrat = st === 'contratado(a)' || st === 'contratado';
+    var isTrab = st === 'trabalhando';
+
+    // ── 🔴 MOU vencido (>90 dias sem ativar) ──
+    if (isContrat && mou === 'assinado' && r.data_mou) {
+      var dias = diasDesde(r.data_mou);
+      if (dias !== null && dias > 90) {
+        alertasCrit.push({
+          emoji: '🔴',
+          nome: nome,
+          desc: praca + ' · MOU assinado há ' + dias + ' dias sem ativação',
+          badge: dias + 'd sem ativar',
+          tipo: 'crit',
+          nav: 'crm.html'
+        });
+      } else if (dias !== null && dias > 60) {
+        alertasWarn.push({
+          emoji: '🟡',
+          nome: nome,
+          desc: praca + ' · MOU assinado há ' + dias + ' dias — atenção',
+          badge: dias + 'd de MOU',
+          tipo: 'warn',
+          nav: 'crm.html'
+        });
+      }
+    }
+
+    // ── 🔴 Sem MOU há mais de 30 dias ──
+    if (isContrat && mou !== 'assinado' && r.dt) {
+      var diasSemMou = diasDesde(r.dt);
+      if (diasSemMou !== null && diasSemMou > 30) {
+        alertasCrit.push({
+          emoji: '📋',
+          nome: nome,
+          desc: praca + ' · Contratado há ' + diasSemMou + ' dias sem MOU assinado',
+          badge: 'Sem MOU',
+          tipo: 'crit',
+          nav: 'crm.html'
+        });
+      }
+    }
+
+    // ── 🔴 Candidato parado >45 dias em Contratação ──
+    if (isContrat && r.dt) {
+      var diasParado = diasDesde(r.dt);
+      if (diasParado !== null && diasParado > 45 && mou !== 'assinado') {
+        // Já capturado acima — evitar duplicata
+      } else if (diasParado !== null && diasParado > 45 && mou === 'assinado') {
+        // Coberto pelo MOU vencido acima
+      }
+    }
+
+    // ── 🟡 Ativação nos próximos 7 dias ──
+    if (isContrat && r.inicio) {
+      var dInicio = r.inicio.indexOf('/') > -1
+        ? (function(p){ return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0])); })(r.inicio.split('/'))
+        : new Date(r.inicio);
+      if (!isNaN(dInicio)) {
+        var diff = Math.ceil((dInicio - hoje2) / 86400000);
+        if (diff >= 0 && diff <= 7) {
+          alertasWarn.push({
+            emoji: '🚀',
+            nome: nome,
+            desc: praca + ' · Previsão de início em ' + diff + (diff===1?' dia':' dias'),
+            badge: 'Início em ' + diff + 'd',
+            tipo: 'warn',
+            nav: 'crm.html'
+          });
+        }
+      }
+    }
+  });
+
+  // ── Vagas críticas sem hunter ──
+  (window.Blue3Data && window.Blue3Data._vagas || []).forEach(function(v) {
+    if (v.status !== 'aberta' || v.prioridade !== 'Alto') return;
+    var diasAberta = diasDesde(v.created_at);
+    if (diasAberta !== null && diasAberta > 15) {
+      alertasCrit.push({
+        emoji: '💼',
+        nome: v.cargo || 'Vaga sem título',
+        desc: (v.unidade||'—') + ' · Aberta há ' + diasAberta + ' dias sem hunter',
+        badge: diasAberta + 'd aberta',
+        tipo: 'crit',
+        nav: 'vagas.html'
+      });
+    }
+  });
+
+  function renderAlertas(lista, tipo) {
+    if (!lista.length) return '';
+    var label = tipo === 'crit'
+      ? '🔴 ' + lista.length + ' alerta' + (lista.length>1?'s':'') + ' crítico' + (lista.length>1?'s':'')
+      : '🟡 ' + lista.length + ' ponto' + (lista.length>1?'s':'') + ' de atenção';
+    var id = 'alerta-body-' + tipo;
+    var html = '<div class="alerta-bloco">'
+      + '<div class="alerta-header ' + tipo + '" onclick="(function(el){'
+        + 'var b=document.getElementById(\'' + id + '\');'
+        + 'var t=el.querySelector(\'.alerta-toggle\');'
+        + 'if(b.style.display===\'none\'){b.style.display=\'\';t.textContent=\'▲\';}else{b.style.display=\'none\';t.textContent=\'▼\';}'
+        + '})(this)">'
+        + '<span>' + label + '</span>'
+        + '<span class="alerta-toggle">▲</span>'
+      + '</div>'
+      + '<div class="alerta-body" id="' + id + '">'
+      + lista.map(function(a) {
+          return '<div class="alerta-item" onclick="window.parent.navTo && window.parent.navTo(\'' + a.nav + '\',\'\') ">'
+            + '<div class="alerta-item-left">'
+              + '<div class="alerta-emoji">' + a.emoji + '</div>'
+              + '<div><div class="alerta-nome">' + a.nome + '</div>'
+              + '<div class="alerta-desc">' + a.desc + '</div></div>'
+            + '</div>'
+            + '<span class="alerta-badge ' + a.tipo + '">' + a.badge + '</span>'
+          + '</div>';
+        }).join('')
+      + '</div></div>';
+    return html;
+  }
+
+  var alertasHtml = '';
+  if (alertasCrit.length || alertasWarn.length) {
+    alertasHtml = '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t4);margin-bottom:10px;">Alertas Operacionais</div>'
+      + renderAlertas(alertasCrit, 'crit')
+      + renderAlertas(alertasWarn, 'warn');
+  }
+
+  root.innerHTML = [alertasHtml,
 
     // ── BLOCO 1: Expansão ──
     '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t4);margin-bottom:10px;">Expansão</div>',
@@ -397,8 +569,10 @@ function showEmpty() {
         Promise.all([
           supa('crm_candidatos?select=etapa&limit=500').catch(function(){ return []; }),
           supa('propostas?select=status&limit=500').catch(function(){ return []; }),
-          supa('ma_pipeline?select=id,nome,praca,auc_b,status&limit=200').catch(function(){ return []; })
+          supa('ma_pipeline?select=id,nome,praca,auc_b,status&limit=200').catch(function(){ return []; }),
+          supa('vagas?select=id,cargo,unidade,status,prioridade,created_at&status=eq.aberta&limit=100').catch(function(){ return []; })
         ]).then(function(results){
+          if (window.Blue3Data) window.Blue3Data._vagas = results[3] || [];
           renderDash(G, H, results[0], results[1], results[2]);
         });
       } else {
