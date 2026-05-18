@@ -137,6 +137,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .hist-txt{font-size:12px;color:var(--t1);line-height:1.5;flex:1;white-space:pre-wrap}
 .hist-del{background:none;border:none;color:var(--t4);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;flex-shrink:0}
 .hist-del:hover{color:var(--red)}
+.hist-edit{background:none;border:none;color:var(--t4);cursor:pointer;font-size:12px;padding:0 4px;line-height:1;flex-shrink:0;opacity:.6}
+.hist-edit:hover{color:var(--cobalt);opacity:1}
+.hist-edit-area{flex:1;border:1px solid var(--cobalt);border-radius:5px;padding:5px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--t1);outline:none;resize:none;min-height:36px;background:#fff;line-height:1.5}
+.hist-edit-btns{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.hist-save{background:var(--cobalt);color:#fff;border:none;border-radius:5px;padding:3px 9px;font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+.hist-save:hover{background:var(--cobalt-br)}
+.hist-cancel{background:none;border:1px solid var(--rule);border-radius:5px;padding:3px 9px;font-size:10px;color:var(--t3);cursor:pointer;font-family:'DM Sans',sans-serif}
+.hist-cancel:hover{border-color:var(--t3);color:var(--t1)}
 .hist-vazio{padding:16px;text-align:center;font-size:11px;color:var(--t4)}
 
 
@@ -1471,12 +1479,40 @@ function renderHistorico() {
     return;
   }
   lista.innerHTML = _histAtual.map(function(e, i) {
-    return '<div class="hist-item">'
+    return '<div class="hist-item" id="hist-item-' + i + '">'
       + '<span class="hist-data">📅 ' + e.dt + '</span>'
       + '<span class="hist-txt">' + esc(e.txt) + '</span>'
-      + '<button class="hist-del" onclick="removerNota(' + i + ')" title="Remover">×</button>'
+      + '<div style="display:flex;gap:2px;flex-shrink:0;">'
+        + '<button class="hist-edit" onclick="editarNota(' + i + ')" title="Editar">✏</button>'
+        + '<button class="hist-del" onclick="removerNota(' + i + ')" title="Remover">×</button>'
+      + '</div>'
       + '</div>';
   }).join('');
+}
+
+function editarNota(i) {
+  var item = document.getElementById('hist-item-' + i);
+  if (!item) return;
+  var e = _histAtual[i];
+  item.innerHTML = ''
+    + '<span class="hist-data">📅 ' + e.dt + '</span>'
+    + '<textarea class="hist-edit-area" id="hist-edit-txt-' + i + '">' + esc(e.txt) + '</textarea>'
+    + '<div class="hist-edit-btns">'
+      + '<button class="hist-save" onclick="salvarEdicaoNota(' + i + ')">Salvar</button>'
+      + '<button class="hist-cancel" onclick="renderHistorico()">Cancelar</button>'
+    + '</div>';
+  var ta = document.getElementById('hist-edit-txt-' + i);
+  if (ta) { ta.focus(); ta.selectionStart = ta.selectionEnd = ta.value.length; }
+}
+
+function salvarEdicaoNota(i) {
+  var ta = document.getElementById('hist-edit-txt-' + i);
+  if (!ta) return;
+  var novo = ta.value.trim();
+  if (!novo) { ta.focus(); return; }
+  _histAtual[i].txt = novo;
+  document.getElementById('m-obs').value = serializarHistorico(_histAtual);
+  renderHistorico();
 }
 
 function adicionarNota() {
