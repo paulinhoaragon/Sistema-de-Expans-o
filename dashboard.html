@@ -465,15 +465,36 @@ function funilStage(label, val, total, color) {
 }
 
 function renderHunters(H) {
-  if (!H || !H.length) return '<div style="font-size:12px;color:var(--t4);padding:16px 0;text-align:center;">Sem dados de hunters.<br>Faça upload do CSV.</div>';
-  return H.slice(0,5).map(function(h, i){
+  if (!H || !H.length) return '<div style="font-size:12px;color:var(--t4);padding:16px 0;text-align:center;">Sem dados de hunters.</div>';
+
+  // Score composto: Contratações 50% · AuC 25% · % Sênior 25%
+  var maxContrat   = Math.max.apply(null, H.map(function(h){ return h.total||0; }));
+  var maxAuC       = Math.max.apply(null, H.map(function(h){ return h.auc||0; }));
+  var maxSenPct    = Math.max.apply(null, H.map(function(h){ return h.total>0?(h.senior||0)/h.total:0; }));
+
+  var scored = H.map(function(h) {
+    var sC = maxContrat>0 ? (h.total||0)/maxContrat : 0;
+    var sA = maxAuC>0     ? (h.auc||0)/maxAuC       : 0;
+    var sS = maxSenPct>0  ? (h.total>0?(h.senior||0)/h.total:0)/maxSenPct : 0;
+    h._score = sC*0.50 + sA*0.25 + sS*0.25;
+    return h;
+  }).sort(function(a,b){ return b._score - a._score; });
+
+  var nota = '<div style="font-size:9px;color:var(--t4);padding:8px 0 2px;border-top:1px solid var(--rule);margin-top:4px;">'
+    +'<strong style="color:var(--t3);">Ranking:</strong> Contratações 50% · AuC 25% · % Sênior 25%'
+    +'</div>';
+
+  return scored.slice(0,5).map(function(h, i){
+    var senPct = h.total>0 ? Math.round((h.senior||0)/h.total*100) : 0;
     return '<div class="hunter-row">'
       +'<span class="h-rank">'+(i+1)+'</span>'
       +'<span class="h-name">'+esc(h.nome||'')+'</span>'
-      +'<span class="h-count">'+h.total+' contrat.</span>'
-      +'<span class="h-val">'+fmt((h.auc||0)*1e6)+'</span>'
+      +'<div style="text-align:right;">'
+        +'<div class="h-val">'+fmt((h.auc||0)*1e6)+'</div>'
+        +'<div class="h-count">'+h.total+' contrat. · '+senPct+'% sênior</div>'
+      +'</div>'
       +'</div>';
-  }).join('');
+  }).join('') + nota;
 }
 
 function renderCRMEtapas(etapas) {
