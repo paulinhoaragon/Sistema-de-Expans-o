@@ -217,23 +217,6 @@ function carregarLogs(){
     .then(function(rows){
       _todos=rows||[];
 
-      // ── DIAGNÓSTICO: mostra os primeiros registros brutos no console e na tela ──
-      if(_todos.length){
-        console.log('[NEXUS LOGS] Primeiros registros brutos:', _todos.slice(0,5));
-        var amostra = _todos.slice(0,3).map(function(r){
-          return '• id='+r.id+' | criado_em='+JSON.stringify(r.criado_em)+' | acao='+r.acao+' | usuario='+r.usuario;
-        }).join('\n');
-        // Exibe diagnóstico discreto abaixo dos KPIs (removido automaticamente após 10s)
-        var diag = document.createElement('div');
-        diag.id='diag-box';
-        diag.style.cssText='background:#FFF9C4;border:1px solid #F59E0B;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:11px;font-family:monospace;color:#78350F;white-space:pre-line;';
-        diag.textContent='[DIAGNÓSTICO] '+_todos.length+' registros recebidos do Supabase:\n'+amostra;
-        var page = document.querySelector('.page');
-        if(page) page.insertBefore(diag, page.children[1]);
-        setTimeout(function(){ var el=document.getElementById('diag-box'); if(el)el.remove(); }, 15000);
-      }
-      // ── fim diagnóstico ──
-
       popularUsuarios();
       calcKPIs();
       // Datas padrão
