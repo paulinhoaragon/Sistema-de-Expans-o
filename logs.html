@@ -158,7 +158,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 <script src="config.js"></script>
 <script>
 var SUPA_URL='https://cjimsplgxrwkqgzegnkq.supabase.co';
-// Mesma chave anon usada no CRM — a sb_publishable não tem permissão de leitura na tabela
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
 
 function supa(p){
@@ -217,6 +216,24 @@ function carregarLogs(){
   supa('logs_auditoria?order=criado_em.desc&limit=1000')
     .then(function(rows){
       _todos=rows||[];
+
+      // ── DIAGNÓSTICO: mostra os primeiros registros brutos no console e na tela ──
+      if(_todos.length){
+        console.log('[NEXUS LOGS] Primeiros registros brutos:', _todos.slice(0,5));
+        var amostra = _todos.slice(0,3).map(function(r){
+          return '• id='+r.id+' | criado_em='+JSON.stringify(r.criado_em)+' | acao='+r.acao+' | usuario='+r.usuario;
+        }).join('\n');
+        // Exibe diagnóstico discreto abaixo dos KPIs (removido automaticamente após 10s)
+        var diag = document.createElement('div');
+        diag.id='diag-box';
+        diag.style.cssText='background:#FFF9C4;border:1px solid #F59E0B;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:11px;font-family:monospace;color:#78350F;white-space:pre-line;';
+        diag.textContent='[DIAGNÓSTICO] '+_todos.length+' registros recebidos do Supabase:\n'+amostra;
+        var page = document.querySelector('.page');
+        if(page) page.insertBefore(diag, page.children[1]);
+        setTimeout(function(){ var el=document.getElementById('diag-box'); if(el)el.remove(); }, 15000);
+      }
+      // ── fim diagnóstico ──
+
       popularUsuarios();
       calcKPIs();
       // Datas padrão
@@ -249,17 +266,45 @@ function calcKPIs(){
   document.getElementById('kpi-del').textContent=_todos.filter(function(r){var a=(r.acao||'').toLowerCase();return a.includes('exclu')||a.includes('delet')||a.includes('remov');}).length;
 }
 
+// Converte string de data para timestamp de forma segura
+// Aceita: ISO 8601, "YYYY-MM-DD", "DD/MM/YYYY" e timestamps numéricos
+function parseDateSafe(s) {
+  if (!s) return null;
+  if (typeof s === 'number') return s; // já é timestamp
+  var str = String(s).trim();
+  // Formato ISO ou YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return new Date(str).getTime();
+  // Formato DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) {
+    var p = str.split('/');
+    return new Date(p[2]+'-'+p[1]+'-'+p[0]).getTime();
+  }
+  // Tenta parseamento genérico
+  var t = Date.parse(str);
+  return isNaN(t) ? null : t;
+}
+
 function aplicarFiltros(){
   var usr=(document.getElementById('f-usr')||{}).value||'';
   var acao=(document.getElementById('f-acao')||{}).value||'';
   var de=(document.getElementById('f-de')||{}).value||'';
   var ate=(document.getElementById('f-ate')||{}).value||'';
   var mapa={crm:'candidato|crm|edita',etapa:'etapa|status',proposta:'proposta',vaga:'vaga',hist:'hist|obs|contato',login:'login',delete:'exclu|delet|remov'};
+
+  // Limites do filtro de data (sem hora para "de", fim do dia para "ate")
+  var tsDE  = de  ? parseDateSafe(de)  : null;
+  var tsATE = ate ? parseDateSafe(ate) : null;
+  if (tsATE) tsATE += (23*3600 + 59*60 + 59) * 1000; // fim do dia
+
   _filtrados=_todos.filter(function(r){
     if(usr&&(r.usuario||'')!==usr)return false;
     if(acao){var a=(r.acao||'').toLowerCase();if(!new RegExp(mapa[acao]||acao).test(a))return false;}
-    if(de&&r.criado_em){var dd=new Date(de);dd.setHours(0,0,0,0);if(new Date(r.criado_em)<dd)return false;}
-    if(ate&&r.criado_em){var ad=new Date(ate);ad.setHours(23,59,59,999);if(new Date(r.criado_em)>ad)return false;}
+    // Filtro de data: se criado_em for nulo/inválido, inclui o registro
+    var tsCriado = parseDateSafe(r.criado_em);
+    if(tsCriado !== null){
+      if(tsDE  && tsCriado < tsDE)  return false;
+      if(tsATE && tsCriado > tsATE) return false;
+    }
     return true;
   });
   _pag=1;
