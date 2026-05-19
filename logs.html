@@ -158,7 +158,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 <script src="config.js"></script>
 <script>
 var SUPA_URL='https://cjimsplgxrwkqgzegnkq.supabase.co';
-var SUPA_KEY='sb_publishable_m4pgWOuDEQghiA2w4_axzg_HccJZxDS';
+// Mesma chave anon usada no CRM — a sb_publishable não tem permissão de leitura na tabela
+var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
 
 function supa(p){
   return fetch(SUPA_URL+'/rest/v1/'+p,{
@@ -257,7 +258,7 @@ function aplicarFiltros(){
   _filtrados=_todos.filter(function(r){
     if(usr&&(r.usuario||'')!==usr)return false;
     if(acao){var a=(r.acao||'').toLowerCase();if(!new RegExp(mapa[acao]||acao).test(a))return false;}
-    if(de&&r.criado_em){if(new Date(r.criado_em)<new Date(de))return false;}
+    if(de&&r.criado_em){var dd=new Date(de);dd.setHours(0,0,0,0);if(new Date(r.criado_em)<dd)return false;}
     if(ate&&r.criado_em){var ad=new Date(ate);ad.setHours(23,59,59,999);if(new Date(r.criado_em)>ad)return false;}
     return true;
   });
