@@ -154,29 +154,13 @@ function resumoMeta(m){
 var _todos=[], _filtrados=[], _pag=1, _pp=50;
 
 // ── Controle de acesso ──
-var CU=null;
-(function(){
-  // Tenta sessão do frame pai (index.html expõe B3CU globalmente)
-  try{ if(window.parent&&window.parent.B3CU) CU=window.parent.B3CU; }catch(e){}
-  // Fallback: sessionStorage próprio
-  if(!CU){ var s=sessionStorage.getItem('b3s'); if(s) try{ CU=JSON.parse(s); }catch(e){} }
+// Acesso controlado pelo index.html via classe b3-sb-logs
+// Apenas master e gerente veem o link no menu
+var CU = null;
+try { if(window.parent && window.parent.B3CU) CU = window.parent.B3CU; } catch(e) {}
+if (!CU) { try { var _s=sessionStorage.getItem('b3s'); if(_s) CU=JSON.parse(_s); } catch(e) {} }
 
-  function verificar(){
-    // Tentar novamente pegar do pai (pode não ter carregado ainda)
-    if(!CU){ try{ if(window.parent&&window.parent.B3CU) CU=window.parent.B3CU; }catch(e){} }
-    var r=(CU&&CU.r||'').toLowerCase();
-    var podeVer = r==='master'||r==='gerente';
-    if(!podeVer){
-      document.getElementById('page-root').innerHTML='<div class="no-access"><div class="empty-icon">🔒</div><div class="empty-t">Acesso restrito</div><div class="empty-s">Esta página é acessível apenas para Master e Gerente.</div></div>';
-      return;
-    }
-    init();
-  }
-
-  // Aguardar frame pai estar pronto (máx 800ms)
-  if(CU){ verificar(); }
-  else { setTimeout(verificar, 400); }
-})();
+init();
 
 function init(){
   var root=document.getElementById('page-root');
