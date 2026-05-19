@@ -95,7 +95,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 <body>
 
 <div class="page" id="page-root">
-  <div class="empty"><div class="empty-icon">⏳</div><div class="empty-t">Verificando acesso...</div></div>
+  <div class="empty"><div class="empty-icon">⏳</div><div class="empty-t">Carregando logs...</div></div>
 </div>
 
 <!-- Modal detalhe -->
@@ -155,12 +155,13 @@ var _todos=[], _filtrados=[], _pag=1, _pp=50;
 
 // ── Controle de acesso ──
 // Acesso controlado pelo index.html via classe b3-sb-logs
-// Apenas master e gerente veem o link no menu
 var CU = null;
 try { if(window.parent && window.parent.B3CU) CU = window.parent.B3CU; } catch(e) {}
 if (!CU) { try { var _s=sessionStorage.getItem('b3s'); if(_s) CU=JSON.parse(_s); } catch(e) {} }
 
-init();
+try { init(); } catch(e) {
+  document.getElementById('page-root').innerHTML = '<div class="empty"><div class="empty-icon">❌</div><div class="empty-t">Erro ao carregar</div><div class="empty-s">' + e.message + '</div></div>';
+}
 
 function init(){
   var root=document.getElementById('page-root');
