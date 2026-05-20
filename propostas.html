@@ -6,6 +6,7 @@
 <title>Nexus · Histórico de Propostas · Blue3</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="pipeline.js"></script>
+<script src="config.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;font-size:12px;background:#e8ecf3;color:#1a2035;min-height:100vh}
@@ -454,7 +455,7 @@ function salvarProposta() {
     })
     .then(function(rows){
       var novaId = rows && rows[0] && rows[0].id;
-      gravarLog('salvar_proposta', { proposta_id: novaId, telefone: tel, nome: nome, versao: _versaoAtual });
+      gravarLog('Proposta Salva', { proposta_id: novaId, candidato: nome, telefone: tel, versao: _versaoAtual, status: status });
       // Sync CRM se crm_id disponível
       var crmId = window._b3CrmId || '';
       if (crmId && dadosSim) {
@@ -502,6 +503,7 @@ function abrirNoSimulador(id, e) {
     .then(function(r){ return r.json(); })
     .then(function(rows){
       if (!rows || !rows.length) return;
+      gravarLog('Abriu Proposta no Simulador', { proposta_id: id, nome: rows[0].nome, versao: rows[0].versao });
       sessionStorage.setItem('b3_carregar_proposta', JSON.stringify(rows[0]));
       window.location.href = 'simulador.html';
     });
@@ -529,7 +531,7 @@ function deletarProposta(id, telefone, e) {
     headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY }
   })
   .then(function(r){
-    if (r.status === 204 || r.ok) { gravarLog('delete_versao', {id:id,tel:telefone}); buscar(); return; }
+    if (r.status === 204 || r.ok) { gravarLog('Exclusão de Versão de Proposta', {proposta_id:id, telefone:telefone}); buscar(); return; }
     return r.text().then(function(t){ throw new Error(r.status+' '+t); });
   })
   .catch(function(err){ alert('Erro ao excluir: '+err+'\n\nVerifique se RLS permite DELETE na tabela propostas.'); });
@@ -544,7 +546,7 @@ function deletarCandidato(telefone, nome, e) {
     headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY }
   })
   .then(function(r){
-    if (r.status === 204 || r.ok) { gravarLog('delete_candidato', {tel:telefone,nome:nome}); buscar(); return; }
+    if (r.status === 204 || r.ok) { gravarLog('Exclusão de Todas as Propostas', {telefone:telefone, candidato:nome}); buscar(); return; }
     return r.text().then(function(t){ throw new Error(r.status+' '+t); });
   })
   .catch(function(err){ alert('Erro ao excluir: '+err+'\n\nVerifique se RLS permite DELETE na tabela propostas.'); });
@@ -552,25 +554,22 @@ function deletarCandidato(telefone, nome, e) {
 
 // ── Log de auditoria ─────────────────────────────────────────────
 function gravarLog(acao, meta) {
-  var usuario = (window.Blue3Data && window.Blue3Data.usuario) || 'desconhecido';
-  var payload = {
-    acao: acao,
-    usuario: usuario,
-    meta: JSON.stringify(meta || {}),
-    criado_em: new Date().toISOString()
-  };
-  supa('logs_auditoria', { method:'POST', body: JSON.stringify(payload) })
-    .catch(function(){/* log não bloqueia o fluxo */});
+  if (typeof NexusConfig !== 'undefined') {
+    NexusConfig.log(acao, meta);
+  }
 }
 
 // ── Alterar status ────────────────────────────────────────────────
 function alterarStatus(id, novoStatus, el) {
   el.disabled = true;
+  // Busca o nome do candidato para enriquecer o log
+  var nomeCard = '';
+  try { nomeCard = el.closest('.cand-block').querySelector('.cand-nome').textContent; } catch(ex) {}
   supa('propostas?id=eq.'+id, { method:'PATCH', body: JSON.stringify({ status: novoStatus, atualizado_em: new Date().toISOString() }) })
     .then(function(r){
       el.disabled = false;
       if (!r.ok) throw new Error(r.status);
-      gravarLog('status_proposta', { proposta_id: id, novo_status: novoStatus });
+      gravarLog('Alteração de Status de Proposta', { proposta_id: id, candidato: nomeCard, novo_status: novoStatus });
     })
     .catch(function(e){ el.disabled = false; alert('Erro ao atualizar status: '+e); });
 }
