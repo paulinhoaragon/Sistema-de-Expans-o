@@ -1692,35 +1692,12 @@ function toggleDataMou(val){
 }
 
 // ══════════════════════════════════════════════════════════════
-// NEXUS LOGS — grava ações em logs_auditoria
+// NEXUS LOGS — centralizado via NexusConfig.log()
 // ══════════════════════════════════════════════════════════════
 function nexusLog(acao, meta) {
-  try {
-    var usuario = '';
-    try {
-      var cu = window.parent && window.parent.B3CU ? window.parent.B3CU : null;
-      if (!cu) { var s=sessionStorage.getItem('b3s'); if(s) cu=JSON.parse(s); }
-      usuario = cu ? (cu.n || cu.l || '') : '';
-    } catch(e) {}
-
-    var body = JSON.stringify({
-      acao: acao,
-      usuario: usuario,
-      meta: typeof meta === 'string' ? meta : JSON.stringify(meta),
-      criado_em: new Date().toISOString()
-    });
-
-    fetch('https://cjimsplgxrwkqgzegnkq.supabase.co/rest/v1/logs_auditoria', {
-      method: 'POST',
-      headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A',
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: body
-    }).catch(function(){}); // silencioso — log nunca deve quebrar o sistema
-  } catch(e) {}
+  if (typeof NexusConfig !== 'undefined') {
+    NexusConfig.log(acao, meta);
+  }
 }
 
 </script>
