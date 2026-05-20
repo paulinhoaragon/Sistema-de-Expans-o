@@ -387,14 +387,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         <div class="sec-lbl">Etapa</div>
         <div class="fgrid">
           <div class="f-row"><label>Etapa</label>
-            <select id="m-etapa" onchange="toggleDeclinio(this.value)">
+            <select id="m-etapa" onchange="toggleEtapaDatas(this.value, true)">
               <option>Prospecção</option><option>Qualificação</option>
               <option>Negociação</option><option>Contratação</option>
               <option>Trabalhando</option><option>Declinou</option>
               <option>Contato Futuro</option>
             </select>
           </div>
-          <div class="f-row"><label>Data da Contratação</label><input id="m-data-ent" type="date"></div>
+          <div class="f-row" id="row-data-cadastro" style="display:none;"><label style="color:var(--t3)">Cadastrado em</label><input id="m-data-ent" type="date" readonly style="background:#f0f2fa;color:var(--t3);cursor:default;font-size:11px;"></div>
           <div class="f-row"><label>MOU</label>
             <select id="m-mou" onchange="toggleDataMou(this.value)"><option>Pendente</option><option>Assinado</option></select>
           </div>
@@ -406,7 +406,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
               <option>Pendente</option><option>Em preparo</option><option>Aprovada</option><option>Isento</option>
             </select>
           </div>
-          <div class="f-row"><label>Data início trabalho</label><input id="m-data-ini" type="date"></div>
+          <div class="f-row" id="row-data-contratacao" style="display:none;">
+            <label>Data de Contratação</label>
+            <input id="m-data-contratacao" type="date">
+          </div>
+          <div class="f-row" id="row-data-ini" style="display:none;">
+            <label>Data início trabalho</label>
+            <input id="m-data-ini" type="date">
+          </div>
           <div class="f-row" id="row-declinio" style="display:none;">
             <label>Data de declínio</label>
             <input id="m-data-declinio" type="date">
@@ -789,7 +796,12 @@ function dropCard(e, etapa) {
   if (typeof NexusConfig !== 'undefined') {
     NexusConfig.registrarMudancaEtapa(dragIdAtual, etapaAnterior, etapa, histBruto, null);
   } else {
-    supa('crm_candidatos?id=eq.'+dragIdAtual, { method:'PATCH', body: JSON.stringify({ etapa: etapa, atualizado_em: new Date().toISOString() }) });
+    var dragPayload = { etapa: etapa, atualizado_em: new Date().toISOString() };
+  var hj = new Date().toISOString().slice(0,10);
+  if (etapa === 'Contratação' || etapa === 'Trabalhando') { if(!cand.data_contratacao) dragPayload.data_contratacao = hj; }
+  if (etapa === 'Trabalhando') { if(!cand.data_inicio) dragPayload.data_inicio = hj; }
+  if (etapa === 'Declinou')    { if(!cand.data_declinio) dragPayload.data_declinio = hj; }
+  supa('crm_candidatos?id=eq.'+dragIdAtual, { method:'PATCH', body: JSON.stringify(dragPayload) });
     var cDrag = _todos.find(function(x){return x.id===dragIdAtual;});
     if(cDrag) nexusLog('Mudança de Etapa', { candidato: cDrag.nome, de: cDrag.etapa, para: etapa, via: 'drag-drop' });
   }
@@ -853,8 +865,9 @@ function abrirEdicao(id) {
   document.getElementById('m-ancord').value   = r.status_ancord||'Pendente';
   document.getElementById('m-data-ent').value = r.data_entrada||'';
   document.getElementById('m-data-ini').value = r.data_inicio||'';
+  var dc = document.getElementById('m-data-contratacao'); if (dc) dc.value = r.data_contratacao||'';
   var dd = document.getElementById('m-data-declinio'); if (dd) dd.value = r.data_declinio||'';
-  toggleDeclinio(r.etapa||'Prospecção');
+  toggleEtapaDatas(r.etapa||'Prospecção');
   carregarHistorico(r.comentarios||'');
   // campos financeiros
   document.getElementById('m-auc-cust').value    = r.auc_custodia_mm ? formatBRL(r.auc_custodia_mm) : '';
@@ -897,12 +910,45 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-// Mostrar/ocultar campo de data de declínio
-function toggleDeclinio(etapa) {
-  var row = document.getElementById('row-declinio');
-  if (!row) return;
-  row.style.display = etapa === 'Declinou' ? '' : 'none';
-  if (etapa !== 'Declinou') document.getElementById('m-data-declinio').value = '';
+// Mostrar/ocultar datas conforme etapa
+function toggleDeclinio(etapa) { toggleEtapaDatas(etapa); } // compatibilidade
+function toggleEtapaDatas(etapa, autoData) {
+  var hoje = new Date().toISOString().slice(0,10);
+
+  // Data de Contratação — visível em Contratação e Trabalhando
+  var rowCont = document.getElementById('row-data-contratacao');
+  var inpCont = document.getElementById('m-data-contratacao');
+  if (rowCont) {
+    var showCont = (etapa === 'Contratação' || etapa === 'Trabalhando');
+    rowCont.style.display = showCont ? '' : 'none';
+    if (showCont && autoData && inpCont && !inpCont.value) inpCont.value = hoje;
+    if (!showCont && inpCont) inpCont.value = '';
+  }
+
+  // Data início trabalho — visível somente em Trabalhando
+  var rowIni = document.getElementById('row-data-ini');
+  var inpIni = document.getElementById('m-data-ini');
+  if (rowIni) {
+    var showIni = (etapa === 'Trabalhando');
+    rowIni.style.display = showIni ? '' : 'none';
+    if (showIni && autoData && inpIni && !inpIni.value) inpIni.value = hoje;
+    if (!showIni && inpIni) inpIni.value = '';
+  }
+
+  // Data de declínio — visível somente em Declinou
+  var rowDec = document.getElementById('row-declinio');
+  var inpDec = document.getElementById('m-data-declinio');
+  if (rowDec) {
+    var showDec = (etapa === 'Declinou');
+    rowDec.style.display = showDec ? '' : 'none';
+    if (showDec && autoData && inpDec && !inpDec.value) inpDec.value = hoje;
+    if (!showDec && inpDec) inpDec.value = '';
+  }
+
+  // Data de cadastro — sempre visível em edição (campo readonly)
+  var rowCad = document.getElementById('row-data-cadastro');
+  var mId    = document.getElementById('m-id');
+  if (rowCad) rowCad.style.display = (mId && mId.value) ? '' : 'none';
 }
 
 function limparModal() {
@@ -910,7 +956,7 @@ function limparModal() {
    'm-auc','m-piso','m-periodo','m-upfront',
    'm-t1tri-m','m-t1tri-v','m-t1m','m-t1v','m-t2m','m-t2v','m-t3m','m-t3v','m-t4m','m-t4v',
    'm-copart','m-copart-det','m-codigo-a','m-cs','m-prev-inicio',
-   'm-data-ent','m-data-ini','m-obs',
+   'm-data-ent','m-data-contratacao','m-data-ini','m-obs',
    'm-auc-cust','m-clientes','m-rem-bruta','m-bonus-bruto','m-saude','m-vavr',
    'm-saude-anual','m-vavr-anual','m-obs-nova'
   ].forEach(function(id){
@@ -941,7 +987,7 @@ function limparModal() {
   var ph = document.getElementById('crm-prop-hist'); if (ph) ph.style.display='none';
   var pl = document.getElementById('crm-prop-hist-lista'); if (pl) pl.innerHTML='';
   var dd = document.getElementById('m-data-declinio'); if (dd) dd.value = '';
-  toggleDeclinio('Prospecção');
+  toggleEtapaDatas('Prospecção');
   _histAtual = [];
   document.getElementById('m-obs').value = '';
   renderHistorico();
@@ -977,7 +1023,8 @@ function salvarCandidato() {
     condicoes_renovacao: getRenovacaoPayload(),
     // Status
     mou: g('m-mou'), data_mou: g('m-data-mou')||null, status_ancord: g('m-ancord'),
-    data_entrada: g('m-data-ent')||null, data_inicio: g('m-data-ini')||null,
+    data_entrada: g('m-data-ent')||null, data_contratacao: g('m-data-contratacao')||null,
+    data_inicio: g('m-data-ini')||null,
     data_declinio: g('m-data-declinio')||null,
     comentarios: g('m-obs'),
     // Carteira atual
@@ -1692,12 +1739,35 @@ function toggleDataMou(val){
 }
 
 // ══════════════════════════════════════════════════════════════
-// NEXUS LOGS — centralizado via NexusConfig.log()
+// NEXUS LOGS — grava ações em logs_auditoria
 // ══════════════════════════════════════════════════════════════
 function nexusLog(acao, meta) {
-  if (typeof NexusConfig !== 'undefined') {
-    NexusConfig.log(acao, meta);
-  }
+  try {
+    var usuario = '';
+    try {
+      var cu = window.parent && window.parent.B3CU ? window.parent.B3CU : null;
+      if (!cu) { var s=sessionStorage.getItem('b3s'); if(s) cu=JSON.parse(s); }
+      usuario = cu ? (cu.n || cu.l || '') : '';
+    } catch(e) {}
+
+    var body = JSON.stringify({
+      acao: acao,
+      usuario: usuario,
+      meta: typeof meta === 'string' ? meta : JSON.stringify(meta),
+      criado_em: new Date().toISOString()
+    });
+
+    fetch('https://cjimsplgxrwkqgzegnkq.supabase.co/rest/v1/logs_auditoria', {
+      method: 'POST',
+      headers: {
+        'apikey': 'sb_publishable_m4pgWOuDEQghiA2w4_axzg_HccJZxDS',
+        'Authorization': 'Bearer sb_publishable_m4pgWOuDEQghiA2w4_axzg_HccJZxDS',
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: body
+    }).catch(function(){}); // silencioso — log nunca deve quebrar o sistema
+  } catch(e) {}
 }
 
 </script>
