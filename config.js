@@ -182,6 +182,51 @@ var NexusConfig = (function() {
     return tempos;
   }
 
+  // ── Usuário da sessão ───────────────────────────────────────────
+  // Lê de todas as fontes: window.parent.B3CU → sessionStorage b3s → Blue3Data → fallback
+  function getUsuario() {
+    try {
+      if (window.parent && window.parent.B3CU) {
+        var cu = window.parent.B3CU;
+        return cu.n || cu.l || cu.nome || cu.email || '';
+      }
+    } catch(e) {}
+    try {
+      var raw = sessionStorage.getItem('b3s');
+      if (raw) {
+        var s = JSON.parse(raw);
+        return s.n || s.l || s.nome || s.email || '';
+      }
+    } catch(e) {}
+    try {
+      if (window.Blue3Data && window.Blue3Data.usuario) return window.Blue3Data.usuario;
+    } catch(e) {}
+    return 'Master';
+  }
+
+  // ── Log de auditoria centralizado ──────────────────────────────
+  // Uso em qualquer módulo: NexusConfig.log('Ação', { campo: valor })
+  function log(acao, meta) {
+    try {
+      var payload = JSON.stringify({
+        acao:      acao,
+        usuario:   getUsuario(),
+        meta:      typeof meta === 'string' ? meta : JSON.stringify(meta || {}),
+        criado_em: new Date().toISOString(),
+      });
+      fetch(SUPA_URL + '/rest/v1/logs_auditoria', {
+        method: 'POST',
+        headers: {
+          'apikey':        SUPA_KEY,
+          'Authorization': 'Bearer ' + SUPA_KEY,
+          'Content-Type':  'application/json',
+          'Prefer':        'return=minimal',
+        },
+        body: payload,
+      }).catch(function() {});
+    } catch(e) {}
+  }
+
   // ── Init automático: aplica white label se disponível ───────────
   function init(cb) {
     getWhiteLabel(function(err, wl) {
@@ -221,6 +266,8 @@ var NexusConfig = (function() {
     calcularTempoEtapas:    calcularTempoEtapas,
     clearCache:             clearCache,
     TENANT:                 TENANT,
+    getUsuario:             getUsuario,
+    log:                    log,
   };
 
 })();
