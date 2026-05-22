@@ -192,11 +192,13 @@ function blue3LoadData(callback){
       o['Total Captação (MM)']   = totalCap * 1e6; // MM → R$ para Blue3_dataLoader dividir de volta
       o['Total Comp.']           = totalComp;
       var _statusFinal = etapaToStatus(r.etapa);
-      // 'Data de Contratação' = sempre data_entrada (seção 02 — evolução mensal)
-      // 'Data Inicio'         = data_inicio real (cashflow)
+      // 'Data de Contratação' — prioridade:
+      // 1. data_contratacao (preenchida ao entrar em Contratação/Trabalhando)
+      // 2. data_declinio    (para desistências)
+      // 3. data_entrada     (fallback: data de cadastro no CRM)
       var _dataContrat = (_statusFinal === 'Desistência' && r.data_declinio)
         ? r.data_declinio
-        : r.data_entrada;
+        : (r.data_contratacao || r.data_entrada);
       o['Data de Contratação']   = _dataContrat
         ? _dataContrat.split('-').reverse().join('/')
         : '';
