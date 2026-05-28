@@ -192,18 +192,15 @@ function blue3LoadData(callback){
       o['Total Captação (MM)']   = totalCap * 1e6; // MM → R$ para Blue3_dataLoader dividir de volta
       o['Total Comp.']           = totalComp;
       var _statusFinal = etapaToStatus(r.etapa);
-      // Motor de datas:
-      // _foi_contratado = TRUE somente se data_contratacao foi gravada no banco
-      // Desistência COM data_contratacao = pós-contrato (aceitou e desistiu durante o processo)
-      // Desistência SEM data_contratacao = precoce (nunca chegou a ser contratado) — dt fica vazio
+      // _foi_contratado = TRUE se data_contratacao foi gravada no banco
       var _foiContratado = !!(r.data_contratacao);
-      var _dataContrat;
-      if (_statusFinal === 'Desistência') {
-        // Só usa data se realmente foi contratado antes — ignora data_declinio e data_entrada
-        _dataContrat = _foiContratado ? r.data_contratacao : null;
-      } else {
-        _dataContrat = r.data_contratacao || r.data_entrada;
-      }
+      // Data de referência — lógica original preservada:
+      // 1. data_contratacao (preenchida ao entrar em Contratação/Trabalhando)
+      // 2. data_declinio    (para desistências — mantém aparecimento nos cards mensais)
+      // 3. data_entrada     (fallback)
+      var _dataContrat = (_statusFinal === 'Desistência' && r.data_declinio)
+        ? r.data_declinio
+        : (r.data_contratacao || r.data_entrada);
       o['Data de Contratação']   = _dataContrat
         ? _dataContrat.split('-').reverse().join('/')
         : '';
