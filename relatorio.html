@@ -1466,22 +1466,22 @@ function getDesistentesExtras(candidatosAtuais) {
       var s = norm(r['Status']||'');
       var isDesist = s === 'desistência' || s === 'desistencia';
       if (!isDesist) return false;
-      // Pós-contrato: tem foiContratado=true OU tem Data de Contratação preenchida
-      var foiContratado = r['foiContratado'] === true || r['_foi_contratado'] === true || !!(r['Data de Contratação']);
-      if (!foiContratado) return false;
+      // Mostrar todos os desistentes que têm data (aparecem nos cards mensais)
+      if (!r['Data de Contratação']) return false;
       var nome = (r['Candidato']||r['nome']||'').trim().toLowerCase();
       if (nomesAtuais[nome]) return false;
       return true;
     }).map(function(r){
+      var foiContratado = r['foiContratado'] === true || r['_foi_contratado'] === true;
       return {
         n:    (r['Candidato']||r['nome']||'').trim(),
-        p:    (r['Praça']||r['praca']||'').trim(),
+        p:    (r['Praça']||r['Filial']||r['praca']||'').trim(),
         sen:  (r['Senioridade']||r['sen']||'').trim(),
         h:    (r['Hunter']||r['hunter']||'').trim(),
         st:   'Desistência',
         area: (r['Área']||r['area']||'Assessor').trim(),
         dt:   (r['Data de Contratação']||r['dt']||null),
-        foiContratado: true,
+        foiContratado: foiContratado,
         dd:   (r['Data de Declínio']||r['Data Declínio']||r['Data Declinio']||r['dd']||null),
       };
     });
