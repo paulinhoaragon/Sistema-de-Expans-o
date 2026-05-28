@@ -208,6 +208,7 @@ function blue3LoadData(callback){
         ? _dataContrat.split('-').reverse().join('/')
         : '';
       o['_foi_contratado']       = _foiContratado;
+      o['foiContratado']         = _foiContratado;
       o['Status']                = _statusFinal;
       o['MOU']                   = (r.mou||'').trim();
       o['Data MOU']              = r.data_mou || '';
