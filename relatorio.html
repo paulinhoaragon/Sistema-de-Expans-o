@@ -1556,11 +1556,10 @@ function renderAssessoresMensal(candidatos) {
   if (!mgEl || !grid) return;
 
   var base = candidatos || window.Blue3Data.candidatos || [];
-  var temFiltro = _activeFilters && (_activeFilters.hunter || _activeFilters.praca || _activeFilters.sen || _activeFilters.status || _activeFilters.area);
+  var temFiltro = _activeFilters && typeof _activeFilters === 'object' && (_activeFilters.hunter || _activeFilters.praca || _activeFilters.sen || _activeFilters.status || _activeFilters.area);
 
-  // Extras: apenas desistências pós-contrato (dt preenchido) — precoces ignoradas
-  var extrasRaw = temFiltro ? [] : getDesistentesExtras(base);
-  var extras = extrasRaw.filter(function(r){ return r.foiContratado === true; });
+  // Incluir todos os desistentes com data — a distinção pós/precoce é só visual (tag)
+  var extras = temFiltro ? [] : getDesistentesExtras(base);
 
   var C = base.concat(extras).filter(function(r) {
     return !r.area || ['assessor','assessores'].indexOf(r.area.toLowerCase()) !== -1;
