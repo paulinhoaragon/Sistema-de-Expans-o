@@ -127,6 +127,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .t-pl{background:var(--amp);color:#92400E;}
 .t-jr{background:var(--rosep);color:#9D174D;}
 .t-dt{background:var(--redp);color:#991B1B;}
+.t-dt-pos{background:#EDE9FE;color:#5B21B6;}
 .t-deal{background:#DCFCE7;color:#14532D;}
 .t-nda{background:#EEF2FF;color:#3730A3;}
 .t-prop{background:var(--amp);color:#92400E;}
@@ -422,7 +423,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
 <!-- 02 EVOLUÇÃO MENSAL -->
 <div style="margin-bottom:32px;">
-  <div class="sh"><span class="sn">02</span><span class="st">Evolução mensal de contratações</span><span class="ss">Verde = Sênior · Âmbar = Pleno · Rosa = Júnior · Vermelho = Desistência</span></div>
+  <div class="sh"><span class="sn">02</span><span class="st">Evolução mensal de contratações</span><span class="ss">Verde = Sênior · Âmbar = Pleno · Rosa = Júnior · Roxo = Desistência pós-contrato</span></div>
   <!-- Sub-label Assessores (gerado dinamicamente) -->
   <div id="mg-assessores" style="display:none;">
     <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--rule);">Assessores</div>
@@ -1489,6 +1490,7 @@ function getDesistentesExtras(candidatosAtuais) {
         mou:  (r['MOU'] || '').trim(),
         st:   st,
         dt:   (r['Data de Contratação'] || null),
+        dd:   (r['Data de Declínio'] || r['Data Declínio'] || r['Data Declinio'] || null),
         cap:  0,
         comp: 0,
         piso: 0,
@@ -1568,7 +1570,11 @@ function renderAssessoresMensal(candidatos) {
 
   var base = candidatos || window.Blue3Data.candidatos || [];
   var temFiltro = _activeFilters && (_activeFilters.hunter || _activeFilters.praca || _activeFilters.sen || _activeFilters.status || _activeFilters.area);
-  var extras = temFiltro ? [] : getDesistentesExtras(base);
+
+  // Extras: apenas desistências pós-contrato (dt preenchido) — precoces ignoradas
+  var extrasRaw = temFiltro ? [] : getDesistentesExtras(base);
+  var extras = extrasRaw.filter(function(r){ return !!(r.dt); });
+
   var C = base.concat(extras).filter(function(r) {
     return !r.area || ['assessor','assessores'].indexOf(r.area.toLowerCase()) !== -1;
   });
@@ -1599,13 +1605,15 @@ function renderAssessoresMensal(candidatos) {
     var cands   = temFiltro ? meses[mes].filter(function(r){ var s=norm(r.st||""); return s==="trabalhando"||s==="contratado(a)"; }) : meses[mes];
     var ativos  = cands.filter(function(r) { var s = norm(r.st || ''); return s === 'trabalhando' || s === 'contratado(a)'; });
     var desist  = cands.filter(function(r) { var s = norm(r.st || ''); return s === 'desistência' || s === 'desistencia'; });
+    // Distinguir: desistência pós-contrato (tinha data_contratacao) vs. desistência precoce (nunca chegou a ser contratado)
+    var desistPosContrato = desist.filter(function(r){ return !!(r.dt); });
     var senior  = ativos.filter(function(r) { return norm(r.sen || '') === 'sênior'; }).length;
     var pleno   = ativos.filter(function(r) { return norm(r.sen || '') === 'pleno'; }).length;
     var junior  = ativos.filter(function(r) { return norm(r.sen || '') === 'júnior' || norm(r.sen || '') === 'junior'; }).length;
     var total   = ativos.length + desist.length;
 
     var ativasLabel = ativos.length + ' ativa' + (ativos.length !== 1 ? 's' : '');
-    if (desist.length) ativasLabel += ' · ' + desist.length + ' desistência' + (desist.length > 1 ? 's' : '');
+    if (desistPosContrato.length) ativasLabel += ' · ' + desistPosContrato.length + ' desistência' + (desistPosContrato.length > 1 ? 's' : '') + ' pós-contrato';
 
     var isLatest = (mes === mesMax);
     var mchStyle = isLatest ? ' style="background:linear-gradient(140deg,#0A0F1E,#1A3BAD);"' : '';
@@ -1613,11 +1621,12 @@ function renderAssessoresMensal(candidatos) {
     var mccStyle = isLatest ? ' style="color:#6EE7B7;"' : '';
 
     var pessoas = cands.map(function(r) {
-      var isDesist = norm(r.st || '') === 'desistência' || norm(r.st || '') === 'desistencia';
+      var sNorm    = norm(r.st || '');
+      var isDesist = sNorm === 'desistência' || sNorm === 'desistencia';
+      var isPosContrato = isDesist && !!(r.dt);
       var senNorm  = norm(r.sen || '');
-      var tagCls   = isDesist ? 't-dt' : (senNorm === 'sênior' ? 't-sr' : senNorm === 'pleno' ? 't-pl' : 't-jr');
-      var tagLbl   = isDesist ? 'Desistência' : (r.sen || '—');
-      // Nome + sufixo da praça (filial)
+      var tagCls   = isPosContrato ? 't-dt-pos' : isDesist ? 't-dt' : (senNorm === 'sênior' ? 't-sr' : senNorm === 'pleno' ? 't-pl' : 't-jr');
+      var tagLbl   = isPosContrato ? 'Desistência' : isDesist ? 'Desist. precoce' : (r.sen || '—');
       var nomePraca = r.n + (r.p ? ' — ' + r.p : '');
       return '<div class="mcp"><span class="mcn">' + nomePraca + '</span><span class="tag ' + tagCls + '">' + tagLbl + '</span></div>';
     }).join('');
@@ -1626,10 +1635,10 @@ function renderAssessoresMensal(candidatos) {
       + '<div class="mch"' + mchStyle + '><div><div class="mcm"' + mcmStyle + '>' + mLabels[mes] + '</div><div class="mca">' + ativasLabel + '</div></div><div class="mcc"' + mccStyle + '>' + total + '</div></div>'
       + '<div class="mcb">' + pessoas + '</div>'
       + '<div class="mcf">'
-      + '<div class="mcs"><div class="mcsv" style="color:var(--g)">'    + senior       + '</div><div class="mcsl">Sênior</div></div>'
-      + '<div class="mcs"><div class="mcsv" style="color:var(--am)">'   + pleno        + '</div><div class="mcsl">Pleno</div></div>'
-      + '<div class="mcs"><div class="mcsv" style="color:var(--rose)">' + junior       + '</div><div class="mcsl">Júnior</div></div>'
-      + '<div class="mcs"><div class="mcsv" style="color:var(--red)">'  + desist.length + '</div><div class="mcsl">Desist.</div></div>'
+      + '<div class="mcs"><div class="mcsv" style="color:var(--g)">'    + senior                   + '</div><div class="mcsl">Sênior</div></div>'
+      + '<div class="mcs"><div class="mcsv" style="color:var(--am)">'   + pleno                    + '</div><div class="mcsl">Pleno</div></div>'
+      + '<div class="mcs"><div class="mcsv" style="color:var(--rose)">' + junior                   + '</div><div class="mcsl">Júnior</div></div>'
+      + '<div class="mcs"><div class="mcsv" style="color:#7C3AED">'     + desistPosContrato.length + '</div><div class="mcsl">Desistência</div></div>'
       + '</div>'
       + '</div>';
   }).join('');
@@ -1670,20 +1679,28 @@ function renderOutrasAreas(candidatos) {
     var cands = meses[mes];
     var ativos  = cands.filter(function(r){ var s=norm(r.st||''); return s==='trabalhando'||s==='contratado(a)'; });
     var desist  = cands.filter(function(r){ var s=norm(r.st||''); return s==='desistência'||s==='desistencia'; });
+    var desistPosContrato = desist.filter(function(r){ return !!(r.dt); });
     var senior  = ativos.filter(function(r){ return norm(r.sen||'')==='sênior'; }).length;
     var pleno   = ativos.filter(function(r){ return norm(r.sen||'')==='pleno'; }).length;
     var junior  = ativos.filter(function(r){ return norm(r.sen||'')==='júnior'||norm(r.sen||'')==='junior'; }).length;
-    var total   = ativos.length + desist.length;
+    var total   = ativos.length + desistPosContrato.length;
 
     var ativasLabel = ativos.length + ' ativa' + (ativos.length !== 1 ? 's' : '');
-    if (desist.length) ativasLabel += ' · ' + desist.length + ' desistência' + (desist.length > 1 ? 's' : '');
+    if (desistPosContrato.length) ativasLabel += ' · ' + desistPosContrato.length + ' desistência' + (desistPosContrato.length > 1 ? 's' : '') + ' pós-contrato';
 
-    var pessoas = cands.map(function(r){
-      var isDesist = norm(r.st||'')==='desistência'||norm(r.st||'')==='desistencia';
+    var pessoas = cands.filter(function(r){
+      // Excluir desistências precoces (sem dt)
+      var sNorm = norm(r.st||'');
+      var isDesist = sNorm==='desistência'||sNorm==='desistencia';
+      if(isDesist && !r.dt) return false;
+      return true;
+    }).map(function(r){
+      var sNorm    = norm(r.st||'');
+      var isDesist = sNorm==='desistência'||sNorm==='desistencia';
+      var isPosContrato = isDesist && !!(r.dt);
       var senNorm  = norm(r.sen||'');
-      var tagCls   = isDesist ? 't-dt' : (senNorm==='sênior'?'t-sr':senNorm==='pleno'?'t-pl':'t-jr');
-      var tagLbl   = isDesist ? 'Desistência' : (r.sen||'—');
-      // Mostrar área junto ao nome para diferenciar quando há múltiplas
+      var tagCls   = isPosContrato ? 't-dt-pos' : (senNorm==='sênior'?'t-sr':senNorm==='pleno'?'t-pl':'t-jr');
+      var tagLbl   = isPosContrato ? 'Desistência' : (r.sen||'—');
       var nome = r.n + (r.area ? ' <span style="font-size:9px;color:var(--t3);">['+r.area+']</span>' : '');
       return '<div class="mcp"><span class="mcn">'+nome+'</span><span class="tag '+tagCls+'">'+tagLbl+'</span></div>';
     }).join('');
@@ -1695,7 +1712,7 @@ function renderOutrasAreas(candidatos) {
       + '<div class="mcs"><div class="mcsv" style="color:var(--g)">'+senior+'</div><div class="mcsl">Sênior</div></div>'
       + '<div class="mcs"><div class="mcsv" style="color:var(--am)">'+pleno+'</div><div class="mcsl">Pleno</div></div>'
       + '<div class="mcs"><div class="mcsv" style="color:var(--rose)">'+junior+'</div><div class="mcsl">Júnior</div></div>'
-      + '<div class="mcs"><div class="mcsv" style="color:#DC2626">'+desist.length+'</div><div class="mcsl">Desist.</div></div>'
+      + '<div class="mcs"><div class="mcsv" style="color:#7C3AED">'+desistPosContrato.length+'</div><div class="mcsl">Desistência</div></div>'
       + '</div>'
       + '</div>';
   }).join('');
