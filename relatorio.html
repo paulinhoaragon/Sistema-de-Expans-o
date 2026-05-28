@@ -1489,7 +1489,8 @@ function getDesistentesExtras(candidatosAtuais) {
         org:  (r['Origem'] || '').trim(),
         mou:  (r['MOU'] || '').trim(),
         st:   st,
-        dt:   (r['Data de Contratação'] || null),
+        dt:   (r['_foi_contratado'] ? (r['Data de Contratação'] || null) : null),
+        foiContratado: !!(r['_foi_contratado']),
         dd:   (r['Data de Declínio'] || r['Data Declínio'] || r['Data Declinio'] || null),
         cap:  0,
         comp: 0,
@@ -1573,7 +1574,7 @@ function renderAssessoresMensal(candidatos) {
 
   // Extras: apenas desistências pós-contrato (dt preenchido) — precoces ignoradas
   var extrasRaw = temFiltro ? [] : getDesistentesExtras(base);
-  var extras = extrasRaw.filter(function(r){ return !!(r.dt); });
+  var extras = extrasRaw.filter(function(r){ return r.foiContratado === true; });
 
   var C = base.concat(extras).filter(function(r) {
     return !r.area || ['assessor','assessores'].indexOf(r.area.toLowerCase()) !== -1;
@@ -1606,7 +1607,7 @@ function renderAssessoresMensal(candidatos) {
     var ativos  = cands.filter(function(r) { var s = norm(r.st || ''); return s === 'trabalhando' || s === 'contratado(a)'; });
     var desist  = cands.filter(function(r) { var s = norm(r.st || ''); return s === 'desistência' || s === 'desistencia'; });
     // Distinguir: desistência pós-contrato (tinha data_contratacao) vs. desistência precoce (nunca chegou a ser contratado)
-    var desistPosContrato = desist.filter(function(r){ return !!(r.dt); });
+    var desistPosContrato = desist.filter(function(r){ return r.foiContratado === true; });
     var senior  = ativos.filter(function(r) { return norm(r.sen || '') === 'sênior'; }).length;
     var pleno   = ativos.filter(function(r) { return norm(r.sen || '') === 'pleno'; }).length;
     var junior  = ativos.filter(function(r) { return norm(r.sen || '') === 'júnior' || norm(r.sen || '') === 'junior'; }).length;
@@ -1623,7 +1624,7 @@ function renderAssessoresMensal(candidatos) {
     var pessoas = cands.map(function(r) {
       var sNorm    = norm(r.st || '');
       var isDesist = sNorm === 'desistência' || sNorm === 'desistencia';
-      var isPosContrato = isDesist && !!(r.dt);
+      var isPosContrato = isDesist && r.foiContratado === true;
       var senNorm  = norm(r.sen || '');
       var tagCls   = isPosContrato ? 't-dt-pos' : isDesist ? 't-dt' : (senNorm === 'sênior' ? 't-sr' : senNorm === 'pleno' ? 't-pl' : 't-jr');
       var tagLbl   = isPosContrato ? 'Desistência' : isDesist ? 'Desist. precoce' : (r.sen || '—');
@@ -1679,7 +1680,7 @@ function renderOutrasAreas(candidatos) {
     var cands = meses[mes];
     var ativos  = cands.filter(function(r){ var s=norm(r.st||''); return s==='trabalhando'||s==='contratado(a)'; });
     var desist  = cands.filter(function(r){ var s=norm(r.st||''); return s==='desistência'||s==='desistencia'; });
-    var desistPosContrato = desist.filter(function(r){ return !!(r.dt); });
+    var desistPosContrato = desist.filter(function(r){ return r.foiContratado === true; });
     var senior  = ativos.filter(function(r){ return norm(r.sen||'')==='sênior'; }).length;
     var pleno   = ativos.filter(function(r){ return norm(r.sen||'')==='pleno'; }).length;
     var junior  = ativos.filter(function(r){ return norm(r.sen||'')==='júnior'||norm(r.sen||'')==='junior'; }).length;
@@ -1697,7 +1698,7 @@ function renderOutrasAreas(candidatos) {
     }).map(function(r){
       var sNorm    = norm(r.st||'');
       var isDesist = sNorm==='desistência'||sNorm==='desistencia';
-      var isPosContrato = isDesist && !!(r.dt);
+      var isPosContrato = isDesist && r.foiContratado === true;
       var senNorm  = norm(r.sen||'');
       var tagCls   = isPosContrato ? 't-dt-pos' : (senNorm==='sênior'?'t-sr':senNorm==='pleno'?'t-pl':'t-jr');
       var tagLbl   = isPosContrato ? 'Desistência' : (r.sen||'—');
