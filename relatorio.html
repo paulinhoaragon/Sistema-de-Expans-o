@@ -403,7 +403,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
   <div class="ib">
     <div class="ii"><div class="iv"><span id="dyn-brutas">31</span></div><div class="il">Contratações brutas <span id="dyn-periodo-label">Jan–Abr</span></div></div>
-       <div class="ii"><div class="iv"><span id="dyn-desist">3</span></div><div class="il" id="dyn-desist-label">Desistências · taxa —</div></div>
+    <div class="ii"><div class="iv" style="display:flex;align-items:baseline;gap:10px;"><span id="dyn-desist-pos" style="font-size:.85em;">—</span><span style="opacity:.3;font-size:.6em;">|</span><span id="dyn-desist-prec" style="font-size:.85em;opacity:.6;">—</span></div><div class="il" id="dyn-desist-label">Desistências · taxa —</div></div>
     <div class="ii">
       <div class="ptw">
         <div class="iv" style="border-bottom:1px dotted rgba(255,255,255,.25);cursor:default;"><span id="dyn-pracas">13</span></div>
@@ -963,6 +963,10 @@ function fmtM(v) {
     set('dyn-ma-count', D.ma.length + ' operações em andamento');
   }
   var desist=G.desist||0;
+  // Separar pós-contrato (foiContratado) vs precoce
+  var allCands = window.Blue3Data && window.Blue3Data._rawRows ? window.Blue3Data._rawRows : [];
+  var desistPos  = allCands.filter(function(r){ var s=norm(r['Status']||''); return (s==='desistência'||s==='desistencia') && (r['foiContratado']===true||r['_foi_contratado']===true); }).length;
+  var desistPrec = allCands.filter(function(r){ var s=norm(r['Status']||''); return (s==='desistência'||s==='desistencia') && !(r['foiContratado']===true||r['_foi_contratado']===true); }).length;
   var meses=Object.keys(G.byMonth||{}).length||1;
   var mLabels={1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
   var mNums=Object.keys(G.byMonth||{}).map(Number).sort(function(a,b){return a-b;});
@@ -972,7 +976,8 @@ function fmtM(v) {
   set('dyn-auc',    'R$'+(G.aucB||'0')+'B');
   set('dyn-auc-sub', AT+' candidatos com carteira');
   set('dyn-brutas', G.brutas||AT);
-  set('dyn-desist', desist);
+  set('dyn-desist-pos',  desistPos  + ' pós-contrato');
+  set('dyn-desist-prec', desistPrec + ' precoce' + (desistPrec!==1?'s':''));
   set('dyn-desist-label','Desistências · taxa '+taxaDesist+'%');
   set('dyn-senior-pct', (G.seniorPct||0)+'%');
   if (G.maiorCand) {
