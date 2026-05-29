@@ -195,9 +195,11 @@ function blue3LoadData(callback){
       // _foi_contratado = TRUE se data_contratacao foi gravada no banco
       var _foiContratado = !!(r.data_contratacao);
       // Data de referência:
-      // 1. data_contratacao — fonte principal (contratados e desistentes pós-contrato)
-      // 2. data_entrada     — fallback para quem ainda não tem data_contratacao
-      var _dataContrat = r.data_contratacao || r.data_entrada;
+      // Desistentes SEM data_contratacao = precoces → sem data → não aparecem nos cards mensais
+      // Todos os outros: data_contratacao ou data_entrada como fallback
+      var _dataContrat = (_statusFinal === 'Desistência' && !_foiContratado)
+        ? null
+        : (r.data_contratacao || r.data_entrada);
       o['Data de Contratação']   = _dataContrat
         ? _dataContrat.split('-').reverse().join('/')
         : '';
