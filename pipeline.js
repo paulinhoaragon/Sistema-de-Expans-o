@@ -194,13 +194,10 @@ function blue3LoadData(callback){
       var _statusFinal = etapaToStatus(r.etapa);
       // _foi_contratado = TRUE se data_contratacao foi gravada no banco
       var _foiContratado = !!(r.data_contratacao);
-      // Data de referência — lógica original preservada:
-      // 1. data_contratacao (preenchida ao entrar em Contratação/Trabalhando)
-      // 2. data_declinio    (para desistências — mantém aparecimento nos cards mensais)
-      // 3. data_entrada     (fallback)
-      var _dataContrat = (_statusFinal === 'Desistência' && r.data_declinio)
-        ? r.data_declinio
-        : (r.data_contratacao || r.data_entrada);
+      // Data de referência:
+      // 1. data_contratacao — fonte principal (contratados e desistentes pós-contrato)
+      // 2. data_entrada     — fallback para quem ainda não tem data_contratacao
+      var _dataContrat = r.data_contratacao || r.data_entrada;
       o['Data de Contratação']   = _dataContrat
         ? _dataContrat.split('-').reverse().join('/')
         : '';
