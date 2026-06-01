@@ -339,7 +339,14 @@ function Blue3_payback(){
 
 function Blue3_huntersPerformance(){
   var C=window.Blue3Data.candidatos,hs={};
+  // Incluir hunters com candidatos
   C.forEach(function(r){if(r.h)hs[r.h]=true;});
+  // Incluir também hunters ativos do HUNTER_DB sem candidatos ainda
+  if(typeof HUNTER_DB !== 'undefined' && HUNTER_DB.length){
+    HUNTER_DB.forEach(function(h){
+      if(h.status==='Ativo') hs[h.nome]=true;
+    });
+  }
   window.Blue3Data.hunters=Object.keys(hs).map(function(h){
     var rows=C.filter(function(r){return norm(r.h)===norm(h);});
     return{nome:h,total:rows.length,senior:rows.filter(function(r){return norm(r.sen)==='sênior';}).length,pleno:rows.filter(function(r){return norm(r.sen)==='pleno';}).length,junior:rows.filter(function(r){return norm(r.sen)==='junior'||norm(r.sen)==='júnior';}).length,auc:rows.reduce(function(s,r){return s+r.cap;},0),comp:rows.reduce(function(s,r){return s+r.comp;},0),mouOk:rows.filter(function(r){return norm(r.mou)==='assinado';}).length,trab:rows.filter(function(r){return norm(r.st)==='trabalhando';}).length,xp:rows.reduce(function(s,r){return s+r.xp;},0)};
