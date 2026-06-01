@@ -599,6 +599,26 @@ NexusConfig.getHunters(function(err,hunters){
       HUNTER_COLORS[key]=cores[i%cores.length];
       HUNTER_ORDER.push(h.nome);
     });
+    // Rerodar huntersPerformance agora que HUNTER_DB está populado
+    // para incluir hunters ativos sem candidatos ainda (ex: recém cadastrados)
+    if(window.Blue3Data && window.Blue3Data.candidatos) {
+      var hs={};
+      window.Blue3Data.candidatos.forEach(function(r){if(r.h)hs[r.h]=true;});
+      hunters.forEach(function(h){ if(h.status==='Ativo') hs[h.nome]=true; });
+      var C=window.Blue3Data.candidatos;
+      window.Blue3Data.hunters=Object.keys(hs).map(function(h){
+        var rows=C.filter(function(r){return (r.h||'').trim().toLowerCase()===(h||'').trim().toLowerCase();});
+        return{nome:h,total:rows.length,
+          senior:rows.filter(function(r){return(r.sen||'').toLowerCase()==='sênior';}).length,
+          pleno:rows.filter(function(r){return(r.sen||'').toLowerCase()==='pleno';}).length,
+          junior:rows.filter(function(r){var s=(r.sen||'').toLowerCase();return s==='junior'||s==='júnior';}).length,
+          auc:rows.reduce(function(s,r){return s+(r.cap||0);},0),
+          comp:rows.reduce(function(s,r){return s+(r.comp||0);},0),
+          mouOk:rows.filter(function(r){return(r.mou||'').toLowerCase()==='assinado';}).length,
+          trab:rows.filter(function(r){return(r.st||'').toLowerCase()==='trabalhando';}).length,
+          xp:rows.reduce(function(s,r){return s+(r.xp||0);},0)};
+      });
+    }
     if(cb) cb(hunters);
   });
 }
