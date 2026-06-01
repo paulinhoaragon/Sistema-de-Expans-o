@@ -118,8 +118,19 @@ tbody td:first-child{text-align:left;font-weight:600;color:var(--t1)}
  */
 
 // ── Objeto global (sempre recriado, nunca persistido) ──
-window.Blue3Data = null;
-window.Blue3Ready = false;
+// Preservar blue3LoadData do pipeline.js externo se já carregado
+var _externalBlue3LoadData = (typeof blue3LoadData === 'function') ? blue3LoadData : null;
+var _externalBlue3DataLoader = (typeof Blue3_dataLoader === 'function') ? Blue3_dataLoader : null;
+var _externalBlue3HuntersPerf = (typeof Blue3_huntersPerformance === 'function') ? Blue3_huntersPerformance : null;
+var _externalBlue3Finance = (typeof Blue3_financeMetrics === 'function') ? Blue3_financeMetrics : null;
+var _externalBlue3Payback = (typeof Blue3_payback === 'function') ? Blue3_payback : null;
+
+if (typeof window.Blue3Data === 'undefined' || window.Blue3Data === null) {
+  window.Blue3Data = null;
+}
+if (typeof window.Blue3Ready === 'undefined') {
+  window.Blue3Ready = false;
+}
 
 // ── Utilitários ──
 
@@ -883,24 +894,29 @@ document.addEventListener('DOMContentLoaded',function(){
   diag('Iniciando hunters — buscando do Supabase...');
   try { localStorage.removeItem('B3D'); localStorage.removeItem('B3D_RAW'); } catch(e){}
 
-  // Usar blue3LoadData do pipeline.js externo
-  if (typeof blue3LoadData === 'function') {
-    blue3LoadData(function(rows) {
+  // Preferir funções do pipeline.js externo se disponíveis
+  var _loadData   = _externalBlue3LoadData   || (typeof blue3LoadData          === 'function' ? blue3LoadData          : null);
+  var _dataLoader = _externalBlue3DataLoader || (typeof Blue3_dataLoader       === 'function' ? Blue3_dataLoader       : null);
+  var _huntersP   = _externalBlue3HuntersPerf|| (typeof Blue3_huntersPerformance==='function' ? Blue3_huntersPerformance: null);
+  var _finance    = _externalBlue3Finance    || (typeof Blue3_financeMetrics   === 'function' ? Blue3_financeMetrics   : null);
+  var _payback    = _externalBlue3Payback    || (typeof Blue3_payback          === 'function' ? Blue3_payback          : null);
+
+  if (typeof _loadData === 'function') {
+    _loadData(function(rows) {
       if (!rows || !rows.length) {
         showEmptyState('Sem dados no Supabase.');
         return;
       }
-      // Popular Blue3Data com os dados do Supabase
       window.Blue3Data = {
         candidatos: [], financeiros: [], paybacks: [],
         hunters: [], pipeline: [], ma: [], resumoGeral: {},
         _rawRows: rows,
         _ma: [], _pipeline: [], _pipelineNeg: []
       };
-      if (Blue3_dataLoader()) {
-        Blue3_financeMetrics();
-        Blue3_payback();
-        Blue3_huntersPerformance();
+      if (_dataLoader && _dataLoader()) {
+        if (_finance)  _finance();
+        if (_payback)  _payback();
+        if (_huntersP) _huntersP();
         window.Blue3Ready = true;
         renderPage();
       } else {
@@ -908,7 +924,6 @@ document.addEventListener('DOMContentLoaded',function(){
       }
     });
   } else {
-    // Fallback localStorage
     var raw = localStorage.getItem('B3D');
     if (!raw) { showEmptyState(); diag('Sem dados'); return; }
     if (Blue3_runPipeline()) renderPage();
