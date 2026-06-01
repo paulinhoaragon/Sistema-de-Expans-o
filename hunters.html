@@ -611,7 +611,7 @@ function buildH(hunters,cands){
   return ord.map(function(h){
       var nomKey=(h.nome||'').trim().toLowerCase();
     var meta=HUNTER_METAS[nomKey]||0,color=HUNTER_COLORS[nomKey]||'#64748B';
-    var pace=meta>0?Math.round(h.total/meta*100):0,hn=ns(h.nome);
+    var pace=meta>0?Math.round(h.total/meta*100):null,hn=ns(h.nome);
     var cs=cands.filter(function(c){return ns(c.h)===hn;}).map(function(c){
       return{nome:c.n,filial:c.p,status:c.st,mou:c.mou,inicio:c.inicio||null,auc:c.cap,piso:c.piso,periodo:c.periodo,comp:c.comp,sen:c.sen};
     });
@@ -626,22 +626,27 @@ function showDet(nome){
   var h=H.find(function(x){return x.nome===nome;});if(!h)return;
   document.getElementById('view-ov').style.display='none';
   document.getElementById('view-det').style.display='block';
-  var pc=h.pace_pct,pcC=pc>=100?'#16A34A':pc>=70?'#B8962E':'#DC2626';
+  var pc=h.pace_pct,pcC=pc!=null?(pc>=100?'#16A34A':pc>=70?'#B8962E':'#DC2626'):'#94A3B8';
+  var pcLabel=pc!=null?pc+'%':'Sem meta';
+  var metaLabel=h.meta>0?h.meta:'—';
   document.getElementById('det-content').innerHTML=
     '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">'
     +'<div style="width:10px;height:40px;border-radius:4px;background:'+h.color+'"></div>'
     +'<div><div style="font-family:Playfair Display,serif;font-size:22px;font-weight:600;color:var(--t1)">'+h.nome+'</div>'
-    +'<div style="font-size:11px;color:var(--t3)">'+h.total+' contratos - Meta: '+h.meta+' - Pace: '+pc+'%</div></div></div>'
-    +'<div class="krow">'+kc('Contratacoes',h.total+'/'+h.meta,'meta '+h.meta)+kc('AuC Alvo',fmt(h.auc),'total')+kc('Comp.',fmt(h.comp),'contratos')+kc('Trabalhando',h.trabalhando,'iniciados')+'</div>'
+    +'<div style="font-size:11px;color:var(--t3)">'+h.total+' contratos · Meta: '+metaLabel+' · Pace: '+pcLabel+'</div></div></div>'
+    +'<div class="krow">'+kc('Contratações',h.total+(h.meta>0?'/'+h.meta:''),'meta '+(h.meta>0?h.meta:'a definir'))+kc('AuC Alvo',fmt(h.auc),'total')+kc('Comp.',fmt(h.comp),'contratos')+kc('Trabalhando',h.trabalhando,'iniciados')+'</div>'
     +'<div class="mou-row">'
     +'<div class="mou-box" style="background:#DCFCE7"><div style="font-size:11px;font-weight:700;color:#15803D">MOU OK</div><div style="font-size:26px;font-weight:700;color:#15803D">'+h.mou_ok+'</div></div>'
     +'<div class="mou-box" style="background:#FEF3C7"><div style="font-size:11px;font-weight:700;color:#92400E">MOU Pend.</div><div style="font-size:26px;font-weight:700;color:#92400E">'+h.mou_pend+'</div></div>'
     +'<div class="mou-box" style="background:#EEF2FD"><div style="font-size:11px;font-weight:700;color:#1A3BAD">Trabalhando</div><div style="font-size:26px;font-weight:700;color:#1A3BAD">'+h.trabalhando+'</div></div>'
     +'<div class="mou-box" style="background:var(--canvas);flex:2">'
     +'<div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:6px">Pace vs Meta</div>'
-    +'<div style="height:8px;background:var(--rule);border-radius:4px;overflow:hidden">'
-    +'<div style="height:100%;width:'+Math.min(pc,100)+'%;background:'+pcC+';border-radius:4px"></div></div>'
-    +'<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-top:4px"><span>0</span><span style="font-weight:700;color:'+pcC+'">'+pc+'%</span><span>'+h.meta+'</span></div>'
+    +(h.meta>0
+      ?'<div style="height:8px;background:var(--rule);border-radius:4px;overflow:hidden">'
+        +'<div style="height:100%;width:'+Math.min(pc,100)+'%;background:'+pcC+';border-radius:4px"></div></div>'
+        +'<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-top:4px"><span>0</span><span style="font-weight:700;color:'+pcC+'">'+pcLabel+'</span><span>'+h.meta+'</span></div>'
+      :'<div style="font-size:12px;color:var(--t4);margin-top:8px;">Meta a definir em julho</div>'
+    )
     +'</div></div>'
     +'<div class="sh"><div class="st">Candidatos</div><div class="ss">'+h.total+'</div></div>'
     +'<div class="tbl-wrap"><table><thead><tr><th>Candidato</th><th>Filial</th><th>Status</th><th>MOU</th><th>Inicio</th><th>Piso</th><th>Periodo</th><th>AuC</th><th>Comp.</th></tr></thead>'
@@ -667,17 +672,15 @@ function rank(id,sf,lf){
 
 function renderBonusCards(){
   var el=document.getElementById('bonus-summary');if(!el)return;
-  // Hunters não-gestores (elegíveis para bonus) — dinâmico via Supabase
+  // Hunters não-gestores com meta definida (elegíveis para bonus)
   var bh=H.filter(function(h){
     var dbH=HUNTER_DB.find(function(d){ return d.nome===h.nome; });
-    return !dbH || dbH.is_gestor !== true; // is_gestor=false ou campo ausente = elegível
+    return (!dbH || dbH.is_gestor !== true) && h.meta > 0;
   });
   if(!bh.length){el.innerHTML='';return;}
-
-  // Total das hunters comerciais
   var totalContr=bh.reduce(function(s,h){return s+h.total;},0);
   var metaTotal=bh.reduce(function(s,h){return s+h.meta;},0);
-  var pctTotal=Math.min(100,Math.round(totalContr/metaTotal*100));
+  var pctTotal=metaTotal>0?Math.min(100,Math.round(totalContr/metaTotal*100)):0;
 
   el.innerHTML=
     // Título caderno de metas
@@ -724,8 +727,9 @@ function renderOv(){
   var el=document.getElementById('hgrid');if(!el)return;
   el.innerHTML=H.map(function(hun){
     var pc=hun.pace_pct;
-    var pcC=pc>=100?'#16A34A':pc>=70?'#B8962E':'#DC2626';
-    var metaOk=(hun.total>=hun.meta);
+    var semMeta=hun.meta===0||hun.meta==null;
+    var pcC=semMeta?'#94A3B8':(pc>=100?'#16A34A':pc>=70?'#B8962E':'#DC2626');
+    var metaOk=!semMeta&&(hun.total>=hun.meta&&hun.meta>0);
     var cardCls='hcard'+(metaOk?' meta-atingida':'');
     var crown=metaOk?'<div class="hcard-crown">&#x1F451;</div>':'';
     var badge=metaOk?'<div class="hcard-meta-badge">&#x1F3C6; Meta atingida! Parab&eacute;ns!</div>':'';
@@ -740,8 +744,29 @@ function renderOv(){
     var nomeEsc=hun.nome.replace(/'/g,"&#39;");
     var dbHun=HUNTER_DB.find(function(d){ return d.nome===hun.nome; });
     var isGestor=dbHun && dbHun.is_gestor===true;
-    var contratStr=String(hun.total)+'/'+String(hun.meta);
+    var contratStr=semMeta?String(hun.total)+'/—':String(hun.total)+'/'+String(hun.meta);
     var subLabel=isGestor?'Gestor &middot; Deals Estrat&eacute;gicos':'Hunter &middot; Expans&atilde;o 1S2026';
+    var hunFoto=HUNTER_PHOTOS[(hun.nome||'').trim().toLowerCase()]||'';
+    var paceBarHtml=semMeta
+      ?'<div class="pace-bar"><div class="pace-fill" style="width:0%;background:#E2E8F0"></div></div>'
+       +'<div class="pace-lbl"><span>Pace vs meta</span><span style="font-weight:700;color:#94A3B8">Meta a definir</span></div>'
+      :'<div class="pace-bar"><div class="pace-fill" style="width:'+Math.min(pc,100)+'%;background:'+pcC+'"></div></div>'
+       +'<div class="pace-lbl"><span>Pace vs meta</span><span style="font-weight:700;color:'+pcC+'">'+pc+'%</span></div>';
+    return '<div class="'+cardCls+'" onclick="showDet(&#39;'+nomeEsc+'&#39;)">'
+      +(isGestor?'':crown)+particles
+      +(hunFoto
+        ?'<div class="hcard-foto" style="height:90px;overflow:hidden;position:relative;border-radius:14px 14px 0 0;"><img src="'+hunFoto+'" style="width:100%;height:100%;object-fit:cover;object-position:center 15%;"><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(10,15,30,.6) 100%);"></div></div>'
+        :'<div class="hcard-top" style="background:'+hun.color+'"></div>')
+      +'<div class="hcard-name">'+hun.nome+'</div>'
+      +'<div class="hcard-sub">'+subLabel+'</div>'
+      +'<div class="hs"><span class="hl">Contrata&ccedil;&otilde;es</span><span class="hv">'+contratStr+'</span></div>'
+      +'<div class="hs"><span class="hl">AuC Alvo</span><span class="hv">'+fmt(hun.auc)+'</span></div>'
+      +'<div class="hs"><span class="hl">Comp. Gerada</span><span class="hv">'+fmt(hun.comp)+'</span></div>'
+      +'<div class="hs"><span class="hl">MOU OK</span><span class="hv">'+hun.mou_ok+'/'+hun.total+'</span></div>'
+      +'<div class="hs"><span class="hl">Trabalhando</span><span class="hv">'+hun.trabalhando+'</span></div>'
+      +paceBarHtml
+      +(isGestor?'':badge)+'</div>';
+  }).join('');
         var hunFoto=HUNTER_PHOTOS[(hun.nome||'').trim().toLowerCase()]||'';
     return '<div class="'+cardCls+'" onclick="showDet(&#39;'+nomeEsc+'&#39;)">'
       +(isGestor?'':crown)+particles
