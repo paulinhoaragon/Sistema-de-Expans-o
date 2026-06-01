@@ -442,28 +442,36 @@ document.addEventListener('DOMContentLoaded',function(){
   diag('Iniciando hunters — buscando do Supabase...');
   try { localStorage.removeItem('B3D'); localStorage.removeItem('B3D_RAW'); } catch(e){}
 
-  if (typeof blue3LoadData === 'function') {
-    blue3LoadData(function(rows) {
-      if (!rows || !rows.length) { showEmptyState('Sem dados no Supabase.'); return; }
-      window.Blue3Data = {
-        candidatos: [], financeiros: [], paybacks: [],
-        hunters: [], pipeline: [], ma: [], resumoGeral: {},
-        _rawRows: rows, _ma: [], _pipeline: [], _pipelineNeg: []
-      };
-      if (Blue3_dataLoader()) {
-        Blue3_financeMetrics();
-        Blue3_payback();
-        Blue3_huntersPerformance();
-        window.Blue3Ready = true;
-        renderPage();
-      } else {
-        showEmptyState('Falha ao processar dados.');
-      }
-    });
-  } else {
-    showEmptyState('pipeline.js não carregado.');
-    diag('ERRO: blue3LoadData não encontrado');
+  // Aguarda pipeline.js estar disponível (máx 5s)
+  var tentativas = 0;
+  function tentarCarregar() {
+    tentativas++;
+    if (typeof blue3LoadData === 'function') {
+      blue3LoadData(function(rows) {
+        if (!rows || !rows.length) { showEmptyState('Sem dados no Supabase.'); return; }
+        window.Blue3Data = {
+          candidatos: [], financeiros: [], paybacks: [],
+          hunters: [], pipeline: [], ma: [], resumoGeral: {},
+          _rawRows: rows, _ma: [], _pipeline: [], _pipelineNeg: []
+        };
+        if (Blue3_dataLoader()) {
+          Blue3_financeMetrics();
+          Blue3_payback();
+          Blue3_huntersPerformance();
+          window.Blue3Ready = true;
+          renderPage();
+        } else {
+          showEmptyState('Falha ao processar dados.');
+        }
+      });
+    } else if (tentativas < 50) {
+      setTimeout(tentarCarregar, 100);
+    } else {
+      showEmptyState('pipeline.js não carregou a tempo.');
+      diag('ERRO: blue3LoadData não disponível após 5s');
+    }
   }
+  tentarCarregar();
 });
 
 window.b3OnCSVLoaded = function() {
