@@ -257,11 +257,13 @@ function Blue3_dataLoader(){
       trigs:[pn(r['Trigger 1 Tri']),pn(r['Trigger 1']),pn(r['Trigger 2']),pn(r['Trigger 3']),pn(r['Trigger 4'])],
       dt:(r['Data de Contratação']||null),
       foiContratado:!!(r['_foi_contratado']),
-      // data_inicio = data real (Trabalhando); prev_inicio = previsão (Contratação)
       inicio:(r['Data Inicio']||r['Prev. Inicio']||null),
       estrategico:(r['Estratégico']||'Não').trim(),
       tel:(r['Telefone']||'').trim(),
-      _id:(r['_crm_id']||'')
+      _id:(r['_crm_id']||''),
+      hist:(r['historico_etapas']||r['Historico Etapas']||null),
+      dataEntrada:(r['data_entrada']||null),
+      dataDeclinio:(r['data_declinio']||null)
     };
   });
   // Desduplicar por nome — previne soma dupla se Supabase retornar duplicatas
@@ -339,17 +341,52 @@ function Blue3_payback(){
 
 function Blue3_huntersPerformance(){
   var C=window.Blue3Data.candidatos,hs={};
-  // Incluir hunters com candidatos
   C.forEach(function(r){if(r.h)hs[r.h]=true;});
-  // Incluir também hunters ativos do HUNTER_DB sem candidatos ainda
   if(typeof HUNTER_DB !== 'undefined' && HUNTER_DB.length){
-    HUNTER_DB.forEach(function(h){
-      if(h.status==='Ativo') hs[h.nome]=true;
-    });
+    HUNTER_DB.forEach(function(h){ if(h.status==='Ativo') hs[h.nome]=true; });
   }
   window.Blue3Data.hunters=Object.keys(hs).map(function(h){
     var rows=C.filter(function(r){return norm(r.h)===norm(h);});
-    return{nome:h,total:rows.length,senior:rows.filter(function(r){return norm(r.sen)==='sênior';}).length,pleno:rows.filter(function(r){return norm(r.sen)==='pleno';}).length,junior:rows.filter(function(r){return norm(r.sen)==='junior'||norm(r.sen)==='júnior';}).length,auc:rows.reduce(function(s,r){return s+r.cap;},0),comp:rows.reduce(function(s,r){return s+r.comp;},0),mouOk:rows.filter(function(r){return norm(r.mou)==='assinado';}).length,trab:rows.filter(function(r){return norm(r.st)==='trabalhando';}).length,xp:rows.reduce(function(s,r){return s+r.xp;},0)};
+    var ativos=rows.filter(function(r){var s=norm(r.st);return s==='trabalhando'||s==='contratado(a)';});
+    var desist=rows.filter(function(r){var s=norm(r.st);return s==='desistência'||s==='desistencia';});
+    var total=rows.length;
+
+    // Taxa de desistência
+    var txDesist=total>0?Math.round(desist.length/total*100):0;
+
+    // Tempo médio até contratação (dias) — usa historico_etapas quando disponível
+    var tempos=[];
+    ativos.concat(desist.filter(function(r){return r.foiContratado;})).forEach(function(r){
+      var hist=r.hist;
+      if(typeof hist==='string'){try{hist=JSON.parse(hist);}catch(e){hist=null;}}
+      var inicio=null;
+      if(hist&&Array.isArray(hist)&&hist.length){
+        var sorted=hist.slice().sort(function(a,b){return new Date(a.entrada||a.timestamp||0)-new Date(b.entrada||b.timestamp||0);});
+        inicio=new Date(sorted[0].entrada||sorted[0].timestamp);
+      } else if(r.dataEntrada){
+        inicio=new Date(r.dataEntrada);
+      }
+      if(!inicio||isNaN(inicio.getTime()))return;
+      var fim=r.dt?new Date(r.dt.split('/').reverse().join('-')):new Date();
+      var dias=Math.round((fim-inicio)/(1000*60*60*24));
+      if(dias>0&&dias<500)tempos.push(dias);
+    });
+    var tempoMedio=tempos.length?Math.round(tempos.reduce(function(s,v){return s+v;},0)/tempos.length):null;
+
+    return{
+      nome:h,total:ativos.length,
+      senior:ativos.filter(function(r){return norm(r.sen)==='sênior';}).length,
+      pleno:ativos.filter(function(r){return norm(r.sen)==='pleno';}).length,
+      junior:ativos.filter(function(r){var s=norm(r.sen);return s==='junior'||s==='júnior';}).length,
+      auc:ativos.reduce(function(s,r){return s+(r.cap||0);},0),
+      comp:ativos.reduce(function(s,r){return s+(r.comp||0);},0),
+      mouOk:ativos.filter(function(r){return norm(r.mou)==='assinado';}).length,
+      trab:ativos.filter(function(r){return norm(r.st)==='trabalhando';}).length,
+      xp:ativos.reduce(function(s,r){return s+(r.xp||0);},0),
+      txDesist:txDesist,
+      tempoMedio:tempoMedio,
+      totalFunil:total
+    };
   });
 }
 
