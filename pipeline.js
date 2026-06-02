@@ -221,6 +221,10 @@ function blue3LoadData(callback){
       o['Estratégico']           = (r.estrategico||'Não').trim();
       o['Telefone']              = (r.telefone||'').trim();
       o['_crm_id']               = r.id || '';
+      o['data_entrada']          = r.data_entrada || '';
+      o['data_declinio']         = r.data_declinio || '';
+      o['historico_etapas']      = r.historico_etapas || null;
+      o['lider']                 = (r.lider||'').trim();
       return o;
     });
     // Não salvar em localStorage — dados sempre frescos do Supabase
