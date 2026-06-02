@@ -627,11 +627,19 @@ NexusConfig.getHunters(function(err,hunters){
         var tempos=[];
         ativos.forEach(function(r){
           var rawRow=raw.find(function(rr){return norm(rr['Candidato']||'')===norm(r.n);});
-          var dataE=rawRow?(rawRow['data_entrada']||rawRow['Data Entrada']||rawRow['Data de Entrada']||null):null;
-          if(!dataE)return;
-          var inicio=new Date(dataE);
-          if(isNaN(inicio.getTime()))return;
-          var fim=r.dt?new Date(r.dt.split('/').reverse().join('-')):new Date();
+          var dataE=rawRow?(rawRow['data_entrada']||null):null;
+          var dataCont=r.dt; // Data de Contratação no formato DD/MM/YYYY
+          // Usar a mais antiga entre data_entrada e data_contratacao como início
+          var inicioE=dataE?new Date(dataE):null;
+          var inicioC=dataCont?new Date(dataCont.split('/').reverse().join('-')):null;
+          var inicio=null;
+          if(inicioE&&inicioC){
+            inicio=inicioE<inicioC?inicioE:inicioC;
+          } else {
+            inicio=inicioE||inicioC;
+          }
+          if(!inicio||isNaN(inicio.getTime()))return;
+          var fim=inicioC&&inicioC>inicio?inicioC:new Date();
           var dias=Math.round((fim-inicio)/(1000*60*60*24));
           if(dias>0&&dias<500)tempos.push(dias);
         });
