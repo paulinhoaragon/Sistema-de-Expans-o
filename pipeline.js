@@ -340,31 +340,49 @@ function Blue3_payback(){
 }
 
 function Blue3_huntersPerformance(){
-  var C=window.Blue3Data.candidatos,hs={};
+  var C=window.Blue3Data.candidatos; // ativos (trabalhando + contratado)
+  var raw=window.Blue3Data._rawRows||[]; // todos incluindo desistentes
+
+  var hs={};
   C.forEach(function(r){if(r.h)hs[r.h]=true;});
+  // Incluir também desistentes nos hunters
+  raw.forEach(function(r){
+    var h=r['Hunter']||r['hunter']||'';
+    if(h)hs[h]=true;
+  });
   if(typeof HUNTER_DB !== 'undefined' && HUNTER_DB.length){
     HUNTER_DB.forEach(function(h){ if(h.status==='Ativo') hs[h.nome]=true; });
   }
+
   window.Blue3Data.hunters=Object.keys(hs).map(function(h){
-    var rows=C.filter(function(r){return norm(r.h)===norm(h);});
-    var ativos=rows.filter(function(r){var s=norm(r.st);return s==='trabalhando'||s==='contratado(a)';});
-    var desist=rows.filter(function(r){var s=norm(r.st);return s==='desistência'||s==='desistencia';});
-    var total=rows.length;
+    var ativos=C.filter(function(r){return norm(r.h)===norm(h);});
 
-    // Taxa de desistência
-    var txDesist=total>0?Math.round(desist.length/total*100):0;
+    // Desistentes via _rawRows
+    var desist=raw.filter(function(r){
+      var rh=norm(r['Hunter']||r['hunter']||'');
+      var s=norm(r['Status']||'');
+      return rh===norm(h)&&(s==='desistência'||s==='desistencia');
+    });
 
-    // Tempo médio até contratação (dias) — usa historico_etapas quando disponível
+    var totalFunil=ativos.length+desist.length;
+    var txDesist=totalFunil>0?Math.round(desist.length/totalFunil*100):0;
+
+    // Tempo médio até contratação usando data_entrada dos _rawRows
     var tempos=[];
-    ativos.concat(desist.filter(function(r){return r.foiContratado;})).forEach(function(r){
+    ativos.forEach(function(r){
+      // Tentar historico_etapas primeiro
       var hist=r.hist;
       if(typeof hist==='string'){try{hist=JSON.parse(hist);}catch(e){hist=null;}}
       var inicio=null;
       if(hist&&Array.isArray(hist)&&hist.length){
         var sorted=hist.slice().sort(function(a,b){return new Date(a.entrada||a.timestamp||0)-new Date(b.entrada||b.timestamp||0);});
         inicio=new Date(sorted[0].entrada||sorted[0].timestamp);
-      } else if(r.dataEntrada){
-        inicio=new Date(r.dataEntrada);
+      }
+      // Fallback: data_entrada do _rawRows
+      if(!inicio||isNaN(inicio.getTime())){
+        var rawRow=raw.find(function(rr){return norm(rr['Candidato']||rr['nome']||'')===norm(r.n);});
+        var de=rawRow&&(rawRow['data_entrada']||rawRow['Data Entrada']||rawRow['Data de Entrada']);
+        if(de) inicio=new Date(de);
       }
       if(!inicio||isNaN(inicio.getTime()))return;
       var fim=r.dt?new Date(r.dt.split('/').reverse().join('-')):new Date();
@@ -385,7 +403,7 @@ function Blue3_huntersPerformance(){
       xp:ativos.reduce(function(s,r){return s+(r.xp||0);},0),
       txDesist:txDesist,
       tempoMedio:tempoMedio,
-      totalFunil:total
+      totalFunil:totalFunil
     };
   });
 }
