@@ -606,16 +606,32 @@ NexusConfig.getHunters(function(err,hunters){
       hunters.forEach(function(h){ if(h.status==='Ativo') hs[h.nome]=true; });
       var C=window.Blue3Data.candidatos;
       window.Blue3Data.hunters=Object.keys(hs).map(function(h){
-        var rows=C.filter(function(r){return (r.h||'').trim().toLowerCase()===(h||'').trim().toLowerCase();});
-        return{nome:h,total:rows.length,
-          senior:rows.filter(function(r){return(r.sen||'').toLowerCase()==='sênior';}).length,
-          pleno:rows.filter(function(r){return(r.sen||'').toLowerCase()==='pleno';}).length,
-          junior:rows.filter(function(r){var s=(r.sen||'').toLowerCase();return s==='junior'||s==='júnior';}).length,
-          auc:rows.reduce(function(s,r){return s+(r.cap||0);},0),
-          comp:rows.reduce(function(s,r){return s+(r.comp||0);},0),
-          mouOk:rows.filter(function(r){return(r.mou||'').toLowerCase()==='assinado';}).length,
-          trab:rows.filter(function(r){return(r.st||'').toLowerCase()==='trabalhando';}).length,
-          xp:rows.reduce(function(s,r){return s+(r.xp||0);},0)};
+        var atR=C.filter(function(r){return(r.h||'').trim().toLowerCase()===(h||'').trim().toLowerCase();});
+        var desistR=atR.filter(function(r){var s=(r.st||'').toLowerCase();return s==='desistência'||s==='desistencia';});
+        var totalR=atR.length;
+        var txDesist=totalR>0?Math.round(desistR.length/totalR*100):0;
+        var tempos=[];
+        atR.filter(function(r){var s=(r.st||'').toLowerCase();return s==='trabalhando'||s==='contratado(a)';}).forEach(function(r){
+          var dataE=r.dataEntrada;
+          if(!dataE)return;
+          var inicio=new Date(dataE);
+          var fim=r.dt?new Date(r.dt.split('/').reverse().join('-')):new Date();
+          var dias=Math.round((fim-inicio)/(1000*60*60*24));
+          if(dias>0&&dias<500)tempos.push(dias);
+        });
+        var tempoMedio=tempos.length?Math.round(tempos.reduce(function(s,v){return s+v;},0)/tempos.length):null;
+        return{nome:h,total:atR.filter(function(r){var s=(r.st||'').toLowerCase();return s==='trabalhando'||s==='contratado(a)';}).length,
+          senior:atR.filter(function(r){return(r.sen||'').toLowerCase()==='sênior';}).length,
+          pleno:atR.filter(function(r){return(r.sen||'').toLowerCase()==='pleno';}).length,
+          junior:atR.filter(function(r){var s=(r.sen||'').toLowerCase();return s==='junior'||s==='júnior';}).length,
+          auc:atR.reduce(function(s,r){return s+(r.cap||0);},0),
+          comp:atR.reduce(function(s,r){return s+(r.comp||0);},0),
+          mouOk:atR.filter(function(r){return(r.mou||'').toLowerCase()==='assinado';}).length,
+          trab:atR.filter(function(r){return(r.st||'').toLowerCase()==='trabalhando';}).length,
+          xp:atR.reduce(function(s,r){return s+(r.xp||0);},0),
+          txDesist:txDesist,
+          tempoMedio:tempoMedio,
+          totalFunil:totalR};
       });
     }
     if(cb) cb(hunters);
@@ -778,12 +794,21 @@ function renderOv(){
         +'<span style="background:'+tier.color+';color:#fff;font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px;">'+tier.lbl+'</span></div>';
     // KPIs
     var contratStr=semMeta?hun.total+'/—':hun.total+'/'+hun.meta;
+    var txDesistCor=hun.txDesist>30?'#DC2626':hun.txDesist>15?'#B45309':'#16A34A';
+    var tempoStr=hun.tempoMedio?hun.tempoMedio+'d':'—';
+    // Custo por MM captado
+    var custoPorMM=hun.auc>0?Math.round(hun.comp/hun.auc):null;
+    var custoStr=custoPorMM?'R$'+custoPorMM.toLocaleString('pt-BR')+'K/MM':'—';
+    var custoCor=custoPorMM?(custoPorMM<8000?'#16A34A':custoPorMM<12000?'#B45309':'#DC2626'):'#94A3B8';
     var kpis=[
       ['Contratações',contratStr],
       ['AuC Alvo',fmt(hun.auc)],
       ['Comp. Gerada',fmt(hun.comp)],
+      ['Custo por MM','<span style="color:'+custoCor+';font-weight:700;">'+custoStr+'</span>'],
       ['MOU OK',hun.mou_ok+'/'+hun.total],
       ['Trabalhando',hun.trabalhando],
+      ['Taxa desistência','<span style="color:'+txDesistCor+';font-weight:700;">'+hun.txDesist+'%</span>'],
+      ['Tempo médio contrat.',tempoStr],
     ].map(function(r){
       return'<div class="hs"><span class="hl">'+r[0]+'</span><span class="hv">'+r[1]+'</span></div>';
     }).join('');
