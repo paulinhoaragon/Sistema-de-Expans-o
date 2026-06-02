@@ -20,13 +20,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .page{max-width:1100px;margin:0 auto;padding:20px 28px 60px;min-height:calc(100vh - 130px)}
 .sh{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--rule)}
 .st{font-size:13px;font-weight:600;color:var(--t1)}.ss{font-size:11px;color:var(--t3);margin-left:auto}
-.hgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px}
 @media(max-width:700px){.hgrid{grid-template-columns:1fr}}
-.hcard{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:18px;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .3s,box-shadow .3s;position:relative;overflow:hidden}
+.hcard{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:18px;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .3s,box-shadow .3s;position:relative;}
 .hcard.meta-atingida{border-color:rgba(250,204,21,.5);animation:hcard-pulse 2.5s ease-in-out infinite;}
 @keyframes hcard-pulse{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.0),var(--sh);}50%{box-shadow:0 0 24px 4px rgba(250,204,21,.18),var(--sh);}}
-.hcard-crown{position:absolute;top:-18px;left:50%;transform:translateX(-50%) scale(0);font-size:20px;transition:top .5s cubic-bezier(.175,.885,.32,1.275),transform .5s cubic-bezier(.175,.885,.32,1.275);pointer-events:none;z-index:2;}
-.hcard.meta-atingida .hcard-crown{top:-10px;transform:translateX(-50%) scale(1);}
+.hcard-crown{position:absolute;top:12px;left:12px;transform:scale(0);font-size:24px;transition:transform .5s cubic-bezier(.175,.885,.32,1.275);pointer-events:none;z-index:10;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));}
+.hcard.meta-atingida .hcard-crown{transform:scale(1);}
 .hcard-meta-badge{display:none;align-items:center;justify-content:center;gap:5px;margin-top:10px;padding:6px 12px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:20px;font-size:10px;font-weight:700;color:#FCD34D;letter-spacing:.04em;}
 .hcard.meta-atingida .hcard-meta-badge{display:flex;}
 .hcard-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .3s;}
@@ -96,10 +96,9 @@ tbody td:first-child{text-align:left;font-weight:600;color:var(--t1)}
 
 <div class="page">
   <div id="view-ov">
-    <div id="bonus-summary"></div>
-    <div class="sh"><div class="st">Visão Geral</div><div class="ss">Clique em um hunter para detalhes</div></div>
-    <div class="hgrid" id="hgrid"></div>
-    <div class="sh"><div class="st">Rankings</div></div>
+    <div class="sh"><div class="st">Performance de Hunters</div><div class="ss" id="hunters-subtitle">Clique em um hunter para detalhes</div></div>
+    <div id="hgrid"></div>
+    <div class="sh" style="margin-top:8px;"><div class="st">Rankings</div></div>
     <div class="rank-box"><div class="rank-title">AuC Alvo Total</div><div id="r-auc"></div></div>
     <div class="rank-box"><div class="rank-title">Contratações vs Meta</div><div id="r-cont"></div></div>
     <div class="rank-box"><div class="rank-title">Comp. Total Gerada</div><div id="r-comp"></div></div>
@@ -740,18 +739,21 @@ function renderBonusCards(){
 function renderOv(){
   renderBonusCards();
   var el=document.getElementById('hgrid');if(!el)return;
+  el.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px;';
   el.innerHTML=H.map(function(hun){
-    var pc=hun.pace_pct;
     var semMeta=hun.meta===0||hun.meta==null;
+    var pc=hun.pace_pct;
     var pcC=semMeta?'#94A3B8':(pc>=100?'#16A34A':pc>=70?'#B8962E':'#DC2626');
     var metaOk=!semMeta&&hun.total>=hun.meta&&hun.meta>0;
-    var contratStr=semMeta?String(hun.total)+'/—':String(hun.total)+'/'+String(hun.meta);
-    var paceBarHtml=semMeta
-      ?'<div class="pace-bar"><div class="pace-fill" style="width:0%;background:#E2E8F0"></div></div><div class="pace-lbl"><span>Pace vs meta</span><span style="font-weight:700;color:#94A3B8">Meta a definir</span></div>'
-      :'<div class="pace-bar"><div class="pace-fill" style="width:'+Math.min(pc,100)+'%;background:'+pcC+'"></div></div><div class="pace-lbl"><span>Pace vs meta</span><span style="font-weight:700;color:'+pcC+'">'+pc+'%</span></div>';
+    var dbHun=HUNTER_DB.find(function(d){return d.nome===hun.nome;});
+    var isGestor=dbHun&&dbHun.is_gestor===true;
+    var hunFoto=HUNTER_PHOTOS[(hun.nome||'').trim().toLowerCase()]||'';
+    var nomeEsc=hun.nome.replace(/'/g,"&#39;");
+    var sp=hun.senior/Math.max(hun.total,1);
+    var tier=getBonusTier(hun.total,sp);
     var cardCls='hcard'+(metaOk?' meta-atingida':'');
-    var crown=metaOk?'<div class="hcard-crown">&#x1F451;</div>':'';
-    var badge=metaOk?'<div class="hcard-meta-badge">&#x1F3C6; Meta atingida! Parab&eacute;ns!</div>':'';
+    var crown=metaOk&&!isGestor?'<div class="hcard-crown">&#x1F451;</div>':'';
+    var badge=metaOk&&!isGestor?'<div class="hcard-meta-badge">&#x1F3C6; Meta atingida! Parab&eacute;ns!</div>':'';
     var particles='<div class="hcard-particles">';
     if(metaOk){
       var pColors=['#FCD34D','#6366F1','#4ADE80','#F472B6','#60A5FA'];
@@ -760,25 +762,49 @@ function renderOv(){
       }
     }
     particles+='</div>';
-    var nomeEsc=hun.nome.replace(/'/g,"&#39;");
-    var dbHun=HUNTER_DB.find(function(d){ return d.nome===hun.nome; });
-    var isGestor=dbHun && dbHun.is_gestor===true;
-    var subLabel=isGestor?'Gestor &middot; Deals Estrat&eacute;gicos':'Hunter &middot; Expans&atilde;o 1S2026';
-        var hunFoto=HUNTER_PHOTOS[(hun.nome||'').trim().toLowerCase()]||'';
-    return '<div class="'+cardCls+'" onclick="showDet(&#39;'+nomeEsc+'&#39;)">'
-      +(isGestor?'':crown)+particles
-      +(hunFoto
-        ?'<div class="hcard-foto" style="height:90px;overflow:hidden;position:relative;border-radius:14px 14px 0 0;"><img src="'+hunFoto+'" style="width:100%;height:100%;object-fit:cover;object-position:center 15%;"><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(10,15,30,.6) 100%);"></div></div>'
-        :'<div class="hcard-top" style="background:'+hun.color+'"></div>')
-      +'<div class="hcard-name">'+hun.nome+'</div>'
-      +'<div class="hcard-sub">'+subLabel+'</div>'
-      +'<div class="hs"><span class="hl">Contrata&ccedil;&otilde;es</span><span class="hv">'+contratStr+'</span></div>'
-      +'<div class="hs"><span class="hl">AuC Alvo</span><span class="hv">'+fmt(hun.auc)+'</span></div>'
-      +'<div class="hs"><span class="hl">Comp. Gerada</span><span class="hv">'+fmt(hun.comp)+'</span></div>'
-      +'<div class="hs"><span class="hl">MOU OK</span><span class="hv">'+hun.mou_ok+'/'+hun.total+'</span></div>'
-      +'<div class="hs"><span class="hl">Trabalhando</span><span class="hv">'+hun.trabalhando+'</span></div>'
-      +paceBarHtml
-      +(isGestor?'':badge)+'</div>';
+    // Header com foto
+    var fotoHtml=hunFoto
+      ?'<div style="height:140px;position:relative;overflow:hidden;border-radius:12px 12px 0 0;margin:-18px -18px 16px -18px;">'
+        +'<img src="'+hunFoto+'" style="width:100%;height:100%;object-fit:cover;object-position:center 15%;">'
+        +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,15,30,0) 30%,rgba(10,15,30,.82) 100%);"></div>'
+        +'<div style="position:absolute;top:10px;right:10px;background:'+tier.color+';color:#fff;font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.04em;">'+tier.lbl+'</div>'
+        +'<div style="position:absolute;bottom:12px;left:14px;">'
+          +'<div style="font-family:Playfair Display,serif;font-size:18px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4);">'+hun.nome+'</div>'
+          +'<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-top:2px;">'+(isGestor?'Gestor':'Hunter · Expansão 1S2026')+'</div>'
+        +'</div></div>'
+      :'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">'
+        +'<div><div class="hcard-name">'+hun.nome+'</div>'
+        +'<div class="hcard-sub">'+(isGestor?'Gestor':'Hunter · Expansão 1S2026')+'</div></div>'
+        +'<span style="background:'+tier.color+';color:#fff;font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px;">'+tier.lbl+'</span></div>';
+    // KPIs
+    var contratStr=semMeta?hun.total+'/—':hun.total+'/'+hun.meta;
+    var kpis=[
+      ['Contratações',contratStr],
+      ['AuC Alvo',fmt(hun.auc)],
+      ['Comp. Gerada',fmt(hun.comp)],
+      ['MOU OK',hun.mou_ok+'/'+hun.total],
+      ['Trabalhando',hun.trabalhando],
+    ].map(function(r){
+      return'<div class="hs"><span class="hl">'+r[0]+'</span><span class="hv">'+r[1]+'</span></div>';
+    }).join('');
+    // Senioridade
+    var senRow='<div style="display:flex;gap:5px;margin-top:10px;flex-wrap:wrap;">'
+      +'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:#DCFCE7;color:#15803D;">'+hun.senior+' Sênior</span>'
+      +'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:#FEF3C7;color:#92400E;">'+hun.pleno+' Pleno</span>'
+      +'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:#FCE7F3;color:#9D174D;">'+hun.junior+' Júnior</span>'
+      +'</div>';
+    // Pace
+    var paceHtml=semMeta
+      ?'<div class="pace-bar"><div class="pace-fill" style="width:0%;background:#E2E8F0;"></div></div>'
+       +'<div class="pace-lbl"><span>Pace vs meta</span><span style="color:#94A3B8;font-weight:700;">Meta a definir</span></div>'
+      :'<div class="pace-bar"><div class="pace-fill" style="width:'+Math.min(pc,100)+'%;background:'+pcC+';"></div></div>'
+       +'<div class="pace-lbl"><span>Pace vs meta</span><span style="font-weight:700;color:'+pcC+';">'+pc+'%</span></div>';
+    // Próximo tier
+    var proxTier=!isGestor&&tier.falta>0
+      ?'<div style="font-size:11px;color:var(--t3);margin-top:8px;">Faltam <b style="color:var(--t1);">'+tier.falta+'</b> para <b style="color:'+tier.color+';">'+tier.next+'</b></div>'
+      :'';
+    return'<div class="'+cardCls+'" onclick="showDet(&#39;'+nomeEsc+'&#39;)">'
+      +crown+particles+fotoHtml+kpis+senRow+paceHtml+proxTier+badge+'</div>';
   }).join('');
   rank('r-auc',function(h){return h.auc;},fmt);
   // Disparar confetes para hunters que bateram a meta
