@@ -389,7 +389,9 @@ function Blue3_huntersPerformance(){
         if(de) inicio=new Date(de);
       }
       if(!inicio||isNaN(inicio.getTime()))return;
+      // Usar a data mais antiga entre início e contratação
       var fim=r.dt?new Date(r.dt.split('/').reverse().join('-')):new Date();
+      if(inicio>fim){ var tmp=inicio; inicio=fim; fim=tmp; }
       var dias=Math.round((fim-inicio)/(1000*60*60*24));
       if(dias>0&&dias<500)tempos.push(dias);
     });
