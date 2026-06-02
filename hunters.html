@@ -650,7 +650,7 @@ function buildH(hunters,cands){
     var cs=cands.filter(function(c){return ns(c.h)===hn;}).map(function(c){
       return{nome:c.n,filial:c.p,status:c.st,mou:c.mou,inicio:c.inicio||null,auc:c.cap,piso:c.piso,periodo:c.periodo,comp:c.comp,sen:c.sen};
     });
-    return{nome:h.nome,total:h.total,meta:meta,pace_pct:pace,trabalhando:h.trab,auc:h.auc*1e6,comp:h.comp,mou_ok:h.mouOk,mou_pend:h.total-h.mouOk,senior:h.senior,pleno:h.pleno,junior:h.junior,candidatos:cs,color:color};
+    return{nome:h.nome,total:h.total,meta:meta,pace_pct:pace,trabalhando:h.trab,auc:h.auc*1e6,comp:h.comp,mou_ok:h.mouOk,mou_pend:h.total-h.mouOk,senior:h.senior,pleno:h.pleno,junior:h.junior,candidatos:cs,color:color,txDesist:h.txDesist||0,tempoMedio:h.tempoMedio||null,totalFunil:h.totalFunil||0};
   });
 }
 
@@ -796,10 +796,11 @@ function renderOv(){
     var contratStr=semMeta?hun.total+'/—':hun.total+'/'+hun.meta;
     var txDesistCor=hun.txDesist>30?'#DC2626':hun.txDesist>15?'#B45309':'#16A34A';
     var tempoStr=hun.tempoMedio?hun.tempoMedio+'d':'—';
-    // Custo por MM captado
-    var custoPorMM=hun.auc>0?Math.round(hun.comp/hun.auc):null;
+    // Custo por MM captado (comp em R$, auc em R$ total → converter para MM)
+    var aucMM=hun.auc/1e6;
+    var custoPorMM=aucMM>0?Math.round(hun.comp/aucMM/1000):null;
     var custoStr=custoPorMM?'R$'+custoPorMM.toLocaleString('pt-BR')+'K/MM':'—';
-    var custoCor=custoPorMM?(custoPorMM<8000?'#16A34A':custoPorMM<12000?'#B45309':'#DC2626'):'#94A3B8';
+    var custoCor=custoPorMM?(custoPorMM<8?'#16A34A':custoPorMM<12?'#B45309':'#DC2626'):'#94A3B8';
     var kpis=[
       ['Contratações',contratStr],
       ['AuC Alvo',fmt(hun.auc)],
