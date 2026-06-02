@@ -129,7 +129,12 @@ function norm(s) {
 
 /** Parseia moeda brasileira: "R$ 10.000,00" → 10000 */
 function pn(v) {
-  var s = String(v || '0').replace(/R\$|\s/g, '').replace(/\./g, '').replace(',', '.').trim();
+  var s = String(v || '0').replace(/R\$|\s/g, '').trim();
+  // Supabase: 9265.82 (ponto decimal) — não remover ponto
+  // CSV PT-BR: 9.265,82 (ponto milhar, vírgula decimal)
+  if (s.indexOf(',') > -1) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  }
   return parseFloat(s) || 0;
 }
 
@@ -602,36 +607,47 @@ NexusConfig.getHunters(function(err,hunters){
     // para incluir hunters ativos sem candidatos ainda (ex: recém cadastrados)
     if(window.Blue3Data && window.Blue3Data.candidatos) {
       var hs={};
-      window.Blue3Data.candidatos.forEach(function(r){if(r.h)hs[r.h]=true;});
-      hunters.forEach(function(h){ if(h.status==='Ativo') hs[h.nome]=true; });
       var C=window.Blue3Data.candidatos;
+      var raw=window.Blue3Data._rawRows||[];
+      C.forEach(function(r){if(r.h)hs[r.h]=true;});
+      // Incluir desistentes dos _rawRows
+      raw.forEach(function(r){var h=r['Hunter']||'';if(h)hs[h]=true;});
+      hunters.forEach(function(h){ if(h.status==='Ativo') hs[h.nome]=true; });
       window.Blue3Data.hunters=Object.keys(hs).map(function(h){
-        var atR=C.filter(function(r){return(r.h||'').trim().toLowerCase()===(h||'').trim().toLowerCase();});
-        var desistR=atR.filter(function(r){var s=(r.st||'').toLowerCase();return s==='desistência'||s==='desistencia';});
-        var totalR=atR.length;
-        var txDesist=totalR>0?Math.round(desistR.length/totalR*100):0;
+        var ativos=C.filter(function(r){return norm(r.h)===norm(h);});
+        // Desistentes via _rawRows
+        var desist=raw.filter(function(r){
+          var rh=norm(r['Hunter']||'');
+          var s=norm(r['Status']||'');
+          return rh===norm(h)&&(s==='desistência'||s==='desistencia');
+        });
+        var totalFunil=ativos.length+desist.length;
+        var txDesist=totalFunil>0?Math.round(desist.length/totalFunil*100):0;
+        // Tempo médio usando data_entrada dos _rawRows
         var tempos=[];
-        atR.filter(function(r){var s=(r.st||'').toLowerCase();return s==='trabalhando'||s==='contratado(a)';}).forEach(function(r){
-          var dataE=r.dataEntrada;
+        ativos.forEach(function(r){
+          var rawRow=raw.find(function(rr){return norm(rr['Candidato']||'')===norm(r.n);});
+          var dataE=rawRow?(rawRow['data_entrada']||rawRow['Data Entrada']||rawRow['Data de Entrada']||null):null;
           if(!dataE)return;
           var inicio=new Date(dataE);
+          if(isNaN(inicio.getTime()))return;
           var fim=r.dt?new Date(r.dt.split('/').reverse().join('-')):new Date();
           var dias=Math.round((fim-inicio)/(1000*60*60*24));
           if(dias>0&&dias<500)tempos.push(dias);
         });
         var tempoMedio=tempos.length?Math.round(tempos.reduce(function(s,v){return s+v;},0)/tempos.length):null;
-        return{nome:h,total:atR.filter(function(r){var s=(r.st||'').toLowerCase();return s==='trabalhando'||s==='contratado(a)';}).length,
-          senior:atR.filter(function(r){return(r.sen||'').toLowerCase()==='sênior';}).length,
-          pleno:atR.filter(function(r){return(r.sen||'').toLowerCase()==='pleno';}).length,
-          junior:atR.filter(function(r){var s=(r.sen||'').toLowerCase();return s==='junior'||s==='júnior';}).length,
-          auc:atR.reduce(function(s,r){return s+(r.cap||0);},0),
-          comp:atR.reduce(function(s,r){return s+(r.comp||0);},0),
-          mouOk:atR.filter(function(r){return(r.mou||'').toLowerCase()==='assinado';}).length,
-          trab:atR.filter(function(r){return(r.st||'').toLowerCase()==='trabalhando';}).length,
-          xp:atR.reduce(function(s,r){return s+(r.xp||0);},0),
+        return{nome:h,total:ativos.length,
+          senior:ativos.filter(function(r){return norm(r.sen)==='sênior';}).length,
+          pleno:ativos.filter(function(r){return norm(r.sen)==='pleno';}).length,
+          junior:ativos.filter(function(r){var s=norm(r.sen);return s==='junior'||s==='júnior';}).length,
+          auc:ativos.reduce(function(s,r){return s+(r.cap||0);},0),
+          comp:ativos.reduce(function(s,r){return s+(r.comp||0);},0),
+          mouOk:ativos.filter(function(r){return norm(r.mou)==='assinado';}).length,
+          trab:ativos.filter(function(r){return norm(r.st)==='trabalhando';}).length,
+          xp:ativos.reduce(function(s,r){return s+(r.xp||0);},0),
           txDesist:txDesist,
           tempoMedio:tempoMedio,
-          totalFunil:totalR};
+          totalFunil:totalFunil};
       });
     }
     if(cb) cb(hunters);
