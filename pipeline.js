@@ -225,6 +225,7 @@ function blue3LoadData(callback){
       o['data_declinio']         = r.data_declinio || '';
       o['historico_etapas']      = r.historico_etapas || null;
       o['lider']                 = (r.lider||'').trim();
+      o['payback_meses']         = parseInt(r.payback_meses)||0;
       return o;
     });
     // Não salvar em localStorage — dados sempre frescos do Supabase
@@ -267,7 +268,8 @@ function Blue3_dataLoader(){
       _id:(r['_crm_id']||''),
       hist:(r['historico_etapas']||r['Historico Etapas']||null),
       dataEntrada:(r['data_entrada']||null),
-      dataDeclinio:(r['data_declinio']||null)
+      dataDeclinio:(r['data_declinio']||null),
+      payback_meses:parseInt(r['payback_meses'])||0
     };
   });
   // Desduplicar por nome — previne soma dupla se Supabase retornar duplicatas
@@ -315,7 +317,7 @@ function Blue3_financeMetrics(){
         custoTotal_calculado: Math.round(pt+r.si+tt)
       });
     }
-    return{n:r.n,p:r.p,h:r.h,sen:r.sen,mou:r.mou,st:r.st,piso:r.piso,periodo:r.periodo,si:r.si,xp:r.xp,comp:r.comp,cap:r.cap,pisoTotal:Math.round(pt),trigTotal:Math.round(tt),custoTotal:Math.round(pt+r.si+tt),trigMap:tm,ativo:!!r.inicio,inicio:r.inicio,dt:r.dt,org:r.org,ancord:r.ancord,estrategico:r.estrategico||"Não",data_mou:r.data_mou||'',area:r.area||'Assessor'};
+    return{n:r.n,p:r.p,h:r.h,sen:r.sen,mou:r.mou,st:r.st,piso:r.piso,periodo:r.periodo,si:r.si,xp:r.xp,comp:r.comp,cap:r.cap,pisoTotal:Math.round(pt),trigTotal:Math.round(tt),custoTotal:Math.round(pt+r.si+tt),trigMap:tm,ativo:!!r.inicio,inicio:r.inicio,dt:r.dt,org:r.org,ancord:r.ancord,estrategico:r.estrategico||"Não",data_mou:r.data_mou||'',area:r.area||'Assessor',payback_meses:r.payback_meses||0};
   });
   var F=window.Blue3Data.financeiros,bm={},sbm={};
   F.forEach(function(r){var mo=getMonth(r.dt);if(mo){bm[mo]=(bm[mo]||0)+1;if(norm(r.sen)==='sênior')sbm[mo]=(sbm[mo]||0)+1;}});
@@ -336,10 +338,10 @@ function Blue3_financeMetrics(){
 }
 
 function Blue3_payback(){
+  // Usa payback_meses salvo pelo simulador de proposta — não recalcula
   window.Blue3Data.paybacks=window.Blue3Data.financeiros.map(function(r){
-    var rec=r.cap>0?Math.round(r.cap*1e6*0.01/12):0,ac=0,mp=null;
-    for(var m=1;m<=36;m++){ac+=rec-(m<=r.periodo?r.piso:0);if(ac>=0&&mp===null)mp=m;}
-    return{n:r.n,receita:rec,mesPayback:mp};
+    var mp = r.payback_meses > 0 ? r.payback_meses : null;
+    return{n:r.n, mp:mp, mesPayback:mp};
   });
 }
 
