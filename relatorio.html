@@ -394,15 +394,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 <div style="margin-bottom:32px;">
   <div class="sh"><span class="sn">01</span><span class="st">Visão geral do semestre</span><span class="ss">Contratações ativas apenas</span></div>
   <div class="krow" style="grid-template-columns:repeat(3,1fr);">
-    <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Contratações líquidas ativas</div><div class="kv"><span id="dyn-liq">28</span></div><div class="ks" id="dyn-liq-sub-el">Jan–Abr 2026 · 4 meses (31 brutas − 3 desist.)</div><div class="kp pu">↑ Ritmo: 6,75 líquidas/mês</div></div>
-    <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">AuC total mapeado</div><div class="kv"><span id="dyn-auc">R$1,88B</span></div><div class="ks" id="dyn-auc-sub-el">27 candidatos com carteira</div><div class="kp pu">↑ Média R$148M / pessoa</div></div>
-    <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">AuC estratégico confirmado</div><div class="kv"><span id="dyn-auc-estrat">—</span></div><div class="ks" id="dyn-auc-estrat-sub">— assessores estratégicos</div><div class="kp pu" id="dyn-auc-neg-label">—</div></div>
+    <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Contratações líquidas ativas</div><div class="kv"><span id="dyn-liq">—</span></div><div class="ks" id="dyn-liq-sub-el">—</div><div class="kp pu" id="dyn-ritmo-label">—</div></div>
+    <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">AuC total mapeado</div><div class="kv"><span id="dyn-auc">—</span></div><div class="ks" id="dyn-auc-sub-el">—</div><div class="kp pu" id="dyn-auc-media-label">—</div></div>
+    <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">AuC estratégico confirmado</div><div class="kv"><span id="dyn-auc-estrat">—</span></div><div class="ks" id="dyn-auc-estrat-sub">—</div><div class="kp pu" id="dyn-auc-neg-label">—</div></div>
   </div>
   <!-- Breakdown por área -->
   <div id="area-breakdown" style="display:none;margin-bottom:16px;"></div>
 
   <div class="ib">
-    <div class="ii"><div class="iv"><span id="dyn-brutas">31</span></div><div class="il">Contratações brutas <span id="dyn-periodo-label">Jan–Abr</span></div></div>
+    <div class="ii"><div class="iv"><span id="dyn-brutas">—</span></div><div class="il">Contratações brutas <span id="dyn-periodo-label">—</span></div></div>
     <div class="ii"><div class="iv" style="display:flex;align-items:baseline;gap:10px;"><span id="dyn-desist-pos" style="font-size:.85em;">—</span><span style="opacity:.3;font-size:.6em;">|</span><span id="dyn-desist-prec" style="font-size:.85em;opacity:.6;">—</span></div><div class="il" id="dyn-desist-label">Desistências · taxa —</div></div>
     <div class="ii">
       <div class="ptw">
@@ -414,8 +414,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         </div>
       </div>
     </div>
-    <div class="ii"><div class="iv"><span id="dyn-senior-pct">39%</span></div><div class="il">Perfil sênior no período</div></div>
-    <div class="ii"><div class="iv"><span id="dyn-maior">R$275M</span></div><div class="il" id="dyn-maior-label-el">Maior carteira — Pedro Costa · BH</div></div>
+    <div class="ii"><div class="iv"><span id="dyn-senior-pct">—</span></div><div class="il">Perfil sênior no período</div></div>
+    <div class="ii"><div class="iv"><span id="dyn-maior">—</span></div><div class="il" id="dyn-maior-label-el">Maior carteira</div></div>
   </div>
 </div>
 
@@ -498,17 +498,25 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
 <hr class="rule">
 
-<!-- 05 CANDIDATOS -->
+<!-- 05 CANDIDATOS + PROPOSTAS UNIFICADOS -->
 <div style="margin-bottom:32px;">
-  <div class="sh"><span class="sn">05</span><span class="st">Candidatos contratados — origem e carteiras mapeadas</span></div>
-  <div class="g6535">
-    <div class="card">
-      <div class="ch" style="display:flex;align-items:center;justify-content:space-between;">
-        <span>Candidatos com carteiras mapeadas</span>
-        <button id="cand-toggle" onclick="toggleCandList()" style="font-size:10px;font-weight:700;color:var(--cobalt);background:var(--cobalt-pl);border:none;padding:4px 12px;border-radius:4px;cursor:pointer;letter-spacing:.04em;">▼ Ver todos</button>
-      </div>
-      <!-- Filtros seção 05 -->
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 0 4px;">
+  <div class="sh"><span class="sn">05</span><span class="st">Candidatos contratados — carteiras, origem e propostas comerciais</span><span class="ss">Compilação completa das contratações 2026</span></div>
+
+  <!-- KPIs financeiros -->
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;">
+    <div class="kc"><div class="ktr" style="background:#7C3AED;"></div><div class="kl">Total comprometido</div><div class="kv" style="font-size:22px;"><span id="dyn-comp">—</span></div><div class="ks"><span id="dyn-comp-sub">— candidatos</span></div><div class="kp pu">↑ Média <span id="dyn-comp-media">—</span>/pessoa</div></div>
+    <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Custo por MM captado</div><div class="kv" style="font-size:22px;"><span id="dyn-custo-mm">—</span></div><div class="ks">por R$1M de captação</div><div class="kp pu">Meta total: <span id="dyn-cap-total-meta">—</span></div></div>
+    <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">Total sign-ins</div><div class="kv" style="font-size:22px;"><span id="dyn-si">—</span></div><div class="ks"><span id="dyn-si-sub">— candidatos com luva</span></div></div>
+    <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">Coparticipação XP</div><div class="kv" style="font-size:22px;"><span id="dyn-xp">—</span></div><div class="ks">responsabilidade XP Inc.</div><div class="kp pu">Líquido Blue3: <span id="dyn-liq-blue3">—</span></div></div>
+    <div class="kc"><div class="ktr" style="background:var(--am);"></div><div class="kl">Captação alvo total</div><div class="kv" style="font-size:22px;"><span id="dyn-cap-total">—</span></div><div class="ks">metas contratuais</div></div>
+  </div>
+
+
+  <!-- Tabela unificada: candidatos + propostas -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="ch" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Candidatos contratados — carteiras e propostas detalhadas</span>
+      <div style="display:flex;gap:6px;align-items:center;">
         <select id="cand-f-periodo" onchange="aplicarFiltrosCand()" style="font-size:10px;padding:4px 8px;border:1px solid var(--rule);border-radius:6px;color:var(--t2);background:var(--canvas);cursor:pointer;font-family:inherit;">
           <option value="todos">Todos os períodos</option>
           <option value="mes">Este mês</option>
@@ -522,19 +530,38 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           <option value="júnior">Júnior</option>
         </select>
         <button onclick="resetFiltrosCand()" style="font-size:10px;padding:4px 10px;border:1px solid var(--rule);border-radius:6px;color:var(--t3);background:var(--canvas);cursor:pointer;font-family:inherit;">✕ Limpar</button>
-      </div>
-      <!-- 10 primeiros sempre visíveis -->
-      <div id="cand-list-top"></div>
-      <!-- restante colapsado -->
-      <div id="cand-list-rest" style="display:none;">
-        <div id="cand-list-more"></div>
+        <button id="cand-toggle" onclick="toggleCandList()" style="font-size:10px;font-weight:700;color:var(--cobalt);background:var(--cobalt-pl);border:none;padding:4px 12px;border-radius:4px;cursor:pointer;letter-spacing:.04em;">▼ Ver todos</button>
       </div>
     </div>
-    <div class="card">
-      <div class="ch">Origem institucional dos candidatos</div>
-      <div id="origemLista"></div>
+    <!-- Totais sempre visíveis -->
+    <div style="display:flex;gap:24px;align-items:center;padding:8px 0 6px;flex-wrap:wrap;">
+      <span style="font-size:11px;color:var(--t3);">Cap. alvo: <strong style="color:var(--t1);"><span class="dyn-cap-alvo">—</span></strong></span>
+      <span style="font-size:11px;color:var(--t3);">Comp. total: <strong style="color:var(--t1);"><span id="dyn-bar-comp">R$11,1M</span></strong></span>
+      <span style="font-size:11px;color:var(--t3);">XP: <strong style="color:var(--cobalt);"><span id="dyn-bar-xp">R$3,15M</span></strong></span>
+      <span style="font-size:12px;font-weight:700;color:var(--cobalt);">Blue3 líquido: <span id="dyn-bar-liq">R$7,99M</span></span>
+    </div>
+    <!-- tabela unificada com 10 fixos + colapsado -->
+    <div id="cand-list-top"></div>
+    <div id="cand-list-rest" style="display:none;">
+      <div id="cand-list-more"></div>
+    </div>
+    <div class="tf" style="margin-top:12px;">
+      <span class="tfl">Totais</span>
+      <div style="display:flex;gap:32px;align-items:center;">
+        <span style="font-size:11px;color:var(--t3);">Cap. alvo: <strong style="color:var(--t1);"><span class="dyn-cap-alvo">—</span></strong></span>
+        <span style="font-size:11px;color:var(--t3);">Comp. total: <strong style="color:var(--t1);"><span id="dyn-bar-comp2">—</span></strong></span>
+        <span style="font-size:11px;color:var(--t3);">XP: <strong style="color:var(--cobalt);"><span id="dyn-bar-xp2">—</span></strong></span>
+        <span class="tfv">Blue3 líquido: <span id="dyn-bar-liq2">—</span></span>
+      </div>
     </div>
   </div>
+
+  <!-- Origem institucional -->
+  <div class="card">
+    <div class="ch">Origem institucional dos candidatos</div>
+    <div id="origemLista"></div>
+  </div>
+
 </div>
 
 <hr class="rule">
@@ -543,12 +570,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 <div style="margin-bottom:32px;">
   <div class="sh"><span class="sn">06</span><span class="st">Contratações estratégicas — assessores com carteira confirmada</span></div>
   <div class="sgrid" id="strat-cards"></div>
-  <!-- Rodapé total consolidado -->
   <div id="strat-total" style="display:none;justify-content:space-between;align-items:center;margin-top:12px;padding:12px 16px;background:var(--cobalt-pl);border-radius:var(--r8);border:1px solid var(--rule);">
     <span style="font-size:11px;font-weight:700;color:var(--cobalt);text-transform:uppercase;letter-spacing:.08em;">AuC total estratégico confirmado</span>
     <span id="strat-total-val" style="font-size:15px;font-weight:700;color:var(--cobalt);">—</span>
   </div>
-  <!-- Em negociação — dinâmico -->
   <div class="card" id="neg-card" style="margin-top:16px;display:none;">
     <div class="ch">Em negociação</div>
     <div id="neg-rows"></div>
@@ -556,113 +581,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   </div>
 </div>
 
-
-
 <hr class="rule">
 
-<!-- 07 FINANCEIRO · INVESTIMENTOS -->
+<!-- 07 PAYBACK + SIGN-INS -->
 <div style="margin-bottom:32px;">
-  <div class="sh"><span class="sn">07</span><span class="st">Investimentos — Propostas comerciais</span><span class="ss">Compilação financeira das contratações 2026</span></div>
-
-  <!-- Financial KPI row -->
-  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;">
-    <div class="kc"><div class="ktr" style="background:#7C3AED;"></div><div class="kl">Total comprometido</div><div class="kv" style="font-size:22px;"><span id="dyn-comp">—</span></div><div class="ks"><span id="dyn-comp-sub">— candidatos</span></div><div class="kp pu">↑ Média <span id="dyn-comp-media">—</span>/pessoa</div></div>
-    <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Custo por MM captado</div><div class="kv" style="font-size:22px;"><span id="dyn-custo-mm">—</span></div><div class="ks">por R$1M de captação</div><div class="kp pu">Meta total: <span id="dyn-cap-total-meta">—</span></div></div>
-    <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">Total sign-ins</div><div class="kv" style="font-size:22px;"><span id="dyn-si">—</span></div><div class="ks"><span id="dyn-si-sub">— candidatos com luva</span></div></div>
-    <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">Coparticipação XP</div><div class="kv" style="font-size:22px;"><span id="dyn-xp">—</span></div><div class="ks">responsabilidade XP Inc.</div><div class="kp pu">Líquido Blue3: <span id="dyn-liq-blue3">—</span></div></div>
-    <div class="kc"><div class="ktr" style="background:var(--am);"></div><div class="kl">Captação alvo total</div><div class="kv" style="font-size:22px;"><span id="dyn-cap-total">—</span></div><div class="ks">metas contratuais</div></div>
-  </div>
-
-  <div class="g2">
-    <!-- MOU / Status / Ancord status -->
-    <div class="card">
-      <div class="ch">Status operacional — contratações líquidas</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
-        <div style="background:var(--s2);border-radius:var(--r8);padding:14px;text-align:center;">
-          <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:600;color:var(--g);"><span id="dyn-trab">7</span></div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-top:4px;">Trabalhando</div>
-        </div>
-        <div style="background:var(--s2);border-radius:var(--r8);padding:14px;text-align:center;">
-          <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:600;color:var(--am);"><span id="dyn-cont">21</span></div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-top:4px;">Contratado(a)</div>
-        </div>
-        <div style="background:var(--s2);border-radius:var(--r8);padding:14px;text-align:center;">
-          <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:600;color:var(--cobalt);"><span id="dyn-ancord">14</span></div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-top:4px;">Com Ancord</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:10px;margin-bottom:16px;">
-        <div style="flex:1;background:var(--gp);border-radius:var(--r8);padding:12px;text-align:center;border:1px solid #BBF7D0;">
-          <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:600;color:var(--g);"><span id="dyn-mou-ok">18</span></div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--g);margin-top:3px;">MOU Assinado</div>
-        </div>
-        <div style="flex:1;background:var(--amp);border-radius:var(--r8);padding:12px;text-align:center;border:1px solid #FDE68A;">
-          <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:600;color:var(--am);"><span id="dyn-mou-pend">10</span></div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--am);margin-top:3px;">MOU Pendente</div>
-        </div>
-      </div>
-      <div class="ch" style="margin-top:4px;">Distribuição por status</div>
-      <div style="position:relative;width:100%;height:140px;"><canvas id="chartStatus"></canvas></div>
-    </div>
-
-    <!-- Captação targets chart -->
-    <div class="card">
-      <div class="ch">Metas de captação por candidato — Top 12</div>
-      <div style="position:relative;width:100%;height:280px;"><canvas id="chartCapMetas"></canvas></div>
-    </div>
-  </div>
-
-  <!-- Financial table -->
-  <div class="card" style="margin-bottom:16px;">
-    <div class="ch" style="display:flex;align-items:center;justify-content:space-between;">
-      <span>Propostas comerciais detalhadas · todos os candidatos</span>
-      <button id="prop-toggle" onclick="togglePropList()" style="font-size:10px;font-weight:700;color:var(--cobalt);background:var(--cobalt-pl);border:none;padding:4px 12px;border-radius:4px;cursor:pointer;letter-spacing:.04em;">▼ Ver lista completa</button>
-    </div>
-    <!-- Totais sempre visíveis -->
-    <div style="display:flex;gap:24px;align-items:center;padding:8px 0 6px;flex-wrap:wrap;">
-      <span style="font-size:11px;color:var(--t3);">Cap. alvo: <strong style="color:var(--t1);">R$1.7B</strong></span>
-      <span style="font-size:11px;color:var(--t3);">Comp. total: <strong style="color:var(--t1);"><span id="dyn-bar-comp">R$11,1M</span></strong></span>
-      <span style="font-size:11px;color:var(--t3);">XP: <strong style="color:var(--cobalt);"><span id="dyn-bar-xp">R$3,15M</span></strong></span>
-      <span style="font-size:12px;font-weight:700;color:var(--cobalt);">Blue3 líquido: <span id="dyn-bar-liq">R$7,99M</span></span>
-    </div>
-    <!-- tabela com 10 fixos + resto colapsado -->
-    <div style="overflow-x:auto;">
-    <table class="mat" style="min-width:900px;">
-      <thead>
-        <tr>
-          <th>Candidato</th>
-          <th>Praça</th>
-          <th>Piso/mês</th>
-          <th>Sign-in</th>
-          <th>Cap. alvo total</th>
-          <th>Total comp.</th>
-          <th>Coparcip. XP</th>
-          <th>MOU</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="inv-tbody-top"></tbody>
-    </table>
-    </div>
-    <!-- linhas extras colapsadas -->
-    <div id="prop-list-rest" style="display:none;">
-      <div style="overflow-x:auto;">
-      <table class="mat" style="min-width:900px;">
-        <tbody id="inv-tbody-more"></tbody>
-      </table>
-      </div>
-    </div>
-    <div class="tf" style="margin-top:12px;">
-      <span class="tfl">Totais</span>
-      <div style="display:flex;gap:32px;align-items:center;">
-        <span style="font-size:11px;color:var(--t3);">Cap. alvo: <strong style="color:var(--t1);">R$1.7B</strong></span>
-        <span style="font-size:11px;color:var(--t3);">Comp. total: <strong style="color:var(--t1);"><span id="dyn-bar-comp2">—</span></strong></span>
-        <span style="font-size:11px;color:var(--t3);">XP: <strong style="color:var(--cobalt);"><span id="dyn-bar-xp2">—</span></strong></span>
-        <span class="tfv">Blue3 líquido: <span id="dyn-bar-liq2">—</span></span>
-      </div>
-    </div>
-  </div>
-
+  <div class="sh"><span class="sn">07</span><span class="st">Análise de investimento — payback e sign-ins</span></div>
   <!-- Payback analysis -->
   <div class="g2">
     <div class="card">
@@ -868,28 +791,45 @@ function renderCandList(candidatos, el) {
     +'<th onclick="sortCandTable(\'n\')" style="'+_thC+'text-align:left;">Candidato<span id="csi-n"></span></th>'
     +'<th onclick="sortCandTable(\'dt\')" style="'+_thC+'text-align:left;white-space:nowrap;">Contratação<span id="csi-dt"></span></th>'
     +'<th onclick="sortCandTable(\'p\')" style="'+_thC+'text-align:left;">Praça<span id="csi-p"></span></th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Hunter</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Senioridade</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">Status</th>'
-    +'<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);">MOU</th>'
+    +'<th style="'+_thS+'text-align:left;">Hunter</th>'
+    +'<th style="'+_thS+'text-align:left;">Senioridade</th>'
+    +'<th style="'+_thS+'text-align:left;">Status</th>'
+    +'<th style="'+_thS+'text-align:left;">MOU</th>'
     +'<th onclick="sortCandTable(\'cap\')" style="'+_thC+'text-align:right;white-space:nowrap;min-width:80px;">AuC (MM)<span id="csi-cap"> ↓</span></th>'
+    +'<th style="'+_thS+'text-align:right;white-space:nowrap;">Piso/mês</th>'
+    +'<th style="'+_thS+'text-align:right;white-space:nowrap;">Sign-in</th>'
+    +'<th style="'+_thS+'text-align:right;white-space:nowrap;">Total comp.</th>'
+    +'<th style="'+_thS+'text-align:right;white-space:nowrap;">Copartic. XP</th>'
     +'</tr></thead>';
   var senTag = function(s){ var m={'sênior':'background:#DCFCE7;color:#166534;','pleno':'background:#FEF3C7;color:#92400E;','júnior':'background:#FCE7F3;color:#9D174D;','junior':'background:#FCE7F3;color:#9D174D;'}; return m[(s||'').toLowerCase()]||'background:var(--s2);color:var(--t2);'; };
   var mouTag = function(m){ return (m||'').toLowerCase()==='assinado'?'background:#DCFCE7;color:#166534;':'background:#FEF3C7;color:#92400E;'; };
+  var fmtR = function(v){ if(!v||v===0) return '—'; return 'R$'+Math.round(v).toLocaleString('pt-BR'); };
   var ROWS = candsSorted.map(function(r){
+    // Buscar dados financeiros nos financeiros array
+    var fin = window.Blue3Data && window.Blue3Data.financeiros ? window.Blue3Data.financeiros.find(function(f){return f.n===r.n;}) : null;
+    var piso   = fin ? fin.piso   : (r.piso  ||0);
+    var si     = fin ? fin.si     : (r.si    ||0);
+    var comp   = fin ? fin.comp   : (r.comp  ||0);
+    var xp     = fin ? fin.xp     : (r.xp    ||0);
     return '<tr>'
       +'<td style="padding:8px 10px;font-size:12px;font-weight:600;color:var(--t1);border-bottom:1px solid var(--rule);">'+r.n+'</td>'
+      +'<td style="padding:8px 10px;font-size:11px;color:var(--t3);border-bottom:1px solid var(--rule);white-space:nowrap;">'+(r.dt||'—')+'</td>'
       +'<td style="padding:8px 10px;font-size:11px;color:var(--t3);border-bottom:1px solid var(--rule);">'+r.p+'</td>'
       +'<td style="padding:8px 10px;font-size:11px;color:var(--t2);border-bottom:1px solid var(--rule);">'+(r.h||'—')+'</td>'
       +'<td style="padding:8px 10px;border-bottom:1px solid var(--rule);"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;'+senTag(r.sen)+'">'+r.sen+'</span></td>'
       +'<td style="padding:8px 10px;font-size:11px;color:var(--t2);border-bottom:1px solid var(--rule);">'+r.st+'</td>'
       +'<td style="padding:8px 10px;border-bottom:1px solid var(--rule);"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;'+mouTag(r.mou)+'">'+r.mou+'</span></td>'
       +'<td style="padding:8px 10px;font-size:12px;font-weight:700;color:var(--cobalt);text-align:right;border-bottom:1px solid var(--rule);">R$'+(r.cap||0)+'M</td>'
+      +'<td style="padding:8px 10px;font-size:11px;color:var(--t2);text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap;">'+fmtR(piso)+'</td>'
+      +'<td style="padding:8px 10px;font-size:11px;color:var(--t2);text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap;">'+(si>0?fmtR(si):'—')+'</td>'
+      +'<td style="padding:8px 10px;font-size:11px;font-weight:600;color:var(--t1);text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap;">'+fmtR(comp)+'</td>'
+      +'<td style="padding:8px 10px;font-size:11px;color:var(--cobalt);text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap;">'+(xp>0?fmtR(xp):'—')+'</td>'
       +'</tr>';
   }).join('');
   var TFOOT = '<tfoot><tr style="background:var(--s2);">'
     +'<td colspan="7" style="padding:10px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
     +'<td style="padding:10px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
+    +'<td colspan="4" style="padding:10px;"></td>'
     +'</tr></tfoot>';
   el.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'+TH+'<tbody>'+ROWS+'</tbody>'+TFOOT+'</table></div>';
 }
@@ -952,8 +892,6 @@ function fmtM(v) {
     }
   })();
 
-  set('dyn-liq',    AT);
-
   // ── M&A KPIs dinâmicos ──
   if (D.ma && D.ma.length) {
     var maTotal = D.ma.reduce(function(s,o){ return s + (o.a||0); }, 0);
@@ -966,20 +904,55 @@ function fmtM(v) {
     set('dyn-ma-total', fmtMaB(maTotal));
     set('dyn-ma-count', D.ma.length + ' operações em andamento');
   }
-  var desist=G.desist||0;
-  // Separar pós-contrato (foiContratado) vs precoce
   var allCands = window.Blue3Data && window.Blue3Data._rawRows ? window.Blue3Data._rawRows : [];
+
+  // Brutas = todos os candidatos contratados + desistentes (todas as áreas)
+  var brutasStatuses = ['trabalhando','contratado(a)','contratado','desistência','desistencia'];
+  var totalBrutas = allCands.filter(function(r){
+    return brutasStatuses.indexOf(norm(r['Status']||'')) > -1;
+  }).length;
+
+  // Desistências: só pós-contrato (foiContratado = true)
   var desistPos  = allCands.filter(function(r){ var s=norm(r['Status']||''); return (s==='desistência'||s==='desistencia') && (r['foiContratado']===true||r['_foi_contratado']===true); }).length;
   var desistPrec = allCands.filter(function(r){ var s=norm(r['Status']||''); return (s==='desistência'||s==='desistencia') && !(r['foiContratado']===true||r['_foi_contratado']===true); }).length;
-  var meses=Object.keys(G.byMonth||{}).length||1;
+  var desist = desistPos + desistPrec;
+
+  // Período dinâmico: Jan até o mês atual
   var mLabels={1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
-  var mNums=Object.keys(G.byMonth||{}).map(Number).sort(function(a,b){return a-b;});
-  var periodoLabel=mNums.length>=2?(mLabels[mNums[0]]+'–'+mLabels[mNums[mNums.length-1]]+' 2026 · '+meses+' meses'):'2026';
-  var taxaDesist=G.brutas>0?Math.round(desist/G.brutas*100):0;
-  set('dyn-liq-sub',periodoLabel+' ('+G.brutas+' brutas − '+desist+' desist.)');
-  set('dyn-auc',    'R$'+(G.aucB||'0')+'B');
-  set('dyn-auc-sub', AT+' candidatos com carteira');
-  set('dyn-brutas', G.brutas||AT);
+  var hoje = new Date();
+  var mesAtual = hoje.getMonth() + 1;
+  var anoAtual = hoje.getFullYear();
+  var mNums = Object.keys(G.byMonth||{}).map(Number).sort(function(a,b){return a-b;});
+  // Período vai de Jan (ou primeiro mês com dados) até o mês atual
+  var mesInicio = mNums.length > 0 ? mNums[0] : 1;
+  var mesFim = mesAtual;
+  var meses = mesFim - mesInicio + 1;
+  var periodoLabel = mLabels[mesInicio]+'–'+mLabels[mesFim]+' '+anoAtual+' · '+meses+' mês'+(meses!==1?'es':'');
+
+  // Taxa de desistência: pós-contrato / (ativos + pós-contrato)
+  var baseDesist = AT + desistPos;
+  var taxaDesist = baseDesist > 0 ? Math.round(desistPos/baseDesist*100) : 0;
+
+  // Captação alvo total em MM→B (declarar ANTES de usar)
+  var capTotalMM = G.aucTotal || 0;
+  var capTotalFmt = capTotalMM >= 1000
+    ? 'R$'+(capTotalMM/1000).toFixed(2).replace('.',',')+' B'
+    : 'R$'+capTotalMM+' MM';
+  var capAlovoFmt = capTotalMM >= 1000
+    ? 'R$'+(capTotalMM/1000).toFixed(2).replace('.',',')+' B'
+    : (capTotalMM > 0 ? 'R$'+Math.round(capTotalMM)+'M' : '—');
+
+  // Ritmo = líquidas ativas / meses desde Jan
+  var ritmo = meses > 0 ? (AT/meses).toFixed(2).replace('.',',') : '—';
+  set('dyn-liq', AT);
+  set('dyn-liq-sub-el', periodoLabel+' ('+totalBrutas+' brutas − '+desistPos+' desist. pós-contrato)');
+  set('dyn-ritmo-label', '↑ Ritmo: '+ritmo+' líquidas/mês');
+  set('dyn-auc', 'R$'+(G.aucB||'0')+'B');
+  var candComCart = C.filter(function(r){return r.cap>0;}).length;
+  var aucMedia = candComCart > 0 ? Math.round(G.aucTotal/candComCart) : 0;
+  set('dyn-auc-sub-el', candComCart+' candidatos com carteira');
+  set('dyn-auc-media-label', candComCart>0 ? '↑ Média R$'+aucMedia+'M / pessoa' : '—');
+  set('dyn-brutas', totalBrutas);
   set('dyn-desist-pos',  desistPos  + ' pós-contrato');
   set('dyn-desist-prec', desistPrec + ' precoce' + (desistPrec!==1?'s':''));
   set('dyn-desist-label','Desistências · taxa '+taxaDesist+'%');
@@ -988,13 +961,12 @@ function fmtM(v) {
     set('dyn-maior', 'R$'+G.maiorCand.cap+'M');
     set('dyn-maior-label-el', 'Maior carteira — '+(G.maiorCand.n||'').split(' ')[0]+' · '+(G.maiorCand.p||''));
   }
-  // ── KPI AuC estratégico: soma dos candidatos com cap > 0 (pipeline confirmado) ──
+  // ── KPI AuC estratégico ──
   (function(){
     var candsPipeline = C.filter(function(r){ return r.cap > 0 && (r.estrategico||"Não").toLowerCase() === "sim"; });
     var aucEstrat = candsPipeline.reduce(function(s,r){ return s+(r.cap||0); }, 0);
     var negPipeline = (D._pipelineNeg||[]).reduce(function(s,p){ return s+(parseFloat(p.auc_mm)||0); }, 0);
     var countEstrat = candsPipeline.length;
-    // Formatar
     var fmtAuc = aucEstrat >= 1000
       ? 'R$'+(aucEstrat/1000).toFixed(2).replace('.',',')+' B'
       : 'R$'+aucEstrat+'M';
@@ -1006,22 +978,17 @@ function fmtM(v) {
     }
   })();
 
-  set('dyn-periodo-label',  periodoLabel.split(' · ')[0] || 'Jan–Abr');
-  set('dyn-periodo-chart',  periodoLabel || 'Jan–Abr 2026');
-  set('dyn-auc-footer', 'R$'+G.aucB+'B');
+  set('dyn-periodo-label',  mLabels[mesInicio]+'–'+mLabels[mesFim]);
+  set('dyn-periodo-chart',  periodoLabel);
+  set('dyn-update-date', (function(){ var d=new Date(); var m=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']; return d.getDate().toString().padStart(2,'0')+' '+m[d.getMonth()]+' '+d.getFullYear(); })());
+  document.querySelectorAll('.dyn-cap-alvo').forEach(function(el){ el.textContent = capAlovoFmt; });
   set('dyn-comp',        fmtM(G.compTotal));
   set('dyn-comp-sub',    AT+' candidatos');
   set('dyn-comp-media',  AT>0 ? fmtM(Math.round(G.compTotal/AT)) : '—');
   set('dyn-xp',          G.xpTotal>0 ? fmtM(G.xpTotal) : '—');
   set('dyn-liq-blue3',   fmtM(G.blue3Liq));
-  // Captação alvo total em MM→B
-  var capTotalMM = G.aucTotal || 0;
-  var capTotalFmt = capTotalMM >= 1000
-    ? 'R$'+(capTotalMM/1000).toFixed(2).replace('.',',')+' B'
-    : 'R$'+capTotalMM+' MM';
   set('dyn-cap-total',   capTotalFmt);
   set('dyn-cap-total-meta', capTotalFmt);
-  // Custo por MM: compTotal / (aucTotal em R$)
   var custoMM = capTotalMM > 0 ? Math.round(G.compTotal / capTotalMM) : 0;
   set('dyn-custo-mm',    custoMM > 0 ? 'R$'+custoMM.toLocaleString('pt-BR') : '—');
   set('dyn-si',      fmtM(G.siTotal));
@@ -1382,42 +1349,8 @@ function fmtM(v) {
     }).join('');
   }
 
-  // ── Seção 05: Cand list (top10 + colapsável) ──
+  // ── Seção 05: Tabela unificada candidatos + propostas ──
   renderCandListSplit(C);
-
-    // ── Seção 07: Tabela inv-tbody (top10 + colapsável) ──
-  var _invTop = document.getElementById('inv-tbody-top');
-  var _invMore = document.getElementById('inv-tbody-more');
-  if (_invTop) {
-    var _makeInvRow = function(r){
-      var mc = (r.mou||'').trim()==='Assinado'?'background:#DCFCE7;color:#166534;':'background:#FEF3C7;color:#92400E;';
-      var sc2= (r.st||'').trim()==='Trabalhando'?'background:#EEF2FD;color:#1A3BAD;':'background:#F1F5F9;color:#475569;';
-      return '<tr><td style="font-weight:600;">'+r.n+'</td><td style="color:var(--t3);">'+r.p+'</td>'
-        +'<td>'+fmtM(r.piso)+'</td><td>'+(r.si>0?fmtM(r.si):'—')+'</td><td>'+(r.cap>0?'R$'+r.cap+'MM':'—')+'</td>'
-        +'<td style="font-weight:600;">'+fmtM(r.comp)+'</td><td>'+(r.xp>0?fmtM(r.xp):'—')+'</td>'
-        +'<td><span style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;'+mc+'">'+r.mou+'</span></td>'
-        +'<td><span style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;'+sc2+'">'+r.st+'</span></td></tr>';
-    };
-    var _invTop10 = C.slice(0,10);
-    var _invRest  = C.slice(10);
-    _invTop.innerHTML  = _invTop10.map(_makeInvRow).join('');
-    if (_invMore) _invMore.innerHTML = _invRest.map(_makeInvRow).join('');
-    // Ajustar botão
-    var _btnProp = document.getElementById('prop-toggle');
-    if (_btnProp) {
-      if (_invRest.length === 0) { _btnProp.style.display='none'; }
-      else { _btnProp.style.display=''; _btnProp.textContent='▼ Ver lista completa ('+C.length+' candidatos)'; }
-    }
-    // Sincronizar totais rodapé expandido
-    var _syncFooter = function(){
-      ['dyn-bar-comp','dyn-bar-xp','dyn-bar-liq'].forEach(function(id){
-        var src=document.getElementById(id);
-        var dst=document.getElementById(id+'2');
-        if(src&&dst) dst.textContent=src.textContent;
-      });
-    };
-    _syncFooter();
-  }
 
   // ── Chart 7: Status donut ──
   sc('chartStatus', {type:'doughnut', data:{
@@ -2102,72 +2035,96 @@ function renderCandListSplit(candidatos, fromFilter) {
   var totalAuC = sorted.reduce(function(s,r){return s+(r.cap||0);},0);
 
   // Cabeçalho da tabela (mesmo estilo de renderCandList)
-  var _thS2 = 'padding:8px 10px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);';
+  var _thS2 = 'padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);';
   var _thC2 = _thS2+'cursor:pointer;user-select:none;';
   var TH = '<thead><tr style="background:var(--s2);">'
     +'<th onclick="sortCandTable(\'n\')" style="'+_thC2+'text-align:left;">Candidato<span id="csi-n"></span></th>'
     +'<th onclick="sortCandTable(\'dt\')" style="'+_thC2+'text-align:left;white-space:nowrap;">Contratação<span id="csi-dt"></span></th>'
     +'<th onclick="sortCandTable(\'p\')" style="'+_thC2+'text-align:left;">Praça<span id="csi-p"></span></th>'
     +'<th style="'+_thS2+'text-align:left;">Hunter</th>'
-    +'<th style="'+_thS2+'text-align:left;">Senioridade</th>'
-    +'<th style="'+_thS2+'text-align:left;">Status</th>'
-    +'<th style="'+_thS2+'text-align:left;">MOU</th>'
-    +'<th onclick="sortCandTable(\'cap\')" style="'+_thC2+'text-align:right;white-space:nowrap;min-width:80px;">AuC (MM)<span id="csi-cap"> ↓</span></th>'
+    +'<th style="'+_thS2+'text-align:center;">Sen.</th>'
+    +'<th style="'+_thS2+'text-align:center;">Status</th>'
+    +'<th style="'+_thS2+'text-align:center;">MOU</th>'
+    +'<th onclick="sortCandTable(\'cap\')" style="'+_thC2+'text-align:right;">AuC<span id="csi-cap"> ↓</span></th>'
+    +'<th style="'+_thS2+'text-align:right;">Piso/mês</th>'
+    +'<th style="'+_thS2+'text-align:right;">Sign-in</th>'
+    +'<th style="'+_thS2+'text-align:right;">Total comp.</th>'
+    +'<th style="'+_thS2+'text-align:right;">Copart. XP</th>'
     +'</tr></thead>';
 
-  var senTag = function(s){ var m={'sênior':'background:#DCFCE7;color:#166534;','pleno':'background:#FEF3C7;color:#92400E;','júnior':'background:#FCE7F3;color:#9D174D;','junior':'background:#FCE7F3;color:#9D174D;'}; return m[(s||'').toLowerCase()]||'background:var(--s2);color:var(--t2);'; };
-  var mouTag = function(m){ return (m||'').toLowerCase()==='assinado'?'background:#DCFCE7;color:#166534;':'background:#FEF3C7;color:#92400E;'; };
+  var senTag  = function(s){ var m={'sênior':'background:#DCFCE7;color:#166534;','pleno':'background:#FEF3C7;color:#92400E;','júnior':'background:#FCE7F3;color:#9D174D;','junior':'background:#FCE7F3;color:#9D174D;'}; return m[(s||'').toLowerCase()]||'background:var(--s2);color:var(--t2);'; };
+  var mouTag  = function(m){ return (m||'').toLowerCase()==='assinado'?'background:#DCFCE7;color:#166534;':'background:#FEF3C7;color:#92400E;'; };
+  var stTag   = function(s){ var n=(s||'').toLowerCase(); return n==='trabalhando'?'background:#EEF2FD;color:#1A3BAD;':n==='contratado(a)'?'background:#F0FDF4;color:#15803D;':'background:var(--s2);color:var(--t3);'; };
+  var senLbl  = function(s){ var m={'sênior':'Sên.','pleno':'Plen.','júnior':'Jún.','junior':'Jún.'}; return m[(s||'').toLowerCase()]||(s||''); };
+  var stLbl   = function(s){ var n=(s||'').toLowerCase(); return n==='trabalhando'?'● Trab.':n==='contratado(a)'?'● Cont.':s; };
+  var fmtR2   = function(v){ if(!v||v===0) return '—'; if(v>=1000000) return 'R$'+(v/1000000).toFixed(2).replace('.',',')+'M'; return 'R$'+Math.round(v).toLocaleString('pt-BR'); };
+  var fmtAuC2 = function(v){ if(!v||v===0) return '—'; if(v>=1000) return 'R$'+(v/1000).toFixed(1).replace('.',',')+'B'; return 'R$'+v+'M'; };
 
+  var td = 'padding:6px 8px;font-size:11px;border-bottom:1px solid var(--rule);';
   var makeRows = function(arr) {
     return arr.map(function(r){
-      var _dtFmt = r.dt ? r.dt : '—';
+      var fin = window.Blue3Data && window.Blue3Data.financeiros ? window.Blue3Data.financeiros.find(function(f){return f.n===r.n;}) : null;
+      var piso = fin ? fin.piso : (r.piso||0);
+      var si   = fin ? fin.si   : (r.si  ||0);
+      var comp = fin ? fin.comp : (r.comp||0);
+      var xp   = fin ? fin.xp   : (r.xp  ||0);
       return '<tr>'
-        +'<td style="padding:8px 10px;font-size:12px;font-weight:600;color:var(--t1);border-bottom:1px solid var(--rule);">'+r.n+'</td>'
-        +'<td style="padding:8px 10px;font-size:11px;color:var(--t3);border-bottom:1px solid var(--rule);white-space:nowrap;">'+_dtFmt+'</td>'
-        +'<td style="padding:8px 10px;font-size:11px;color:var(--t3);border-bottom:1px solid var(--rule);">'+r.p+'</td>'
-        +'<td style="padding:8px 10px;font-size:11px;color:var(--t2);border-bottom:1px solid var(--rule);">'+(r.h||'—')+'</td>'
-        +'<td style="padding:8px 10px;border-bottom:1px solid var(--rule);"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;'+senTag(r.sen)+'">'+r.sen+'</span></td>'
-        +'<td style="padding:8px 10px;font-size:11px;color:var(--t2);border-bottom:1px solid var(--rule);">'+r.st+'</td>'
-        +'<td style="padding:8px 10px;border-bottom:1px solid var(--rule);"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;'+mouTag(r.mou)+'">'+r.mou+'</span></td>'
-        +'<td style="padding:8px 10px;font-size:12px;font-weight:700;color:var(--cobalt);text-align:right;border-bottom:1px solid var(--rule);">R$'+(r.cap||0)+'M</td>'
+        +'<td style="'+td+'font-weight:600;color:var(--t1);max-width:130px;">'+r.n+'</td>'
+        +'<td style="'+td+'color:var(--t3);white-space:nowrap;">'+(r.dt||'—')+'</td>'
+        +'<td style="'+td+'color:var(--t3);font-size:10px;">'+r.p.replace('Blue3 - ','')+'</td>'
+        +'<td style="'+td+'color:var(--t2);">'+(r.h||'—')+'</td>'
+        +'<td style="'+td+'text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;'+senTag(r.sen)+'">'+senLbl(r.sen)+'</span></td>'
+        +'<td style="'+td+'text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;'+stTag(r.st)+'">'+stLbl(r.st)+'</span></td>'
+        +'<td style="'+td+'text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;'+mouTag(r.mou)+'">'+(r.mou==='Assinado'?'✓ OK':'Pend.')+'</span></td>'
+        +'<td style="'+td+'font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+fmtAuC2(r.cap)+'</td>'
+        +'<td style="'+td+'color:var(--t2);text-align:right;white-space:nowrap;">'+fmtR2(piso)+'</td>'
+        +'<td style="'+td+'color:var(--t2);text-align:right;white-space:nowrap;">'+(si>0?fmtR2(si):'—')+'</td>'
+        +'<td style="'+td+'font-weight:600;color:var(--t1);text-align:right;white-space:nowrap;">'+fmtR2(comp)+'</td>'
+        +'<td style="'+td+'color:var(--cobalt);text-align:right;white-space:nowrap;">'+(xp>0?fmtR2(xp):'—')+'</td>'
         +'</tr>';
     }).join('');
   };
 
-  // Rodapé com total AuC — aparece só após os 10 se não houver mais
   var TFOOT = rest.length === 0
     ? '<tfoot><tr style="background:var(--s2);">'
-        +'<td colspan="7" style="padding:10px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
-        +'<td style="padding:10px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
+        +'<td colspan="7" style="padding:8px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
+        +'<td style="padding:8px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
+        +'<td colspan="4" style="padding:8px;"></td>'
         +'</tr></tfoot>'
     : '';
 
-  topEl.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
-    + TH + '<tbody>' + makeRows(top10) + '</tbody>' + TFOOT + '</table></div>';
+  topEl.innerHTML = '<table style="width:100%;border-collapse:collapse;table-layout:fixed;">'
+    + TH + '<tbody>' + makeRows(top10) + '</tbody>' + TFOOT + '</table>';
 
-  // Linhas extras
   if (moreEl) {
     if (rest.length) {
       var TFOOT2 = '<tfoot><tr style="background:var(--s2);">'
-        +'<td colspan="6" style="padding:10px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
-        +'<td style="padding:10px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
+        +'<td colspan="7" style="padding:8px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
+        +'<td style="padding:8px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
+        +'<td colspan="4" style="padding:8px;"></td>'
         +'</tr></tfoot>';
-      moreEl.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
-        + '<tbody>' + makeRows(rest) + '</tbody>' + TFOOT2 + '</table></div>';
+      moreEl.innerHTML = '<table style="width:100%;border-collapse:collapse;table-layout:fixed;">'
+        + '<tbody>' + makeRows(rest) + '</tbody>' + TFOOT2 + '</table>';
     } else {
       moreEl.innerHTML = '';
     }
   }
 
-  // Ajustar botão
   if (btn) {
-    if (rest.length === 0) {
-      btn.style.display = 'none';
-    } else {
-      btn.style.display = '';
-      btn.textContent = '▼ Ver todos (' + sorted.length + ')';
-    }
+    if (rest.length === 0) { btn.style.display = 'none'; }
+    else { btn.style.display = ''; btn.textContent = '▼ Ver todos (' + sorted.length + ')'; }
   }
+
+  // Sincronizar totais do rodapé com valores calculados
+  var F = window.Blue3Data && window.Blue3Data.financeiros ? window.Blue3Data.financeiros : [];
+  var _filt = fromFilter ? sorted : F;
+  var _compT = _filt.reduce(function(s,r){return s+(r.comp||0);},0);
+  var _xpT   = _filt.reduce(function(s,r){return s+(r.xp||0);},0);
+  var _liqT  = _compT - _xpT;
+  var _fmtFt = function(v){ if(!v||v===0)return '—'; if(v>=1000000)return 'R$'+(v/1000000).toFixed(2).replace('.',',')+'M'; return 'R$'+Math.round(v).toLocaleString('pt-BR'); };
+  var _s2 = document.getElementById('dyn-bar-comp2'); if(_s2) _s2.textContent = _fmtFt(_compT);
+  var _s3 = document.getElementById('dyn-bar-xp2');   if(_s3) _s3.textContent = _fmtFt(_xpT);
+  var _s4 = document.getElementById('dyn-bar-liq2');  if(_s4) _s4.textContent = _fmtFt(_liqT);
 }
 
 // ── Toggle seção 05 (candidatos) ─────────────────────────────
