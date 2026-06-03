@@ -145,24 +145,33 @@ function blue3SaveCSV(rows, onDone){
 
 // ── Carregar dados do CRM (crm_candidatos) ──
 function blue3LoadData(callback){
-  // Busca crm_candidatos + propostas em paralelo para join pelo crm_id
-  Promise.all([
-    supaFetch('crm_candidatos?order=data_entrada.desc&limit=500',{prefer:'return=representation'}).then(function(r){return r.json();}),
-    supaFetch('propostas?select=crm_id,payback_meses&order=created_at.desc&limit=1000',{prefer:'return=representation'}).then(function(r){return r.json();}).catch(function(){return [];})
-  ])
-  .then(function(results){
-    var rows     = results[0] || [];
-    var propRows = results[1] || [];
-
-    // Mapa crm_id → payback_meses mais recente (já vem ordenado por created_at desc)
-    var pbByIdMap = {};
-    propRows.forEach(function(p){
-      if(p.crm_id && p.payback_meses && !pbByIdMap[p.crm_id]){
-        pbByIdMap[p.crm_id] = parseInt(p.payback_meses) || 0;
-      }
-    });
-
+  // Primeiro carrega crm_candidatos (essencial), depois tenta propostas (opcional)
+  supaFetch('crm_candidatos?order=data_entrada.desc&limit=500',{prefer:'return=representation'})
+  .then(function(r){return r.json();})
+  .then(function(rows){
     if(!rows||!rows.length){ callback([]); return; }
+
+    // Tenta buscar payback das propostas — falha silenciosa se não conseguir
+    supaFetch('propostas?select=crm_id,payback_meses&order=created_at.desc&limit=1000',{prefer:'return=representation'})
+    .then(function(pr){ return pr.ok ? pr.json() : []; })
+    .catch(function(){ return []; })
+    .then(function(propRows){
+      var pbByIdMap = {};
+      (propRows||[]).forEach(function(p){
+        if(p.crm_id && p.payback_meses && !pbByIdMap[p.crm_id]){
+          pbByIdMap[p.crm_id] = parseInt(p.payback_meses)||0;
+        }
+      });
+      _processCrmRows(rows, pbByIdMap, callback);
+    });
+  })
+  .catch(function(){
+    console.error('Erro ao carregar dados do Supabase');
+    callback([]);
+  });
+}
+
+function _processCrmRows(rows, pbByIdMap, callback){
     // Capturar data da última atualização
     if(rows[0] && rows[0].atualizado_em){
       var d = new Date(rows[0].atualizado_em);
@@ -244,11 +253,6 @@ function blue3LoadData(callback){
     });
     // Não salvar em localStorage — dados sempre frescos do Supabase
     callback(converted);
-  })
-  .catch(function(){
-    console.error('Erro ao carregar dados do Supabase');
-    callback([]);
-  });
 }
 
 // ── dataLoader (lê de window.Blue3Data._rawRows) ──
