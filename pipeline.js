@@ -145,9 +145,23 @@ function blue3SaveCSV(rows, onDone){
 
 // ── Carregar dados do CRM (crm_candidatos) ──
 function blue3LoadData(callback){
-  supaFetch('crm_candidatos?order=data_entrada.desc&limit=500',{prefer:'return=representation'})
-  .then(function(r){return r.json();})
-  .then(function(rows){
+  // Busca crm_candidatos + propostas em paralelo para join pelo crm_id
+  Promise.all([
+    supaFetch('crm_candidatos?order=data_entrada.desc&limit=500',{prefer:'return=representation'}).then(function(r){return r.json();}),
+    supaFetch('propostas?select=crm_id,payback_meses&order=created_at.desc&limit=1000',{prefer:'return=representation'}).then(function(r){return r.json();}).catch(function(){return [];})
+  ])
+  .then(function(results){
+    var rows     = results[0] || [];
+    var propRows = results[1] || [];
+
+    // Mapa crm_id → payback_meses mais recente (já vem ordenado por created_at desc)
+    var pbByIdMap = {};
+    propRows.forEach(function(p){
+      if(p.crm_id && p.payback_meses && !pbByIdMap[p.crm_id]){
+        pbByIdMap[p.crm_id] = parseInt(p.payback_meses) || 0;
+      }
+    });
+
     if(!rows||!rows.length){ callback([]); return; }
     // Capturar data da última atualização
     if(rows[0] && rows[0].atualizado_em){
@@ -225,7 +239,7 @@ function blue3LoadData(callback){
       o['data_declinio']         = r.data_declinio || '';
       o['historico_etapas']      = r.historico_etapas || null;
       o['lider']                 = (r.lider||'').trim();
-      o['payback_meses']         = parseInt(r.payback_meses)||0;
+      o['payback_meses']         = pbByIdMap[r.id] || parseInt(r.payback_meses) || 0;
       return o;
     });
     // Não salvar em localStorage — dados sempre frescos do Supabase
