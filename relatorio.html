@@ -619,7 +619,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Payback min / max</div><div class="kv" style="font-size:16px;"><span id="exp-pb-range">— / —</span></div><div class="ks">dispersão do risco</div></div>
     <div class="kc"><div class="ktr" style="background:var(--cobalt);"></div><div class="kl">Piso médio</div><div class="kv" style="font-size:20px;"><span id="exp-piso-med">—</span></div><div class="ks">R$/mês comprometido</div></div>
     <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">Piso moda</div><div class="kv" style="font-size:20px;"><span id="exp-piso-moda">—</span></div><div class="ks">valor mais frequente</div></div>
-    <div class="kc"><div class="ktr" style="background:#7C3AED;"></div><div class="kl">Taxa de conversão</div><div class="kv" style="font-size:20px;"><span id="exp-conv">—</span></div><div class="ks"><span id="exp-conv-sub">prop. → contratação</span></div></div>
+    <div class="kc"><div class="ktr" style="background:#7C3AED;"></div><div class="kl">Candidatos analisados</div><div class="kv" style="font-size:20px;"><span id="exp-conv">—</span></div><div class="ks"><span id="exp-conv-sub">com proposta gerada</span></div></div>
   </div>
 
   <!-- Linha 2: gráficos lado a lado -->
@@ -2941,8 +2941,8 @@ function renderSec08() {
   if(el('exp-pb-range'))  el('exp-pb-range').textContent  = pbSorted.length ? pbSorted[0]+'m / '+pbSorted[pbSorted.length-1]+'m' : '—';
   if(el('exp-piso-med'))  el('exp-piso-med').textContent  = fmt(pisoMed);
   if(el('exp-piso-moda')) el('exp-piso-moda').textContent = fmt(moda);
-  if(el('exp-conv'))      el('exp-conv').textContent      = F.length ? F.length+'p' : '—';
-  if(el('exp-conv-sub'))  el('exp-conv-sub').textContent  = 'candidatos analisados';
+  if(el('exp-conv'))      el('exp-conv').textContent      = F.length || '—';
+  if(el('exp-conv-sub'))  el('exp-conv-sub').textContent  = 'com proposta gerada';
 
   // ── Gráfico 1: evolução mensal piso médio ──
   var meses = Object.keys(mensalMap).map(Number).sort(function(a,b){return a-b;});
