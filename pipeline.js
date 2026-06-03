@@ -152,17 +152,19 @@ function blue3LoadData(callback){
     if(!rows||!rows.length){ callback([]); return; }
 
     // Tenta buscar payback das propostas — falha silenciosa se não conseguir
-    supaFetch('propostas?select=crm_id,payback_meses&order=created_at.desc&limit=1000',{prefer:'return=representation'})
+    supaFetch('propostas?select=telefone,payback_meses&order=versao.desc&limit=1000',{prefer:'return=representation'})
     .then(function(pr){ return pr.ok ? pr.json() : []; })
     .catch(function(){ return []; })
     .then(function(propRows){
-      var pbByIdMap = {};
+      // Join por telefone — pega a versão mais recente (já ordenado por versao desc)
+      var pbByTelMap = {};
       (propRows||[]).forEach(function(p){
-        if(p.crm_id && p.payback_meses && !pbByIdMap[p.crm_id]){
-          pbByIdMap[p.crm_id] = parseInt(p.payback_meses)||0;
+        var tel = (p.telefone||'').replace(/\D/g,'');
+        if(tel && p.payback_meses && !pbByTelMap[tel]){
+          pbByTelMap[tel] = parseInt(p.payback_meses)||0;
         }
       });
-      _processCrmRows(rows, pbByIdMap, callback);
+      _processCrmRows(rows, pbByTelMap, callback);
     });
   })
   .catch(function(){
@@ -248,7 +250,7 @@ function _processCrmRows(rows, pbByIdMap, callback){
       o['data_declinio']         = r.data_declinio || '';
       o['historico_etapas']      = r.historico_etapas || null;
       o['lider']                 = (r.lider||'').trim();
-      o['payback_meses']         = pbByIdMap[r.id] || parseInt(r.payback_meses) || 0;
+      o['payback_meses']         = pbByIdMap[(r.telefone||'').replace(/\D/g,'')] || parseInt(r.payback_meses) || 0;
       return o;
     });
     // Não salvar em localStorage — dados sempre frescos do Supabase
