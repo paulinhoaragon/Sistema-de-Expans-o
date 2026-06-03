@@ -71,6 +71,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 /* KPI ROW */
 .krow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px;}
 .kc{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r12);padding:20px 22px;position:relative;overflow:hidden;}
+.fpill{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;border:1px solid var(--rule);background:var(--canvas);color:var(--t3);cursor:pointer;letter-spacing:.02em;transition:all .15s;}
+.fpill:hover{border-color:var(--cobalt);color:var(--cobalt);}
+.fpill-on{background:var(--cobalt) !important;border-color:var(--cobalt) !important;color:#fff !important;}
 .ktr{position:absolute;top:0;left:0;right:0;height:2px;border-radius:var(--r12) var(--r12) 0 0;}
 .kl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;}
 .kv{font-family:'Playfair Display',serif;font-size:31px;font-weight:600;color:var(--t1);line-height:1;}
@@ -514,22 +517,25 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
   <!-- Tabela unificada: candidatos + propostas -->
   <div class="card" style="margin-bottom:16px;">
-    <div class="ch" style="display:flex;align-items:center;justify-content:space-between;">
+    <div class="ch" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
       <span>Candidatos contratados — carteiras e propostas detalhadas</span>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <select id="cand-f-periodo" onchange="aplicarFiltrosCand()" style="font-size:10px;padding:4px 8px;border:1px solid var(--rule);border-radius:6px;color:var(--t2);background:var(--canvas);cursor:pointer;font-family:inherit;">
-          <option value="todos">Todos os períodos</option>
-          <option value="mes">Este mês</option>
-          <option value="anterior">Mês anterior</option>
-          <option value="3meses">Últimos 3 meses</option>
-        </select>
-        <select id="cand-f-sen" onchange="aplicarFiltrosCand()" style="font-size:10px;padding:4px 8px;border:1px solid var(--rule);border-radius:6px;color:var(--t2);background:var(--canvas);cursor:pointer;font-family:inherit;">
-          <option value="todos">Todas as senioridades</option>
-          <option value="sênior">Sênior</option>
-          <option value="pleno">Pleno</option>
-          <option value="júnior">Júnior</option>
-        </select>
-        <button onclick="resetFiltrosCand()" style="font-size:10px;padding:4px 10px;border:1px solid var(--rule);border-radius:6px;color:var(--t3);background:var(--canvas);cursor:pointer;font-family:inherit;">✕ Limpar</button>
+      <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
+        <!-- Pills período -->
+        <div style="display:flex;gap:3px;" id="cand-pills-periodo">
+          <button onclick="setCandFilter('periodo','todos',this)" class="fpill fpill-on" data-group="periodo" data-val="todos">Todos</button>
+          <button onclick="setCandFilter('periodo','mes',this)" class="fpill" data-group="periodo" data-val="mes">Este mês</button>
+          <button onclick="setCandFilter('periodo','anterior',this)" class="fpill" data-group="periodo" data-val="anterior">Mês ant.</button>
+          <button onclick="setCandFilter('periodo','3meses',this)" class="fpill" data-group="periodo" data-val="3meses">3 meses</button>
+        </div>
+        <div style="width:1px;height:18px;background:var(--rule);margin:0 2px;"></div>
+        <!-- Pills senioridade -->
+        <div style="display:flex;gap:3px;" id="cand-pills-sen">
+          <button onclick="setCandFilter('sen','todos',this)" class="fpill fpill-on" data-group="sen" data-val="todos">Todos</button>
+          <button onclick="setCandFilter('sen','sênior',this)" class="fpill" data-group="sen" data-val="sênior">Sênior</button>
+          <button onclick="setCandFilter('sen','pleno',this)" class="fpill" data-group="sen" data-val="pleno">Pleno</button>
+          <button onclick="setCandFilter('sen','júnior',this)" class="fpill" data-group="sen" data-val="júnior">Júnior</button>
+        </div>
+        <div style="width:1px;height:18px;background:var(--rule);margin:0 2px;"></div>
         <button id="cand-toggle" onclick="toggleCandList()" style="font-size:10px;font-weight:700;color:var(--cobalt);background:var(--cobalt-pl);border:none;padding:4px 12px;border-radius:4px;cursor:pointer;letter-spacing:.04em;">▼ Ver todos</button>
       </div>
     </div>
@@ -1883,6 +1889,7 @@ function renderPage() {
    carregarHuntersRelatorio(function(){
     Blue3_charts();
     populateFilters();
+    renderSec08();
   });
 }
 
@@ -1973,9 +1980,22 @@ function sortCandTable(key) {
   renderCandListSplit(_candDataFull, true);
 }
 
+// Estado dos filtros da tabela candidatos
+var _candFilters = {periodo:'todos', sen:'todos'};
+
+function setCandFilter(group, val, btn) {
+  _candFilters[group] = val;
+  // Atualizar visual das pills
+  var container = document.getElementById('cand-pills-'+group);
+  if(container) container.querySelectorAll('.fpill').forEach(function(b){
+    b.classList.toggle('fpill-on', b.dataset.val === val);
+  });
+  aplicarFiltrosCand();
+}
+
 function aplicarFiltrosCand() {
-  var periodo = (document.getElementById('cand-f-periodo')||{}).value || 'todos';
-  var sen     = (document.getElementById('cand-f-sen')||{}).value || 'todos';
+  var periodo = _candFilters.periodo || 'todos';
+  var sen     = _candFilters.sen     || 'todos';
   var now = new Date();
   var filtered = _candDataFull.filter(function(r) {
     // Sem filtro de período: mostrar apenas com AuC mapeado (comportamento original)
@@ -2002,13 +2022,12 @@ function aplicarFiltrosCand() {
 }
 
 function resetFiltrosCand() {
-  var p = document.getElementById('cand-f-periodo');
-  var s = document.getElementById('cand-f-sen');
-  if (p) p.value = 'todos';
-  if (s) s.value = 'todos';
+  _candFilters = {periodo:'todos', sen:'todos'};
+  document.querySelectorAll('#cand-pills-periodo .fpill, #cand-pills-sen .fpill').forEach(function(b){
+    b.classList.toggle('fpill-on', b.dataset.val === 'todos');
+  });
   _candSortKey = 'cap'; _candSortAsc = false;
   _updateCandSortIcons('cap', false);
-  // Ao resetar para "todos os períodos": mostrar só candidatos com AuC mapeado
   var resetData = _candDataFull.filter(function(r){ return r.cap > 0; });
   renderCandListSplit(resetData, true);
 }
@@ -2859,249 +2878,187 @@ if (_regEstrat) _regEstrat.addEventListener('change',function(){
   if (f) f.style.display = this.checked ? 'block' : 'none';
 });
 
-// ── Custo de Expansão: análise completa ──
-(function(){
-  var URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
-  var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
-  var hdr = { 'apikey': KEY, 'Authorization': 'Bearer '+KEY, 'Accept': 'application/json' };
-  var el  = function(id){ return document.getElementById(id); };
-  var fmt = function(v){ return v >= 1000 ? 'R$'+Math.round(v/1000).toLocaleString('pt-BR')+'K' : 'R$'+Math.round(v).toLocaleString('pt-BR'); };
-  var fmtM = function(v){ if(!v) return '—'; return v >= 1000000 ? 'R$'+(v/1000000).toFixed(2).replace('.',',')+'M' : 'R$'+Math.round(v).toLocaleString('pt-BR'); };
+// ── Seção 08: Custo de Expansão — usa Blue3Data já carregado ──
+function renderSec08() {
+  var F  = (window.Blue3Data && window.Blue3Data.financeiros)  || [];
+  var PB = (window.Blue3Data && window.Blue3Data.paybacks)     || [];
+  var el = function(id){ return document.getElementById(id); };
+  var fmt = function(v){ if(!v) return '—'; return v >= 1000 ? 'R$'+Math.round(v/1000).toLocaleString('pt-BR')+'K' : 'R$'+Math.round(v).toLocaleString('pt-BR'); };
   var mLabels = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
 
-  Promise.all([
-    fetch(URL+'/rest/v1/propostas?select=dados,payback_meses,status,telefone&limit=1000', {headers:hdr})
-      .then(function(r){
-        if(!r.ok) console.error('Propostas HTTP '+r.status);
-        return r.json();
-      }),
-    fetch(URL+'/rest/v1/crm_candidatos?select=telefone,vaga,nivel,data_contratacao,auc_captado_mm,nome&limit=1000', {headers:hdr})
-      .then(function(r){
-        if(!r.ok) console.error('Candidatos HTTP '+r.status);
-        return r.json();
-      })
-  ]).then(function(results){
-    var allProp  = Array.isArray(results[0]) ? results[0] : [];
-    var candRows = Array.isArray(results[1]) ? results[1] : [];
-    console.log('[Sec08] candRows sample:', JSON.stringify(candRows.slice(0,2)));
-    console.log('[Sec08] propAtivas sample:', JSON.stringify(propAtivas.slice(0,2).map(function(r){return {tel:r.telefone,status:r.status,dados:r.dados};})));
+  if(!F.length){ console.warn('[Sec08] Blue3Data.financeiros vazio'); return; }
 
-    // Mapa telefone → candidato
-    var candMap = {};
-    candRows.forEach(function(c){ if(c.telefone) candMap[c.telefone.replace(/\D/g,'')] = c; });
+  // ── Mapear payback por candidato (pelo nome) ──
+  var pbMap = {};
+  PB.forEach(function(r){ if(r.n) pbMap[r.n] = r.mp || 0; });
 
-    // Separar propostas ativas vs declinadas/expiradas
-    var normSt = function(s){ return (s||'').toLowerCase().trim(); };
-    var propAtivas    = allProp.filter(function(r){ var s=normSt(r.status); return s!=='declinada'&&s!=='expirada'; });
-    var propDeclinadas = allProp.filter(function(r){ var s=normSt(r.status); return s==='declinada'||s==='expirada'; });
+  // ── Arrays base ──
+  var pisos = [], paybacks = [], mensalMap = {}, scatterData = [], breakdown = {}, topList = [];
 
-    // Taxa de conversão: propostas → contratação
-    var totalProp = allProp.length;
-    var convCount = propAtivas.length;
-    var taxaConv  = totalProp > 0 ? Math.round(convCount/totalProp*100) : 0;
-    if(el('exp-conv')) el('exp-conv').textContent = taxaConv+'%';
-    if(el('exp-conv-sub')) el('exp-conv-sub').textContent = convCount+' de '+totalProp+' propostas';
+  F.forEach(function(r){
+    var piso = r.piso || 0;
+    var pb   = pbMap[r.n] || 0;
+    var sen  = r.sen  || '—';
+    var area = r.area || 'Assessor';
+    var auc  = r.cap  || 0;
+    var dt   = r.dt   || '';
+    var mes  = dt ? parseInt((dt.match(/\/(\d{2})\//) || [])[1] || dt.split('-')[1] || 0) : 0;
 
-    // Trabalhar com propostas ativas
-    var pisos = [], paybacks = [];
-    var breakdown = {}; // canal → nivel → [{piso, pb, auc, nome, mes}]
-    var mensalMap = {}; // mes (1-12) → [piso]
-    var scatterData = []; // [{piso, auc, nivel}]
-    var topList = []; // [{nome, piso, pb, auc, nivel, vaga}]
+    if(piso > 0) pisos.push(piso);
+    if(pb > 0)   paybacks.push(pb);
 
-    propAtivas.forEach(function(r){
-      var dados = r.dados || {};
-      if(typeof dados === 'string'){ try{ dados=JSON.parse(dados); }catch(e){ dados={}; } }
-      // piso pode estar em vários campos — robusto
-      var pisoRaw = dados.piso || dados.piso_mensal || dados.salario || dados.valor || r.piso_mensal || 0;
-      var piso = parseFloat(String(pisoRaw).replace(/[R$\s.]/g,'').replace(',','.')) || 0;
-      if(piso > 500000) piso = piso / 100; // guard contra valores em centavos
-      var pb    = r.payback_meses ? parseInt(r.payback_meses) : 0;
-      var tel   = (r.telefone||'').replace(/\D/g,'');
-      var cand  = candMap[tel] || {};
-      var vaga  = (cand.vaga  || 'Outros').trim();
-      var nivel = (cand.nivel || '—').trim();
-      var nome  = cand.nome   || '—';
-      var auc   = parseFloat(cand.auc_captado_mm||0);
-      var dtStr = cand.data_contratacao || '';
-      var mes   = dtStr ? parseInt(dtStr.split('-')[1]) : 0;
+    // Breakdown área × senioridade
+    if(!breakdown[area]) breakdown[area] = {};
+    if(!breakdown[area][sen]) breakdown[area][sen] = [];
+    breakdown[area][sen].push({piso:piso, pb:pb});
 
-      if(piso>0) pisos.push(piso);
-      if(pb>0)   paybacks.push(pb);
+    // Evolução mensal
+    if(mes > 0 && piso > 0){
+      if(!mensalMap[mes]) mensalMap[mes] = [];
+      mensalMap[mes].push(piso);
+    }
 
-      // Breakdown
-      if(!breakdown[vaga]) breakdown[vaga] = {};
-      if(!breakdown[vaga][nivel]) breakdown[vaga][nivel] = [];
-      breakdown[vaga][nivel].push({piso:piso, pb:pb, auc:auc, nome:nome});
+    // Scatter
+    if(piso > 0 && auc > 0) scatterData.push({piso:piso, auc:auc, sen:sen});
 
-      // Mensal
-      if(mes>0 && piso>0){
-        if(!mensalMap[mes]) mensalMap[mes] = [];
-        mensalMap[mes].push(piso);
+    // Top list
+    topList.push({n:r.n, piso:piso, pb:pb, auc:auc, sen:sen, area:area, comp:r.comp||0});
+  });
+
+  // ── KPIs ──
+  var pisoMed  = pisos.length ? Math.round(pisos.reduce(function(a,b){return a+b;},0)/pisos.length) : 0;
+  var pbSorted = paybacks.slice().sort(function(a,b){return a-b;});
+  var pbMed    = pbSorted.length ? Math.round(pbSorted.reduce(function(a,b){return a+b;},0)/pbSorted.length) : 0;
+  var pbMed2   = pbSorted.length ? (pbSorted.length%2===0
+    ? Math.round((pbSorted[pbSorted.length/2-1]+pbSorted[pbSorted.length/2])/2)
+    : pbSorted[Math.floor(pbSorted.length/2)]) : 0;
+  var freq = {};
+  pisos.forEach(function(p){ freq[Math.round(p/1000)*1000] = (freq[Math.round(p/1000)*1000]||0)+1; });
+  var moda = Object.keys(freq).length ? parseInt(Object.keys(freq).reduce(function(a,b){return freq[a]>=freq[b]?a:b;})) : 0;
+
+  if(el('exp-pb-med'))    el('exp-pb-med').textContent    = pbMed   ? pbMed+'m'  : '—';
+  if(el('exp-pb-med2'))   el('exp-pb-med2').textContent   = pbMed2  ? pbMed2+'m' : '—';
+  if(el('exp-pb-range'))  el('exp-pb-range').textContent  = pbSorted.length ? pbSorted[0]+'m / '+pbSorted[pbSorted.length-1]+'m' : '—';
+  if(el('exp-piso-med'))  el('exp-piso-med').textContent  = fmt(pisoMed);
+  if(el('exp-piso-moda')) el('exp-piso-moda').textContent = fmt(moda);
+  if(el('exp-conv'))      el('exp-conv').textContent      = F.length ? F.length+'p' : '—';
+  if(el('exp-conv-sub'))  el('exp-conv-sub').textContent  = 'candidatos analisados';
+
+  // ── Gráfico 1: evolução mensal piso médio ──
+  var meses = Object.keys(mensalMap).map(Number).sort(function(a,b){return a-b;});
+  if(el('chartExpMensal') && window.Chart && meses.length > 1){
+    new Chart(el('chartExpMensal'),{
+      type:'line',
+      data:{
+        labels: meses.map(function(m){return mLabels[m]||('M'+m);}),
+        datasets:[{
+          label:'Piso médio',
+          data: meses.map(function(m){
+            var a=mensalMap[m]; return Math.round(a.reduce(function(x,y){return x+y;},0)/a.length);
+          }),
+          borderColor:'#1A3BAD', backgroundColor:'rgba(26,59,173,.08)',
+          fill:true, tension:.35, pointBackgroundColor:'#1A3BAD', pointRadius:4
+        }]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return fmt(c.parsed.y);}}}},
+        scales:{y:{ticks:{callback:function(v){return fmt(v);},font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},
+                x:{ticks:{font:{size:9}},grid:{display:false}}}
       }
-
-      // Scatter
-      if(piso>0 && auc>0) scatterData.push({piso:piso, auc:auc, nivel:nivel});
-
-      // Top list
-      if(piso>0) topList.push({nome:nome, piso:piso, pb:pb, auc:auc, nivel:nivel, vaga:vaga});
     });
+  }
 
-    // KPIs
-    var pisoMed = pisos.length ? Math.round(pisos.reduce(function(a,b){return a+b;},0)/pisos.length) : 0;
-    var pisosSorted = pisos.slice().sort(function(a,b){return a-b;});
-    var freq = {};
-    pisos.forEach(function(p){ freq[p]=(freq[p]||0)+1; });
-    var moda = pisos.length ? pisos.reduce(function(a,b){return (freq[a]||0)>=(freq[b]||0)?a:b;}) : 0;
-    var pbMed  = paybacks.length ? Math.round(paybacks.reduce(function(a,b){return a+b;},0)/paybacks.length) : 0;
-    var pbSorted = paybacks.slice().sort(function(a,b){return a-b;});
-    var pbMed2 = pbSorted.length ? (pbSorted.length%2===0 ? Math.round((pbSorted[pbSorted.length/2-1]+pbSorted[pbSorted.length/2])/2) : pbSorted[Math.floor(pbSorted.length/2)]) : 0;
-    var pbMin  = pbSorted.length ? pbSorted[0] : 0;
-    var pbMax  = pbSorted.length ? pbSorted[pbSorted.length-1] : 0;
-
-    if(el('exp-pb-med'))    el('exp-pb-med').textContent    = pbMed   ? pbMed+'m'   : '—';
-    if(el('exp-pb-med2'))   el('exp-pb-med2').textContent   = pbMed2  ? pbMed2+'m'  : '—';
-    if(el('exp-pb-range'))  el('exp-pb-range').textContent  = (pbMin&&pbMax) ? pbMin+'m / '+pbMax+'m' : '—';
-    if(el('exp-piso-med'))  el('exp-piso-med').textContent  = pisoMed  ? fmt(pisoMed)  : '—';
-    if(el('exp-piso-moda')) el('exp-piso-moda').textContent = moda     ? fmt(moda)     : '—';
-
-    // Gráfico 1: evolução mensal
-    var meses = Object.keys(mensalMap).map(Number).sort(function(a,b){return a-b;});
-    var lblMes = meses.map(function(m){ return mLabels[m]||('M'+m); });
-    var valMes = meses.map(function(m){
-      var arr = mensalMap[m];
-      return Math.round(arr.reduce(function(a,b){return a+b;},0)/arr.length);
-    });
-    if(el('chartExpMensal') && window.Chart && lblMes.length){
-      new Chart(el('chartExpMensal'), {
-        type:'line',
-        data:{
-          labels:lblMes,
-          datasets:[{
-            label:'Piso médio',
-            data:valMes,
-            borderColor:'#1A3BAD',
-            backgroundColor:'rgba(26,59,173,.08)',
-            fill:true,
-            tension:.35,
-            pointBackgroundColor:'#1A3BAD',
-            pointRadius:4
-          }]
-        },
-        options:{
-          responsive:true, maintainAspectRatio:false,
-          plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return fmt(c.parsed.y);}}}},
-          scales:{
-            y:{ticks:{callback:function(v){return fmt(v);},font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},
-            x:{ticks:{font:{size:9}},grid:{display:false}}
-          }
+  // ── Gráfico 2: scatter piso × AuC ──
+  var nivelColor={'Sênior':'#166534','Pleno':'#92400E','Júnior':'#9D174D','—':'#475569'};
+  var scatDS={};
+  scatterData.forEach(function(d){
+    if(!scatDS[d.sen]) scatDS[d.sen]=[];
+    scatDS[d.sen].push({x:d.piso,y:d.auc});
+  });
+  if(el('chartExpScatter') && window.Chart && scatterData.length){
+    new Chart(el('chartExpScatter'),{
+      type:'scatter',
+      data:{datasets:Object.keys(scatDS).map(function(s){return{
+        label:s, data:scatDS[s],
+        backgroundColor:(nivelColor[s]||'#475569')+'99',
+        borderColor:nivelColor[s]||'#475569', pointRadius:5
+      };})},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10}},
+          tooltip:{callbacks:{label:function(c){return 'Piso '+fmt(c.parsed.x)+' · AuC R$'+c.parsed.y+'M';}}}},
+        scales:{
+          x:{title:{display:true,text:'Piso R$/mês',font:{size:9}},ticks:{callback:function(v){return fmt(v);},font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},
+          y:{title:{display:true,text:'AuC meta (MM)',font:{size:9}},ticks:{font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}
         }
-      });
-    }
-
-    // Gráfico 2: scatter piso × AuC
-    var nivelColor = {'Sênior':'#166534','Pleno':'#92400E','Júnior':'#9D174D','—':'#475569'};
-    var scatDS = {};
-    scatterData.forEach(function(d){
-      if(!scatDS[d.nivel]) scatDS[d.nivel]=[];
-      scatDS[d.nivel].push({x:d.piso, y:d.auc});
+      }
     });
-    if(el('chartExpScatter') && window.Chart && scatterData.length){
-      new Chart(el('chartExpScatter'), {
-        type:'scatter',
-        data:{
-          datasets: Object.keys(scatDS).map(function(niv){
-            return {
-              label:niv,
-              data:scatDS[niv],
-              backgroundColor:(nivelColor[niv]||'#475569')+'99',
-              borderColor:nivelColor[niv]||'#475569',
-              pointRadius:5
-            };
-          })
-        },
-        options:{
-          responsive:true, maintainAspectRatio:false,
-          plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10}},
-            tooltip:{callbacks:{label:function(c){return 'Piso '+fmt(c.parsed.x)+' · AuC R$'+c.parsed.y+'M';}}}
-          },
-          scales:{
-            x:{title:{display:true,text:'Piso R$/mês',font:{size:9}},ticks:{callback:function(v){return fmt(v);},font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},
-            y:{title:{display:true,text:'AuC meta (MM)',font:{size:9}},ticks:{font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}
-          }
-        }
-      });
-    }
+  }
 
-    // Breakdown canal × senioridade
-    var canais = Object.keys(breakdown).sort();
-    var bGrid = el('exp-breakdown-grid');
-    var bEmpty = el('exp-breakdown-empty');
-    if(bGrid && canais.length){
-      var ordNivel = ['Júnior','Pleno','Sênior','—'];
-      bGrid.innerHTML = canais.map(function(vaga){
-        var niveis = breakdown[vaga];
-        var total  = Object.values(niveis).reduce(function(s,a){return s+a.length;},0);
-        var linhas = Object.keys(niveis)
-          .sort(function(a,b){return (ordNivel.indexOf(a)||99)-(ordNivel.indexOf(b)||99);})
-          .map(function(nivel){
-            var arr    = niveis[nivel];
-            var pisoA  = arr.map(function(x){return x.piso;}).filter(Boolean);
-            var pbA    = arr.map(function(x){return x.pb;}).filter(Boolean);
-            var pisoM  = pisoA.length ? Math.round(pisoA.reduce(function(a,b){return a+b;},0)/pisoA.length) : 0;
-            var pbM    = pbA.length   ? Math.round(pbA.reduce(function(a,b){return a+b;},0)/pbA.length) : 0;
-            var cor    = nivel==='Sênior'?'#166534':nivel==='Pleno'?'#92400E':nivel==='Júnior'?'#9D174D':'#475569';
-            var bgcor  = nivel==='Sênior'?'#DCFCE7':nivel==='Pleno'?'#FEF3C7':nivel==='Júnior'?'#FCE7F3':'#F1F5F9';
-            return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--rule);">'
-              +'<span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;background:'+bgcor+';color:'+cor+';">'+nivel+'</span>'
-              +'<span style="font-size:10px;color:var(--t2);">'+(pisoM?fmt(pisoM):'—')+'</span>'
-              +'<span style="font-size:10px;color:#00915A;font-weight:700;">'+(pbM?pbM+'m':'—')+'</span>'
-              +'</div>';
-          }).join('');
-        return '<div style="background:var(--surface);border-radius:var(--r8);padding:10px;border:1px solid var(--rule);">'
-          +'<div style="font-size:10px;font-weight:700;color:var(--cobalt);margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--rule);">'+vaga
-          +'<span style="float:right;font-size:9px;font-weight:600;color:var(--t4);">'+total+'p</span></div>'
-          +'<div style="display:flex;justify-content:space-between;font-size:9px;font-weight:700;color:var(--t4);margin-bottom:3px;"><span>Nível</span><span>Piso Méd.</span><span>Payback</span></div>'
-          +linhas+'</div>';
-      }).join('');
-      if(bEmpty) bEmpty.style.display='none';
-    } else if(bEmpty){
-      bEmpty.style.display='';
-    }
+  // ── Breakdown área × senioridade ──
+  var bGrid = el('exp-breakdown-grid');
+  var bEmpty = el('exp-breakdown-empty');
+  var areas = Object.keys(breakdown).sort();
+  if(bGrid && areas.length){
+    var ordNivel=['Júnior','Pleno','Sênior','—'];
+    bGrid.innerHTML = areas.map(function(area){
+      var niveis = breakdown[area];
+      var total  = Object.values(niveis).reduce(function(s,a){return s+a.length;},0);
+      var linhas = Object.keys(niveis)
+        .sort(function(a,b){return ordNivel.indexOf(a)-ordNivel.indexOf(b);})
+        .map(function(niv){
+          var arr   = niveis[niv];
+          var pisoA = arr.map(function(x){return x.piso;}).filter(Boolean);
+          var pbA   = arr.map(function(x){return x.pb;}).filter(Boolean);
+          var pm    = pisoA.length ? Math.round(pisoA.reduce(function(a,b){return a+b;},0)/pisoA.length) : 0;
+          var pbm   = pbA.length   ? Math.round(pbA.reduce(function(a,b){return a+b;},0)/pbA.length)   : 0;
+          var cor   = niv==='Sênior'?'#166534':niv==='Pleno'?'#92400E':niv==='Júnior'?'#9D174D':'#475569';
+          var bg    = niv==='Sênior'?'#DCFCE7':niv==='Pleno'?'#FEF3C7':niv==='Júnior'?'#FCE7F3':'#F1F5F9';
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--rule);">'
+            +'<span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;background:'+bg+';color:'+cor+';">'+niv+'</span>'
+            +'<span style="font-size:10px;color:var(--t2);">'+(pm?fmt(pm):'—')+'</span>'
+            +'<span style="font-size:10px;color:#00915A;font-weight:700;">'+(pbm?pbm+'m':'—')+'</span>'
+            +'</div>';
+        }).join('');
+      return '<div style="background:var(--surface);border-radius:var(--r8);padding:10px;border:1px solid var(--rule);">'
+        +'<div style="font-size:10px;font-weight:700;color:var(--cobalt);margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--rule);">'+area
+        +'<span style="float:right;font-size:9px;color:var(--t4);">'+total+'p</span></div>'
+        +'<div style="display:flex;justify-content:space-between;font-size:9px;font-weight:700;color:var(--t4);margin-bottom:3px;"><span>Nível</span><span>Piso Méd.</span><span>Payback</span></div>'
+        +linhas+'</div>';
+    }).join('');
+    if(bEmpty) bEmpty.style.display='none';
+  } else if(bEmpty){ bEmpty.style.display=''; }
 
-    // Top propostas por custo
-    topList.sort(function(a,b){return (b.piso*Math.max(b.pb,1))-(a.piso*Math.max(a.pb,1));});
-    var top10 = topList.slice(0,10);
-    var tEl = el('exp-top-table');
-    if(tEl && top10.length){
-      var thS = 'padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);';
-      var tdS = 'padding:6px 8px;font-size:11px;border-bottom:1px solid var(--rule);';
-      var nivelTag = function(n){
-        var m={'Sênior':'background:#DCFCE7;color:#166534;','Pleno':'background:#FEF3C7;color:#92400E;','Júnior':'background:#FCE7F3;color:#9D174D;'};
-        return m[n]||'background:#F1F5F9;color:#475569;';
-      };
-      tEl.innerHTML = '<table style="width:100%;border-collapse:collapse;">'
-        +'<thead><tr style="background:var(--s2);">'
-        +'<th style="'+thS+'text-align:left;">Candidato</th>'
-        +'<th style="'+thS+'text-align:left;">Perfil</th>'
-        +'<th style="'+thS+'text-align:right;">Piso/mês</th>'
-        +'<th style="'+thS+'text-align:right;">Payback</th>'
-        +'<th style="'+thS+'text-align:right;">AuC meta</th>'
-        +'</tr></thead><tbody>'
-        +top10.map(function(r){
-          return '<tr>'
-            +'<td style="'+tdS+'font-weight:600;color:var(--t1);">'+r.nome+'</td>'
-            +'<td style="'+tdS+'"><span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;'+nivelTag(r.nivel)+'">'+r.nivel+'</span></td>'
-            +'<td style="'+tdS+'text-align:right;color:var(--cobalt);font-weight:700;">'+fmt(r.piso)+'</td>'
-            +'<td style="'+tdS+'text-align:right;color:#00915A;font-weight:600;">'+(r.pb?r.pb+'m':'—')+'</td>'
-            +'<td style="'+tdS+'text-align:right;color:var(--t2);">'+(r.auc?'R$'+r.auc+'M':'—')+'</td>'
-            +'</tr>';
-        }).join('')
-        +'</tbody></table>';
-    }
-
-  }).catch(function(e){ console.warn('Custo Expansão:', e); });
-})();
+  // ── Top 10 por custo (piso × payback) ──
+  topList.sort(function(a,b){return (b.piso*(b.pb||1))-(a.piso*(a.pb||1));});
+  var top10 = topList.slice(0,10);
+  var tEl = el('exp-top-table');
+  if(tEl && top10.length){
+    var thS='padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);';
+    var tdS='padding:6px 8px;font-size:11px;border-bottom:1px solid var(--rule);';
+    var nTag=function(n){var m={'Sênior':'background:#DCFCE7;color:#166534;','Pleno':'background:#FEF3C7;color:#92400E;','Júnior':'background:#FCE7F3;color:#9D174D;'};return m[n]||'background:#F1F5F9;color:#475569;';};
+    tEl.innerHTML='<table style="width:100%;border-collapse:collapse;">'
+      +'<thead><tr style="background:var(--s2);">'
+      +'<th style="'+thS+'text-align:left;">Candidato</th>'
+      +'<th style="'+thS+'text-align:left;">Área</th>'
+      +'<th style="'+thS+'text-align:center;">Nível</th>'
+      +'<th style="'+thS+'text-align:right;">Piso/mês</th>'
+      +'<th style="'+thS+'text-align:right;">Payback</th>'
+      +'<th style="'+thS+'text-align:right;">AuC meta</th>'
+      +'<th style="'+thS+'text-align:right;">Custo total</th>'
+      +'</tr></thead><tbody>'
+      +top10.map(function(r){return '<tr>'
+        +'<td style="'+tdS+'font-weight:600;color:var(--t1);">'+r.n+'</td>'
+        +'<td style="'+tdS+'color:var(--t3);font-size:10px;">'+r.area+'</td>'
+        +'<td style="'+tdS+'text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;'+nTag(r.sen)+'">'+r.sen+'</span></td>'
+        +'<td style="'+tdS+'text-align:right;color:var(--cobalt);font-weight:700;">'+fmt(r.piso)+'</td>'
+        +'<td style="'+tdS+'text-align:right;color:#00915A;font-weight:600;">'+(r.pb?r.pb+'m':'—')+'</td>'
+        +'<td style="'+tdS+'text-align:right;color:var(--t2);">'+(r.auc?'R$'+r.auc+'M':'—')+'</td>'
+        +'<td style="'+tdS+'text-align:right;font-weight:600;color:var(--t1);">'+fmt(r.comp)+'</td>'
+        +'</tr>';}).join('')
+      +'</tbody></table>';
+  }
+}
+// Seção 08 chamada após Blue3Data carregar (via renderPage)
 </script>
 
 <!-- MODAL NOVA CONTRATAÇÃO -->
