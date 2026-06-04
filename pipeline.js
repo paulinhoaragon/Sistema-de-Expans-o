@@ -152,19 +152,19 @@ function blue3LoadData(callback){
     if(!rows||!rows.length){ callback([]); return; }
 
     // Tenta buscar payback das propostas — falha silenciosa se não conseguir
-    supaFetch('propostas?select=telefone,payback_meses&order=versao.desc&limit=1000',{prefer:'return=representation'})
+    supaFetch('propostas?select=telefone,nome,payback_meses&order=versao.desc&limit=1000',{prefer:'return=representation'})
     .then(function(pr){ return pr.ok ? pr.json() : []; })
     .catch(function(){ return []; })
     .then(function(propRows){
-      // Join por telefone — pega a versão mais recente (já ordenado por versao desc)
-      var pbByTelMap = {};
+      // Join por telefone (primário) e nome (fallback)
+      var pbByTelMap = {}, pbByNomeMap = {};
       (propRows||[]).forEach(function(p){
-        var tel = (p.telefone||'').replace(/\D/g,'');
-        if(tel && p.payback_meses && !pbByTelMap[tel]){
-          pbByTelMap[tel] = parseInt(p.payback_meses)||0;
-        }
+        var tel  = (p.telefone||'').replace(/\D/g,'');
+        var nome = (p.nome||'').trim().toLowerCase();
+        if(tel  && p.payback_meses && !pbByTelMap[tel])  pbByTelMap[tel]  = parseInt(p.payback_meses)||0;
+        if(nome && p.payback_meses && !pbByNomeMap[nome]) pbByNomeMap[nome] = parseInt(p.payback_meses)||0;
       });
-      _processCrmRows(rows, pbByTelMap, callback);
+      _processCrmRows(rows, pbByTelMap, pbByNomeMap, callback);
     });
   })
   .catch(function(){
@@ -173,7 +173,7 @@ function blue3LoadData(callback){
   });
 }
 
-function _processCrmRows(rows, pbByIdMap, callback){
+function _processCrmRows(rows, pbByIdMap, pbByNomeMap, callback){
     // Capturar data da última atualização
     if(rows[0] && rows[0].atualizado_em){
       var d = new Date(rows[0].atualizado_em);
@@ -250,7 +250,9 @@ function _processCrmRows(rows, pbByIdMap, callback){
       o['data_declinio']         = r.data_declinio || '';
       o['historico_etapas']      = r.historico_etapas || null;
       o['lider']                 = (r.lider||'').trim();
-      o['payback_meses']         = pbByIdMap[(r.telefone||'').replace(/\D/g,'')] || parseInt(r.payback_meses) || 0;
+      var _tel  = (r.telefone||'').replace(/\D/g,'');
+      var _nome = (r.nome||'').trim().toLowerCase();
+      o['payback_meses'] = pbByIdMap[_tel] || pbByNomeMap[_nome] || parseInt(r.payback_meses) || 0;
       return o;
     });
     // Não salvar em localStorage — dados sempre frescos do Supabase
