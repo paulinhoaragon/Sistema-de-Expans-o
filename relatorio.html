@@ -587,30 +587,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   </div>
 </div>
 
-<hr class="rule">
-
-<!-- 07 PAYBACK + SIGN-INS -->
-<div style="margin-bottom:32px;">
-  <div class="sh"><span class="sn">07</span><span class="st">Análise de investimento — payback e sign-ins</span></div>
-  <!-- Payback analysis -->
-  <div class="g2">
-    <div class="card">
-      <div class="ch">Análise de sign-ins · candidatos com luva</div>
-      <div id="signin-list"></div>
-      <div class="tf"><span class="tfl">Total sign-ins</span><span class="tfv"><span id="dyn-si-footer">R$ 585.000</span></span></div>
-    </div>
-    <div class="card">
-      <div class="ch">Distribuição piso mensal × captação alvo</div>
-      <div style="position:relative;width:100%;height:220px;"><canvas id="chartPisoVsCap"></canvas></div>
-      <div class="leg" style="margin-top:8px;"><span class="li" style="font-size:11px;color:var(--t3);">Eixo X: piso mensal (R$) · Eixo Y: meta de captação (MM) · tamanho = custo total</span></div>
-    </div>
-  </div>
-</div>
-
 
 <!-- CUSTO DE EXPANSÃO -->
 <div style="margin:28px 0 0;">
-  <div class="sh"><span class="sn">08</span><span class="st">Custo de Expansão — Propostas Orçadas</span><span class="ss">Análise de payback, dispersão de custo e eficiência do simulador</span></div>
+  <div class="sh"><span class="sn">07</span><span class="st">Custo de Expansão — Propostas Orçadas</span><span class="ss">Análise de payback, dispersão de custo e eficiência do simulador</span></div>
 
   <!-- Linha 1: KPIs principais (6 cards) -->
   <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px;">
@@ -636,20 +616,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     </div>
   </div>
 
-  <!-- Linha 3: breakdown canal × senioridade + tabela top proposals -->
-  <div class="g2" style="margin-bottom:16px;">
-    <div class="card">
-      <div class="ch">Custo por canal × senioridade</div>
-      <div id="exp-breakdown-wrap">
-        <div id="exp-breakdown-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:8px;"></div>
-        <div id="exp-breakdown-empty" style="display:none;font-size:12px;color:var(--t3);padding:16px 0;">Sem dados de canal disponíveis.</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="ch">Propostas com maior custo comprometido</div>
-      <div id="exp-top-table"></div>
+  <!-- Linha 3: breakdown canal × senioridade -->
+  <div class="card" style="margin-bottom:0;">
+    <div class="ch">Custo por canal × senioridade</div>
+    <div id="exp-breakdown-wrap">
+      <div id="exp-breakdown-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0;margin-top:12px;border:1px solid var(--rule);border-radius:var(--r8);overflow:hidden;"></div>
+      <div id="exp-breakdown-empty" style="display:none;font-size:12px;color:var(--t3);padding:16px 0;text-align:center;">Sem dados de canal disponíveis.</div>
     </div>
   </div>
+</div>
 </div>
 
 
@@ -2063,32 +2038,33 @@ function renderCandListSplit(candidatos, fromFilter) {
   var totalAuC = sorted.reduce(function(s,r){return s+(r.cap||0);},0);
 
   // Cabeçalho da tabela (mesmo estilo de renderCandList)
-  var _thS2 = 'padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);';
+  var _thS2 = 'padding:5px 6px;font-size:8px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);';
   var _thC2 = _thS2+'cursor:pointer;user-select:none;';
   var TH = '<thead><tr style="background:var(--s2);">'
-    +'<th onclick="sortCandTable(\'n\')" style="'+_thC2+'text-align:left;">Candidato<span id="csi-n"></span></th>'
-    +'<th onclick="sortCandTable(\'dt\')" style="'+_thC2+'text-align:left;white-space:nowrap;">Contratação<span id="csi-dt"></span></th>'
+    +'<th onclick="sortCandTable(\'n\')" style="'+_thC2+'text-align:left;min-width:110px;">Candidato<span id="csi-n"></span></th>'
+    +'<th onclick="sortCandTable(\'dt\')" style="'+_thC2+'text-align:left;white-space:nowrap;">Contrat.<span id="csi-dt"></span></th>'
     +'<th onclick="sortCandTable(\'p\')" style="'+_thC2+'text-align:left;">Praça<span id="csi-p"></span></th>'
     +'<th style="'+_thS2+'text-align:left;">Hunter</th>'
     +'<th style="'+_thS2+'text-align:center;">Sen.</th>'
     +'<th style="'+_thS2+'text-align:center;">Status</th>'
     +'<th style="'+_thS2+'text-align:center;">MOU</th>'
     +'<th onclick="sortCandTable(\'cap\')" style="'+_thC2+'text-align:right;">AuC<span id="csi-cap"> ↓</span></th>'
-    +'<th style="'+_thS2+'text-align:right;">Piso/mês</th>'
+    +'<th style="'+_thS2+'text-align:right;">Piso</th>'
     +'<th style="'+_thS2+'text-align:right;">Sign-in</th>'
-    +'<th style="'+_thS2+'text-align:right;">Total comp.</th>'
-    +'<th style="'+_thS2+'text-align:right;">Copart. XP</th>'
+    +'<th style="'+_thS2+'text-align:right;">Payback</th>'
+    +'<th style="'+_thS2+'text-align:right;">Custo</th>'
+    +'<th style="'+_thS2+'text-align:right;">XP</th>'
     +'</tr></thead>';
 
   var senTag  = function(s){ var m={'sênior':'background:#DCFCE7;color:#166534;','pleno':'background:#FEF3C7;color:#92400E;','júnior':'background:#FCE7F3;color:#9D174D;','junior':'background:#FCE7F3;color:#9D174D;'}; return m[(s||'').toLowerCase()]||'background:var(--s2);color:var(--t2);'; };
-  var mouTag  = function(m){ return (m||'').toLowerCase()==='assinado'?'background:#DCFCE7;color:#166534;':'background:#FEF3C7;color:#92400E;'; };
+  var mouTag  = function(m){ return (m||'').toLowerCase()==='assinado'?'background:#DCFCE7;color:#166634;':'background:#FEF3C7;color:#92400E;'; };
   var stTag   = function(s){ var n=(s||'').toLowerCase(); return n==='trabalhando'?'background:#EEF2FD;color:#1A3BAD;':n==='contratado(a)'?'background:#F0FDF4;color:#15803D;':'background:var(--s2);color:var(--t3);'; };
   var senLbl  = function(s){ var m={'sênior':'Sên.','pleno':'Plen.','júnior':'Jún.','junior':'Jún.'}; return m[(s||'').toLowerCase()]||(s||''); };
   var stLbl   = function(s){ var n=(s||'').toLowerCase(); return n==='trabalhando'?'● Trab.':n==='contratado(a)'?'● Cont.':s; };
-  var fmtR2   = function(v){ if(!v||v===0) return '—'; if(v>=1000000) return 'R$'+(v/1000000).toFixed(2).replace('.',',')+'M'; return 'R$'+Math.round(v).toLocaleString('pt-BR'); };
-  var fmtAuC2 = function(v){ if(!v||v===0) return '—'; if(v>=1000) return 'R$'+(v/1000).toFixed(1).replace('.',',')+'B'; return 'R$'+v+'M'; };
+  var fmtR2   = function(v){ if(!v||v===0) return '—'; if(v>=1000000) return 'R$'+(v/1000000).toFixed(1).replace('.',',')+'M'; return 'R$'+Math.round(v/1000)+'K'; };
+  var fmtAuC2 = function(v){ if(!v||v===0) return '—'; if(v>=1000) return 'R$'+(v/1000).toFixed(1)+'B'; return 'R$'+v+'M'; };
 
-  var td = 'padding:6px 8px;font-size:11px;border-bottom:1px solid var(--rule);';
+  var td = 'padding:5px 6px;font-size:10px;border-bottom:1px solid var(--rule);';
   var makeRows = function(arr) {
     return arr.map(function(r){
       var fin = window.Blue3Data && window.Blue3Data.financeiros ? window.Blue3Data.financeiros.find(function(f){return f.n===r.n;}) : null;
@@ -2096,17 +2072,19 @@ function renderCandListSplit(candidatos, fromFilter) {
       var si   = fin ? fin.si   : (r.si  ||0);
       var comp = fin ? fin.comp : (r.comp||0);
       var xp   = fin ? fin.xp   : (r.xp  ||0);
+      var pb   = fin ? (fin.payback_meses||0) : (r.payback_meses||0);
       return '<tr>'
-        +'<td style="'+td+'font-weight:600;color:var(--t1);max-width:130px;">'+r.n+'</td>'
+        +'<td style="'+td+'font-weight:600;color:var(--t1);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+r.n+'</td>'
         +'<td style="'+td+'color:var(--t3);white-space:nowrap;">'+(r.dt||'—')+'</td>'
-        +'<td style="'+td+'color:var(--t3);font-size:10px;">'+r.p.replace('Blue3 - ','')+'</td>'
-        +'<td style="'+td+'color:var(--t2);">'+(r.h||'—')+'</td>'
-        +'<td style="'+td+'text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;'+senTag(r.sen)+'">'+senLbl(r.sen)+'</span></td>'
-        +'<td style="'+td+'text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;'+stTag(r.st)+'">'+stLbl(r.st)+'</span></td>'
-        +'<td style="'+td+'text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;'+mouTag(r.mou)+'">'+(r.mou==='Assinado'?'✓ OK':'Pend.')+'</span></td>'
+        +'<td style="'+td+'color:var(--t3);font-size:9px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+r.p.replace('Blue3 - ','')+'</td>'
+        +'<td style="'+td+'color:var(--t2);white-space:nowrap;">'+(r.h||'—')+'</td>'
+        +'<td style="'+td+'text-align:center;"><span style="font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;'+senTag(r.sen)+'">'+senLbl(r.sen)+'</span></td>'
+        +'<td style="'+td+'text-align:center;"><span style="font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;'+stTag(r.st)+'">'+stLbl(r.st)+'</span></td>'
+        +'<td style="'+td+'text-align:center;"><span style="font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;'+mouTag(r.mou)+'">'+(r.mou==='Assinado'?'✓':'Pend.')+'</span></td>'
         +'<td style="'+td+'font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+fmtAuC2(r.cap)+'</td>'
         +'<td style="'+td+'color:var(--t2);text-align:right;white-space:nowrap;">'+fmtR2(piso)+'</td>'
-        +'<td style="'+td+'color:var(--t2);text-align:right;white-space:nowrap;">'+(si>0?fmtR2(si):'—')+'</td>'
+        +'<td style="'+td+'color:var(--gold);font-weight:600;text-align:right;white-space:nowrap;">'+(si>0?fmtR2(si):'—')+'</td>'
+        +'<td style="'+td+'color:#00915A;font-weight:600;text-align:right;white-space:nowrap;">'+(pb?pb+'m':'—')+'</td>'
         +'<td style="'+td+'font-weight:600;color:var(--t1);text-align:right;white-space:nowrap;">'+fmtR2(comp)+'</td>'
         +'<td style="'+td+'color:var(--cobalt);text-align:right;white-space:nowrap;">'+(xp>0?fmtR2(xp):'—')+'</td>'
         +'</tr>';
@@ -2115,9 +2093,9 @@ function renderCandListSplit(candidatos, fromFilter) {
 
   var TFOOT = rest.length === 0
     ? '<tfoot><tr style="background:var(--s2);">'
-        +'<td colspan="7" style="padding:8px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
-        +'<td style="padding:8px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
-        +'<td colspan="4" style="padding:8px;"></td>'
+        +'<td colspan="7" style="padding:7px 6px;font-size:10px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
+        +'<td style="padding:7px 6px;font-size:12px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
+        +'<td colspan="5" style="padding:7px 6px;"></td>'
         +'</tr></tfoot>'
     : '';
 
@@ -2127,9 +2105,9 @@ function renderCandListSplit(candidatos, fromFilter) {
   if (moreEl) {
     if (rest.length) {
       var TFOOT2 = '<tfoot><tr style="background:var(--s2);">'
-        +'<td colspan="7" style="padding:8px;font-size:11px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
-        +'<td style="padding:8px;font-size:13px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
-        +'<td colspan="4" style="padding:8px;"></td>'
+        +'<td colspan="7" style="padding:7px 6px;font-size:10px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
+        +'<td style="padding:7px 6px;font-size:12px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
+        +'<td colspan="5" style="padding:7px 6px;"></td>'
         +'</tr></tfoot>';
       moreEl.innerHTML = '<table style="width:100%;border-collapse:collapse;table-layout:fixed;">'
         + '<tbody>' + makeRows(rest) + '</tbody>' + TFOOT2 + '</table>';
@@ -2922,7 +2900,7 @@ function renderSec08() {
     if(piso > 0 && auc > 0) scatterData.push({piso:piso, auc:auc, sen:sen});
 
     // Top list
-    topList.push({n:r.n, piso:piso, pb:pb, auc:auc, sen:sen, area:area, comp:r.comp||0});
+    topList.push({n:r.n, piso:piso, pb:pb, auc:auc, sen:sen, area:area, comp:r.comp||0, si:r.si||0});
   });
 
   // ── KPIs ──
@@ -3000,62 +2978,94 @@ function renderSec08() {
   var areas = Object.keys(breakdown).sort();
   if(bGrid && areas.length){
     var ordNivel=['Júnior','Pleno','Sênior','—'];
-    bGrid.innerHTML = areas.map(function(area){
+    // Todos os níveis presentes
+    var todosNiveis = [];
+    areas.forEach(function(a){ Object.keys(breakdown[a]).forEach(function(n){ if(todosNiveis.indexOf(n)<0) todosNiveis.push(n); }); });
+    todosNiveis.sort(function(a,b){ return ordNivel.indexOf(a)-ordNivel.indexOf(b); });
+
+    bGrid.innerHTML = areas.map(function(area, idx){
       var niveis = breakdown[area];
       var total  = Object.values(niveis).reduce(function(s,a){return s+a.length;},0);
-      var linhas = Object.keys(niveis)
-        .sort(function(a,b){return ordNivel.indexOf(a)-ordNivel.indexOf(b);})
-        .map(function(niv){
-          var arr   = niveis[niv];
-          var pisoA = arr.map(function(x){return x.piso;}).filter(Boolean);
-          var pbA   = arr.map(function(x){return x.pb;}).filter(Boolean);
-          var pm    = pisoA.length ? Math.round(pisoA.reduce(function(a,b){return a+b;},0)/pisoA.length) : 0;
-          var pbm   = pbA.length   ? Math.round(pbA.reduce(function(a,b){return a+b;},0)/pbA.length)   : 0;
-          var cor   = niv==='Sênior'?'#166534':niv==='Pleno'?'#92400E':niv==='Júnior'?'#9D174D':'#475569';
-          var bg    = niv==='Sênior'?'#DCFCE7':niv==='Pleno'?'#FEF3C7':niv==='Júnior'?'#FCE7F3':'#F1F5F9';
-          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--rule);">'
-            +'<span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;background:'+bg+';color:'+cor+';">'+niv+'</span>'
-            +'<span style="font-size:10px;color:var(--t2);">'+(pm?fmt(pm):'—')+'</span>'
-            +'<span style="font-size:10px;color:#00915A;font-weight:700;">'+(pbm?pbm+'m':'—')+'</span>'
-            +'</div>';
-        }).join('');
-      return '<div style="background:var(--surface);border-radius:var(--r8);padding:10px;border:1px solid var(--rule);">'
-        +'<div style="font-size:10px;font-weight:700;color:var(--cobalt);margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--rule);">'+area
-        +'<span style="float:right;font-size:9px;color:var(--t4);">'+total+'p</span></div>'
-        +'<div style="display:flex;justify-content:space-between;font-size:9px;font-weight:700;color:var(--t4);margin-bottom:3px;"><span>Nível</span><span>Piso Méd.</span><span>Payback</span></div>'
-        +linhas+'</div>';
+      var bordL  = idx > 0 ? 'border-left:1px solid var(--rule);' : '';
+
+      var linhas = todosNiveis.map(function(niv){
+        var arr   = niveis[niv] || [];
+        var pisoA = arr.map(function(x){return x.piso;}).filter(Boolean);
+        var pbA   = arr.map(function(x){return x.pb;}).filter(Boolean);
+        var pm    = pisoA.length ? Math.round(pisoA.reduce(function(a,b){return a+b;},0)/pisoA.length) : 0;
+        var pbm   = pbA.length   ? Math.round(pbA.reduce(function(a,b){return a+b;},0)/pbA.length)   : 0;
+        var cor   = niv==='Sênior'?'#166534':niv==='Pleno'?'#92400E':niv==='Júnior'?'#9D174D':'#475569';
+        var bg    = niv==='Sênior'?'#DCFCE7':niv==='Pleno'?'#FEF3C7':niv==='Júnior'?'#FCE7F3':'#F1F5F9';
+        var empty = arr.length === 0;
+        return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;padding:8px 12px;border-top:1px solid var(--rule);background:'+(empty?'var(--s2)':'var(--surface)')+';">'
+          +'<span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;width:fit-content;background:'+bg+';color:'+cor+';opacity:'+(empty?'0.35':'1')+';">'+niv+'</span>'
+          +'<span style="font-size:11px;font-weight:'+(pm?'600':'400')+';color:'+(pm?'var(--cobalt)':'var(--t4)')+';text-align:center;">'+(pm?fmt(pm):'—')+'</span>'
+          +'<span style="font-size:11px;font-weight:'+(pbm?'600':'400')+';color:'+(pbm?'#00915A':'var(--t4)')+';text-align:right;">'+(pbm?pbm+'m':'—')+'</span>'
+          +'</div>';
+      }).join('');
+
+      return '<div style="'+bordL+'">'
+        // Cabeçalho do canal
+        +'<div style="padding:12px 12px 8px;background:var(--s2);border-bottom:1px solid var(--rule);text-align:center;">'
+          +'<div style="font-size:11px;font-weight:700;color:var(--cobalt);">'+area+'</div>'
+          +'<div style="font-size:9px;color:var(--t4);margin-top:2px;">'+total+' candidato'+(total!==1?'s':'')+'</div>'
+        +'</div>'
+        // Sub-cabeçalho das colunas
+        +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:5px 12px;background:var(--s2);border-bottom:1px solid var(--rule);">'
+          +'<span style="font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t4);">Nível</span>'
+          +'<span style="font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t4);text-align:center;">Piso méd.</span>'
+          +'<span style="font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t4);text-align:right;">Payback</span>'
+        +'</div>'
+        +linhas
+        +'</div>';
     }).join('');
     if(bEmpty) bEmpty.style.display='none';
   } else if(bEmpty){ bEmpty.style.display=''; }
 
-  // ── Top 10 por custo (piso × payback) ──
-  topList.sort(function(a,b){return (b.piso*(b.pb||1))-(a.piso*(a.pb||1));});
-  var top10 = topList.slice(0,10);
+  // ── Tabela completa: todos os candidatos com custo comprometido ──
+  topList.sort(function(a,b){return (b.comp||0)-(a.comp||0);});
   var tEl = el('exp-top-table');
-  if(tEl && top10.length){
+  if(tEl && topList.length){
     var thS='padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);';
     var tdS='padding:6px 8px;font-size:11px;border-bottom:1px solid var(--rule);';
     var nTag=function(n){var m={'Sênior':'background:#DCFCE7;color:#166534;','Pleno':'background:#FEF3C7;color:#92400E;','Júnior':'background:#FCE7F3;color:#9D174D;'};return m[n]||'background:#F1F5F9;color:#475569;';};
+    var totalSI = topList.reduce(function(s,r){return s+(r.si||0);},0);
+    var totalComp = topList.reduce(function(s,r){return s+(r.comp||0);},0);
     tEl.innerHTML='<table style="width:100%;border-collapse:collapse;">'
       +'<thead><tr style="background:var(--s2);">'
       +'<th style="'+thS+'text-align:left;">Candidato</th>'
       +'<th style="'+thS+'text-align:left;">Área</th>'
       +'<th style="'+thS+'text-align:center;">Nível</th>'
       +'<th style="'+thS+'text-align:right;">Piso/mês</th>'
+      +'<th style="'+thS+'text-align:right;">Sign-in</th>'
       +'<th style="'+thS+'text-align:right;">Payback</th>'
       +'<th style="'+thS+'text-align:right;">AuC meta</th>'
       +'<th style="'+thS+'text-align:right;">Custo total</th>'
       +'</tr></thead><tbody>'
-      +top10.map(function(r){return '<tr>'
-        +'<td style="'+tdS+'font-weight:600;color:var(--t1);">'+r.n+'</td>'
-        +'<td style="'+tdS+'color:var(--t3);font-size:10px;">'+r.area+'</td>'
-        +'<td style="'+tdS+'text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;'+nTag(r.sen)+'">'+r.sen+'</span></td>'
-        +'<td style="'+tdS+'text-align:right;color:var(--cobalt);font-weight:700;">'+fmt(r.piso)+'</td>'
-        +'<td style="'+tdS+'text-align:right;color:#00915A;font-weight:600;">'+(r.pb?r.pb+'m':'—')+'</td>'
-        +'<td style="'+tdS+'text-align:right;color:var(--t2);">'+(r.auc?'R$'+r.auc+'M':'—')+'</td>'
-        +'<td style="'+tdS+'text-align:right;font-weight:600;color:var(--t1);">'+fmt(r.comp)+'</td>'
-        +'</tr>';}).join('')
-      +'</tbody></table>';
+      +topList.map(function(r){
+        var siStyle = r.si > 0 ? 'font-weight:700;color:var(--gold);' : 'color:var(--t3);';
+        return '<tr>'
+          +'<td style="'+tdS+'font-weight:600;color:var(--t1);">'+r.n+'</td>'
+          +'<td style="'+tdS+'color:var(--t3);font-size:10px;">'+r.area+'</td>'
+          +'<td style="'+tdS+'text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;'+nTag(r.sen)+'">'+r.sen+'</span></td>'
+          +'<td style="'+tdS+'text-align:right;color:var(--cobalt);font-weight:700;">'+fmt(r.piso)+'</td>'
+          +'<td style="'+tdS+'text-align:right;'+siStyle+'">'+(r.si>0?fmt(r.si):'—')+'</td>'
+          +'<td style="'+tdS+'text-align:right;color:#00915A;font-weight:600;">'+(r.pb?r.pb+'m':'—')+'</td>'
+          +'<td style="'+tdS+'text-align:right;color:var(--t2);">'+(r.auc?'R$'+r.auc+'M':'—')+'</td>'
+          +'<td style="'+tdS+'text-align:right;font-weight:600;color:var(--t1);">'+fmt(r.comp)+'</td>'
+          +'</tr>';
+      }).join('')
+      +'</tbody>'
+      +'<tfoot><tr style="background:var(--s2);">'
+      +'<td colspan="4" style="padding:8px;font-size:11px;font-weight:700;color:var(--t2);">Totais</td>'
+      +'<td style="padding:8px;text-align:right;font-weight:700;color:var(--gold);">'+(totalSI>0?fmt(totalSI):'—')+'</td>'
+      +'<td style="padding:8px;"></td>'
+      +'<td style="padding:8px;"></td>'
+      +'<td style="padding:8px;text-align:right;font-weight:700;color:var(--t1);">'+fmt(totalComp)+'</td>'
+      +'</tr></tfoot>'
+      +'</table>';
+    // Atualizar também o KPI de sign-in no rodapé se existir
+    if(el('dyn-si-footer')) el('dyn-si-footer').textContent = totalSI > 0 ? 'R$ '+totalSI.toLocaleString('pt-BR') : '—';
   }
 }
 // Seção 08 chamada após Blue3Data carregar (via renderPage)
