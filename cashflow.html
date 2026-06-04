@@ -170,7 +170,7 @@ tfoot td:first-child{text-align:left}
   </div>
 
   <!-- Tabela por assessor -->
-  <div class="sh"><div class="st">Impacto por Assessor</div><div class="ss">Total comprometido por contrato</div></div>
+  <div class="sh"><div class="st">Impacto por Assessor</div><div class="ss">Total comprometido por contrato</div><button onclick="exportarCSV()" style="margin-left:auto;font-size:10px;font-weight:700;padding:5px 14px;border-radius:6px;border:1px solid var(--cobalt);color:var(--cobalt);background:transparent;cursor:pointer;letter-spacing:.04em;display:flex;align-items:center;gap:5px;white-space:nowrap;">⬇ Exportar CSV</button></div>
   <div class="tbl-wrap" id="tb2-wrap">
     <table id="tb2-table">
       <thead>
@@ -419,6 +419,62 @@ function _updateSortIcons(key, asc) {
   });
   var el = document.getElementById('si-'+key);
   if (el) el.textContent = asc ? ' ↑' : ' ↓';
+}
+
+function exportarCSV() {
+  if (!_tbData || !_tbData.length) { alert('Sem dados para exportar.'); return; }
+  var fmtNum = function(v){ return v ? String(Math.round(v)).replace('.',',') : '0'; };
+  var fmtPeriodo = function(v){ return v ? v + ' meses' : '—'; };
+  var headers = [
+    'Assessor','Filial','Situação','Início',
+    'Piso/Mês (R$)','Período','Piso Total (R$)',
+    'Sign-in (R$)','Triggers (R$)','Total (R$)',
+    'Coparticipação XP','Estratégico','Área'
+  ];
+  var rows = _tbData.map(function(a){
+    return [
+      a.n,
+      a.p,
+      a.ativo ? 'Ativo' : 'A confirmar',
+      a.inicio || '',
+      fmtNum(a.piso),
+      fmtPeriodo(a.periodo),
+      fmtNum(a.pisoTotal),
+      fmtNum(a.si),
+      fmtNum(a.trigTotal),
+      fmtNum(a.custoTotal),
+      (a.xp && a.xp > 0) ? 'Sim' : 'Não',
+      (a.estrategico||'').toLowerCase() === 'sim' ? 'Sim' : 'Não',
+      a.area || 'Assessor'
+    ].map(function(v){
+      // Escapar aspas e envolver em aspas se necessário
+      var s = String(v).replace(/"/g,'""');
+      return /[,;\n"]/.test(s) ? '"'+s+'"' : s;
+    }).join(';');
+  });
+  // Totais
+  var totPiso = _tbData.reduce(function(s,a){return s+(a.pisoTotal||0);},0);
+  var totSI   = _tbData.reduce(function(s,a){return s+(a.si||0);},0);
+  var totTrig = _tbData.reduce(function(s,a){return s+(a.trigTotal||0);},0);
+  var totGeral= _tbData.reduce(function(s,a){return s+(a.custoTotal||0);},0);
+  var totRow  = ['TOTAL GERAL','','','','','',fmtNum(totPiso),fmtNum(totSI),fmtNum(totTrig),fmtNum(totGeral),'','',''].join(';');
+
+  var csv = '\uFEFF' // BOM para Excel reconhecer UTF-8
+    + headers.join(';') + '\n'
+    + rows.join('\n') + '\n'
+    + totRow;
+
+  var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  var hoje = new Date();
+  var data = hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');
+  a.href     = url;
+  a.download = 'blue3_impacto_assessores_'+data+'.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function sortTable(key) {
