@@ -1597,7 +1597,7 @@ function carregarPropostasCRM(telefone) {
                     'Declinada':'#991B1B;background:#FEE2E2',
                     'Expirada':'#64748B;background:#F1F5F9' };
 
-  fetch(SUPA_URL+'/rest/v1/propostas?select=*,pdf_url&telefone=eq.'+tel+'&order=versao.desc', {
+  fetch(SUPA_URL+'/rest/v1/propostas?telefone=eq.'+tel+'&order=versao.desc', {
     headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json' }
   })
   .then(function(r){ return r.json(); })
@@ -1608,9 +1608,7 @@ function carregarPropostasCRM(telefone) {
       var cor = corStatus[p.status] || '64748B;background:#F1F5F9';
       var resumo = p.resumo || (p.dados && p.dados.piso ? 'Piso R$'+p.dados.piso+'/mês' : '—');
       var data = p.criado_em ? new Date(p.criado_em).toLocaleDateString('pt-BR') : '';
-      var pdfBtn = p.pdf_url
-        ? '<a href="'+p.pdf_url+'" target="_blank" style="flex-shrink:0;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;background:#EEF2FD;color:#1A3BAD;border:1px solid #c7d2f5;text-decoration:none;white-space:nowrap;">↗ PDF</a>'
-        : '<span style="flex-shrink:0;font-size:9px;color:#CBD5E1;padding:2px 8px;">sem PDF</span>';
+      var pdfBtn = '<button onclick="abrirPDFproposta(\''+p.id+'\')" style="flex-shrink:0;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;background:#EEF2FD;color:#1A3BAD;border:1px solid #c7d2f5;cursor:pointer;white-space:nowrap;">↗ PDF</button>';
       return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;background:#f7f9ff;border:1px solid #e8edf5;margin-bottom:4px;font-size:11px;">'
         + '<span style="background:#1A3BAD;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:4px;flex-shrink:0;">v'+p.versao+'</span>'
         + '<span style="flex:1;color:#3a4268;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+resumo+'</span>'
@@ -1626,6 +1624,37 @@ function carregarPropostasCRM(telefone) {
     }).join('');
   })
   .catch(function(){ wrap.style.display='none'; });
+}
+
+function abrirPDFproposta(propId) {
+  // Busca os dados completos da proposta pelo ID
+  fetch(SUPA_URL+'/rest/v1/propostas?id=eq.'+propId, {
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json' }
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(rows){
+    if (!rows || !rows.length) { alert('Proposta não encontrada.'); return; }
+    var prop = rows[0];
+    // Salva no sessionStorage para o simulador carregar
+    sessionStorage.setItem('b3_carregar_proposta', JSON.stringify({
+      dados:     prop.dados || {},
+      nome:      prop.nome      || '',
+      telefone:  prop.telefone  || '',
+      hunter:    prop.hunter    || '',
+      crm_id:    prop.crm_id    || '',
+      praca:     prop.praca     || (prop.dados && prop.dados.praca) || '',
+      condicoes_renovacao: prop.condicoes_renovacao || null
+    }));
+    // Abre simulador com ?pdf=1 — ele carrega os dados e dispara exportPDF automaticamente
+    var url = 'simulador.html?pdf=1';
+    if (window.parent && window.parent !== window) {
+      // Dentro do iframe do Nexus — abre em nova aba
+      window.open(url, '_blank');
+    } else {
+      window.open(url, '_blank');
+    }
+  })
+  .catch(function(){ alert('Erro ao carregar proposta.'); });
 }
 
 function atualizarStatusCRM(id, status, el) {
