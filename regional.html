@@ -234,14 +234,31 @@ function sc(id,cfg){ if(_charts[id]){try{_charts[id].destroy();}catch(e){}} var 
 
 // ── Init ─────────────────────────────────────────────────────
 window.addEventListener('load', function(){
-  var tentativas=0, iv=setInterval(function(){
+  // Tentar parent por 2 segundos, depois buscar direto
+  var ok = false;
+  try{
+    ok = window.parent && window.parent.Blue3Ready &&
+         window.parent.Blue3Data && window.parent.Blue3Data._rawRows &&
+         window.parent.Blue3Data._rawRows.length > 0;
+  }catch(e){}
+
+  if(ok){
+    init(window.parent.Blue3Data);
+    return;
+  }
+
+  // Aguardar até 2s pelo parent, depois fetch direto
+  var tentativas = 0;
+  var iv = setInterval(function(){
     tentativas++;
-    var ok = false;
-    try{ ok = window.parent && window.parent.Blue3Ready && window.parent.Blue3Data && window.parent.Blue3Data._rawRows && window.parent.Blue3Data._rawRows.length > 0; }catch(e){}
-    if(ok || tentativas > 100){
+    var pronto = false;
+    try{ pronto = window.parent && window.parent.Blue3Ready && window.parent.Blue3Data && window.parent.Blue3Data._rawRows && window.parent.Blue3Data._rawRows.length > 0; }catch(e){}
+    if(pronto){
       clearInterval(iv);
-      if(ok){ init(window.parent.Blue3Data); }
-      else { fetchDireto(); }
+      init(window.parent.Blue3Data);
+    } else if(tentativas >= 13){ // ~2 segundos
+      clearInterval(iv);
+      fetchDireto();
     }
   }, 150);
 });
@@ -270,11 +287,17 @@ function fetchDireto(){
     // Montar estrutura compatível com _rawRows
     var fake = { _rawRows: rows.map(function(r){
       var tel=(r.telefone||'').replace(/\D/g,'');
-      // Extrair status do historico_etapas
-      var status = r.status||r.Status||'';
-      if(!status && r.historico_etapas && r.historico_etapas.length){
-        var last=r.historico_etapas[r.historico_etapas.length-1];
-        status=last.etapa||last.saida||'';
+      // Status: campo direto ou última etapa do histórico
+      var status = r.status || r.Status || '';
+      if(!status && r.historico_etapas){
+        var hist = typeof r.historico_etapas === 'string' ? JSON.parse(r.historico_etapas) : r.historico_etapas;
+        if(Array.isArray(hist) && hist.length){
+          // Pegar a entrada mais recente (maior data)
+          var last = hist.reduce(function(a,b){
+            return (a.entrada||a.saida||'') > (b.entrada||b.saida||'') ? a : b;
+          });
+          status = last.etapa || last.saida || '';
+        }
       }
       return {
         'Candidato':r.nome||'', 'Filial':r.praca||'', 'Hunter':r.hunter||'',
