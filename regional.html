@@ -231,21 +231,30 @@ window.addEventListener('load', function(){
     });
     _all=rows.map(function(r){
       var tel=(r.telefone||'').replace(/\D/g,'');
-      var praca=(r.praca||'').trim();
+      var praca=(r.praca||r['Praça']||'').trim();
+      // Campo status pode ser 'Status', 'status', ou vir do historico_etapas
+      var status = r.Status||r.status||'';
+      // Campo nivel pode ser 'nivel', 'Nível', 'nivel_senioridade'
+      var nivel  = r.nivel||r['Nível']||r.nivel_senioridade||r.senioridade||r.vaga||'';
+      // Se nivel === vaga (ex: "Assessor"), ignorar — nível é senioridade
+      if(nivel&&['assessor','advisor','lider','líder','offshore'].indexOf(nivel.toLowerCase())>-1) nivel='';
+      // Tentar extrair status do historico_etapas se status vazio
+      if(!status && r.historico_etapas && r.historico_etapas.length){
+        var last = r.historico_etapas[r.historico_etapas.length-1];
+        status = last.etapa||last.status||'';
+      }
       return{
         nome:r.nome||'—', tel:tel, praca:praca, regional:getReg(praca),
-        status:r.status||'', nivel:r.nivel||'', hunter:r.hunter||'',
+        status:status, nivel:nivel, hunter:r.hunter||r.Hunter||'',
         auc:parseFloat(r.auc_captado_mm||0)||0,
         piso:pisoMap[tel]||parseFloat(r.piso||0)||0,
         comp:parseFloat(r.total_comp||0)||0,
         xp:parseFloat(r.copart_xp||0)||0,
-        mou:r.mou||'', payback:pbMap[tel]||parseInt(r.payback_meses||0)||0,
+        mou:r.mou||r.MOU||'', payback:pbMap[tel]||parseInt(r.payback_meses||0)||0,
         dt_contrat:r.data_contratacao||'', instituicao:r.instituicao||''
       };
     });
-    // DEBUG — remover após confirmar
-    if(_all.length) console.log('[Regional] amostra row raw:', JSON.stringify(rows[0]));
-    if(_all.length) console.log('[Regional] amostra mapeado:', JSON.stringify(_all[0]));
+    console.log('[Regional] status amostra:', _all.slice(0,3).map(function(r){return r.nome+':'+r.status+'/'+r.nivel;}));
     // popular filtro praças
     var pracasUnicas=[...new Set(_all.map(function(r){return r.praca;}).filter(Boolean))].sort();
     var sel=document.getElementById('flt-praca');
