@@ -2,8 +2,8 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexus · Relatório Regional · Blue3</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nexus · Regional</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
@@ -13,39 +13,42 @@
   --gold:#B8962E;--canvas:#F7F8FC;--surface:#FFFFFF;--s2:#F0F2FA;
   --rule:#E2E5F0;--t1:#0A0F1E;--t2:#3A4268;--t3:#7A82A8;--t4:#A8B0CC;
   --g:#16A34A;--gp:#DCFCE7;--am:#B45309;--amp:#FEF3C7;
-  --rose:#BE185D;--rosep:#FCE7F3;--r8:8px;--r12:12px;--r16:16px;
+  --rose:#BE185D;--rosep:#FCE7F3;--r8:8px;--r12:12px;
 }
-body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;}
-.cover{background:var(--ink);min-height:160px;position:relative;overflow:hidden;}
-.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:56px 56px;pointer-events:none;}
-.cover-in{position:relative;max-width:1160px;margin:0 auto;padding:28px 44px 24px;display:flex;justify-content:space-between;align-items:flex-end;gap:32px;}
-.page{max-width:1160px;margin:0 auto;padding:28px 44px;}
-.card{background:var(--surface);border-radius:var(--r12);border:1px solid var(--rule);padding:18px 20px;}
-.ch{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--rule);}
-.sh{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:12px;border-bottom:2px solid var(--rule);}
-.sn{font-size:11px;font-weight:700;color:var(--t4);background:var(--s2);border-radius:4px;padding:2px 8px;}
-.st{font-size:17px;font-weight:600;color:var(--t1);}
-.ss{font-size:11px;color:var(--t3);margin-left:auto;}
-.kc{background:var(--surface);border-radius:var(--r12);border:1px solid var(--rule);padding:16px 18px;position:relative;overflow:hidden;}
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:13px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+.cover{background:var(--ink);min-height:140px;position:relative;overflow:hidden;}
+.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:56px 56px;}
+.cover-in{position:relative;max-width:1200px;margin:0 auto;padding:24px 40px;display:flex;justify-content:space-between;align-items:flex-end;}
+.page{max-width:1200px;margin:0 auto;padding:24px 40px;}
+.card{background:var(--surface);border-radius:var(--r12);border:1px solid var(--rule);padding:16px 18px;}
+.ch{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--rule);}
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--rule);}
+.sn{font-size:10px;font-weight:700;color:var(--t4);background:var(--s2);border-radius:4px;padding:2px 7px;}
+.st{font-size:16px;font-weight:600;color:var(--t1);}
+.ss{font-size:10px;color:var(--t3);margin-left:auto;}
+.kc{background:var(--surface);border-radius:var(--r12);border:1px solid var(--rule);padding:14px 16px;position:relative;overflow:hidden;}
 .ktr{position:absolute;top:0;left:0;right:0;height:3px;}
-.kl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;}
-.kv{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:var(--t1);line-height:1;}
-.ks{font-size:10px;color:var(--t3);margin-top:5px;}
-.kp{font-size:10px;font-weight:600;margin-top:6px;padding:2px 8px;border-radius:20px;display:inline-block;}
+.kl{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:6px;}
+.kv{font-family:'Playfair Display',serif;font-size:24px;font-weight:600;color:var(--t1);line-height:1;}
+.ks{font-size:10px;color:var(--t3);margin-top:4px;}
+.kp{font-size:9px;font-weight:600;margin-top:5px;padding:2px 7px;border-radius:20px;display:inline-block;}
 .pu{background:var(--gp);color:var(--g);}
-.hr{height:1px;background:var(--rule);margin:28px 0;}
-.fpill{font-size:10px;font-weight:600;padding:4px 12px;border-radius:20px;border:1px solid var(--rule);background:var(--canvas);color:var(--t3);cursor:pointer;transition:all .15s;}
+.pa{background:var(--amp);color:var(--am);}
+.hr{height:1px;background:var(--rule);margin:24px 0;}
+.fpill{font-size:10px;font-weight:600;padding:4px 14px;border-radius:20px;border:1px solid var(--rule);background:var(--canvas);color:var(--t3);cursor:pointer;transition:all .15s;}
 .fpill:hover{border-color:var(--cobalt);color:var(--cobalt);}
 .fpill-on{background:var(--cobalt)!important;border-color:var(--cobalt)!important;color:#fff!important;}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.tag{display:inline-block;font-size:8px;font-weight:700;padding:2px 5px;border-radius:3px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
-.mat{width:100%;border-collapse:collapse;}
-.mat th{padding:7px 10px;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);background:var(--s2);text-align:left;}
-.mat td{padding:7px 10px;font-size:11px;border-bottom:1px solid var(--rule);color:var(--t2);}
-.mat tr:last-child td{border-bottom:none;}
-.mat tr:hover td{background:var(--s2);}
-.tag{display:inline-block;font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.03em;}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+table{width:100%;border-collapse:collapse;}
+th{padding:6px 8px;font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);background:var(--s2);text-align:left;}
+td{padding:6px 8px;font-size:11px;border-bottom:1px solid var(--rule);color:var(--t2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--s2);}
+.empty{font-size:11px;color:var(--t3);padding:12px 0;}
 </style>
 </head>
 <body>
@@ -54,344 +57,375 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   <div class="cg"></div>
   <div class="cover-in">
     <div>
-      <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:600;color:#fff;line-height:1.2;">Relatório Regional</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:6px;letter-spacing:.04em;">BLUE3 EXPANSÃO · PIPELINE POR REGIONAL E PRAÇA</div>
+      <div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:#fff;">Relatório Regional</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px;letter-spacing:.04em;">BLUE3 EXPANSÃO · VISÃO COMPLETA POR REGIONAL</div>
     </div>
     <div style="text-align:right;">
-      <div id="cover-regional" style="font-size:18px;font-weight:600;color:rgba(255,255,255,.9);">Todas as regionais</div>
-      <div id="cover-data" style="font-size:11px;color:rgba(255,255,255,.35);margin-top:4px;">—</div>
+      <div id="cover-reg" style="font-size:17px;font-weight:600;color:rgba(255,255,255,.9);">Todas as regionais</div>
+      <div id="cover-data" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:3px;">—</div>
     </div>
   </div>
 </div>
 
-<!-- FILTROS -->
-<div style="background:var(--surface);border-bottom:1px solid var(--rule);padding:12px 44px;max-width:1160px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-  <span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-right:4px;">Regional:</span>
-  <button onclick="setRegional('todas',this)" class="fpill fpill-on" id="pill-todas">Todas</button>
-  <button onclick="setRegional('Tamires',this)" class="fpill" id="pill-Tamires">Tamires</button>
-  <button onclick="setRegional('Yokoy',this)" class="fpill" id="pill-Yokoy">Yokoy</button>
-  <button onclick="setRegional('Bruno',this)" class="fpill" id="pill-Bruno">Bruno</button>
-  <div style="width:1px;height:18px;background:var(--rule);margin:0 4px;"></div>
-  <span style="font-size:10px;color:var(--t3);">Total no CRM: <strong id="filtro-count" style="color:var(--t1);">—</strong></span>
+<!-- NAV REGIONAIS -->
+<div style="background:var(--surface);border-bottom:1px solid var(--rule);padding:10px 40px;max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+  <span style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-right:6px;">REGIONAL:</span>
+  <button onclick="setReg('todas',this)" class="fpill fpill-on" id="pr-todas">Todas</button>
+  <button onclick="setReg('Tamires',this)" class="fpill" id="pr-Tamires">Tamires</button>
+  <button onclick="setReg('Yokoy',this)" class="fpill" id="pr-Yokoy">Yokoy</button>
+  <button onclick="setReg('Bruno',this)" class="fpill" id="pr-Bruno">Bruno</button>
+  <button onclick="setReg('MariaLaura',this)" class="fpill" id="pr-MariaLaura">Maria Laura</button>
+  <div style="width:1px;height:16px;background:var(--rule);margin:0 4px;"></div>
+  <span style="font-size:10px;color:var(--t3);">CRM: <strong id="nav-total" style="color:var(--t1);">—</strong> candidatos</span>
 </div>
 
-<div class="page">
+<div class="page" id="loading" style="padding-top:60px;text-align:center;color:var(--t3);">Carregando dados...</div>
+<div class="page" id="main" style="display:none;">
 
-  <!-- 01 KPIs -->
-  <div style="margin-bottom:28px;">
-    <div class="sh"><span class="sn">01</span><span class="st">Visão geral da regional</span><span class="ss" id="ss-regional">Todas as regionais</span></div>
-    <div class="g4" style="margin-bottom:12px;">
-      <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Ativos</div><div class="kv"><span id="kpi-ativos">—</span></div><div class="ks" id="kpi-ativos-sub">contratados ativos</div></div>
-      <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">AuC mapeado</div><div class="kv"><span id="kpi-auc">—</span></div><div class="ks" id="kpi-auc-sub">meta contratual</div></div>
-      <div class="kc"><div class="ktr" style="background:#7C3AED;"></div><div class="kl">Em negociação</div><div class="kv"><span id="kpi-pipeline">—</span></div><div class="ks">candidatos quentes</div></div>
-      <div class="kc"><div class="ktr" style="background:var(--am);"></div><div class="kl">Custo comprometido</div><div class="kv"><span id="kpi-custo">—</span></div><div class="ks" id="kpi-payback">Payback médio: —</div></div>
+  <!-- 01 VISÃO GERAL -->
+  <div style="margin-bottom:24px;">
+    <div class="sh"><span class="sn">01</span><span class="st">Visão geral</span><span class="ss" id="ss01">—</span></div>
+    <div class="g5" style="margin-bottom:12px;">
+      <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Ativos (trab. + cont.)</div><div class="kv" id="k-ativos">—</div><div class="ks" id="k-ativos-s">—</div></div>
+      <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">AuC mapeado total</div><div class="kv" id="k-auc">—</div><div class="ks" id="k-auc-s">—</div><div class="kp pu" id="k-auc-med">—</div></div>
+      <div class="kc"><div class="ktr" style="background:#7C3AED;"></div><div class="kl">Em negociação</div><div class="kv" id="k-neg">—</div><div class="ks">candidatos quentes</div></div>
+      <div class="kc"><div class="ktr" style="background:var(--am);"></div><div class="kl">Custo total comprometido</div><div class="kv" id="k-custo">—</div><div class="ks" id="k-custo-s">média/pessoa</div><div class="kp pa" id="k-payback">Payback: —</div></div>
+      <div class="kc"><div class="ktr" style="background:var(--rose);"></div><div class="kl">Copart. XP comprometida</div><div class="kv" id="k-xp">—</div><div class="ks" id="k-liq">Líquido Blue3: —</div></div>
     </div>
-    <div class="g3">
-      <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">% Sênior</div><div class="kv"><span id="kpi-senior">—</span></div><div class="ks" id="kpi-senior-sub">dos ativos</div></div>
-      <div class="kc"><div class="ktr" style="background:var(--am);"></div><div class="kl">Taxa de ativação</div><div class="kv"><span id="kpi-ativacao">—</span></div><div class="ks">já trabalhando</div></div>
-      <div class="kc"><div class="ktr" style="background:var(--cobalt);"></div><div class="kl">MOU pendente</div><div class="kv"><span id="kpi-mou-pend">—</span></div><div class="ks">aguardando assinatura</div></div>
+    <div class="g4">
+      <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">Trabalhando</div><div class="kv" id="k-trab">—</div><div class="ks">em operação</div></div>
+      <div class="kc"><div class="ktr" style="background:var(--cobalt);"></div><div class="kl">Taxa de ativação</div><div class="kv" id="k-ativ">—</div><div class="ks">contratados operando</div></div>
+      <div class="kc"><div class="ktr" style="background:var(--am);"></div><div class="kl">MOU pendente</div><div class="kv" id="k-mou">—</div><div class="ks">aguardando assinatura</div></div>
+      <div class="kc"><div class="ktr" style="background:var(--rose);"></div><div class="kl">Desistências pós-contrato</div><div class="kv" id="k-desist">—</div><div class="ks" id="k-desist-s">taxa sobre ativos</div></div>
     </div>
   </div>
 
   <div class="hr"></div>
 
-  <!-- 02 Funil -->
-  <div style="margin-bottom:28px;">
-    <div class="sh"><span class="sn">02</span><span class="st">Pipeline por etapa — funil completo</span><span class="ss">Todos os candidatos no CRM</span></div>
-    <div id="funil-regional" style="display:flex;gap:0;border-radius:var(--r12);overflow:hidden;margin-bottom:16px;"></div>
-    <div id="etapas-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;"></div>
-  </div>
-
-  <div class="hr"></div>
-
-  <!-- 03 Pipeline por praça — TABELA -->
-  <div style="margin-bottom:28px;">
-    <div class="sh"><span class="sn">03</span><span class="st">Pipeline por praça</span><span class="ss">Candidatos por cidade e etapa</span></div>
+  <!-- 02 FUNIL + PRAÇAS -->
+  <div style="margin-bottom:24px;">
+    <div class="sh"><span class="sn">02</span><span class="st">Pipeline completo — funil e praças</span><span class="ss">Todos os candidatos no CRM desta regional</span></div>
+    <div id="funil-wrap" style="display:flex;gap:0;border-radius:var(--r12);overflow:hidden;margin-bottom:16px;"></div>
     <div class="card">
-      <table class="mat" id="pracas-table"></table>
+      <div class="ch">Distribuição por praça e etapa</div>
+      <div style="overflow-x:auto;"><table id="tbl-pracas"></table></div>
     </div>
   </div>
 
   <div class="hr"></div>
 
-  <!-- 04 Contratados ativos -->
-  <div style="margin-bottom:28px;">
-    <div class="sh"><span class="sn">04</span><span class="st">Contratados ativos</span><span class="ss">Assessores em operação ou contratados</span></div>
-    <div id="contratados-vazio" style="display:none;font-size:12px;color:var(--t3);padding:8px 0 16px;">Nenhum contratado ativo nesta regional.</div>
-    <div class="g2">
+  <!-- 03 CONTRATADOS — TABELA COMPLETA -->
+  <div style="margin-bottom:24px;">
+    <div class="sh">
+      <span class="sn">03</span><span class="st">Contratados ativos — carteira, proposta e custo</span>
+      <span class="ss" id="ss03">—</span>
+    </div>
+    <!-- KPIs financeiros -->
+    <div class="g4" style="margin-bottom:14px;">
+      <div class="kc"><div class="ktr" style="background:var(--cobalt);"></div><div class="kl">Piso total mensal</div><div class="kv" id="f-piso">—</div><div class="ks">compromisso mensal</div></div>
+      <div class="kc"><div class="ktr" style="background:var(--gold);"></div><div class="kl">Sign-ins (luvas)</div><div class="kv" id="f-si">—</div><div class="ks" id="f-si-s">— com luva</div></div>
+      <div class="kc"><div class="ktr" style="background:var(--am);"></div><div class="kl">Total comp. comprometido</div><div class="kv" id="f-comp">—</div><div class="ks">piso + luva + triggers</div></div>
+      <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">Custo/MM captado</div><div class="kv" id="f-customm">—</div><div class="ks">eficiência de expansão</div></div>
+    </div>
+    <div class="card">
+      <div id="tbl-cont-top"></div>
+      <div id="tbl-cont-rest" style="display:none;"></div>
+      <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+        <div id="tbl-cont-rodape" style="font-size:10px;color:var(--t3);"></div>
+        <button id="btn-cont" onclick="toggleCont()" style="display:none;font-size:10px;font-weight:700;padding:4px 12px;border-radius:4px;border:none;background:var(--cobalt-pl);color:var(--cobalt);cursor:pointer;">▼ Ver todos</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hr"></div>
+
+  <!-- 04 MOVIMENTO DO MÊS -->
+  <div style="margin-bottom:24px;">
+    <div class="sh"><span class="sn">04</span><span class="st">Movimento do período</span><span class="ss">Entradas, ativações e desistências</span></div>
+    <div class="g3">
       <div class="card">
-        <div class="ch">Contratações por mês</div>
-        <div style="position:relative;height:180px;"><canvas id="chartMensal"></canvas></div>
+        <div class="ch">Entradas por mês</div>
+        <div style="position:relative;height:180px;"><canvas id="chart-mensal"></canvas></div>
       </div>
       <div class="card">
         <div class="ch">Senioridade dos ativos</div>
-        <div style="position:relative;height:180px;"><canvas id="chartSenioridade"></canvas></div>
-        <div id="leg-senioridade" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:10px;"></div>
+        <div style="position:relative;height:180px;"><canvas id="chart-sen"></canvas></div>
+        <div id="leg-sen" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:10px;"></div>
+      </div>
+      <div class="card">
+        <div class="ch">Desistências pós-contrato</div>
+        <div id="desist-lista" style="max-height:200px;overflow-y:auto;"></div>
       </div>
     </div>
   </div>
 
   <div class="hr"></div>
 
-  <!-- 05 Candidatos contratados -->
-  <div style="margin-bottom:28px;">
-    <div class="sh">
-      <span class="sn">05</span><span class="st">Candidatos contratados — carteiras e propostas</span>
-      <span class="ss" id="cont-count">—</span>
-    </div>
+  <!-- 05 PIPELINE QUENTE -->
+  <div style="margin-bottom:24px;">
+    <div class="sh"><span class="sn">05</span><span class="st">Pipeline quente — em negociação</span><span class="ss" id="ss05">candidatos próximos de fechar</span></div>
     <div class="card">
-      <div id="contratados-top"></div>
-      <div id="contratados-rest" style="display:none;"></div>
-      <div style="margin-top:10px;display:flex;justify-content:flex-end;">
-        <button id="btn-exp-cont" onclick="toggleExpCont()" style="display:none;font-size:10px;font-weight:700;padding:4px 12px;border-radius:4px;border:none;background:var(--cobalt-pl);color:var(--cobalt);cursor:pointer;">▼ Ver todos</button>
-      </div>
+      <div id="tbl-neg"></div>
     </div>
   </div>
 
-</div>
+  <div class="hr"></div>
+
+  <!-- 06 VISÃO POR PRAÇA — CUSTO -->
+  <div style="margin-bottom:24px;">
+    <div class="sh"><span class="sn">06</span><span class="st">Custo por praça</span><span class="ss">Investimento e retorno esperado por cidade</span></div>
+    <div id="pracas-custo-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;"></div>
+  </div>
+
+</div><!-- /main -->
 
 <script>
-// ── Mapeamento regional ───────────────────────────────────────
-var REGIONAIS = {
-  'Tamires':['Bauru','Campinas','Curitiba','Franca','Poços de Caldas','Ribeirão Preto','Rio de Janeiro','São José do Rio Preto','Noventena'],
-  'Yokoy':  ['Anywhere','Marília','São José dos Campos','São Paulo'],
-  'Bruno':  ['Goiânia','Uberlândia','Brasília','Belo Horizonte','Belém']
+// ── Mapeamento regional ──────────────────────────────────────
+var REGS = {
+  'Tamires':    {praças:['Bauru','Campinas','Curitiba','Franca','Poços de Caldas','Ribeirão Preto','Rio de Janeiro','São José do Rio Preto','Noventena'], tipo:'praca'},
+  'Yokoy':      {praças:['Anywhere','Marília','São José dos Campos','São Paulo'], tipo:'praca'},
+  'Bruno':      {praças:['Goiânia','Uberlândia','Brasília','Belo Horizonte','Belém'], tipo:'praca'},
+  'MariaLaura': {praças:[], vagas:['Vem Ser Blue','Future','vem ser blue','future'], tipo:'vaga'}
 };
-var RCORES = {'Tamires':'#7C3AED','Yokoy':'#1A3BAD','Bruno':'#00915A'};
-var RBGS   = {'Tamires':'#F5F3FF','Yokoy':'#EEF2FD','Bruno':'#F0FDF4'};
+var RCORES = {'Tamires':'#7C3AED','Yokoy':'#1A3BAD','Bruno':'#00915A','MariaLaura':'#BE185D'};
+var RLABEL = {'Tamires':'Tamires','Yokoy':'Yokoy','Bruno':'Bruno','MariaLaura':'Maria Laura'};
 
-var ns = function(s){ return (s||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); };
-var normP = function(p){ return ns((p||'').replace(/^Blue3\s*[-–]\s*/i,'').trim()); };
+var ns  = function(s){ return (s||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); };
+var npx = function(p){ return ns((p||'').replace(/^Blue3\s*[-–]\s*/i,'')); };
 var P2R = {};
-Object.keys(REGIONAIS).forEach(function(r){ REGIONAIS[r].forEach(function(p){ P2R[ns(p)]=r; }); });
-var getReg = function(p){ return P2R[normP(p)]||null; };
+Object.keys(REGS).forEach(function(r){
+  (REGS[r].praças||[]).forEach(function(p){ P2R[ns(p)] = r; });
+});
+var getReg = function(r){ // r = row object
+  var praca = ns((r.p||r['Filial']||'').replace(/^Blue3\s*[-–]\s*/i,''));
+  var vaga  = ns(r.area||r.vaga||r['Área']||'');
+  if(vaga.includes('vem ser')||vaga.includes('future')) return 'MariaLaura';
+  return P2R[praca] || null;
+};
 
-// Status normalizado — mapear variações
 var normSt = function(s){
   var n = ns(s||'');
-  if(n.includes('negoc'))return 'negociacao';
-  if(n.includes('qualif'))return 'qualificacao';
-  if(n.includes('prospec'))return 'prospeccao';
-  if(n.includes('trabalh'))return 'trabalhando';
-  if(n.includes('contrat'))return 'contratado';
-  if(n.includes('declin'))return 'declinou';
-  if(n.includes('desist'))return 'desistencia';
-  if(n.includes('contato'))return 'contatofuturo';
+  if(n.includes('negoc')) return 'negociacao';
+  if(n.includes('qualif')) return 'qualificacao';
+  if(n.includes('prospec')) return 'prospeccao';
+  if(n.includes('trabalh')) return 'trabalhando';
+  if(n.includes('contrat')) return 'contratado';
+  if(n.includes('declin')) return 'declinou';
+  if(n.includes('desist')) return 'desistencia';
   return n;
 };
 
-var ETAPAS = [
-  {key:'prospeccao',   label:'Prospecção',    cor:'#94A3B8'},
-  {key:'qualificacao', label:'Qualificação',  cor:'#B45309'},
-  {key:'negociacao',   label:'Negociação',    cor:'#2952E3'},
-  {key:'contratado',   label:'Contratado(a)', cor:'#1A3BAD'},
-  {key:'trabalhando',  label:'Trabalhando',   cor:'#16A34A'},
-  {key:'declinou',     label:'Declinou',      cor:'#DC2626'},
-  {key:'desistencia',  label:'Desistência',   cor:'#7C3AED'}
-];
-var etaCor = function(s){
-  var e=ETAPAS.find(function(x){return x.key===normSt(s);});
-  return e?{bg:'',cor:e.cor}:{bg:'',cor:'#94A3B8'};
-};
-var etaLabel = function(s){
-  var e=ETAPAS.find(function(x){return x.key===normSt(s);});
-  return e?e.label:(s||'—');
-};
-var senTag = function(n){
-  var m={'sênior':'background:#DCFCE7;color:#166534;','senior':'background:#DCFCE7;color:#166534;','pleno':'background:#FEF3C7;color:#92400E;','júnior':'background:#FCE7F3;color:#9D174D;','junior':'background:#FCE7F3;color:#9D174D;'};
-  return m[ns(n||'')]||'background:#F1F5F9;color:#475569;';
-};
+var fmtM  = function(v){ if(!v||v===0)return'—'; if(v>=1e6)return'R$'+(v/1e6).toFixed(1).replace('.',',')+'M'; if(v>=1e3)return'R$'+Math.round(v/1e3)+'K'; return'R$'+v.toLocaleString('pt-BR'); };
+var fmtB  = function(v){ if(!v||v===0)return'—'; if(v>=1000)return'R$'+(v/1000).toFixed(1)+'B'; return'R$'+v+'M'; };
+var set   = function(id,v){ var e=document.getElementById(id); if(e)e.textContent=v; };
+var tsCor = function(s){ var n=normSt(s); return n==='trabalhando'?'background:#EEF2FD;color:#1A3BAD;':n==='contratado'?'background:#F0FDF4;color:#15803D;':n==='negociacao'?'background:#EDE9FE;color:#5B21B6;':n==='qualificacao'?'background:#FEF3C7;color:#92400E;':n==='prospeccao'?'background:#F1F5F9;color:#475569;':'background:#FEE2E2;color:#991B1B;'; };
+var tsLbl = function(s){ var n=normSt(s); return n==='trabalhando'?'● Trab.':n==='contratado'?'● Cont.':n==='negociacao'?'Neg.':n==='qualificacao'?'Qual.':n==='prospeccao'?'Prosp.':s||'—'; };
+var snTag = function(n){ var m={'sênior':'background:#DCFCE7;color:#166534;','senior':'background:#DCFCE7;color:#166534;','pleno':'background:#FEF3C7;color:#92400E;','júnior':'background:#FCE7F3;color:#9D174D;','junior':'background:#FCE7F3;color:#9D174D;'}; return m[ns(n||'')]||'background:#F1F5F9;color:#475569;'; };
+var mouTag= function(m){ return ns(m||'')==='assinado'?'background:#DCFCE7;color:#166534;':'background:#FEF3C7;color:#92400E;'; };
 
 // ── Estado ────────────────────────────────────────────────────
-var _reg = 'todas', _fPraca='', _fEtapa='', _fSen='';
-var _all = [], _expandido = false, _chartReg = {};
+var _regAtiva = 'todas';
+var _rawAll   = [];   // todos _rawRows do pipeline
+var _finAll   = [];   // todos financeiros
+var _expCont  = false;
+var _charts   = {};
 
-function sc(id,cfg){ if(_chartReg[id]){try{_chartReg[id].destroy();}catch(e){}} var el=document.getElementById(id);if(!el)return; _chartReg[id]=new Chart(el,cfg); }
-function set(id,v){ var e=document.getElementById(id);if(e)e.textContent=v; }
-function fmtM(v){ if(!v||v===0)return'—';if(v>=1e6)return'R$'+(v/1e6).toFixed(1).replace('.',',')+'M';if(v>=1e3)return'R$'+Math.round(v/1e3)+'K';return'R$'+v.toLocaleString('pt-BR'); }
-function fmtAuC(v){ if(!v||v===0)return'—';if(v>=1000)return'R$'+(v/1000).toFixed(1)+'B';return'R$'+v+'M'; }
+function sc(id,cfg){ if(_charts[id]){try{_charts[id].destroy();}catch(e){}} var el=document.getElementById(id); if(!el)return; _charts[id]=new Chart(el,cfg); }
 
-// ── Carregar ──────────────────────────────────────────────────
+// ── Init ─────────────────────────────────────────────────────
 window.addEventListener('load', function(){
-  var url='https://cjimsplgxrwkqgzegnkq.supabase.co';
-  var key='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
-  try{ if(window.parent&&window.parent.SUPA_URL)url=window.parent.SUPA_URL; if(window.parent&&window.parent.SUPA_KEY)key=window.parent.SUPA_KEY; }catch(e){}
-  var hdr={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json'};
+  var tentativas=0, iv=setInterval(function(){
+    tentativas++;
+    var ok = false;
+    try{ ok = window.parent && window.parent.Blue3Ready && window.parent.Blue3Data && window.parent.Blue3Data._rawRows && window.parent.Blue3Data._rawRows.length > 0; }catch(e){}
+    if(ok || tentativas > 100){
+      clearInterval(iv);
+      if(ok){ init(window.parent.Blue3Data); }
+      else { fetchDireto(); }
+    }
+  }, 150);
+});
 
+function fetchDireto(){
+  var url='https://cjimsplgxrwkqgzegnkq.supabase.co';
+  var key='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FgemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+  try{ if(window.parent&&window.parent.SUPA_URL)url=window.parent.SUPA_URL; if(window.parent&&window.parent.SUPA_KEY)key=window.parent.SUPA_KEY; }catch(e){}
+  var hdr={'apikey':key,'Authorization':'Bearer '+key};
   Promise.all([
     fetch(url+'/rest/v1/crm_candidatos?limit=2000',{headers:hdr}).then(function(r){return r.json();}),
     fetch(url+'/rest/v1/propostas?select=telefone,payback_meses,dados&limit=2000',{headers:hdr}).then(function(r){return r.json();}).catch(function(){return[];})
   ]).then(function(res){
     var rows=res[0]||[], props=res[1]||[];
-    var pbMap={},pisoMap={};
+    var pbMap={},pisoMap={},compMap={},xpMap={};
     props.forEach(function(p){
       var tel=(p.telefone||'').replace(/\D/g,'');
-      if(tel&&p.payback_meses&&!pbMap[tel])pbMap[tel]=parseInt(p.payback_meses)||0;
-      if(tel&&p.dados&&p.dados.piso&&!pisoMap[tel])pisoMap[tel]=parseFloat(String(p.dados.piso).replace(',','.'))||0;
-    });
-    _all=rows.map(function(r){
-      var tel=(r.telefone||'').replace(/\D/g,'');
-      var praca=(r.praca||r['Praça']||'').trim();
-      // Campo status pode ser 'Status', 'status', ou vir do historico_etapas
-      var status = r.Status||r.status||'';
-      // Campo nivel pode ser 'nivel', 'Nível', 'nivel_senioridade'
-      var nivel  = r.nivel||r['Nível']||r.nivel_senioridade||r.senioridade||r.vaga||'';
-      // Se nivel === vaga (ex: "Assessor"), ignorar — nível é senioridade
-      if(nivel&&['assessor','advisor','lider','líder','offshore'].indexOf(nivel.toLowerCase())>-1) nivel='';
-      // Tentar extrair status do historico_etapas se status vazio
-      if(!status && r.historico_etapas && r.historico_etapas.length){
-        var last = r.historico_etapas[r.historico_etapas.length-1];
-        status = last.etapa||last.status||'';
+      if(!tel)return;
+      if(p.payback_meses&&!pbMap[tel])pbMap[tel]=parseInt(p.payback_meses)||0;
+      if(p.dados){
+        if(p.dados.piso&&!pisoMap[tel])pisoMap[tel]=parseFloat(String(p.dados.piso).replace(',','.'))||0;
+        if(p.dados.comp&&!compMap[tel])compMap[tel]=parseFloat(p.dados.comp)||0;
+        if(p.dados.xp&&!xpMap[tel])xpMap[tel]=parseFloat(p.dados.xp)||0;
       }
-      return{
-        nome:r.nome||'—', tel:tel, praca:praca, regional:getReg(praca),
-        status:status, nivel:nivel, hunter:r.hunter||r.Hunter||'',
-        auc:parseFloat(r.auc_captado_mm||0)||0,
-        piso:pisoMap[tel]||parseFloat(r.piso||0)||0,
-        comp:parseFloat(r.total_comp||0)||0,
-        xp:parseFloat(r.copart_xp||0)||0,
-        mou:r.mou||r.MOU||'', payback:pbMap[tel]||parseInt(r.payback_meses||0)||0,
-        dt_contrat:r.data_contratacao||'', instituicao:r.instituicao||''
-      };
     });
-    console.log('[Regional] status amostra:', _all.slice(0,3).map(function(r){return r.nome+':'+r.status+'/'+r.nivel;}));
-    // popular filtro praças
-    var pracasUnicas=[...new Set(_all.map(function(r){return r.praca;}).filter(Boolean))].sort();
-    var sel=document.getElementById('flt-praca');
-    if(sel)pracasUnicas.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p.replace('Blue3 - ','');sel.appendChild(o);});
-    // data
-    var hoje=new Date(),meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-    var el=document.getElementById('cover-data');if(el)el.textContent=hoje.getDate()+' de '+meses[hoje.getMonth()]+' de '+hoje.getFullYear();
-    renderTudo();
-  }).catch(function(e){
-    console.error(e);
-    document.querySelector('.page').innerHTML='<div style="padding:40px;text-align:center;color:var(--t3);">Erro ao carregar: '+e.message+'</div>';
-  });
-});
+    // Montar estrutura compatível com _rawRows
+    var fake = { _rawRows: rows.map(function(r){
+      var tel=(r.telefone||'').replace(/\D/g,'');
+      // Extrair status do historico_etapas
+      var status = r.status||r.Status||'';
+      if(!status && r.historico_etapas && r.historico_etapas.length){
+        var last=r.historico_etapas[r.historico_etapas.length-1];
+        status=last.etapa||last.saida||'';
+      }
+      return {
+        'Candidato':r.nome||'', 'Filial':r.praca||'', 'Hunter':r.hunter||'',
+        'Senioridade':r.nivel||'', 'Área':r.vaga||r.area||'Assessor',
+        'Status':status, 'MOU':r.mou||'',
+        'Total Captação (MM)':(r.auc_captado_mm||0)*1e6,
+        'Piso':pisoMap[tel]||r.piso||0,
+        'Sign in':r.sign_in||0,
+        'Total Comp.':compMap[tel]||r.total_comp||0,
+        'Detalhe Coparticipação':xpMap[tel]||r.copart_xp||0,
+        'Data de Contratação':r.data_contratacao||'',
+        'payback_meses':pbMap[tel]||r.payback_meses||0,
+        '_foi_contratado':!!(r.data_contratacao),
+        'data_entrada':r.data_entrada||''
+      };
+    }), financeiros:[], candidatos:[] };
+    init(fake);
+  }).catch(function(e){ document.getElementById('loading').textContent='Erro: '+e.message; });
+}
 
-// ── Controles ─────────────────────────────────────────────────
-function setRegional(reg,btn){
-  _reg=reg;
-  document.querySelectorAll('.fpill[id^=pill-]').forEach(function(b){b.classList.remove('fpill-on');});
+function init(BD){
+  var raw = BD._rawRows || [];
+  set('nav-total', raw.length);
+  // Data
+  var hoje=new Date(),ml=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  set('cover-data', hoje.getDate()+' de '+ml[hoje.getMonth()]+' de '+hoje.getFullYear());
+
+  // Mapear todos os rows
+  _rawAll = raw.map(function(r){
+    return {
+      n:   (r['Candidato']||r.nome||'').trim(),
+      p:   (r['Filial']||r.praca||'').trim(),
+      h:   (r['Hunter']||r.hunter||'').trim(),
+      sen: (r['Senioridade']||r.nivel||'').trim(),
+      area:(r['Área']||r['Area']||r.vaga||'Assessor').trim(),
+      st:  (r['Status']||r.status||'').trim(),
+      mou: (r['MOU']||r.mou||'').trim(),
+      cap: Math.round(parseFloat(r['Total Captação (MM)']||0)/1e6)||parseFloat(r.auc_captado_mm||0)||0,
+      piso:parseFloat(r['Piso']||r.piso||0)||0,
+      si:  parseFloat(r['Sign in']||r.sign_in||0)||0,
+      comp:parseFloat(r['Total Comp.']||r.total_comp||0)||0,
+      xp:  parseFloat(r['Detalhe Coparticipação']||r.copart_xp||0)||0,
+      dt:  r['Data de Contratação']||r.data_contratacao||'',
+      pb:  parseInt(r['payback_meses']||r.payback_meses||0)||0,
+      foiC:!!(r['_foi_contratado']||r.data_contratacao),
+      org: (r['Origem']||r.instituicao||'').trim(),
+      dtEnt:r['data_entrada']||r.data_entrada||''
+    };
+  }).filter(function(r){return r.n;});
+
+  // Financeiros do pipeline se disponível
+  _finAll = BD.financeiros || [];
+
+  document.getElementById('loading').style.display='none';
+  document.getElementById('main').style.display='';
+  renderTudo();
+}
+
+function setReg(reg, btn){
+  _regAtiva = reg;
+  document.querySelectorAll('.fpill[id^=pr-]').forEach(function(b){b.classList.remove('fpill-on');});
   if(btn)btn.classList.add('fpill-on');
-  set('cover-regional',reg==='todas'?'Todas as regionais':'Regional '+reg);
+  var lbl = reg==='todas'?'Todas as regionais':(RLABEL[reg]||reg);
+  set('cover-reg', lbl);
+  _expCont = false;
   renderTudo();
 }
-function aplicarFiltros(){
-  _fPraca=(document.getElementById('flt-praca')||{}).value||'';
-  _fEtapa=(document.getElementById('flt-etapa')||{}).value||'';
-  _fSen=(document.getElementById('flt-sen')||{}).value||'';
-  _expandido=false;
-  renderTudo();
-}
-function resetFiltros(){
-  _fPraca=_fEtapa=_fSen='';
-  ['flt-praca','flt-etapa','flt-sen'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
-  _expandido=false; renderTudo();
-}
-function toggleExpandir(){
-  _expandido=!_expandido;
-  var rest=document.getElementById('candidatos-rest');
-  var btn=document.getElementById('btn-expandir');
-  if(rest)rest.style.display=_expandido?'':'none';
-  if(btn)btn.textContent=_expandido?'▲ Recolher':'▼ Ver todos';
+
+// ── Filtrar por regional ──────────────────────────────────────
+function filtrar(rows){
+  if(_regAtiva==='todas') return rows;
+  return rows.filter(function(r){ return getReg(r)===_regAtiva; });
 }
 
-// ── Dados filtrados ───────────────────────────────────────────
-function getRegFiltrado(){
-  return _reg==='todas'?_all:_all.filter(function(r){return r.regional===_reg;});
-}
-function getCandFiltrado(){
-  return getRegFiltrado().filter(function(r){
-    if(_fPraca&&r.praca!==_fPraca)return false;
-    if(_fEtapa&&ns(r.status)!==ns(_fEtapa))return false;
-    if(_fSen&&ns(r.nivel)!==ns(_fSen))return false;
-    return true;
-  });
-}
-
-// ── Render ────────────────────────────────────────────────────
+// ── RENDER PRINCIPAL ──────────────────────────────────────────
 function renderTudo(){
-  var todos=getRegFiltrado();
-  set('filtro-count',todos.length);
-  set('ss-regional',(_reg==='todas'?'Todas as regionais':'Regional '+_reg)+' · '+todos.length+' no CRM');
-  renderKPIs(todos);
-  renderFunil(todos);
-  renderPracasTabela(todos);
-  renderContratados(todos);
-  renderContratadosExec(_reg);
+  var R  = filtrar(_rawAll);           // todos do CRM desta regional
+  var AT = R.filter(function(r){ var s=normSt(r.st); return s==='trabalhando'||s==='contratado'; });
+  var FIN= _finAll.length ? _finAll.filter(function(r){ return filtrar([r]).length>0; }) : AT;
+
+  var lbl = _regAtiva==='todas'?'Todas as regionais':(RLABEL[_regAtiva]||_regAtiva);
+  set('ss01', lbl+' · '+R.length+' no CRM');
+  set('ss03', AT.length+' contratados ativos');
+
+  renderKPIs(R, AT, FIN);
+  renderFunil(R);
+  renderPracasTabela(R);
+  renderContratados(AT, FIN);
+  renderMovimento(R, AT);
+  renderNegociacao(R);
+  renderCustoPraca(AT, FIN);
 }
 
 // ── 01 KPIs ───────────────────────────────────────────────────
-function renderKPIs(C){
-  var ativos=C.filter(function(r){var s=normSt(r.status);return s==='trabalhando'||s==='contratado';});
-  var trab=C.filter(function(r){return normSt(r.status)==='trabalhando';});
-  var neg=C.filter(function(r){return normSt(r.status)==='negociacao';});
-  var mouPend=ativos.filter(function(r){return ns(r.mou)!=='assinado'&&r.mou!=='';}).length;
-  var auc=ativos.reduce(function(s,r){return s+(r.auc||0);},0);
-  var custo=neg.reduce(function(s,r){return s+(r.comp||r.piso*18||0);},0);
-  var pbs=ativos.filter(function(r){return r.payback>0;}).map(function(r){return r.payback;});
-  var pbMed=pbs.length?Math.round(pbs.reduce(function(a,b){return a+b;},0)/pbs.length):0;
-  var sen=ativos.filter(function(r){return ns(r.nivel)==='senior'||ns(r.nivel)==='sênior';}).length;
-  set('kpi-ativos',ativos.length);
-  set('kpi-ativos-sub',ativos.length===1?'assessor ativo':'assessores ativos');
-  set('kpi-auc',fmtAuC(auc));
-  set('kpi-auc-sub',ativos.filter(function(r){return r.auc>0;}).length+' com carteira mapeada');
-  set('kpi-pipeline',neg.length);
-  set('kpi-custo',fmtM(custo));
-  set('kpi-payback',pbMed?'Payback médio: '+pbMed+'m':'Payback médio: —');
-  set('kpi-senior',ativos.length?Math.round(sen/ativos.length*100)+'%':'—');
-  set('kpi-senior-sub',sen+' sêniors de '+ativos.length);
-  set('kpi-ativacao',ativos.length?Math.round(trab.length/ativos.length*100)+'%':'—');
-  set('kpi-mou-pend',mouPend);
+function renderKPIs(R, AT, FIN){
+  var trab   = AT.filter(function(r){return normSt(r.st)==='trabalhando';});
+  var neg    = R.filter(function(r){return normSt(r.st)==='negociacao';});
+  var mouPend= AT.filter(function(r){return ns(r.mou)!=='assinado'&&r.mou!=='';}).length;
+  var desist = R.filter(function(r){return normSt(r.st)==='desistencia'&&r.foiC;});
+  var auc    = AT.reduce(function(s,r){return s+(r.cap||0);},0);
+  var comp   = FIN.reduce(function(s,r){return s+(r.comp||r.custoTotal||0);},0)||AT.reduce(function(s,r){return s+(r.comp||0);},0);
+  var xp     = FIN.reduce(function(s,r){return s+(r.xp||0);},0)||AT.reduce(function(s,r){return s+(r.xp||0);},0);
+  var pbs    = AT.filter(function(r){return (r.pb||r.payback_meses||0)>0;}).map(function(r){return r.pb||r.payback_meses||0;});
+  var pbMed  = pbs.length?Math.round(pbs.reduce(function(a,b){return a+b;},0)/pbs.length):0;
+  var sen    = AT.filter(function(r){var n=ns(r.sen||'');return n==='sênior'||n==='senior';}).length;
+  var custMM = auc>0?Math.round(comp/auc):0;
+
+  set('k-ativos',  AT.length);
+  set('k-ativos-s',AT.length===1?'assessor ativo':'assessores ativos');
+  set('k-auc',     fmtB(auc));
+  set('k-auc-s',   AT.filter(function(r){return r.cap>0;}).length+' com carteira mapeada');
+  set('k-auc-med', AT.length&&auc?'↑ Média R$'+Math.round(auc/AT.filter(function(r){return r.cap>0;}).length||1)+'M/pessoa':'—');
+  set('k-neg',     neg.length);
+  set('k-custo',   fmtM(comp));
+  set('k-custo-s', AT.length?fmtM(Math.round(comp/AT.length))+'/pessoa':'—');
+  set('k-payback', pbMed?'Payback médio: '+pbMed+'m':'Payback: —');
+  set('k-xp',      fmtM(xp));
+  set('k-liq',     'Líquido Blue3: '+fmtM(comp-xp));
+  set('k-trab',    trab.length);
+  set('k-ativ',    AT.length?Math.round(trab.length/AT.length*100)+'%':'—');
+  set('k-mou',     mouPend);
+  set('k-desist',  desist.length);
+  set('k-desist-s',AT.length?Math.round(desist.length/(AT.length+desist.length)*100)+'% taxa':'taxa');
 }
 
-// ── 02 Funil ──────────────────────────────────────────────────
-function renderFunil(C){
-  var funil=document.getElementById('funil-regional'); if(!funil)return;
-  var counts={};
-  C.forEach(function(r){var k=normSt(r.status);if(!counts[k])counts[k]=0;counts[k]++;});
-  var etapasF=ETAPAS.slice(0,5); // só principais no funil
-  var total=C.length||1;
-  funil.innerHTML=etapasF.map(function(e,i){
-    var cnt=counts[e.key]||0, pct=Math.round(cnt/total*100);
-    return'<div style="flex:'+(cnt||0.3)+';min-width:70px;background:'+e.cor+';padding:18px 12px;text-align:center;position:relative;">'
-      +(i<etapasF.length-1?'<div style="position:absolute;right:-1px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:28px solid transparent;border-bottom:28px solid transparent;border-left:11px solid '+e.cor+';z-index:2;"></div>':'')
-      +'<div style="font-size:24px;font-weight:700;color:#fff;line-height:1;">'+cnt+'</div>'
-      +'<div style="font-size:8px;font-weight:600;color:rgba(255,255,255,.7);margin-top:3px;text-transform:uppercase;letter-spacing:.06em;">'+e.label+'</div>'
-      +'<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:2px;">'+pct+'%</div>'
-      +'</div>';
-  }).join('');
-
-  var grid=document.getElementById('etapas-grid'); if(!grid)return;
-  grid.innerHTML=etapasF.map(function(e){
-    var cands=C.filter(function(r){return normSt(r.status)===e.key;});
-    if(!cands.length)return'';
-    return'<div class="card" style="padding:12px 14px;">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
-      +'<span style="font-size:10px;font-weight:700;color:'+e.cor+';">'+e.label+'</span>'
-      +'<span style="font-family:serif;font-size:18px;font-weight:600;color:'+e.cor+';">'+cands.length+'</span>'
-      +'</div>'
-      +cands.slice(0,4).map(function(r){
-        return'<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--rule);">'
-          +'<div><div style="font-size:10px;font-weight:600;color:var(--t1);">'+r.nome+'</div>'
-          +'<div style="font-size:9px;color:var(--t3);">'+(r.praca||'').replace('Blue3 - ','')+'</div></div>'
-          +(r.nivel?'<span class="tag" style="'+senTag(r.nivel)+'">'+r.nivel+'</span>':'')
-          +'</div>';
-      }).join('')
-      +(cands.length>4?'<div style="font-size:9px;color:var(--t3);padding-top:5px;">+ '+(cands.length-4)+' mais</div>':'')
+// ── 02 Funil ─────────────────────────────────────────────────
+function renderFunil(R){
+  var fw = document.getElementById('funil-wrap'); if(!fw)return;
+  var ETP=[{k:'prospeccao',l:'Prospecção',c:'#94A3B8'},{k:'qualificacao',l:'Qualificação',c:'#B45309'},
+           {k:'negociacao',l:'Negociação',c:'#2952E3'},{k:'contratado',l:'Contratado(a)',c:'#1A3BAD'},{k:'trabalhando',l:'Trabalhando',c:'#16A34A'}];
+  var cnt={}; R.forEach(function(r){var k=normSt(r.st);if(!cnt[k])cnt[k]=0;cnt[k]++;});
+  var tot=R.length||1;
+  fw.innerHTML=ETP.map(function(e,i){
+    var c=cnt[e.k]||0, p=Math.round(c/tot*100);
+    return'<div style="flex:'+(c||0.3)+';min-width:80px;background:'+e.c+';padding:16px 12px;text-align:center;position:relative;">'
+      +(i<ETP.length-1?'<div style="position:absolute;right:-1px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:26px solid transparent;border-bottom:26px solid transparent;border-left:10px solid '+e.c+';z-index:2;"></div>':'')
+      +'<div style="font-size:22px;font-weight:700;color:#fff;line-height:1;">'+c+'</div>'
+      +'<div style="font-size:8px;font-weight:600;color:rgba(255,255,255,.7);margin-top:2px;text-transform:uppercase;letter-spacing:.05em;">'+e.l+'</div>'
+      +'<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:1px;">'+p+'%</div>'
       +'</div>';
   }).join('');
 }
 
-// ── 03 Pipeline por praça — TABELA ───────────────────────────
-function renderPracasTabela(C){
-  var tbl=document.getElementById('pracas-table'); if(!tbl)return;
+// ── 02 Tabela praças ─────────────────────────────────────────
+function renderPracasTabela(R){
+  var tbl=document.getElementById('tbl-pracas'); if(!tbl)return;
   var byP={};
-  C.forEach(function(r){
-    var p=(r.praca||'Sem praça').trim();
-    if(!byP[p])byP[p]={praca:p,reg:getReg(p),total:0,prosp:0,qual:0,neg:0,cont:0,trab:0,decl:0,auc:0,sen:0,ple:0,jun:0};
-    var s=normSt(r.status);
+  R.forEach(function(r){
+    var p=(r.p||'Sem praça').replace(/^Blue3\s*[-–]\s*/i,'').trim();
+    if(!byP[p])byP[p]={prosp:0,qual:0,neg:0,cont:0,trab:0,decl:0,desist:0,total:0,sen:0,ple:0,jun:0,auc:0};
+    var s=normSt(r.st);
     byP[p].total++;
     if(s==='prospeccao')byP[p].prosp++;
     else if(s==='qualificacao')byP[p].qual++;
@@ -399,153 +433,211 @@ function renderPracasTabela(C){
     else if(s==='contratado')byP[p].cont++;
     else if(s==='trabalhando')byP[p].trab++;
     else if(s==='declinou')byP[p].decl++;
-    byP[p].auc+=(r.auc||0);
-    var nv=ns(r.nivel||'');
+    else if(s==='desistencia')byP[p].desist++;
+    byP[p].auc+=(r.cap||0);
+    var nv=ns(r.sen||'');
     if(nv==='sênior'||nv==='senior')byP[p].sen++;
     else if(nv==='pleno')byP[p].ple++;
     else if(nv==='júnior'||nv==='junior')byP[p].jun++;
   });
-  var lista=Object.values(byP).sort(function(a,b){return b.total-a.total;});
-  if(!lista.length){tbl.innerHTML='<tr><td style="padding:16px;color:var(--t3);">Sem dados.</td></tr>';return;}
-  var thS='padding:7px 10px;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);background:var(--s2);text-align:';
-  tbl.innerHTML='<thead><tr>'
-    +'<th style="'+thS+'left;">Praça</th>'
-    +'<th style="'+thS+'left;">Regional</th>'
-    +'<th style="'+thS+'center;">Total</th>'
-    +'<th style="'+thS+'center;">Prosp.</th>'
-    +'<th style="'+thS+'center;">Qual.</th>'
-    +'<th style="'+thS+'center;">Neg.</th>'
-    +'<th style="'+thS+'center;">Cont.</th>'
-    +'<th style="'+thS+'center;">Trab.</th>'
-    +'<th style="'+thS+'center;">Decl.</th>'
-    +'<th style="'+thS+'right;">AuC meta</th>'
-    +'<th style="'+thS+'center;">Senioridade</th>'
-    +'</tr></thead><tbody>'
-    +lista.map(function(d){
-      var reg=d.reg; var corR=reg?RCORES[reg]:'#94A3B8'; var bgR=reg?RBGS[reg]:'#F1F5F9';
-      var tdS='padding:7px 10px;font-size:11px;border-bottom:1px solid var(--rule);';
-      var cel=function(v,bold){return'<td style="'+tdS+'text-align:center;'+(bold?'font-weight:700;color:var(--cobalt);':v===0?'color:var(--t4);':'')+'">'+v+'</td>';};
-      var seni=(d.sen?'<span class="tag" style="background:#DCFCE7;color:#166534;">'+d.sen+'S</span> ':'')
-              +(d.ple?'<span class="tag" style="background:#FEF3C7;color:#92400E;">'+d.ple+'P</span> ':'')
-              +(d.jun?'<span class="tag" style="background:#FCE7F3;color:#9D174D;">'+d.jun+'J</span>':'');
-      return'<tr>'
-        +'<td style="'+tdS+'font-weight:600;color:var(--t1);">'+(d.praca||'').replace('Blue3 - ','')+'</td>'
-        +'<td style="'+tdS+'">'+(reg?'<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:'+bgR+';color:'+corR+';">'+reg+'</span>':'—')+'</td>'
-        +cel(d.total,true)
-        +cel(d.prosp)+cel(d.qual)+cel(d.neg)+cel(d.cont)+cel(d.trab)+cel(d.decl)
-        +'<td style="'+tdS+'text-align:right;font-weight:700;color:var(--cobalt);">'+fmtAuC(d.auc)+'</td>'
-        +'<td style="'+tdS+'text-align:center;">'+seni+'</td>'
-        +'</tr>';
-    }).join('')
-    +'</tbody>';
+  var lista=Object.keys(byP).map(function(k){return Object.assign({praca:k},byP[k]);}).sort(function(a,b){return b.total-a.total;});
+  if(!lista.length){tbl.innerHTML='<tr><td class="empty">Sem dados.</td></tr>';return;}
+  var th='<thead><tr>'+'<th>Praça</th><th>Total</th><th>Prosp.</th><th>Qual.</th><th>Neg.</th><th>Cont.</th><th>Trab.</th><th>Decl.</th><th>Desist.</th><th style="text-align:right">AuC meta</th><th>Senioridade</th>'+'</tr></thead>';
+  var td=function(v,bold,cor){return'<td style="text-align:center;'+(bold?'font-weight:700;color:'+(cor||'var(--cobalt)')+'':'color:'+(v===0?'var(--t4)':'var(--t2)'))+'">'+(bold&&v===0?'—':v)+'</td>';};
+  tbl.innerHTML=th+'<tbody>'+lista.map(function(d){
+    var sn=(d.sen?'<span class="tag" style="background:#DCFCE7;color:#166534;">'+d.sen+'S</span> ':'')+
+           (d.ple?'<span class="tag" style="background:#FEF3C7;color:#92400E;">'+d.ple+'P</span> ':'')+
+           (d.jun?'<span class="tag" style="background:#FCE7F3;color:#9D174D;">'+d.jun+'J</span>':'');
+    return'<tr><td style="font-weight:600;color:var(--t1);">'+d.praca+'</td>'
+      +td(d.total,true)
+      +td(d.prosp)+td(d.qual)
+      +'<td style="text-align:center;font-weight:600;color:#2952E3;">'+(d.neg||'—')+'</td>'
+      +td(d.cont)+td(d.trab)
+      +'<td style="text-align:center;color:'+(d.decl?'#DC2626':'var(--t4)')+';">'+(d.decl||'—')+'</td>'
+      +'<td style="text-align:center;color:'+(d.desist?'#7C3AED':'var(--t4)')+';">'+(d.desist||'—')+'</td>'
+      +'<td style="text-align:right;font-weight:700;color:var(--cobalt);">'+fmtB(d.auc)+'</td>'
+      +'<td>'+sn+'</td></tr>';
+  }).join('')+'</tbody>';
 }
 
-// ── 04 Contratados ────────────────────────────────────────────
-function renderContratados(C){
-  var ativos=C.filter(function(r){var s=normSt(r.status);return s==='trabalhando'||s==='contratado';});
-  var vazioEl=document.getElementById('contratados-vazio');
-  if(vazioEl)vazioEl.style.display=ativos.length?'none':'block';
-
-  // Gráfico mensal
-  var byM={};
-  ativos.forEach(function(r){
-    var dt=r.dt_contrat||''; var m=parseInt((dt.match(/[-\/](\d{2})[-\/]/)|| [])[1]||dt.split('-')[1]||0);
-    if(m){if(!byM[m])byM[m]=0;byM[m]++;}
-  });
-  var meses=Object.keys(byM).map(Number).sort(function(a,b){return a-b;});
-  var mL={1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
-  if(meses.length){
-    sc('chartMensal',{type:'bar',data:{labels:meses.map(function(m){return mL[m]||'M'+m;}),datasets:[{data:meses.map(function(m){return byM[m];}),backgroundColor:'#2952E3',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
-  }
-
-  // Gráfico senioridade
-  var sen=ativos.filter(function(r){var n=ns(r.nivel||'');return n==='sênior'||n==='senior';}).length;
-  var ple=ativos.filter(function(r){return ns(r.nivel||'')==='pleno';}).length;
-  var jun=ativos.filter(function(r){var n=ns(r.nivel||'');return n==='júnior'||n==='junior';}).length;
-  var pD=[{l:'Sênior',v:sen,c:'#16A34A'},{l:'Pleno',v:ple,c:'#B45309'},{l:'Júnior',v:jun,c:'#BE185D'}].filter(function(d){return d.v>0;});
-  if(pD.length){
-    sc('chartSenioridade',{type:'doughnut',data:{labels:pD.map(function(d){return d.l;}),datasets:[{data:pD.map(function(d){return d.v;}),backgroundColor:pD.map(function(d){return d.c;}),borderWidth:3,borderColor:'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}});
-    var tot=ativos.length||1;
-    var leg=document.getElementById('leg-senioridade');
-    if(leg)leg.innerHTML=pD.map(function(d){return'<span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:'+d.c+';display:inline-block;"></span>'+d.l+' — '+d.v+' ('+Math.round(d.v/tot*100)+'%)</span>';}).join('');
-  }
-}
-
-// ── 05 Candidatos contratados (igual ao rel. executivo) ───────
-var _expCont = false;
-function toggleExpCont(){
+// ── 03 Contratados ────────────────────────────────────────────
+function toggleCont(){
   _expCont=!_expCont;
-  var r=document.getElementById('contratados-rest');
-  var b=document.getElementById('btn-exp-cont');
+  var r=document.getElementById('tbl-cont-rest');
+  var b=document.getElementById('btn-cont');
   if(r)r.style.display=_expCont?'':'none';
   if(b)b.textContent=_expCont?'▲ Recolher':'▼ Ver todos';
 }
 
-function renderContratadosExec(regFiltro){
-  var F=[];
-  // Tentar pegar do parent primeiro
-  try{
-    var pF=window.parent&&window.parent.Blue3Data&&window.parent.Blue3Data.financeiros;
-    if(pF&&pF.length)F=pF;
-  }catch(e){}
-  // Fallback: usar _all já carregados (ativos)
-  if(!F.length){
-    F=_all.filter(function(r){var s=normSt(r.status);return s==='trabalhando'||s==='contratado';}).map(function(r){
-      return{n:r.nome,p:r.praca,h:r.hunter,sen:r.nivel,st:r.status,mou:r.mou,cap:r.auc,piso:r.piso,si:0,comp:r.comp,xp:r.xp,payback_meses:r.payback,dt:r.dt_contrat};
-    });
-  }
-  // Filtrar por regional
-  if(regFiltro&&regFiltro!=='todas'){
-    F=F.filter(function(r){return getReg(r.p||'')===regFiltro;});
-  }
-  F=F.sort(function(a,b){return(b.cap||0)-(a.cap||0);});
-  set('cont-count',F.length+' contratados');
-  var topEl=document.getElementById('contratados-top');
-  var restEl=document.getElementById('contratados-rest');
-  var btn=document.getElementById('btn-exp-cont');
+function renderContratados(AT, FIN){
+  var finMap={};
+  FIN.forEach(function(f){if(f.n)finMap[f.n.trim().toLowerCase()]=f;});
+
+  var piso=AT.reduce(function(s,r){return s+(r.piso||0);},0);
+  var si=AT.reduce(function(s,r){return s+(r.si||0);},0);
+  var comp=FIN.reduce(function(s,r){return s+(r.comp||r.custoTotal||0);},0)||AT.reduce(function(s,r){return s+(r.comp||0);},0);
+  var auc=AT.reduce(function(s,r){return s+(r.cap||0);},0);
+  set('f-piso', fmtM(piso));
+  set('f-si',   fmtM(si));
+  set('f-si-s', AT.filter(function(r){return r.si>0;}).length+' com luva');
+  set('f-comp', fmtM(comp));
+  set('f-customm', auc>0?fmtM(Math.round(comp/auc))+'/MM':'—');
+
+  var topEl=document.getElementById('tbl-cont-top');
+  var restEl=document.getElementById('tbl-cont-rest');
+  var btnEl=document.getElementById('btn-cont');
+  var rodEl=document.getElementById('tbl-cont-rodape');
   if(!topEl)return;
-  if(!F.length){topEl.innerHTML='<div style="color:var(--t3);font-size:12px;padding:8px 0;">Nenhum contratado nesta regional.</div>';return;}
 
-  var thS='padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);background:var(--s2);';
-  var TH='<table style="width:100%;border-collapse:collapse;"><thead><tr>'
-    +'<th style="'+thS+'text-align:left;">Candidato</th>'
-    +'<th style="'+thS+'text-align:left;">Praça</th>'
-    +'<th style="'+thS+'text-align:left;">Hunter</th>'
-    +'<th style="'+thS+'text-align:center;">Sen.</th>'
-    +'<th style="'+thS+'text-align:center;">Status</th>'
-    +'<th style="'+thS+'text-align:center;">MOU</th>'
-    +'<th style="'+thS+'text-align:right;">AuC</th>'
-    +'<th style="'+thS+'text-align:right;">Piso/mês</th>'
-    +'<th style="'+thS+'text-align:right;">Total comp.</th>'
-    +'<th style="'+thS+'text-align:right;">Payback</th>'
+  var sorted=AT.slice().sort(function(a,b){return(b.cap||0)-(a.cap||0);});
+  if(!sorted.length){topEl.innerHTML='<div class="empty">Nenhum contratado ativo nesta regional.</div>';return;}
+
+  var TH='<table><thead><tr>'
+    +'<th>Candidato</th><th>Praça</th><th>Hunter</th><th style="text-align:center">Sen.</th>'
+    +'<th style="text-align:center">Status</th><th style="text-align:center">MOU</th>'
+    +'<th style="text-align:right">AuC</th><th style="text-align:right">Piso/mês</th>'
+    +'<th style="text-align:right">Sign-in</th><th style="text-align:right">Total comp.</th>'
+    +'<th style="text-align:right">Copart. XP</th><th style="text-align:right">Payback</th>'
     +'</tr></thead>';
-
   var td='padding:6px 8px;font-size:11px;border-bottom:1px solid var(--rule);';
-  var makeRows=function(arr){return arr.map(function(r){
-    var stCor=normSt(r.st||'')==='trabalhando'?'background:#EEF2FD;color:#1A3BAD;':'background:#F0FDF4;color:#15803D;';
-    var stLbl=normSt(r.st||'')==='trabalhando'?'● Trab.':'● Cont.';
-    var mouCor=ns(r.mou||'')==='assinado'?'background:#DCFCE7;color:#166534;':'background:#FEF3C7;color:#92400E;';
-    var mouLbl=ns(r.mou||'')==='assinado'?'✓ OK':'Pend.';
-    var fmtR=function(v){if(!v||v===0)return'—';if(v>=1e6)return'R$'+(v/1e6).toFixed(1)+'M';return'R$'+Math.round(v/1000)+'K';};
-    return'<tr>'
-      +'<td style="'+td+'font-weight:600;color:var(--t1);">'+(r.n||'—')+'</td>'
-      +'<td style="'+td+'color:var(--t3);font-size:10px;">'+(r.p||'').replace('Blue3 - ','')+'</td>'
-      +'<td style="'+td+'">'+(r.h||'—')+'</td>'
-      +'<td style="'+td+'text-align:center;">'+(r.sen?'<span class="tag" style="'+senTag(r.sen)+'">'+r.sen+'</span>':'—')+'</td>'
-      +'<td style="'+td+'text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;'+stCor+'">'+stLbl+'</span></td>'
-      +'<td style="'+td+'text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;'+mouCor+'">'+mouLbl+'</span></td>'
-      +'<td style="'+td+'text-align:right;font-weight:700;color:var(--cobalt);">'+(r.cap?'R$'+r.cap+'M':'—')+'</td>'
-      +'<td style="'+td+'text-align:right;">'+(r.piso?fmtR(r.piso):'—')+'</td>'
-      +'<td style="'+td+'text-align:right;font-weight:600;">'+(r.comp?fmtR(r.comp):'—')+'</td>'
-      +'<td style="'+td+'text-align:right;color:#00915A;font-weight:600;">'+(r.payback_meses?r.payback_meses+'m':r.payback?r.payback+'m':'—')+'</td>'
-      +'</tr>';
-  }).join('');};
 
-  var top=F.slice(0,10), rest=F.slice(10);
+  var makeRows=function(arr){
+    return arr.map(function(r){
+      var f=finMap[r.n.toLowerCase()]||{};
+      var piso=f.piso||r.piso||0, si=f.si||r.si||0, comp=f.comp||f.custoTotal||r.comp||0, xp=f.xp||r.xp||0, pb=f.payback_meses||r.pb||0;
+      return'<tr>'
+        +'<td style="'+td+'font-weight:600;color:var(--t1);">'+r.n+'</td>'
+        +'<td style="'+td+'color:var(--t3);font-size:10px;">'+(r.p||'').replace(/^Blue3\s*[-–]\s*/i,'')+'</td>'
+        +'<td style="'+td+'">'+(r.h||'—')+'</td>'
+        +'<td style="'+td+'text-align:center;">'+(r.sen?'<span class="tag" style="'+snTag(r.sen)+'">'+r.sen+'</span>':'—')+'</td>'
+        +'<td style="'+td+'text-align:center;"><span class="tag" style="'+tsCor(r.st)+'">'+tsLbl(r.st)+'</span></td>'
+        +'<td style="'+td+'text-align:center;"><span class="tag" style="'+mouTag(r.mou)+'">'+(ns(r.mou)==='assinado'?'✓ OK':'Pend.')+'</span></td>'
+        +'<td style="'+td+'text-align:right;font-weight:700;color:var(--cobalt);">'+(r.cap?'R$'+r.cap+'M':'—')+'</td>'
+        +'<td style="'+td+'text-align:right;">'+(piso?fmtM(piso):'—')+'</td>'
+        +'<td style="'+td+'text-align:right;color:var(--gold);font-weight:600;">'+(si?fmtM(si):'—')+'</td>'
+        +'<td style="'+td+'text-align:right;font-weight:600;">'+(comp?fmtM(comp):'—')+'</td>'
+        +'<td style="'+td+'text-align:right;color:var(--cobalt);">'+(xp?fmtM(xp):'—')+'</td>'
+        +'<td style="'+td+'text-align:right;color:#00915A;font-weight:600;">'+(pb?pb+'m':'—')+'</td>'
+        +'</tr>';
+    }).join('');
+  };
+
+  var top=sorted.slice(0,10), rest=sorted.slice(10);
   topEl.innerHTML=TH+'<tbody>'+makeRows(top)+'</tbody></table>';
   if(restEl){restEl.innerHTML=rest.length?TH+'<tbody>'+makeRows(rest)+'</tbody></table>':'';}
-  if(btn){btn.style.display=rest.length?'':'none';btn.textContent=_expCont?'▲ Recolher':'▼ Ver todos ('+F.length+')';}
+  if(btnEl){btnEl.style.display=rest.length?'':'none'; btnEl.textContent=_expCont?'▲ Recolher':'▼ Ver todos ('+sorted.length+')';}
   if(restEl)restEl.style.display=_expCont?'':'none';
+  if(rodEl){
+    var totAuC=sorted.reduce(function(s,r){return s+(r.cap||0);},0);
+    rodEl.textContent='AuC total mapeado: '+(totAuC>=1000?'R$'+(totAuC/1000).toFixed(1)+'B':'R$'+totAuC+'M')+' · Comp. total: '+fmtM(comp);
+  }
+}
+
+// ── 04 Movimento ─────────────────────────────────────────────
+function renderMovimento(R, AT){
+  // Gráfico mensal — entradas de contratados
+  var byM={};
+  AT.forEach(function(r){
+    var dt=r.dt||r.dtEnt||''; if(!dt)return;
+    var m=parseInt((dt.match(/[-\/](\d{1,2})[-\/T]/)|| [])[1]||0);
+    if(m){if(!byM[m])byM[m]=0; byM[m]++;}
+  });
+  var meses=Object.keys(byM).map(Number).sort(function(a,b){return a-b;});
+  var mL={1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
+  if(meses.length){
+    sc('chart-mensal',{type:'bar',data:{labels:meses.map(function(m){return mL[m]||'M'+m;}),datasets:[{data:meses.map(function(m){return byM[m];}),backgroundColor:'#2952E3',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1,font:{size:9}}},x:{ticks:{font:{size:9}}}}}});
+  }
+
+  // Gráfico senioridade
+  var sen=AT.filter(function(r){var n=ns(r.sen||'');return n==='sênior'||n==='senior';}).length;
+  var ple=AT.filter(function(r){return ns(r.sen||'')==='pleno';}).length;
+  var jun=AT.filter(function(r){var n=ns(r.sen||'');return n==='júnior'||n==='junior';}).length;
+  var pD=[{l:'Sênior',v:sen,c:'#16A34A'},{l:'Pleno',v:ple,c:'#B45309'},{l:'Júnior',v:jun,c:'#BE185D'}].filter(function(d){return d.v>0;});
+  if(pD.length){
+    sc('chart-sen',{type:'doughnut',data:{labels:pD.map(function(d){return d.l;}),datasets:[{data:pD.map(function(d){return d.v;}),backgroundColor:pD.map(function(d){return d.c;}),borderWidth:2,borderColor:'#fff',hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}});
+    var tot=AT.length||1;
+    var leg=document.getElementById('leg-sen');
+    if(leg)leg.innerHTML=pD.map(function(d){return'<span style="display:flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;border-radius:2px;background:'+d.c+';display:inline-block;"></span>'+d.l+' '+d.v+' ('+Math.round(d.v/tot*100)+'%)</span>';}).join('');
+  }
+
+  // Desistências
+  var desist=R.filter(function(r){return normSt(r.st)==='desistencia'&&r.foiC;});
+  var dl=document.getElementById('desist-lista');
+  if(dl){
+    if(!desist.length){dl.innerHTML='<div class="empty">Nenhuma desistência pós-contrato.</div>';}
+    else{
+      dl.innerHTML=desist.map(function(r){
+        return'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule);">'
+          +'<div><div style="font-size:11px;font-weight:600;color:var(--t1);">'+r.n+'</div>'
+          +'<div style="font-size:9px;color:var(--t3);">'+(r.p||'').replace(/^Blue3\s*[-–]\s*/i,'')+(r.h?' · '+r.h:'')+'</div></div>'
+          +(r.sen?'<span class="tag" style="'+snTag(r.sen)+'">'+r.sen+'</span>':'')
+          +'</div>';
+      }).join('');
+    }
+  }
+}
+
+// ── 05 Negociação ─────────────────────────────────────────────
+function renderNegociacao(R){
+  var neg=R.filter(function(r){return normSt(r.st)==='negociacao';}).sort(function(a,b){return(b.cap||0)-(a.cap||0);});
+  var el=document.getElementById('tbl-neg'); if(!el)return;
+  set('ss05', neg.length+' candidatos em negociação');
+  if(!neg.length){el.innerHTML='<div class="empty">Nenhum candidato em negociação nesta regional.</div>';return;}
+  var TH='<table><thead><tr><th>Candidato</th><th>Praça</th><th>Hunter</th><th style="text-align:center">Sen.</th><th style="text-align:right">AuC meta</th><th style="text-align:right">Piso est.</th><th style="text-align:right">Payback est.</th><th>Origem</th></tr></thead>';
+  var td='padding:6px 8px;font-size:11px;border-bottom:1px solid var(--rule);';
+  el.innerHTML=TH+'<tbody>'+neg.map(function(r){
+    return'<tr>'
+      +'<td style="'+td+'font-weight:600;color:var(--t1);">'+r.n+'</td>'
+      +'<td style="'+td+'color:var(--t3);font-size:10px;">'+(r.p||'').replace(/^Blue3\s*[-–]\s*/i,'')+'</td>'
+      +'<td style="'+td+'">'+(r.h||'—')+'</td>'
+      +'<td style="'+td+'text-align:center;">'+(r.sen?'<span class="tag" style="'+snTag(r.sen)+'">'+r.sen+'</span>':'—')+'</td>'
+      +'<td style="'+td+'text-align:right;font-weight:700;color:var(--cobalt);">'+(r.cap?'R$'+r.cap+'M':'—')+'</td>'
+      +'<td style="'+td+'text-align:right;">'+(r.piso?fmtM(r.piso):'—')+'</td>'
+      +'<td style="'+td+'text-align:right;color:#00915A;font-weight:600;">'+(r.pb?r.pb+'m':'—')+'</td>'
+      +'<td style="'+td+'font-size:10px;color:var(--t3);">'+(r.org||'—')+'</td>'
+      +'</tr>';
+  }).join('')+'</tbody></table>';
+}
+
+// ── 06 Custo por praça ────────────────────────────────────────
+function renderCustoPraca(AT, FIN){
+  var grid=document.getElementById('pracas-custo-grid'); if(!grid)return;
+  var finMap={};
+  FIN.forEach(function(f){if(f.n)finMap[f.n.trim().toLowerCase()]=f;});
+  var byP={};
+  AT.forEach(function(r){
+    var p=(r.p||'Sem praça').replace(/^Blue3\s*[-–]\s*/i,'').trim();
+    if(!byP[p])byP[p]={praca:p,cnt:0,auc:0,comp:0,piso:0,trab:0,sen:0};
+    var f=finMap[r.n.toLowerCase()]||{};
+    byP[p].cnt++;
+    byP[p].auc+=(r.cap||0);
+    byP[p].comp+=(f.comp||f.custoTotal||r.comp||0);
+    byP[p].piso+=(f.piso||r.piso||0);
+    if(normSt(r.st)==='trabalhando')byP[p].trab++;
+    if(ns(r.sen||'')==='sênior'||ns(r.sen||'')==='senior')byP[p].sen++;
+  });
+  var lista=Object.values(byP).sort(function(a,b){return(b.auc||b.cnt)-(a.auc||a.cnt);});
+  if(!lista.length){grid.innerHTML='<div class="empty">Sem contratados nesta regional.</div>';return;}
+  grid.innerHTML=lista.map(function(d){
+    var custMM=d.auc>0?Math.round(d.comp/d.auc):0;
+    var ativPct=d.cnt>0?Math.round(d.trab/d.cnt*100):0;
+    return'<div class="card">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">'
+      +'<div style="font-size:13px;font-weight:700;color:var(--t1);">'+d.praca+'</div>'
+      +'<div style="text-align:right;"><div style="font-family:serif;font-size:20px;font-weight:600;color:var(--cobalt);">'+d.cnt+'</div><div style="font-size:9px;color:var(--t3);">ativos</div></div>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">'
+      +'<div style="background:var(--s2);border-radius:6px;padding:7px;text-align:center;"><div style="font-size:13px;font-weight:700;color:var(--cobalt);">'+fmtB(d.auc)+'</div><div style="font-size:8px;color:var(--t3);">AuC meta</div></div>'
+      +'<div style="background:var(--s2);border-radius:6px;padding:7px;text-align:center;"><div style="font-size:13px;font-weight:700;color:var(--am);">'+fmtM(d.comp)+'</div><div style="font-size:8px;color:var(--t3);">Custo total</div></div>'
+      +'<div style="background:var(--s2);border-radius:6px;padding:7px;text-align:center;"><div style="font-size:13px;font-weight:700;color:var(--t1);">'+fmtM(d.piso)+'</div><div style="font-size:8px;color:var(--t3);">Piso mensal</div></div>'
+      +'<div style="background:var(--s2);border-radius:6px;padding:7px;text-align:center;"><div style="font-size:13px;font-weight:700;color:'+(custMM<8000?'#16A34A':custMM<12000?'#B45309':'#DC2626')+';">'+(custMM?fmtM(custMM)+'/MM':'—')+'</div><div style="font-size:8px;color:var(--t3);">Custo/MM</div></div>'
+      +'</div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);">'
+      +'<span>'+ativPct+'% operando</span>'
+      +'<span>'+(d.sen?d.sen+' sênior'+(d.sen>1?'s':''):'')+'</span>'
+      +'</div>'
+      +'</div>';
+  }).join('');
 }
 </script>
 </body>
