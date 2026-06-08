@@ -16,14 +16,14 @@
   --rose:#BE185D;--rosep:#FCE7F3;--r8:8px;--r12:12px;--r16:16px;
 }
 body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;}
-.cover{background:var(--ink);min-height:180px;position:relative;overflow:hidden;}
+.cover{background:var(--ink);min-height:160px;position:relative;overflow:hidden;}
 .cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:56px 56px;pointer-events:none;}
-.cover-in{position:relative;max-width:1160px;margin:0 auto;padding:32px 44px 28px;display:flex;justify-content:space-between;align-items:flex-end;gap:32px;}
-.page{max-width:1160px;margin:0 auto;padding:32px 44px;}
-.card{background:var(--surface);border-radius:var(--r12);border:1px solid var(--rule);padding:18px 20px;margin-bottom:0;}
+.cover-in{position:relative;max-width:1160px;margin:0 auto;padding:28px 44px 24px;display:flex;justify-content:space-between;align-items:flex-end;gap:32px;}
+.page{max-width:1160px;margin:0 auto;padding:28px 44px;}
+.card{background:var(--surface);border-radius:var(--r12);border:1px solid var(--rule);padding:18px 20px;}
 .ch{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--rule);}
 .sh{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:12px;border-bottom:2px solid var(--rule);}
-.sn{font-size:11px;font-weight:700;color:var(--t4);background:var(--s2);border-radius:4px;padding:2px 8px;letter-spacing:.06em;}
+.sn{font-size:11px;font-weight:700;color:var(--t4);background:var(--s2);border-radius:4px;padding:2px 8px;}
 .st{font-size:17px;font-weight:600;color:var(--t1);}
 .ss{font-size:11px;color:var(--t3);margin-left:auto;}
 .kc{background:var(--surface);border-radius:var(--r12);border:1px solid var(--rule);padding:16px 18px;position:relative;overflow:hidden;}
@@ -37,41 +37,25 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .fpill{font-size:10px;font-weight:600;padding:4px 12px;border-radius:20px;border:1px solid var(--rule);background:var(--canvas);color:var(--t3);cursor:pointer;transition:all .15s;}
 .fpill:hover{border-color:var(--cobalt);color:var(--cobalt);}
 .fpill-on{background:var(--cobalt)!important;border-color:var(--cobalt)!important;color:#fff!important;}
-.tag{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.04em;}
-.tag-sen{background:var(--gp);color:#166534;}
-.tag-ple{background:var(--amp);color:#92400E;}
-.tag-jun{background:var(--rosep);color:#9D174D;}
-.tag-prosp{background:#EEF2FD;color:#1A3BAD;}
-.tag-qual{background:#FEF3C7;color:#92400E;}
-.tag-neg{background:#DCFCE7;color:#166534;}
-.tag-cont{background:#EEF2FD;color:#1A3BAD;}
-.tag-trab{background:#F0FDF4;color:#15803D;}
-.tag-decl{background:#FEE2E2;color:#991B1B;}
-.tag-desist{background:#F5F3FF;color:#5B21B6;}
-.pip-bar{height:8px;border-radius:4px;background:var(--rule);overflow:hidden;margin-top:4px;}
-.pip-fill{height:100%;border-radius:4px;transition:width .4s;}
-.etapa-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;}
-/* Grid */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
-/* Tabela */
 .mat{width:100%;border-collapse:collapse;}
 .mat th{padding:7px 10px;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);background:var(--s2);text-align:left;}
 .mat td{padding:7px 10px;font-size:11px;border-bottom:1px solid var(--rule);color:var(--t2);}
 .mat tr:last-child td{border-bottom:none;}
 .mat tr:hover td{background:var(--s2);}
+.tag{display:inline-block;font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.03em;}
 </style>
 </head>
 <body>
 
-<!-- COVER -->
 <div class="cover">
   <div class="cg"></div>
   <div class="cover-in">
     <div>
       <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:600;color:#fff;line-height:1.2;">Relatório Regional</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:6px;letter-spacing:.04em;">BLUE3 EXPANSÃO · PIPELINE POR REGIONAL E PRAÇA</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:6px;letter-spacing:.04em;">BLUE3 EXPANSÃO · PIPELINE POR REGIONAL E PRAÇA</div>
     </div>
     <div style="text-align:right;">
       <div id="cover-regional" style="font-size:18px;font-weight:600;color:rgba(255,255,255,.9);">Todas as regionais</div>
@@ -80,89 +64,83 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   </div>
 </div>
 
-<!-- FILTROS REGIONAIS -->
-<div style="background:var(--surface);border-bottom:1px solid var(--rule);padding:14px 44px;max-width:1160px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+<!-- FILTROS -->
+<div style="background:var(--surface);border-bottom:1px solid var(--rule);padding:12px 44px;max-width:1160px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
   <span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-right:4px;">Regional:</span>
   <button onclick="setRegional('todas',this)" class="fpill fpill-on" id="pill-todas">Todas</button>
   <button onclick="setRegional('Tamires',this)" class="fpill" id="pill-Tamires">Tamires</button>
   <button onclick="setRegional('Yokoy',this)" class="fpill" id="pill-Yokoy">Yokoy</button>
   <button onclick="setRegional('Bruno',this)" class="fpill" id="pill-Bruno">Bruno</button>
   <div style="width:1px;height:18px;background:var(--rule);margin:0 4px;"></div>
-  <span style="font-size:10px;color:var(--t3);margin-left:4px;">Mostrandos: <strong id="filtro-count" style="color:var(--t1);">—</strong> candidatos</span>
+  <span style="font-size:10px;color:var(--t3);">Total no CRM: <strong id="filtro-count" style="color:var(--t1);">—</strong></span>
 </div>
 
 <div class="page">
 
-  <!-- 01 VISÃO GERAL DA REGIONAL -->
-  <div style="margin-bottom:32px;">
-    <div class="sh"><span class="sn">01</span><span class="st">Visão geral da regional</span><span class="ss" id="ss-regional">Todas as regionais · assessores</span></div>
-    <div class="g4" style="margin-bottom:16px;">
-      <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Ativos na regional</div><div class="kv"><span id="kpi-ativos">—</span></div><div class="ks" id="kpi-ativos-sub">contratados ativos</div></div>
+  <!-- 01 KPIs -->
+  <div style="margin-bottom:28px;">
+    <div class="sh"><span class="sn">01</span><span class="st">Visão geral da regional</span><span class="ss" id="ss-regional">Todas as regionais</span></div>
+    <div class="g4" style="margin-bottom:12px;">
+      <div class="kc"><div class="ktr" style="background:var(--cobalt-br);"></div><div class="kl">Ativos</div><div class="kv"><span id="kpi-ativos">—</span></div><div class="ks" id="kpi-ativos-sub">contratados ativos</div></div>
       <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">AuC mapeado</div><div class="kv"><span id="kpi-auc">—</span></div><div class="ks" id="kpi-auc-sub">meta contratual</div></div>
-      <div class="kc"><div class="ktr" style="background:#7C3AED;"></div><div class="kl">Pipeline ativo</div><div class="kv"><span id="kpi-pipeline">—</span></div><div class="ks">em negociação na regional</div><div class="kp pu" id="kpi-pipeline-conv">— conversão</div></div>
-      <div class="kc"><div class="ktr" style="background:var(--am);"></div><div class="kl">Custo comprometido</div><div class="kv"><span id="kpi-custo">—</span></div><div class="ks">propostas ativas</div><div class="ks" id="kpi-payback">Payback médio: —</div></div>
+      <div class="kc"><div class="ktr" style="background:#7C3AED;"></div><div class="kl">Em negociação</div><div class="kv"><span id="kpi-pipeline">—</span></div><div class="ks">candidatos quentes</div></div>
+      <div class="kc"><div class="ktr" style="background:var(--am);"></div><div class="kl">Custo comprometido</div><div class="kv"><span id="kpi-custo">—</span></div><div class="ks" id="kpi-payback">Payback médio: —</div></div>
     </div>
     <div class="g3">
-      <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">% Perfil sênior</div><div class="kv"><span id="kpi-senior">—</span></div><div class="ks" id="kpi-senior-sub">dos ativos</div></div>
-      <div class="kc"><div class="ktr" style="background:var(--am);"></div><div class="kl">Taxa de ativação</div><div class="kv"><span id="kpi-ativacao">—</span></div><div class="ks">contratados já trabalhando</div></div>
+      <div class="kc"><div class="ktr" style="background:var(--g);"></div><div class="kl">% Sênior</div><div class="kv"><span id="kpi-senior">—</span></div><div class="ks" id="kpi-senior-sub">dos ativos</div></div>
+      <div class="kc"><div class="ktr" style="background:var(--am);"></div><div class="kl">Taxa de ativação</div><div class="kv"><span id="kpi-ativacao">—</span></div><div class="ks">já trabalhando</div></div>
       <div class="kc"><div class="ktr" style="background:var(--cobalt);"></div><div class="kl">MOU pendente</div><div class="kv"><span id="kpi-mou-pend">—</span></div><div class="ks">aguardando assinatura</div></div>
     </div>
   </div>
 
   <div class="hr"></div>
 
-  <!-- 02 PIPELINE POR ETAPA -->
-  <div style="margin-bottom:32px;">
-    <div class="sh"><span class="sn">02</span><span class="st">Pipeline por etapa — funil completo</span><span class="ss">Todos os candidatos no CRM · etapa atual</span></div>
-    <!-- Funil visual -->
-    <div id="funil-regional" style="display:flex;gap:0;margin-bottom:20px;border-radius:var(--r12);overflow:hidden;"></div>
-    <!-- Grid etapas detalhadas -->
-    <div id="etapas-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;"></div>
+  <!-- 02 Funil -->
+  <div style="margin-bottom:28px;">
+    <div class="sh"><span class="sn">02</span><span class="st">Pipeline por etapa — funil completo</span><span class="ss">Todos os candidatos no CRM</span></div>
+    <div id="funil-regional" style="display:flex;gap:0;border-radius:var(--r12);overflow:hidden;margin-bottom:16px;"></div>
+    <div id="etapas-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;"></div>
   </div>
 
   <div class="hr"></div>
 
-  <!-- 03 PIPELINE POR PRAÇA -->
-  <div style="margin-bottom:32px;">
-    <div class="sh"><span class="sn">03</span><span class="st">Pipeline por praça</span><span class="ss">Distribuição de candidatos por cidade e etapa</span></div>
-    <div id="pracas-pipeline-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;"></div>
+  <!-- 03 Pipeline por praça — TABELA -->
+  <div style="margin-bottom:28px;">
+    <div class="sh"><span class="sn">03</span><span class="st">Pipeline por praça</span><span class="ss">Candidatos por cidade e etapa</span></div>
+    <div class="card">
+      <table class="mat" id="pracas-table"></table>
+    </div>
   </div>
 
   <div class="hr"></div>
 
-  <!-- 04 CONTRATADOS ATIVOS -->
-  <div style="margin-bottom:32px;">
-    <div class="sh"><span class="sn">04</span><span class="st">Contratados ativos — senioridade e carteira</span><span class="ss">Assessores em operação ou contratados</span></div>
-    <div id="contratados-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:16px;"></div>
-    <!-- Gráficos lado a lado -->
+  <!-- 04 Contratados ativos -->
+  <div style="margin-bottom:28px;">
+    <div class="sh"><span class="sn">04</span><span class="st">Contratados ativos</span><span class="ss">Assessores em operação ou contratados</span></div>
+    <div id="contratados-vazio" style="display:none;font-size:12px;color:var(--t3);padding:8px 0 16px;">Nenhum contratado ativo nesta regional.</div>
     <div class="g2">
       <div class="card">
         <div class="ch">Contratações por mês</div>
-        <div style="position:relative;height:200px;"><canvas id="chartMensal"></canvas></div>
+        <div style="position:relative;height:180px;"><canvas id="chartMensal"></canvas></div>
       </div>
       <div class="card">
-        <div class="ch">Distribuição de senioridade</div>
-        <div style="position:relative;height:200px;"><canvas id="chartSenioridade"></canvas></div>
-        <div id="leg-senioridade" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;"></div>
+        <div class="ch">Senioridade dos ativos</div>
+        <div style="position:relative;height:180px;"><canvas id="chartSenioridade"></canvas></div>
+        <div id="leg-senioridade" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:10px;"></div>
       </div>
     </div>
   </div>
 
   <div class="hr"></div>
 
-  <!-- 05 CANDIDATOS EM NEGOCIAÇÃO -->
-  <div style="margin-bottom:32px;">
-    <div class="sh"><span class="sn">05</span><span class="st">Candidatos em negociação</span><span class="ss">Pipeline quente — potencial de conversão</span></div>
-    <div id="negociacao-table"></div>
-  </div>
-
-  <div class="hr"></div>
-
-  <!-- 06 CANDIDATOS POR PRAÇA — TABELA COMPLETA -->
-  <div style="margin-bottom:32px;">
+  <!-- 05 Todos os candidatos -->
+  <div style="margin-bottom:28px;">
     <div class="sh">
-      <span class="sn">06</span><span class="st">Todos os candidatos — visão completa</span>
-      <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+      <span class="sn">05</span><span class="st">Todos os candidatos</span>
+      <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <select id="flt-praca" onchange="aplicarFiltros()" style="font-size:10px;padding:4px 8px;border:1px solid var(--rule);border-radius:6px;color:var(--t2);background:var(--surface);cursor:pointer;">
+          <option value="">Todas as praças</option>
+        </select>
         <select id="flt-etapa" onchange="aplicarFiltros()" style="font-size:10px;padding:4px 8px;border:1px solid var(--rule);border-radius:6px;color:var(--t2);background:var(--surface);cursor:pointer;">
           <option value="">Todas as etapas</option>
           <option value="Prospecção">Prospecção</option>
@@ -171,6 +149,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           <option value="Contratado(a)">Contratado(a)</option>
           <option value="Trabalhando">Trabalhando</option>
           <option value="Declinou">Declinou</option>
+          <option value="Desistência">Desistência</option>
         </select>
         <select id="flt-sen" onchange="aplicarFiltros()" style="font-size:10px;padding:4px 8px;border:1px solid var(--rule);border-radius:6px;color:var(--t2);background:var(--surface);cursor:pointer;">
           <option value="">Todas as senioridades</option>
@@ -178,512 +157,394 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           <option value="Pleno">Pleno</option>
           <option value="Júnior">Júnior</option>
         </select>
+        <button onclick="resetFiltros()" style="font-size:10px;padding:4px 10px;border:1px solid var(--rule);border-radius:6px;color:var(--t3);background:var(--canvas);cursor:pointer;">✕ Limpar</button>
+        <button id="btn-expandir" onclick="toggleExpandir()" style="font-size:10px;font-weight:700;padding:4px 12px;border-radius:4px;border:none;background:var(--cobalt-pl);color:var(--cobalt);cursor:pointer;">▼ Ver todos</button>
       </div>
     </div>
-    <div id="todos-candidatos-table"></div>
+    <div class="card">
+      <div id="candidatos-top"></div>
+      <div id="candidatos-rest" style="display:none;"></div>
+      <div id="candidatos-vazio" style="display:none;font-size:12px;color:var(--t3);padding:8px 0;">Nenhum candidato com os filtros selecionados.</div>
+    </div>
   </div>
 
-</div><!-- /page -->
+</div>
 
 <script>
-// ── Config ────────────────────────────────────────────────────
-var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
-var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FgemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
-
-// ── Mapeamento praças → regional ──────────────────────────────
+// ── Mapeamento regional ───────────────────────────────────────
 var REGIONAIS = {
-  'Tamires': ['Bauru','Campinas','Curitiba','Franca','Poços de Caldas','Ribeirão Preto','Rio de Janeiro','São José do Rio Preto','Noventena'],
-  'Yokoy':   ['Anywhere','Marília','São José dos Campos','São Paulo'],
-  'Bruno':   ['Goiânia','Uberlândia','Brasília','Belo Horizonte','Belém']
+  'Tamires':['Bauru','Campinas','Curitiba','Franca','Poços de Caldas','Ribeirão Preto','Rio de Janeiro','São José do Rio Preto','Noventena'],
+  'Yokoy':  ['Anywhere','Marília','São José dos Campos','São Paulo'],
+  'Bruno':  ['Goiânia','Uberlândia','Brasília','Belo Horizonte','Belém']
 };
-var REGIONAL_CORES = { 'Tamires':'#7C3AED', 'Yokoy':'#1A3BAD', 'Bruno':'#00915A' };
-var REGIONAL_BGS   = { 'Tamires':'#F5F3FF', 'Yokoy':'#EEF2FD', 'Bruno':'#F0FDF4' };
+var RCORES = {'Tamires':'#7C3AED','Yokoy':'#1A3BAD','Bruno':'#00915A'};
+var RBGS   = {'Tamires':'#F5F3FF','Yokoy':'#EEF2FD','Bruno':'#F0FDF4'};
 
-var normStr = function(s){ return (s||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); };
-var normPraca = function(p){ return normStr(p.replace(/^Blue3\s*[-–]\s*/i,'')); };
-var PRACA_TO_REG = {};
-Object.keys(REGIONAIS).forEach(function(r){ REGIONAIS[r].forEach(function(p){ PRACA_TO_REG[normStr(p)] = r; }); });
-var getRegional = function(p){ return PRACA_TO_REG[normPraca(p)] || null; };
+var ns = function(s){ return (s||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); };
+var normP = function(p){ return ns((p||'').replace(/^Blue3\s*[-–]\s*/i,'').trim()); };
+var P2R = {};
+Object.keys(REGIONAIS).forEach(function(r){ REGIONAIS[r].forEach(function(p){ P2R[ns(p)]=r; }); });
+var getReg = function(p){ return P2R[normP(p)]||null; };
 
-// ── Etapas e cores ────────────────────────────────────────────
-var ETAPA_COR = {
-  'prospecção':   {bg:'#EEF2FD', cor:'#1A3BAD', label:'Prospecção'},
-  'qualificação': {bg:'#FEF3C7', cor:'#92400E', label:'Qualificação'},
-  'negociação':   {bg:'#DCFCE7', cor:'#166534', label:'Negociação'},
-  'contratado(a)':{bg:'#EEF2FD', cor:'#1A3BAD', label:'Contratado(a)'},
-  'trabalhando':  {bg:'#F0FDF4', cor:'#15803D', label:'Trabalhando'},
-  'declinou':     {bg:'#FEE2E2', cor:'#991B1B', label:'Declinou'},
-  'contato futuro':{bg:'#F1F5F9',cor:'#475569', label:'Contato futuro'},
-  'desistência':  {bg:'#F5F3FF', cor:'#5B21B6', label:'Desistência'}
+// Status normalizado — mapear variações
+var normSt = function(s){
+  var n = ns(s||'');
+  if(n==='negociacao'||n==='negociação')return 'negociacao';
+  if(n==='qualificacao'||n==='qualificação')return 'qualificacao';
+  if(n==='prospeccao'||n==='prospecção'||n==='prospecao')return 'prospeccao';
+  if(n==='contratado(a)'||n==='contratado')return 'contratado';
+  if(n==='trabalhando')return 'trabalhando';
+  if(n==='declinou'||n==='declinado')return 'declinou';
+  if(n==='desistencia'||n==='desistência')return 'desistencia';
+  if(n==='contato futuro')return 'contatofuturo';
+  return n;
 };
-var etapaStyle = function(s){
-  var e = ETAPA_COR[normStr(s||'')];
-  return e ? 'background:'+e.bg+';color:'+e.cor+';' : 'background:#F1F5F9;color:#475569;';
+
+var ETAPAS = [
+  {key:'prospeccao',   label:'Prospecção',    cor:'#94A3B8'},
+  {key:'qualificacao', label:'Qualificação',  cor:'#B45309'},
+  {key:'negociacao',   label:'Negociação',    cor:'#2952E3'},
+  {key:'contratado',   label:'Contratado(a)', cor:'#1A3BAD'},
+  {key:'trabalhando',  label:'Trabalhando',   cor:'#16A34A'},
+  {key:'declinou',     label:'Declinou',      cor:'#DC2626'},
+  {key:'desistencia',  label:'Desistência',   cor:'#7C3AED'}
+];
+var etaCor = function(s){
+  var e=ETAPAS.find(function(x){return x.key===normSt(s);});
+  return e?{bg:'',cor:e.cor}:{bg:'',cor:'#94A3B8'};
 };
-var etapaLabel = function(s){
-  var e = ETAPA_COR[normStr(s||'')];
-  return e ? e.label : (s||'—');
+var etaLabel = function(s){
+  var e=ETAPAS.find(function(x){return x.key===normSt(s);});
+  return e?e.label:(s||'—');
+};
+var senTag = function(n){
+  var m={'sênior':'background:#DCFCE7;color:#166534;','senior':'background:#DCFCE7;color:#166534;','pleno':'background:#FEF3C7;color:#92400E;','júnior':'background:#FCE7F3;color:#9D174D;','junior':'background:#FCE7F3;color:#9D174D;'};
+  return m[ns(n||'')]||'background:#F1F5F9;color:#475569;';
 };
 
 // ── Estado ────────────────────────────────────────────────────
-var _regionalAtiva = 'todas';
-var _fltEtapa = '', _fltSen = '';
-var _allCandidatos = [];
-var _chartReg = {};
+var _reg = 'todas', _fPraca='', _fEtapa='', _fSen='';
+var _all = [], _expandido = false, _chartReg = {};
 
-function sc(id, cfg){
-  if(_chartReg[id]){ try{_chartReg[id].destroy();}catch(e){} }
-  var el = document.getElementById(id); if(!el) return;
-  _chartReg[id] = new Chart(el, cfg);
-}
+function sc(id,cfg){ if(_chartReg[id]){try{_chartReg[id].destroy();}catch(e){}} var el=document.getElementById(id);if(!el)return; _chartReg[id]=new Chart(el,cfg); }
+function set(id,v){ var e=document.getElementById(id);if(e)e.textContent=v; }
+function fmtM(v){ if(!v||v===0)return'—';if(v>=1e6)return'R$'+(v/1e6).toFixed(1).replace('.',',')+'M';if(v>=1e3)return'R$'+Math.round(v/1e3)+'K';return'R$'+v.toLocaleString('pt-BR'); }
+function fmtAuC(v){ if(!v||v===0)return'—';if(v>=1000)return'R$'+(v/1000).toFixed(1)+'B';return'R$'+v+'M'; }
 
-// ── Carregar dados ────────────────────────────────────────────
-function carregarDados(){
-  // Tentar pegar dados do parent (iframe do Nexus) primeiro
-  try {
-    var parentData = window.parent && window.parent.Blue3Data;
-    if(parentData && parentData._rawRows && parentData._rawRows.length){
-      processarRows(parentData._rawRows, []);
-      return;
-    }
-    if(parentData && parentData.candidatos && parentData.candidatos.length){
-      processarRows(parentData.candidatos, []);
-      return;
-    }
-  } catch(e){}
-
-  // Fallback: buscar direto do Supabase
-  // Pegar credenciais do parent se disponível
-  var url = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
-  var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
-  try {
-    if(window.parent && window.parent.SUPA_URL) url = window.parent.SUPA_URL;
-    if(window.parent && window.parent.SUPA_KEY) key = window.parent.SUPA_KEY;
-  } catch(e){}
-
-  var hdr = {'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json'};
+// ── Carregar ──────────────────────────────────────────────────
+window.addEventListener('load', function(){
+  var url='https://cjimsplgxrwkqgzegnkq.supabase.co';
+  var key='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+  try{ if(window.parent&&window.parent.SUPA_URL)url=window.parent.SUPA_URL; if(window.parent&&window.parent.SUPA_KEY)key=window.parent.SUPA_KEY; }catch(e){}
+  var hdr={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json'};
 
   Promise.all([
-    fetch(url+'/rest/v1/crm_candidatos?limit=1000&order=data_entrada.desc', {headers:hdr}).then(function(r){return r.json();}),
-    fetch(url+'/rest/v1/propostas?select=telefone,nome,payback_meses,dados&limit=2000', {headers:hdr}).then(function(r){return r.json();}).catch(function(){return [];})
-  ]).then(function(results){
-    processarRows(results[0]||[], results[1]||[]);
+    fetch(url+'/rest/v1/crm_candidatos?limit=2000',{headers:hdr}).then(function(r){return r.json();}),
+    fetch(url+'/rest/v1/propostas?select=telefone,payback_meses,dados&limit=2000',{headers:hdr}).then(function(r){return r.json();}).catch(function(){return[];})
+  ]).then(function(res){
+    var rows=res[0]||[], props=res[1]||[];
+    var pbMap={},pisoMap={};
+    props.forEach(function(p){
+      var tel=(p.telefone||'').replace(/\D/g,'');
+      if(tel&&p.payback_meses&&!pbMap[tel])pbMap[tel]=parseInt(p.payback_meses)||0;
+      if(tel&&p.dados&&p.dados.piso&&!pisoMap[tel])pisoMap[tel]=parseFloat(String(p.dados.piso).replace(',','.'))||0;
+    });
+    _all=rows.map(function(r){
+      var tel=(r.telefone||'').replace(/\D/g,'');
+      var praca=(r.praca||'').trim();
+      return{
+        nome:r.nome||'—', tel:tel, praca:praca, regional:getReg(praca),
+        status:r.status||'', nivel:r.nivel||'', hunter:r.hunter||'',
+        auc:parseFloat(r.auc_captado_mm||0)||0,
+        piso:pisoMap[tel]||parseFloat(r.piso||0)||0,
+        comp:parseFloat(r.total_comp||0)||0,
+        xp:parseFloat(r.copart_xp||0)||0,
+        mou:r.mou||'', payback:pbMap[tel]||parseInt(r.payback_meses||0)||0,
+        dt_contrat:r.data_contratacao||'', instituicao:r.instituicao||''
+      };
+    });
+    // popular filtro praças
+    var pracasUnicas=[...new Set(_all.map(function(r){return r.praca;}).filter(Boolean))].sort();
+    var sel=document.getElementById('flt-praca');
+    if(sel)pracasUnicas.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p.replace('Blue3 - ','');sel.appendChild(o);});
+    // data
+    var hoje=new Date(),meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    var el=document.getElementById('cover-data');if(el)el.textContent=hoje.getDate()+' de '+meses[hoje.getMonth()]+' de '+hoje.getFullYear();
+    renderTudo();
   }).catch(function(e){
-    console.error('Erro ao carregar dados:', e);
-    var page = document.querySelector('.page');
-    if(page) page.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3);">Erro ao carregar dados: '+e.message+'</div>';
+    console.error(e);
+    document.querySelector('.page').innerHTML='<div style="padding:40px;text-align:center;color:var(--t3);">Erro ao carregar: '+e.message+'</div>';
   });
-}
+});
 
-function processarRows(rows, props){
-  var pbMap = {}, pisoMap = {};
-  (props||[]).forEach(function(p){
-    var tel = (p.telefone||'').replace(/\D/g,'');
-    if(tel && p.payback_meses && !pbMap[tel]) pbMap[tel] = parseInt(p.payback_meses)||0;
-    if(tel && p.dados && p.dados.piso && !pisoMap[tel]) pisoMap[tel] = parseFloat(String(p.dados.piso).replace(',','.'))||0;
-  });
-  _allCandidatos = (rows||[]).map(function(r){
-    var tel   = (r.telefone||r['Telefone']||'').replace(/\D/g,'');
-    var praca = (r.praca||r['Praça']||r['p']||'').trim();
-    return {
-      id:         r.id||r['_crm_id']||'',
-      nome:       r.nome||r['Candidato']||r['n']||'—',
-      tel:        tel,
-      praca:      praca,
-      regional:   getRegional(praca),
-      status:     r.status||r['Status']||r['st']||'',
-      nivel:      r.nivel||r['Nível']||r['sen']||'',
-      hunter:     r.hunter||r['Hunter']||r['h']||'',
-      auc:        parseFloat(r.auc_captado_mm||r['cap']||0)||0,
-      piso:       pisoMap[tel]||parseFloat(r.piso||0)||0,
-      comp:       parseFloat(r.total_comp||r['comp']||0)||0,
-      xp:         parseFloat(r.copart_xp||r['xp']||0)||0,
-      mou:        r.mou||r['MOU']||'',
-      payback:    pbMap[tel]||parseInt(r.payback_meses||0)||0,
-      dt_entrada: r.data_entrada||'',
-      dt_contrat: r.data_contratacao||r['dt']||'',
-      instituicao:r.instituicao||r['org']||''
-    };
-  });
-  var hoje=new Date(); var meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-  var el=document.getElementById('cover-data'); if(el)el.textContent=hoje.getDate()+' de '+meses[hoje.getMonth()]+' de '+hoje.getFullYear();
+// ── Controles ─────────────────────────────────────────────────
+function setRegional(reg,btn){
+  _reg=reg;
+  document.querySelectorAll('.fpill[id^=pill-]').forEach(function(b){b.classList.remove('fpill-on');});
+  if(btn)btn.classList.add('fpill-on');
+  set('cover-regional',reg==='todas'?'Todas as regionais':'Regional '+reg);
   renderTudo();
 }
+function aplicarFiltros(){
+  _fPraca=(document.getElementById('flt-praca')||{}).value||'';
+  _fEtapa=(document.getElementById('flt-etapa')||{}).value||'';
+  _fSen=(document.getElementById('flt-sen')||{}).value||'';
+  _expandido=false;
+  renderTudo();
+}
+function resetFiltros(){
+  _fPraca=_fEtapa=_fSen='';
+  ['flt-praca','flt-etapa','flt-sen'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  _expandido=false; renderTudo();
+}
+function toggleExpandir(){
+  _expandido=!_expandido;
+  var rest=document.getElementById('candidatos-rest');
+  var btn=document.getElementById('btn-expandir');
+  if(rest)rest.style.display=_expandido?'':'none';
+  if(btn)btn.textContent=_expandido?'▲ Recolher':'▼ Ver todos';
+}
 
-// ── Filtrar candidatos ────────────────────────────────────────
-function filtrarCandidatos(){
-  return _allCandidatos.filter(function(r){
-    if(_regionalAtiva !== 'todas' && r.regional !== _regionalAtiva) return false;
-    if(_fltEtapa && normStr(r.status) !== normStr(_fltEtapa)) return false;
-    if(_fltSen   && normStr(r.nivel)  !== normStr(_fltSen))   return false;
+// ── Dados filtrados ───────────────────────────────────────────
+function getRegFiltrado(){
+  return _reg==='todas'?_all:_all.filter(function(r){return r.regional===_reg;});
+}
+function getCandFiltrado(){
+  return getRegFiltrado().filter(function(r){
+    if(_fPraca&&r.praca!==_fPraca)return false;
+    if(_fEtapa&&ns(r.status)!==ns(_fEtapa))return false;
+    if(_fSen&&ns(r.nivel)!==ns(_fSen))return false;
     return true;
   });
 }
 
-function setRegional(reg, btn){
-  _regionalAtiva = reg;
-  document.querySelectorAll('.fpill[id^=pill-]').forEach(function(b){ b.classList.remove('fpill-on'); });
-  if(btn) btn.classList.add('fpill-on');
-  var covEl = document.getElementById('cover-regional');
-  if(covEl) covEl.textContent = reg === 'todas' ? 'Todas as regionais' : 'Regional '+reg;
-  renderTudo();
-}
-
-function aplicarFiltros(){
-  _fltEtapa = (document.getElementById('flt-etapa')||{}).value||'';
-  _fltSen   = (document.getElementById('flt-sen')||{}).value||'';
-  renderTudo();
-}
-
-// ── Render principal ──────────────────────────────────────────
+// ── Render ────────────────────────────────────────────────────
 function renderTudo(){
-  var C = filtrarCandidatos();
-  var todos = _regionalAtiva === 'todas'
-    ? _allCandidatos
-    : _allCandidatos.filter(function(r){ return r.regional === _regionalAtiva; });
-
-  document.getElementById('filtro-count').textContent = C.length;
-  var ssEl = document.getElementById('ss-regional');
-  if(ssEl) ssEl.textContent = (_regionalAtiva==='todas'?'Todas as regionais':'Regional '+_regionalAtiva)+' · '+todos.length+' candidatos no CRM';
-
+  var todos=getRegFiltrado(), C=getCandFiltrado();
+  set('filtro-count',todos.length);
+  set('ss-regional',(_reg==='todas'?'Todas as regionais':'Regional '+_reg)+' · '+todos.length+' no CRM');
   renderKPIs(todos);
   renderFunil(todos);
-  renderPracasPipeline(todos);
+  renderPracasTabela(todos);
   renderContratados(todos);
-  renderNegociacao(todos);
-  renderTodosCandidatos(C);
+  renderCandidatos(C);
 }
 
 // ── 01 KPIs ───────────────────────────────────────────────────
 function renderKPIs(C){
-  var set = function(id,v){ var e=document.getElementById(id); if(e)e.textContent=v; };
-  var fmtM = function(v){ if(!v)return'—';if(v>=1e6)return'R$'+(v/1e6).toFixed(1).replace('.',',')+'M';if(v>=1e3)return'R$'+Math.round(v/1e3)+'K';return'R$'+v.toLocaleString('pt-BR'); };
-  var fmtAuC = function(v){ if(!v)return'—';if(v>=1000)return'R$'+(v/1000).toFixed(1)+'B';return'R$'+v+'M'; };
-
-  var norm = function(s){ return normStr(s); };
-  var ativos = C.filter(function(r){ var s=norm(r.status); return s==='trabalhando'||s==='contratado(a)'; });
-  var trabalhando = C.filter(function(r){ return norm(r.status)==='trabalhando'; });
-  var negociacao  = C.filter(function(r){ return norm(r.status)==='negociação'||norm(r.status)==='negociacao'; });
-  var mouPend     = ativos.filter(function(r){ return norm(r.mou)!=='assinado'&&norm(r.mou)!==''; }).length;
-
-  var aucTotal = ativos.reduce(function(s,r){return s+(r.auc||0);},0);
-  var custoNeg = negociacao.reduce(function(s,r){return s+(r.comp||r.piso*18||0);},0);
-  var pbs = ativos.filter(function(r){return r.payback>0;}).map(function(r){return r.payback;});
-  var pbMed = pbs.length ? Math.round(pbs.reduce(function(a,b){return a+b;},0)/pbs.length) : 0;
-  var seniors = ativos.filter(function(r){return norm(r.nivel)==='sênior';}).length;
-  var totalAtivos = ativos.length;
-  var convTaxa = C.length>0?Math.round(ativos.length/C.length*100):0;
-
-  set('kpi-ativos', totalAtivos);
-  set('kpi-ativos-sub', totalAtivos===1?'assessor ativo':'assessores ativos');
-  set('kpi-auc', fmtAuC(aucTotal));
-  set('kpi-auc-sub', ativos.filter(function(r){return r.auc>0;}).length+' com carteira mapeada');
-  set('kpi-pipeline', negociacao.length);
-  set('kpi-pipeline-conv', convTaxa+'% taxa de conversão geral');
-  set('kpi-custo', fmtM(custoNeg));
-  set('kpi-payback', pbMed ? 'Payback médio: '+pbMed+'m' : 'Payback médio: —');
-  set('kpi-senior', totalAtivos>0?Math.round(seniors/totalAtivos*100)+'%':'—');
-  set('kpi-senior-sub', seniors+' sêniors de '+totalAtivos);
-  set('kpi-ativacao', totalAtivos>0?Math.round(trabalhando.length/totalAtivos*100)+'%':'—');
-  set('kpi-mou-pend', mouPend);
+  var ativos=C.filter(function(r){var s=normSt(r.status);return s==='trabalhando'||s==='contratado';});
+  var trab=C.filter(function(r){return normSt(r.status)==='trabalhando';});
+  var neg=C.filter(function(r){return normSt(r.status)==='negociacao';});
+  var mouPend=ativos.filter(function(r){return ns(r.mou)!=='assinado'&&r.mou!=='';}).length;
+  var auc=ativos.reduce(function(s,r){return s+(r.auc||0);},0);
+  var custo=neg.reduce(function(s,r){return s+(r.comp||r.piso*18||0);},0);
+  var pbs=ativos.filter(function(r){return r.payback>0;}).map(function(r){return r.payback;});
+  var pbMed=pbs.length?Math.round(pbs.reduce(function(a,b){return a+b;},0)/pbs.length):0;
+  var sen=ativos.filter(function(r){return ns(r.nivel)==='senior'||ns(r.nivel)==='sênior';}).length;
+  set('kpi-ativos',ativos.length);
+  set('kpi-ativos-sub',ativos.length===1?'assessor ativo':'assessores ativos');
+  set('kpi-auc',fmtAuC(auc));
+  set('kpi-auc-sub',ativos.filter(function(r){return r.auc>0;}).length+' com carteira mapeada');
+  set('kpi-pipeline',neg.length);
+  set('kpi-custo',fmtM(custo));
+  set('kpi-payback',pbMed?'Payback médio: '+pbMed+'m':'Payback médio: —');
+  set('kpi-senior',ativos.length?Math.round(sen/ativos.length*100)+'%':'—');
+  set('kpi-senior-sub',sen+' sêniors de '+ativos.length);
+  set('kpi-ativacao',ativos.length?Math.round(trab.length/ativos.length*100)+'%':'—');
+  set('kpi-mou-pend',mouPend);
 }
 
 // ── 02 Funil ──────────────────────────────────────────────────
 function renderFunil(C){
-  var norm = normStr;
-  var etapas = [
-    {key:'prospecção',   label:'Prospecção',    cor:'#94A3B8', ordem:1},
-    {key:'qualificação', label:'Qualificação',  cor:'#B45309', ordem:2},
-    {key:'negociação',   label:'Negociação',    cor:'#2952E3', ordem:3},
-    {key:'contratado(a)',label:'Contratado(a)', cor:'#1A3BAD', ordem:4},
-    {key:'trabalhando',  label:'Trabalhando',   cor:'#16A34A', ordem:5}
-  ];
-  var counts = {};
-  C.forEach(function(r){ var k=norm(r.status||''); if(!counts[k])counts[k]=0; counts[k]++; });
-
-  var funil = document.getElementById('funil-regional');
-  if(!funil) return;
-  var total = C.length || 1;
-  funil.innerHTML = etapas.map(function(e,i){
-    var cnt = counts[e.key]||0;
-    var pct = Math.round(cnt/total*100);
-    return '<div style="flex:'+(cnt||0.5)+';min-width:80px;background:'+e.cor+';padding:20px 14px;text-align:center;position:relative;">'
-      +(i<etapas.length-1?'<div style="position:absolute;right:-1px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:30px solid transparent;border-bottom:30px solid transparent;border-left:12px solid '+e.cor+';z-index:2;"></div>':'')
-      +'<div style="font-size:26px;font-weight:700;color:#fff;line-height:1;">'+cnt+'</div>'
-      +'<div style="font-size:9px;font-weight:600;color:rgba(255,255,255,.7);margin-top:3px;text-transform:uppercase;letter-spacing:.06em;">'+e.label+'</div>'
-      +'<div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px;">'+pct+'%</div>'
+  var funil=document.getElementById('funil-regional'); if(!funil)return;
+  var counts={};
+  C.forEach(function(r){var k=normSt(r.status);if(!counts[k])counts[k]=0;counts[k]++;});
+  var etapasF=ETAPAS.slice(0,5); // só principais no funil
+  var total=C.length||1;
+  funil.innerHTML=etapasF.map(function(e,i){
+    var cnt=counts[e.key]||0, pct=Math.round(cnt/total*100);
+    return'<div style="flex:'+(cnt||0.3)+';min-width:70px;background:'+e.cor+';padding:18px 12px;text-align:center;position:relative;">'
+      +(i<etapasF.length-1?'<div style="position:absolute;right:-1px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:28px solid transparent;border-bottom:28px solid transparent;border-left:11px solid '+e.cor+';z-index:2;"></div>':'')
+      +'<div style="font-size:24px;font-weight:700;color:#fff;line-height:1;">'+cnt+'</div>'
+      +'<div style="font-size:8px;font-weight:600;color:rgba(255,255,255,.7);margin-top:3px;text-transform:uppercase;letter-spacing:.06em;">'+e.label+'</div>'
+      +'<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:2px;">'+pct+'%</div>'
       +'</div>';
   }).join('');
 
-  // Grid etapas com candidatos listados
-  var grid = document.getElementById('etapas-grid');
-  if(!grid) return;
-  grid.innerHTML = etapas.map(function(e){
-    var cands = C.filter(function(r){ return norm(r.status||'')=== e.key; });
-    if(!cands.length) return '';
-    return '<div class="card">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
-      +'<span style="font-size:11px;font-weight:700;color:'+e.cor+';">'+e.label+'</span>'
-      +'<span style="font-family:serif;font-size:20px;font-weight:600;color:'+e.cor+';">'+cands.length+'</span>'
+  var grid=document.getElementById('etapas-grid'); if(!grid)return;
+  grid.innerHTML=etapasF.map(function(e){
+    var cands=C.filter(function(r){return normSt(r.status)===e.key;});
+    if(!cands.length)return'';
+    return'<div class="card" style="padding:12px 14px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+      +'<span style="font-size:10px;font-weight:700;color:'+e.cor+';">'+e.label+'</span>'
+      +'<span style="font-family:serif;font-size:18px;font-weight:600;color:'+e.cor+';">'+cands.length+'</span>'
       +'</div>'
-      +cands.slice(0,5).map(function(r){
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--rule);">'
-          +'<div>'
-          +'<div style="font-size:11px;font-weight:600;color:var(--t1);">'+r.nome+'</div>'
-          +'<div style="font-size:9px;color:var(--t3);">'+(r.praca||'').replace('Blue3 - ','')+'</div>'
-          +'</div>'
-          +(r.nivel?'<span class="tag '+(normStr(r.nivel)==='sênior'?'tag-sen':normStr(r.nivel)==='pleno'?'tag-ple':'tag-jun')+'" style="font-size:8px;">'+r.nivel+'</span>':'')
+      +cands.slice(0,4).map(function(r){
+        return'<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--rule);">'
+          +'<div><div style="font-size:10px;font-weight:600;color:var(--t1);">'+r.nome+'</div>'
+          +'<div style="font-size:9px;color:var(--t3);">'+(r.praca||'').replace('Blue3 - ','')+'</div></div>'
+          +(r.nivel?'<span class="tag" style="'+senTag(r.nivel)+'">'+r.nivel+'</span>':'')
           +'</div>';
       }).join('')
-      +(cands.length>5?'<div style="font-size:10px;color:var(--t3);padding-top:6px;">+ '+(cands.length-5)+' mais</div>':'')
+      +(cands.length>4?'<div style="font-size:9px;color:var(--t3);padding-top:5px;">+ '+(cands.length-4)+' mais</div>':'')
       +'</div>';
   }).join('');
 }
 
-// ── 03 Pipeline por praça ─────────────────────────────────────
-function renderPracasPipeline(C){
-  var grid = document.getElementById('pracas-pipeline-grid');
-  if(!grid) return;
-
-  var norm = normStr;
-  var byPraca = {};
+// ── 03 Pipeline por praça — TABELA ───────────────────────────
+function renderPracasTabela(C){
+  var tbl=document.getElementById('pracas-table'); if(!tbl)return;
+  var byP={};
   C.forEach(function(r){
-    var p = (r.praca||'Sem praça').trim();
-    if(!byPraca[p]) byPraca[p]={
-      praca:p, regional:getRegional(p),
-      prosp:0, qual:0, neg:0, cont:0, trab:0, decl:0, outros:0,
-      total:0, auc:0, senior:0, pleno:0, junior:0, cands:[]
-    };
-    var s = norm(r.status||'');
-    byPraca[p].total++;
-    byPraca[p].cands.push(r);
-    if(r.auc) byPraca[p].auc += r.auc;
-    var nv = norm(r.nivel||'');
-    if(nv==='sênior')byPraca[p].senior++;
-    else if(nv==='pleno')byPraca[p].pleno++;
-    else if(nv==='júnior'||nv==='junior')byPraca[p].junior++;
-    if(s==='prospecção')byPraca[p].prosp++;
-    else if(s==='qualificação')byPraca[p].qual++;
-    else if(s==='negociação'||s==='negociacao')byPraca[p].neg++;
-    else if(s==='contratado(a)')byPraca[p].cont++;
-    else if(s==='trabalhando')byPraca[p].trab++;
-    else if(s==='declinou')byPraca[p].decl++;
-    else byPraca[p].outros++;
+    var p=(r.praca||'Sem praça').trim();
+    if(!byP[p])byP[p]={praca:p,reg:getReg(p),total:0,prosp:0,qual:0,neg:0,cont:0,trab:0,decl:0,auc:0,sen:0,ple:0,jun:0};
+    var s=normSt(r.status);
+    byP[p].total++;
+    if(s==='prospeccao')byP[p].prosp++;
+    else if(s==='qualificacao')byP[p].qual++;
+    else if(s==='negociacao')byP[p].neg++;
+    else if(s==='contratado')byP[p].cont++;
+    else if(s==='trabalhando')byP[p].trab++;
+    else if(s==='declinou')byP[p].decl++;
+    byP[p].auc+=(r.auc||0);
+    var nv=ns(r.nivel||'');
+    if(nv==='sênior'||nv==='senior')byP[p].sen++;
+    else if(nv==='pleno')byP[p].ple++;
+    else if(nv==='júnior'||nv==='junior')byP[p].jun++;
   });
-
-  var pracas = Object.values(byPraca).sort(function(a,b){ return b.total-a.total; });
-  if(!pracas.length){ grid.innerHTML='<div style="color:var(--t3);font-size:12px;padding:16px 0;">Sem candidatos para esta regional.</div>'; return; }
-
-  var totalGeral = C.length || 1;
-  var ETAPAS_BAR = [
-    {key:'trab', cor:'#16A34A', label:'Trab.'},
-    {key:'cont', cor:'#1A3BAD', label:'Cont.'},
-    {key:'neg',  cor:'#2952E3', label:'Neg.'},
-    {key:'qual', cor:'#B45309', label:'Qual.'},
-    {key:'prosp',cor:'#94A3B8', label:'Prosp.'},
-    {key:'decl', cor:'#DC2626', label:'Decl.'}
-  ];
-
-  grid.innerHTML = pracas.map(function(d){
-    var reg = d.regional;
-    var corReg = reg ? REGIONAL_CORES[reg] : '#94A3B8';
-    var bgReg  = reg ? REGIONAL_BGS[reg]   : '#F1F5F9';
-    var pct = Math.round(d.total/totalGeral*100);
-    var ativosLocal = d.trab + d.cont;
-    var fmtAuC = d.auc>=1000?'R$'+(d.auc/1000).toFixed(1)+'B':d.auc>0?'R$'+d.auc+'M':'—';
-
-    var barras = ETAPAS_BAR.filter(function(e){return d[e.key]>0;}).map(function(e){
-      var w = Math.round(d[e.key]/d.total*100);
-      return '<div style="flex:'+d[e.key]+';background:'+e.cor+';height:8px;border-radius:0;" title="'+e.label+': '+d[e.key]+'"></div>';
-    }).join('');
-
-    return '<div class="card">'
-      // Cabeçalho
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">'
-      +'<div>'
-      +'<div style="font-size:13px;font-weight:700;color:var(--t1);">'+(d.praca||'').replace('Blue3 - ','')+'</div>'
-      +(reg?'<span style="font-size:8px;font-weight:700;padding:1px 6px;border-radius:3px;background:'+bgReg+';color:'+corReg+';margin-top:3px;display:inline-block;">'+reg+'</span>':'')
-      +'</div>'
-      +'<div style="text-align:right;">'
-      +'<div style="font-family:serif;font-size:22px;font-weight:600;color:var(--cobalt);">'+d.total+'</div>'
-      +'<div style="font-size:9px;color:var(--t3);">'+pct+'% do total</div>'
-      +'</div>'
-      +'</div>'
-      // Barra do funil
-      +'<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;margin-bottom:10px;gap:1px;">'
-      +barras
-      +'</div>'
-      // Legenda da barra
-      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">'
-      +ETAPAS_BAR.filter(function(e){return d[e.key]>0;}).map(function(e){
-        return '<span style="font-size:9px;color:var(--t3);"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:'+e.cor+';margin-right:2px;"></span>'+e.label+' '+d[e.key]+'</span>';
-      }).join('')
-      +'</div>'
-      // Stats
-      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">'
-      +'<div style="background:var(--s2);border-radius:6px;padding:7px;text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--g);">'+ativosLocal+'</div><div style="font-size:8px;color:var(--t3);">Ativos</div></div>'
-      +'<div style="background:var(--s2);border-radius:6px;padding:7px;text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--cobalt);">'+fmtAuC+'</div><div style="font-size:8px;color:var(--t3);">AuC meta</div></div>'
-      +'<div style="background:var(--s2);border-radius:6px;padding:7px;text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--am);">'+d.neg+'</div><div style="font-size:8px;color:var(--t3);">Neg.</div></div>'
-      +'</div>'
-      // Senioridade
-      +(d.senior||d.pleno||d.junior?
-        '<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">'
-        +(d.senior?'<span class="tag tag-sen">'+d.senior+' Sên.</span>':'')
-        +(d.pleno ?'<span class="tag tag-ple">'+d.pleno+' Plen.</span>':'')
-        +(d.junior?'<span class="tag tag-jun">'+d.junior+' Jún.</span>':'')
-        +'</div>':'')
-      +'</div>';
-  }).join('');
+  var lista=Object.values(byP).sort(function(a,b){return b.total-a.total;});
+  if(!lista.length){tbl.innerHTML='<tr><td style="padding:16px;color:var(--t3);">Sem dados.</td></tr>';return;}
+  var thS='padding:7px 10px;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);background:var(--s2);text-align:';
+  tbl.innerHTML='<thead><tr>'
+    +'<th style="'+thS+'left;">Praça</th>'
+    +'<th style="'+thS+'left;">Regional</th>'
+    +'<th style="'+thS+'center;">Total</th>'
+    +'<th style="'+thS+'center;">Prosp.</th>'
+    +'<th style="'+thS+'center;">Qual.</th>'
+    +'<th style="'+thS+'center;">Neg.</th>'
+    +'<th style="'+thS+'center;">Cont.</th>'
+    +'<th style="'+thS+'center;">Trab.</th>'
+    +'<th style="'+thS+'center;">Decl.</th>'
+    +'<th style="'+thS+'right;">AuC meta</th>'
+    +'<th style="'+thS+'center;">Senioridade</th>'
+    +'</tr></thead><tbody>'
+    +lista.map(function(d){
+      var reg=d.reg; var corR=reg?RCORES[reg]:'#94A3B8'; var bgR=reg?RBGS[reg]:'#F1F5F9';
+      var tdS='padding:7px 10px;font-size:11px;border-bottom:1px solid var(--rule);';
+      var cel=function(v,bold){return'<td style="'+tdS+'text-align:center;'+(bold?'font-weight:700;color:var(--cobalt);':v===0?'color:var(--t4);':'')+'">'+v+'</td>';};
+      var seni=(d.sen?'<span class="tag" style="background:#DCFCE7;color:#166534;">'+d.sen+'S</span> ':'')
+              +(d.ple?'<span class="tag" style="background:#FEF3C7;color:#92400E;">'+d.ple+'P</span> ':'')
+              +(d.jun?'<span class="tag" style="background:#FCE7F3;color:#9D174D;">'+d.jun+'J</span>':'');
+      return'<tr>'
+        +'<td style="'+tdS+'font-weight:600;color:var(--t1);">'+(d.praca||'').replace('Blue3 - ','')+'</td>'
+        +'<td style="'+tdS+'">'+(reg?'<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:'+bgR+';color:'+corR+';">'+reg+'</span>':'—')+'</td>'
+        +cel(d.total,true)
+        +cel(d.prosp)+cel(d.qual)+cel(d.neg)+cel(d.cont)+cel(d.trab)+cel(d.decl)
+        +'<td style="'+tdS+'text-align:right;font-weight:700;color:var(--cobalt);">'+fmtAuC(d.auc)+'</td>'
+        +'<td style="'+tdS+'text-align:center;">'+seni+'</td>'
+        +'</tr>';
+    }).join('')
+    +'</tbody>';
 }
 
-// ── 04 Contratados ativos ─────────────────────────────────────
+// ── 04 Contratados ────────────────────────────────────────────
 function renderContratados(C){
-  var norm = normStr;
-  var ativos = C.filter(function(r){ var s=norm(r.status); return s==='trabalhando'||s==='contratado(a)'; });
-  var grid = document.getElementById('contratados-grid');
-  if(grid){
-    if(!ativos.length){ grid.innerHTML='<div style="color:var(--t3);font-size:12px;">Nenhum contratado ativo nesta regional.</div>'; }
-    else {
-      grid.innerHTML = ativos.sort(function(a,b){return(b.auc||0)-(a.auc||0);}).map(function(r){
-        var nv=norm(r.nivel||'');
-        var tagSen=nv==='sênior'?'tag-sen':nv==='pleno'?'tag-ple':'tag-jun';
-        var fmtAuC=r.auc>=1000?'R$'+(r.auc/1000).toFixed(1)+'B':r.auc>0?'R$'+r.auc+'M':'—';
-        var fmtPiso=r.piso?'R$'+Math.round(r.piso/1000)+'K/mês':'—';
-        var mouStyle=norm(r.mou)==='assinado'?'color:#16A34A;':'color:#B45309;';
-        return '<div class="card" style="display:flex;flex-direction:column;gap:6px;">'
-          +'<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
-          +'<div style="font-size:12px;font-weight:700;color:var(--t1);flex:1;">'+r.nome+'</div>'
-          +(r.nivel?'<span class="tag '+tagSen+'" style="font-size:8px;flex-shrink:0;margin-left:6px;">'+r.nivel+'</span>':'')
-          +'</div>'
-          +'<div style="font-size:10px;color:var(--t3);">'+(r.praca||'').replace('Blue3 - ','')+(r.hunter?' · '+r.hunter:'')+'</div>'
-          +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">'
-          +'<div>'
-          +'<div style="font-size:11px;font-weight:700;color:var(--cobalt);">'+fmtAuC+'</div>'
-          +'<div style="font-size:9px;color:var(--t3);">AuC meta</div>'
-          +'</div>'
-          +'<div style="text-align:right;">'
-          +'<div style="font-size:10px;color:var(--t2);">'+fmtPiso+'</div>'
-          +'<div style="font-size:9px;'+mouStyle+'">MOU: '+(r.mou||'—')+'</div>'
-          +'</div>'
-          +'</div>'
-          +(norm(r.status)==='trabalhando'
-            ?'<div style="margin-top:2px;"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;background:#F0FDF4;color:#15803D;">● Trabalhando</span></div>'
-            :'<div style="margin-top:2px;"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;background:#EEF2FD;color:#1A3BAD;">● Contratado(a)</span></div>')
-          +'</div>';
-      }).join('');
-    }
-  }
+  var ativos=C.filter(function(r){var s=normSt(r.status);return s==='trabalhando'||s==='contratado';});
+  var vazioEl=document.getElementById('contratados-vazio');
+  if(vazioEl)vazioEl.style.display=ativos.length?'none':'block';
 
   // Gráfico mensal
-  var byMes = {};
+  var byM={};
   ativos.forEach(function(r){
-    var dt = r.dt_contrat||r.dt_entrada||'';
-    var m = parseInt((dt.match(/[-\/](\d{2})[-\/]/)|| [])[1]||dt.split('-')[1]||0);
-    if(m){ if(!byMes[m])byMes[m]=0; byMes[m]++; }
+    var dt=r.dt_contrat||''; var m=parseInt((dt.match(/[-\/](\d{2})[-\/]/)|| [])[1]||dt.split('-')[1]||0);
+    if(m){if(!byM[m])byM[m]=0;byM[m]++;}
   });
-  var meses = Object.keys(byMes).map(Number).sort(function(a,b){return a-b;});
-  var mLabels={1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
+  var meses=Object.keys(byM).map(Number).sort(function(a,b){return a-b;});
+  var mL={1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
   if(meses.length){
-    sc('chartMensal',{type:'bar',data:{labels:meses.map(function(m){return mLabels[m]||'M'+m;}),datasets:[{data:meses.map(function(m){return byMes[m];}),backgroundColor:'#2952E3',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
+    sc('chartMensal',{type:'bar',data:{labels:meses.map(function(m){return mL[m]||'M'+m;}),datasets:[{data:meses.map(function(m){return byM[m];}),backgroundColor:'#2952E3',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
   }
 
   // Gráfico senioridade
-  var sen=ativos.filter(function(r){return norm(r.nivel)==='sênior';}).length;
-  var ple=ativos.filter(function(r){return norm(r.nivel)==='pleno';}).length;
-  var jun=ativos.filter(function(r){var n=norm(r.nivel||'');return n==='júnior'||n==='junior';}).length;
+  var sen=ativos.filter(function(r){var n=ns(r.nivel||'');return n==='sênior'||n==='senior';}).length;
+  var ple=ativos.filter(function(r){return ns(r.nivel||'')==='pleno';}).length;
+  var jun=ativos.filter(function(r){var n=ns(r.nivel||'');return n==='júnior'||n==='junior';}).length;
   var pD=[{l:'Sênior',v:sen,c:'#16A34A'},{l:'Pleno',v:ple,c:'#B45309'},{l:'Júnior',v:jun,c:'#BE185D'}].filter(function(d){return d.v>0;});
   if(pD.length){
     sc('chartSenioridade',{type:'doughnut',data:{labels:pD.map(function(d){return d.l;}),datasets:[{data:pD.map(function(d){return d.v;}),backgroundColor:pD.map(function(d){return d.c;}),borderWidth:3,borderColor:'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}});
+    var tot=ativos.length||1;
     var leg=document.getElementById('leg-senioridade');
-    if(leg){
-      var tot=ativos.length||1;
-      leg.innerHTML=pD.map(function(d){return'<span style="font-size:10px;color:var(--t2);display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:'+d.c+';display:inline-block;"></span>'+d.l+' — '+d.v+' ('+Math.round(d.v/tot*100)+'%)</span>';}).join('');
-    }
+    if(leg)leg.innerHTML=pD.map(function(d){return'<span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:'+d.c+';display:inline-block;"></span>'+d.l+' — '+d.v+' ('+Math.round(d.v/tot*100)+'%)</span>';}).join('');
   }
 }
 
-// ── 05 Em negociação ─────────────────────────────────────────
-function renderNegociacao(C){
-  var norm = normStr;
-  var neg = C.filter(function(r){ var s=norm(r.status||''); return s==='negociação'||s==='negociacao'; });
-  var wrap = document.getElementById('negociacao-table');
-  if(!wrap) return;
-  if(!neg.length){ wrap.innerHTML='<div style="color:var(--t3);font-size:12px;padding:16px 0;">Nenhum candidato em negociação nesta regional.</div>'; return; }
-  neg.sort(function(a,b){return(b.auc||0)-(a.auc||0);});
-  var fmtAuC=function(v){return v>=1000?'R$'+(v/1000).toFixed(1)+'B':v>0?'R$'+v+'M':'—';};
-  var fmtPiso=function(v){return v?'R$'+Math.round(v/1000)+'K':'—';};
-  wrap.innerHTML='<table class="mat">'
-    +'<thead><tr>'
-    +'<th>Candidato</th><th>Praça</th><th>Hunter</th><th>Senioridade</th>'
-    +'<th style="text-align:right;">AuC meta</th><th style="text-align:right;">Piso/mês</th>'
-    +'<th style="text-align:right;">Payback</th><th>Origem</th>'
-    +'</tr></thead><tbody>'
-    +neg.map(function(r){
-      var nv=norm(r.nivel||'');
-      var tagSen=nv==='sênior'?'tag-sen':nv==='pleno'?'tag-ple':'tag-jun';
-      return '<tr>'
-        +'<td style="font-weight:600;color:var(--t1);">'+r.nome+'</td>'
-        +'<td style="color:var(--t3);font-size:10px;">'+(r.praca||'').replace('Blue3 - ','')+'</td>'
-        +'<td>'+(r.hunter||'—')+'</td>'
-        +'<td>'+(r.nivel?'<span class="tag '+tagSen+'" style="font-size:8px;">'+r.nivel+'</span>':'—')+'</td>'
-        +'<td style="text-align:right;font-weight:700;color:var(--cobalt);">'+fmtAuC(r.auc)+'</td>'
-        +'<td style="text-align:right;">'+fmtPiso(r.piso)+'</td>'
-        +'<td style="text-align:right;color:#16A34A;font-weight:600;">'+(r.payback?r.payback+'m':'—')+'</td>'
-        +'<td style="font-size:10px;color:var(--t3);">'+(r.instituicao||'—')+'</td>'
-        +'</tr>';
-    }).join('')
-    +'</tbody></table>';
-}
+// ── 05 Tabela de candidatos ───────────────────────────────────
+function renderCandidatos(C){
+  var topEl=document.getElementById('candidatos-top');
+  var restEl=document.getElementById('candidatos-rest');
+  var vazioEl=document.getElementById('candidatos-vazio');
+  var btn=document.getElementById('btn-expandir');
+  if(!topEl)return;
 
-// ── 06 Todos os candidatos ───────────────────────────────────
-function renderTodosCandidatos(C){
-  var wrap = document.getElementById('todos-candidatos-table');
-  if(!wrap) return;
-  var norm = normStr;
-  C = C.sort(function(a,b){
-    var ord={'trabalhando':0,'contratado(a)':1,'negociação':2,'negociacao':2,'qualificação':3,'prospecção':4,'declinou':5,'desistência':6};
-    return (ord[norm(a.status||'')]||9)-(ord[norm(b.status||'')]||9);
-  });
-  if(!C.length){ wrap.innerHTML='<div style="color:var(--t3);font-size:12px;padding:16px 0;">Nenhum candidato com os filtros selecionados.</div>'; return; }
-  var fmtAuC=function(v){return v>=1000?'R$'+(v/1000).toFixed(1)+'B':v>0?'R$'+v+'M':'—';};
-  wrap.innerHTML='<table class="mat">'
-    +'<thead><tr>'
-    +'<th>Candidato</th><th>Praça</th><th>Regional</th><th>Hunter</th>'
-    +'<th>Etapa</th><th>Senioridade</th>'
-    +'<th style="text-align:right;">AuC</th><th>MOU</th><th>Origem</th>'
-    +'</tr></thead><tbody>'
-    +C.map(function(r){
-      var nv=norm(r.nivel||'');
-      var tagSen=nv==='sênior'?'tag-sen':nv==='pleno'?'tag-ple':'tag-jun';
-      var reg=r.regional;
-      var corReg=reg?REGIONAL_CORES[reg]:'#94A3B8';
-      var bgReg =reg?REGIONAL_BGS[reg]:'#F1F5F9';
-      var mouStyle=norm(r.mou||'')==='assinado'?'color:#16A34A;font-weight:600;':'color:#B45309;';
-      return '<tr>'
-        +'<td style="font-weight:600;color:var(--t1);">'+r.nome+'</td>'
-        +'<td style="color:var(--t3);font-size:10px;">'+(r.praca||'').replace('Blue3 - ','')+'</td>'
-        +'<td>'+(reg?'<span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;background:'+bgReg+';color:'+corReg+';">'+reg+'</span>':'—')+'</td>'
-        +'<td style="font-size:11px;">'+(r.hunter||'—')+'</td>'
-        +'<td><span class="tag" style="'+etapaStyle(r.status)+'font-size:8px;">'+etapaLabel(r.status)+'</span></td>'
-        +'<td>'+(r.nivel?'<span class="tag '+tagSen+'" style="font-size:8px;">'+r.nivel+'</span>':'—')+'</td>'
-        +'<td style="text-align:right;font-weight:700;color:var(--cobalt);">'+fmtAuC(r.auc)+'</td>'
-        +'<td style="font-size:10px;'+mouStyle+'">'+(r.mou||'—')+'</td>'
-        +'<td style="font-size:10px;color:var(--t3);">'+(r.instituicao||'—')+'</td>'
-        +'</tr>';
-    }).join('')
-    +'</tbody>'
-    +'<tfoot><tr style="background:var(--s2);">'
-    +'<td colspan="6" style="padding:8px 10px;font-size:10px;font-weight:700;color:var(--t2);">Total</td>'
-    +'<td style="padding:8px 10px;font-size:11px;font-weight:700;color:var(--cobalt);text-align:right;">'
-    +(function(){var t=C.reduce(function(s,r){return s+(r.auc||0);},0);return t>=1000?'R$'+(t/1000).toFixed(1)+'B':t>0?'R$'+t+'M':'—';})()
-    +'</td><td colspan="2"></td></tr></tfoot>'
-    +'</table>';
-}
+  // Ordenar por prioridade de etapa
+  var ord={trabalhando:0,'contratado(a)':1,contratado:1,negociacao:2,qualificacao:3,prospeccao:4,declinou:5,desistencia:6};
+  C=C.slice().sort(function(a,b){return (ord[normSt(a.status)]||9)-(ord[normSt(b.status)]||9);});
 
-// ── Init ──────────────────────────────────────────────────────
-window.addEventListener('load', function(){
-  carregarDados();
-});
+  if(!C.length){
+    topEl.innerHTML=''; if(restEl)restEl.innerHTML='';
+    if(vazioEl)vazioEl.style.display='';
+    if(btn)btn.style.display='none';
+    return;
+  }
+  if(vazioEl)vazioEl.style.display='none';
+
+  var thS='padding:7px 10px;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);background:var(--s2);text-align:';
+  var TH='<table class="mat"><thead><tr>'
+    +'<th style="'+thS+'left;">Candidato</th>'
+    +'<th style="'+thS+'left;">Praça</th>'
+    +'<th style="'+thS+'left;">Regional</th>'
+    +'<th style="'+thS+'left;">Hunter</th>'
+    +'<th style="'+thS+'left;">Etapa</th>'
+    +'<th style="'+thS+'center;">Senioridade</th>'
+    +'<th style="'+thS+'right;">AuC</th>'
+    +'<th style="'+thS+'left;">MOU</th>'
+    +'<th style="'+thS+'left;">Origem</th>'
+    +'</tr></thead>';
+
+  var makeRows=function(arr){
+    return arr.map(function(r){
+      var reg=r.regional; var corR=reg?RCORES[reg]:'#94A3B8'; var bgR=reg?RBGS[reg]:'#F1F5F9';
+      var stE=ETAPAS.find(function(e){return e.key===normSt(r.status);});
+      var stCor=stE?stE.cor:'#94A3B8';
+      var mouStyle=ns(r.mou||'')==='assinado'?'color:#16A34A;font-weight:600;':'color:#B45309;';
+      var tdS='padding:7px 10px;font-size:11px;border-bottom:1px solid var(--rule);';
+      return'<tr>'
+        +'<td style="'+tdS+'font-weight:600;color:var(--t1);">'+r.nome+'</td>'
+        +'<td style="'+tdS+'color:var(--t3);font-size:10px;">'+(r.praca||'').replace('Blue3 - ','')+'</td>'
+        +'<td style="'+tdS+'">'+(reg?'<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:'+bgR+';color:'+corR+';">'+reg+'</span>':'—')+'</td>'
+        +'<td style="'+tdS+'">'+(r.hunter||'—')+'</td>'
+        +'<td style="'+tdS+'"><span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:'+stCor+'22;color:'+stCor+';">'+etaLabel(r.status)+'</span></td>'
+        +'<td style="'+tdS+'text-align:center;">'+(r.nivel?'<span class="tag" style="'+senTag(r.nivel)+'">'+r.nivel+'</span>':'—')+'</td>'
+        +'<td style="'+tdS+'text-align:right;font-weight:700;color:var(--cobalt);">'+fmtAuC(r.auc)+'</td>'
+        +'<td style="'+tdS+mouStyle+'">'+(r.mou||'—')+'</td>'
+        +'<td style="'+tdS+'font-size:10px;color:var(--t3);">'+(r.instituicao||'—')+'</td>'
+        +'</tr>';
+    }).join('');
+  };
+
+  var top10=C.slice(0,10), rest=C.slice(10);
+  topEl.innerHTML=TH+'<tbody>'+makeRows(top10)+'</tbody></table>';
+  if(restEl){
+    if(rest.length){restEl.innerHTML=TH+'<tbody>'+makeRows(rest)+'</tbody></table>';}
+    else{restEl.innerHTML='';}
+  }
+  if(btn){
+    if(rest.length===0){btn.style.display='none';}
+    else{btn.style.display='';btn.textContent=_expandido?'▲ Recolher':'▼ Ver todos ('+C.length+')';}
+  }
+  if(restEl)restEl.style.display=_expandido?'':'none';
+}
 </script>
 </body>
 </html>
