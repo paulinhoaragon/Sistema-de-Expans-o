@@ -133,38 +133,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
   <div class="hr"></div>
 
-  <!-- 05 Todos os candidatos -->
+  <!-- 05 Candidatos contratados -->
   <div style="margin-bottom:28px;">
     <div class="sh">
-      <span class="sn">05</span><span class="st">Todos os candidatos</span>
-      <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-        <select id="flt-praca" onchange="aplicarFiltros()" style="font-size:10px;padding:4px 8px;border:1px solid var(--rule);border-radius:6px;color:var(--t2);background:var(--surface);cursor:pointer;">
-          <option value="">Todas as praças</option>
-        </select>
-        <select id="flt-etapa" onchange="aplicarFiltros()" style="font-size:10px;padding:4px 8px;border:1px solid var(--rule);border-radius:6px;color:var(--t2);background:var(--surface);cursor:pointer;">
-          <option value="">Todas as etapas</option>
-          <option value="Prospecção">Prospecção</option>
-          <option value="Qualificação">Qualificação</option>
-          <option value="Negociação">Negociação</option>
-          <option value="Contratado(a)">Contratado(a)</option>
-          <option value="Trabalhando">Trabalhando</option>
-          <option value="Declinou">Declinou</option>
-          <option value="Desistência">Desistência</option>
-        </select>
-        <select id="flt-sen" onchange="aplicarFiltros()" style="font-size:10px;padding:4px 8px;border:1px solid var(--rule);border-radius:6px;color:var(--t2);background:var(--surface);cursor:pointer;">
-          <option value="">Todas as senioridades</option>
-          <option value="Sênior">Sênior</option>
-          <option value="Pleno">Pleno</option>
-          <option value="Júnior">Júnior</option>
-        </select>
-        <button onclick="resetFiltros()" style="font-size:10px;padding:4px 10px;border:1px solid var(--rule);border-radius:6px;color:var(--t3);background:var(--canvas);cursor:pointer;">✕ Limpar</button>
-        <button id="btn-expandir" onclick="toggleExpandir()" style="font-size:10px;font-weight:700;padding:4px 12px;border-radius:4px;border:none;background:var(--cobalt-pl);color:var(--cobalt);cursor:pointer;">▼ Ver todos</button>
-      </div>
+      <span class="sn">05</span><span class="st">Candidatos contratados — carteiras e propostas</span>
+      <span class="ss" id="cont-count">—</span>
     </div>
     <div class="card">
-      <div id="candidatos-top"></div>
-      <div id="candidatos-rest" style="display:none;"></div>
-      <div id="candidatos-vazio" style="display:none;font-size:12px;color:var(--t3);padding:8px 0;">Nenhum candidato com os filtros selecionados.</div>
+      <div id="contratados-top"></div>
+      <div id="contratados-rest" style="display:none;"></div>
+      <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+        <button id="btn-exp-cont" onclick="toggleExpCont()" style="display:none;font-size:10px;font-weight:700;padding:4px 12px;border-radius:4px;border:none;background:var(--cobalt-pl);color:var(--cobalt);cursor:pointer;">▼ Ver todos</button>
+      </div>
     </div>
   </div>
 
@@ -189,14 +169,14 @@ var getReg = function(p){ return P2R[normP(p)]||null; };
 // Status normalizado — mapear variações
 var normSt = function(s){
   var n = ns(s||'');
-  if(n==='negociacao'||n==='negociação')return 'negociacao';
-  if(n==='qualificacao'||n==='qualificação')return 'qualificacao';
-  if(n==='prospeccao'||n==='prospecção'||n==='prospecao')return 'prospeccao';
-  if(n==='contratado(a)'||n==='contratado')return 'contratado';
-  if(n==='trabalhando')return 'trabalhando';
-  if(n==='declinou'||n==='declinado')return 'declinou';
-  if(n==='desistencia'||n==='desistência')return 'desistencia';
-  if(n==='contato futuro')return 'contatofuturo';
+  if(n.includes('negoc'))return 'negociacao';
+  if(n.includes('qualif'))return 'qualificacao';
+  if(n.includes('prospec'))return 'prospeccao';
+  if(n.includes('trabalh'))return 'trabalhando';
+  if(n.includes('contrat'))return 'contratado';
+  if(n.includes('declin'))return 'declinou';
+  if(n.includes('desist'))return 'desistencia';
+  if(n.includes('contato'))return 'contatofuturo';
   return n;
 };
 
@@ -263,6 +243,9 @@ window.addEventListener('load', function(){
         dt_contrat:r.data_contratacao||'', instituicao:r.instituicao||''
       };
     });
+    // DEBUG — remover após confirmar
+    if(_all.length) console.log('[Regional] amostra row raw:', JSON.stringify(rows[0]));
+    if(_all.length) console.log('[Regional] amostra mapeado:', JSON.stringify(_all[0]));
     // popular filtro praças
     var pracasUnicas=[...new Set(_all.map(function(r){return r.praca;}).filter(Boolean))].sort();
     var sel=document.getElementById('flt-praca');
@@ -320,14 +303,14 @@ function getCandFiltrado(){
 
 // ── Render ────────────────────────────────────────────────────
 function renderTudo(){
-  var todos=getRegFiltrado(), C=getCandFiltrado();
+  var todos=getRegFiltrado();
   set('filtro-count',todos.length);
   set('ss-regional',(_reg==='todas'?'Todas as regionais':'Regional '+_reg)+' · '+todos.length+' no CRM');
   renderKPIs(todos);
   renderFunil(todos);
   renderPracasTabela(todos);
   renderContratados(todos);
-  renderCandidatos(C);
+  renderContratadosExec(_reg);
 }
 
 // ── 01 KPIs ───────────────────────────────────────────────────
@@ -479,71 +462,81 @@ function renderContratados(C){
   }
 }
 
-// ── 05 Tabela de candidatos ───────────────────────────────────
-function renderCandidatos(C){
-  var topEl=document.getElementById('candidatos-top');
-  var restEl=document.getElementById('candidatos-rest');
-  var vazioEl=document.getElementById('candidatos-vazio');
-  var btn=document.getElementById('btn-expandir');
-  if(!topEl)return;
+// ── 05 Candidatos contratados (igual ao rel. executivo) ───────
+var _expCont = false;
+function toggleExpCont(){
+  _expCont=!_expCont;
+  var r=document.getElementById('contratados-rest');
+  var b=document.getElementById('btn-exp-cont');
+  if(r)r.style.display=_expCont?'':'none';
+  if(b)b.textContent=_expCont?'▲ Recolher':'▼ Ver todos';
+}
 
-  // Ordenar por prioridade de etapa
-  var ord={trabalhando:0,'contratado(a)':1,contratado:1,negociacao:2,qualificacao:3,prospeccao:4,declinou:5,desistencia:6};
-  C=C.slice().sort(function(a,b){return (ord[normSt(a.status)]||9)-(ord[normSt(b.status)]||9);});
-
-  if(!C.length){
-    topEl.innerHTML=''; if(restEl)restEl.innerHTML='';
-    if(vazioEl)vazioEl.style.display='';
-    if(btn)btn.style.display='none';
-    return;
+function renderContratadosExec(regFiltro){
+  var F=[];
+  // Tentar pegar do parent primeiro
+  try{
+    var pF=window.parent&&window.parent.Blue3Data&&window.parent.Blue3Data.financeiros;
+    if(pF&&pF.length)F=pF;
+  }catch(e){}
+  // Fallback: usar _all já carregados (ativos)
+  if(!F.length){
+    F=_all.filter(function(r){var s=normSt(r.status);return s==='trabalhando'||s==='contratado';}).map(function(r){
+      return{n:r.nome,p:r.praca,h:r.hunter,sen:r.nivel,st:r.status,mou:r.mou,cap:r.auc,piso:r.piso,si:0,comp:r.comp,xp:r.xp,payback_meses:r.payback,dt:r.dt_contrat};
+    });
   }
-  if(vazioEl)vazioEl.style.display='none';
+  // Filtrar por regional
+  if(regFiltro&&regFiltro!=='todas'){
+    F=F.filter(function(r){return getReg(r.p||'')===regFiltro;});
+  }
+  F=F.sort(function(a,b){return(b.cap||0)-(a.cap||0);});
+  set('cont-count',F.length+' contratados');
+  var topEl=document.getElementById('contratados-top');
+  var restEl=document.getElementById('contratados-rest');
+  var btn=document.getElementById('btn-exp-cont');
+  if(!topEl)return;
+  if(!F.length){topEl.innerHTML='<div style="color:var(--t3);font-size:12px;padding:8px 0;">Nenhum contratado nesta regional.</div>';return;}
 
-  var thS='padding:7px 10px;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);background:var(--s2);text-align:';
-  var TH='<table class="mat"><thead><tr>'
-    +'<th style="'+thS+'left;">Candidato</th>'
-    +'<th style="'+thS+'left;">Praça</th>'
-    +'<th style="'+thS+'left;">Regional</th>'
-    +'<th style="'+thS+'left;">Hunter</th>'
-    +'<th style="'+thS+'left;">Etapa</th>'
-    +'<th style="'+thS+'center;">Senioridade</th>'
-    +'<th style="'+thS+'right;">AuC</th>'
-    +'<th style="'+thS+'left;">MOU</th>'
-    +'<th style="'+thS+'left;">Origem</th>'
+  var thS='padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);background:var(--s2);';
+  var TH='<table style="width:100%;border-collapse:collapse;"><thead><tr>'
+    +'<th style="'+thS+'text-align:left;">Candidato</th>'
+    +'<th style="'+thS+'text-align:left;">Praça</th>'
+    +'<th style="'+thS+'text-align:left;">Hunter</th>'
+    +'<th style="'+thS+'text-align:center;">Sen.</th>'
+    +'<th style="'+thS+'text-align:center;">Status</th>'
+    +'<th style="'+thS+'text-align:center;">MOU</th>'
+    +'<th style="'+thS+'text-align:right;">AuC</th>'
+    +'<th style="'+thS+'text-align:right;">Piso/mês</th>'
+    +'<th style="'+thS+'text-align:right;">Total comp.</th>'
+    +'<th style="'+thS+'text-align:right;">Payback</th>'
     +'</tr></thead>';
 
-  var makeRows=function(arr){
-    return arr.map(function(r){
-      var reg=r.regional; var corR=reg?RCORES[reg]:'#94A3B8'; var bgR=reg?RBGS[reg]:'#F1F5F9';
-      var stE=ETAPAS.find(function(e){return e.key===normSt(r.status);});
-      var stCor=stE?stE.cor:'#94A3B8';
-      var mouStyle=ns(r.mou||'')==='assinado'?'color:#16A34A;font-weight:600;':'color:#B45309;';
-      var tdS='padding:7px 10px;font-size:11px;border-bottom:1px solid var(--rule);';
-      return'<tr>'
-        +'<td style="'+tdS+'font-weight:600;color:var(--t1);">'+r.nome+'</td>'
-        +'<td style="'+tdS+'color:var(--t3);font-size:10px;">'+(r.praca||'').replace('Blue3 - ','')+'</td>'
-        +'<td style="'+tdS+'">'+(reg?'<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:'+bgR+';color:'+corR+';">'+reg+'</span>':'—')+'</td>'
-        +'<td style="'+tdS+'">'+(r.hunter||'—')+'</td>'
-        +'<td style="'+tdS+'"><span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:'+stCor+'22;color:'+stCor+';">'+etaLabel(r.status)+'</span></td>'
-        +'<td style="'+tdS+'text-align:center;">'+(r.nivel?'<span class="tag" style="'+senTag(r.nivel)+'">'+r.nivel+'</span>':'—')+'</td>'
-        +'<td style="'+tdS+'text-align:right;font-weight:700;color:var(--cobalt);">'+fmtAuC(r.auc)+'</td>'
-        +'<td style="'+tdS+mouStyle+'">'+(r.mou||'—')+'</td>'
-        +'<td style="'+tdS+'font-size:10px;color:var(--t3);">'+(r.instituicao||'—')+'</td>'
-        +'</tr>';
-    }).join('');
-  };
+  var td='padding:6px 8px;font-size:11px;border-bottom:1px solid var(--rule);';
+  var makeRows=function(arr){return arr.map(function(r){
+    var stCor=normSt(r.st||'')==='trabalhando'?'background:#EEF2FD;color:#1A3BAD;':'background:#F0FDF4;color:#15803D;';
+    var stLbl=normSt(r.st||'')==='trabalhando'?'● Trab.':'● Cont.';
+    var mouCor=ns(r.mou||'')==='assinado'?'background:#DCFCE7;color:#166534;':'background:#FEF3C7;color:#92400E;';
+    var mouLbl=ns(r.mou||'')==='assinado'?'✓ OK':'Pend.';
+    var fmtR=function(v){if(!v||v===0)return'—';if(v>=1e6)return'R$'+(v/1e6).toFixed(1)+'M';return'R$'+Math.round(v/1000)+'K';};
+    return'<tr>'
+      +'<td style="'+td+'font-weight:600;color:var(--t1);">'+(r.n||'—')+'</td>'
+      +'<td style="'+td+'color:var(--t3);font-size:10px;">'+(r.p||'').replace('Blue3 - ','')+'</td>'
+      +'<td style="'+td+'">'+(r.h||'—')+'</td>'
+      +'<td style="'+td+'text-align:center;">'+(r.sen?'<span class="tag" style="'+senTag(r.sen)+'">'+r.sen+'</span>':'—')+'</td>'
+      +'<td style="'+td+'text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;'+stCor+'">'+stLbl+'</span></td>'
+      +'<td style="'+td+'text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;'+mouCor+'">'+mouLbl+'</span></td>'
+      +'<td style="'+td+'text-align:right;font-weight:700;color:var(--cobalt);">'+(r.cap?'R$'+r.cap+'M':'—')+'</td>'
+      +'<td style="'+td+'text-align:right;">'+(r.piso?fmtR(r.piso):'—')+'</td>'
+      +'<td style="'+td+'text-align:right;font-weight:600;">'+(r.comp?fmtR(r.comp):'—')+'</td>'
+      +'<td style="'+td+'text-align:right;color:#00915A;font-weight:600;">'+(r.payback_meses?r.payback_meses+'m':r.payback?r.payback+'m':'—')+'</td>'
+      +'</tr>';
+  }).join('');};
 
-  var top10=C.slice(0,10), rest=C.slice(10);
-  topEl.innerHTML=TH+'<tbody>'+makeRows(top10)+'</tbody></table>';
-  if(restEl){
-    if(rest.length){restEl.innerHTML=TH+'<tbody>'+makeRows(rest)+'</tbody></table>';}
-    else{restEl.innerHTML='';}
-  }
-  if(btn){
-    if(rest.length===0){btn.style.display='none';}
-    else{btn.style.display='';btn.textContent=_expandido?'▲ Recolher':'▼ Ver todos ('+C.length+')';}
-  }
-  if(restEl)restEl.style.display=_expandido?'':'none';
+  var top=F.slice(0,10), rest=F.slice(10);
+  topEl.innerHTML=TH+'<tbody>'+makeRows(top)+'</tbody></table>';
+  if(restEl){restEl.innerHTML=rest.length?TH+'<tbody>'+makeRows(rest)+'</tbody></table>':'';}
+  if(btn){btn.style.display=rest.length?'':'none';btn.textContent=_expCont?'▲ Recolher':'▼ Ver todos ('+F.length+')';}
+  if(restEl)restEl.style.display=_expCont?'':'none';
 }
 </script>
 </body>
