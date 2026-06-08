@@ -239,61 +239,75 @@ function sc(id, cfg){
 
 // ── Carregar dados ────────────────────────────────────────────
 function carregarDados(){
+  // Tentar pegar dados do parent (iframe do Nexus) primeiro
+  try {
+    var parentData = window.parent && window.parent.Blue3Data;
+    if(parentData && parentData._rawRows && parentData._rawRows.length){
+      processarRows(parentData._rawRows, []);
+      return;
+    }
+    if(parentData && parentData.candidatos && parentData.candidatos.length){
+      processarRows(parentData.candidatos, []);
+      return;
+    }
+  } catch(e){}
+
+  // Fallback: buscar direto do Supabase
+  // Pegar credenciais do parent se disponível
+  var url = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+  var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+  try {
+    if(window.parent && window.parent.SUPA_URL) url = window.parent.SUPA_URL;
+    if(window.parent && window.parent.SUPA_KEY) key = window.parent.SUPA_KEY;
+  } catch(e){}
+
+  var hdr = {'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json'};
+
   Promise.all([
-    fetch(SUPA_URL+'/rest/v1/crm_candidatos?limit=1000&order=data_entrada.desc', {
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-    }).then(function(r){return r.json();}),
-    fetch(SUPA_URL+'/rest/v1/propostas?select=telefone,nome,payback_meses,dados&limit=2000&order=id.desc', {
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-    }).then(function(r){return r.json();}).catch(function(){return [];})
+    fetch(url+'/rest/v1/crm_candidatos?limit=1000&order=data_entrada.desc', {headers:hdr}).then(function(r){return r.json();}),
+    fetch(url+'/rest/v1/propostas?select=telefone,nome,payback_meses,dados&limit=2000', {headers:hdr}).then(function(r){return r.json();}).catch(function(){return [];})
   ]).then(function(results){
-    var rows = results[0] || [];
-    var props = results[1] || [];
-
-    // Mapa payback por telefone
-    var pbMap = {};
-    var pisoMap = {};
-    props.forEach(function(p){
-      var tel = (p.telefone||'').replace(/\D/g,'');
-      if(tel && p.payback_meses && !pbMap[tel]) pbMap[tel] = parseInt(p.payback_meses)||0;
-      if(tel && p.dados && p.dados.piso && !pisoMap[tel]) pisoMap[tel] = parseFloat(String(p.dados.piso).replace(',','.'))||0;
-    });
-
-    _allCandidatos = rows.map(function(r){
-      var tel = (r.telefone||'').replace(/\D/g,'');
-      var praca = (r.praca||'').trim();
-      return {
-        id:        r.id,
-        nome:      r.nome||'—',
-        tel:       tel,
-        praca:     praca,
-        regional:  getRegional(praca),
-        status:    r.status||'',
-        nivel:     r.nivel||r.Nível||'',
-        hunter:    r.hunter||'',
-        auc:       parseFloat(r.auc_captado_mm)||0,
-        piso:      pisoMap[tel] || parseFloat(r.piso)||0,
-        comp:      parseFloat(r.total_comp)||0,
-        xp:        parseFloat(r.copart_xp)||0,
-        mou:       r.mou||'',
-        payback:   pbMap[tel] || parseInt(r.payback_meses)||0,
-        dt_entrada:r.data_entrada||'',
-        dt_contrat:r.data_contratacao||'',
-        instituicao:r.instituicao||''
-      };
-    });
-
-    // Data
-    var hoje = new Date();
-    var meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-    var el = document.getElementById('cover-data');
-    if(el) el.textContent = hoje.getDate()+' de '+meses[hoje.getMonth()]+' de '+hoje.getFullYear();
-
-    renderTudo();
+    processarRows(results[0]||[], results[1]||[]);
   }).catch(function(e){
     console.error('Erro ao carregar dados:', e);
-    document.querySelector('.page').innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3);">Erro ao carregar dados. Verifique a conexão.</div>';
+    var page = document.querySelector('.page');
+    if(page) page.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t3);">Erro ao carregar dados: '+e.message+'</div>';
   });
+}
+
+function processarRows(rows, props){
+  var pbMap = {}, pisoMap = {};
+  (props||[]).forEach(function(p){
+    var tel = (p.telefone||'').replace(/\D/g,'');
+    if(tel && p.payback_meses && !pbMap[tel]) pbMap[tel] = parseInt(p.payback_meses)||0;
+    if(tel && p.dados && p.dados.piso && !pisoMap[tel]) pisoMap[tel] = parseFloat(String(p.dados.piso).replace(',','.'))||0;
+  });
+  _allCandidatos = (rows||[]).map(function(r){
+    var tel   = (r.telefone||r['Telefone']||'').replace(/\D/g,'');
+    var praca = (r.praca||r['Praça']||r['p']||'').trim();
+    return {
+      id:         r.id||r['_crm_id']||'',
+      nome:       r.nome||r['Candidato']||r['n']||'—',
+      tel:        tel,
+      praca:      praca,
+      regional:   getRegional(praca),
+      status:     r.status||r['Status']||r['st']||'',
+      nivel:      r.nivel||r['Nível']||r['sen']||'',
+      hunter:     r.hunter||r['Hunter']||r['h']||'',
+      auc:        parseFloat(r.auc_captado_mm||r['cap']||0)||0,
+      piso:       pisoMap[tel]||parseFloat(r.piso||0)||0,
+      comp:       parseFloat(r.total_comp||r['comp']||0)||0,
+      xp:         parseFloat(r.copart_xp||r['xp']||0)||0,
+      mou:        r.mou||r['MOU']||'',
+      payback:    pbMap[tel]||parseInt(r.payback_meses||0)||0,
+      dt_entrada: r.data_entrada||'',
+      dt_contrat: r.data_contratacao||r['dt']||'',
+      instituicao:r.instituicao||r['org']||''
+    };
+  });
+  var hoje=new Date(); var meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  var el=document.getElementById('cover-data'); if(el)el.textContent=hoje.getDate()+' de '+meses[hoje.getMonth()]+' de '+hoje.getFullYear();
+  renderTudo();
 }
 
 // ── Filtrar candidatos ────────────────────────────────────────
