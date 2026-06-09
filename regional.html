@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexus · Relatório Executivo · Blue3</title>
+<title>Nexus · Heads Regionais · Blue3</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script><script src="config.js"></script>
 <script src="config.js"></script>
@@ -347,7 +347,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     </div>
 
     <div class="cr">
-      <div class="rt">Relatório Executivo<br>1º Semestre 2026</div>
+      <div class="rt">Heads Regionais<br>1º Semestre 2026</div>
       
       <div class="rc">Atualizado <span id="dyn-update-date">06 abr 2026</span> · Confidencial</div>
     </div>
@@ -526,6 +526,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           <button onclick="setCandFilter('sen','sênior',this)" class="fpill" data-group="sen" data-val="sênior">Sênior</button>
           <button onclick="setCandFilter('sen','pleno',this)" class="fpill" data-group="sen" data-val="pleno">Pleno</button>
           <button onclick="setCandFilter('sen','júnior',this)" class="fpill" data-group="sen" data-val="júnior">Júnior</button>
+        </div>
+        <div style="width:1px;height:18px;background:var(--rule);margin:0 2px;"></div>
+        <!-- Pills momento -->
+        <div style="display:flex;gap:3px;" id="cand-pills-momento">
+          <button onclick="setCandFilter('momento','todos',this)" class="fpill fpill-on" data-group="momento" data-val="todos">Todos</button>
+          <button onclick="setCandFilter('momento','trabalhando',this)" class="fpill" data-group="momento" data-val="trabalhando">Trabalhando</button>
+          <button onclick="setCandFilter('momento','formalizacao',this)" class="fpill" data-group="momento" data-val="formalizacao">ANCORD</button>
+          <button onclick="setCandFilter('momento','contratado',this)" class="fpill" data-group="momento" data-val="contratado">Aceite</button>
         </div>
         <div style="width:1px;height:18px;background:var(--rule);margin:0 2px;"></div>
         <button id="cand-toggle" onclick="toggleCandList()" style="font-size:10px;font-weight:700;color:var(--cobalt);background:var(--cobalt-pl);border:none;padding:4px 12px;border-radius:4px;cursor:pointer;letter-spacing:.04em;">▼ Ver todos</button>
@@ -1883,17 +1891,19 @@ function renderWithFilter(filteredC){
   function norm(s){return String(s||'').trim().toLowerCase();}
   function fmtM(v){if(!v||v===0)return'—';var a=Math.abs(v);if(a>=1e6)return'R$'+(v/1e6).toFixed(1).replace('.',',')+'M';if(a>=1e3)return'R$'+Math.round(v/1e3)+'K';return'R$'+v.toLocaleString('pt-BR');}
 
-  var AT       = filteredC.length;
-  var trab     = filteredC.filter(function(r){return norm(r.st)==='trabalhando';}).length;
-  var mouOk    = filteredC.filter(function(r){return norm(r.mou)==='assinado';}).length;
-  var ancord   = filteredC.filter(function(r){return norm(r.ancord)==='sim';}).length;
-  var seniors  = filteredC.filter(function(r){return norm(r.sen)==='sênior';}).length;
-  var aucTotal = filteredC.reduce(function(s,r){return s+(r.cap||0);},0);
-  var compTotal= filteredC.reduce(function(s,r){return s+(r.comp||0);},0);
-  var xpTotal  = filteredC.reduce(function(s,r){return s+(r.xp||0);},0);
-  var siTotal  = filteredC.reduce(function(s,r){return s+(r.si||0);},0);
-  var siCount  = filteredC.filter(function(r){return(r.si||0)>0;}).length;
-  var mouPend  = filteredC.filter(function(r){var m=norm(r.mou||'');return m!=='assinado'&&m!=='';}).length;
+  // Visão geral escopada aos ASSESSORES (mesmo universo do hero "Entrantes por momento")
+  var _coreC   = filteredC.filter(function(r){return (r.area||'Assessor').toLowerCase()==='assessor';});
+  var AT       = _coreC.length;
+  var trab     = _coreC.filter(function(r){return norm(r.st)==='trabalhando';}).length;
+  var mouOk    = _coreC.filter(function(r){return norm(r.mou)==='assinado';}).length;
+  var ancord   = _coreC.filter(function(r){return norm(r.ancord)==='sim';}).length;
+  var seniors  = _coreC.filter(function(r){return norm(r.sen)==='sênior';}).length;
+  var aucTotal = _coreC.reduce(function(s,r){return s+(r.cap||0);},0);
+  var compTotal= _coreC.reduce(function(s,r){return s+(r.comp||0);},0);
+  var xpTotal  = _coreC.reduce(function(s,r){return s+(r.xp||0);},0);
+  var siTotal  = _coreC.reduce(function(s,r){return s+(r.si||0);},0);
+  var siCount  = _coreC.filter(function(r){return(r.si||0)>0;}).length;
+  var mouPend  = _coreC.filter(function(r){var m=norm(r.mou||'');return m!=='assinado'&&m!=='';}).length;
 
   // ── Seção 01 KPIs ──
   var mLabels={1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
@@ -1903,12 +1913,14 @@ function renderWithFilter(filteredC){
   var periodoLabel=mLabels[mesInicio]+'–'+mLabels[mesFim]+' '+anoAtual+' · '+meses+' mês'+(meses!==1?'es':'');
   var ritmo=meses>0?(AT/meses).toFixed(2).replace('.',','):'—';
   var aucB=aucTotal>=1000?'R$'+(aucTotal/1000).toFixed(2).replace('.',',')+'B':'R$'+aucTotal+'M';
-  var candComCart=filteredC.filter(function(r){return r.cap>0;}).length;
+  var candComCart=_coreC.filter(function(r){return r.cap>0;}).length;
   var aucMedia=candComCart>0?Math.round(aucTotal/candComCart):0;
 
   // Desistências do filtro atual
   var rawFiltrado = D._rawRows ? D._rawRows.filter(function(r){
     var af=_activeFilters||{};
+    // Visão geral é só de assessores
+    if(norm(r['Área']||r['area']||r['vaga']||'Assessor')!=='assessor') return false;
     // respeitar a regional ativa (mesma lógica de praças do filtro de cima)
     if(_regAtiva && _regAtiva!=='todas'){
       if(_regAtiva==='MariaLaura'){
@@ -1972,7 +1984,7 @@ function renderWithFilter(filteredC){
   });
 
   // ── Seção 01 — maior carteira ──
-  var comCart=filteredC.filter(function(r){return r.cap>0;});
+  var comCart=_coreC.filter(function(r){return r.cap>0;});
   if(comCart.length){
     var maior=comCart.reduce(function(a,b){return(b.cap||0)>(a.cap||0)?b:a;});
     set('dyn-maior','R$'+maior.cap+'M');
@@ -1986,7 +1998,7 @@ function renderWithFilter(filteredC){
     var mNamesShort={1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
     // Agrupar filteredC por mês de contratação
     var byM={};
-    filteredC.forEach(function(r){
+    _coreC.forEach(function(r){
       var dt=r.dt||''; var m=0;
       if(dt) m=parseInt((dt.match(/\/(\d{2})\//)|| [])[1]||dt.split('-')[1]||0);
       if(!m) return;
@@ -2048,7 +2060,7 @@ function renderWithFilter(filteredC){
   set('dyn-auc-estrat', _aucEstrat>=1000?'R$'+(_aucEstrat/1000).toFixed(2).replace('.',',')+' B':(_aucEstrat>0?'R$'+_aucEstrat+'M':'—'));
   set('dyn-auc-estrat-sub', _estratC.length+' assessor'+(_estratC.length!==1?'es':'')+' com carteira');
   // ── Praças atendidas (distintas) entre os entrantes filtrados ──
-  var _prc={}; filteredC.forEach(function(r){ if(r.p) _prc[r.p]=1; });
+  var _prc={}; _coreC.forEach(function(r){ if(r.p) _prc[r.p]=1; });
   set('dyn-pracas', Object.keys(_prc).length);
 
   renderEstratégico(filteredC);
@@ -2449,12 +2461,12 @@ function renderRegionais(candidatos) {
 
     // Lista de praças
     var pracasSorted = Object.keys(d.pracas).sort(function(a,b){ return d.pracas[b]-d.pracas[a]; });
-    var pracasHtml = pracasSorted.map(function(p){
+    var pracasHtml = pracasSorted.slice(0,5).map(function(p){
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--rule);">'
         +'<span style="font-size:10px;color:var(--t2);">'+p+'</span>'
         +'<span style="font-size:10px;font-weight:700;color:var(--t1);">'+d.pracas[p]+'</span>'
         +'</div>';
-    }).join('');
+    }).join('') + (pracasSorted.length>5?'<div style="font-size:9px;color:var(--t4);padding-top:4px;">+'+(pracasSorted.length-5)+' outras</div>':'');
 
     return '<div style="background:var(--surface);border-radius:var(--r12);border:1px solid var(--rule);overflow:hidden;">'
       // Cabeçalho colorido
@@ -2481,7 +2493,7 @@ function renderRegionais(candidatos) {
       // Origem institucional (unificada aqui)
       +'<div style="padding:12px 16px;">'
       +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:6px;">Origem (instituições)</div>'
-      +(function(){var ks=Object.keys(d.origens).sort(function(a,b){return d.origens[b]-d.origens[a];});if(!ks.length)return '<div style="font-size:10px;color:var(--t4);">—</div>';return ks.slice(0,5).map(function(k){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--rule);"><span style="font-size:10px;color:var(--t2);">'+k+'</span><span style="font-size:10px;font-weight:700;color:var(--t1);">'+d.origens[k]+'</span></div>';}).join('');})()
+      +(function(){var ks=Object.keys(d.origens).sort(function(a,b){return d.origens[b]-d.origens[a];});if(!ks.length)return '<div style="font-size:10px;color:var(--t4);">—</div>';return ks.slice(0,4).map(function(k){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--rule);"><span style="font-size:10px;color:var(--t2);">'+k+'</span><span style="font-size:10px;font-weight:700;color:var(--t1);">'+d.origens[k]+'</span></div>';}).join('')+(ks.length>4?'<div style="font-size:9px;color:var(--t4);padding-top:4px;">+'+(ks.length-4)+' instituições</div>':'');})()
       +'</div>'
       +'</div>';
   }).join('');
@@ -2592,7 +2604,7 @@ function sortCandTable(key) {
 }
 
 // Estado dos filtros da tabela candidatos
-var _candFilters = {periodo:'todos', sen:'todos'};
+var _candFilters = {periodo:'todos', sen:'todos', momento:'todos'};
 
 function setCandFilter(group, val, btn) {
   _candFilters[group] = val;
@@ -2607,10 +2619,12 @@ function setCandFilter(group, val, btn) {
 function aplicarFiltrosCand() {
   var periodo = _candFilters.periodo || 'todos';
   var sen     = _candFilters.sen     || 'todos';
+  var momento = _candFilters.momento || 'todos';
   var now = new Date();
   var filtered = _candDataFull.filter(function(r) {
-    // Sem filtro de período: mostrar apenas com AuC mapeado (comportamento original)
-    if (periodo === 'todos' && !(r.cap > 0)) return false;
+    // Sem filtro de período/momento: mostrar só com AuC mapeado (comportamento original)
+    if (periodo === 'todos' && momento === 'todos' && !(r.cap > 0)) return false;
+    if (momento !== 'todos' && momentoCand(r) !== momento) return false;
     if (sen !== 'todos' && (r.sen||'').toLowerCase() !== sen) return false;
     if (periodo !== 'todos') {
       var d = _parseDtCand(r.dt);
@@ -2633,8 +2647,8 @@ function aplicarFiltrosCand() {
 }
 
 function resetFiltrosCand() {
-  _candFilters = {periodo:'todos', sen:'todos'};
-  document.querySelectorAll('#cand-pills-periodo .fpill, #cand-pills-sen .fpill').forEach(function(b){
+  _candFilters = {periodo:'todos', sen:'todos', momento:'todos'};
+  document.querySelectorAll('#cand-pills-periodo .fpill, #cand-pills-sen .fpill, #cand-pills-momento .fpill').forEach(function(b){
     b.classList.toggle('fpill-on', b.dataset.val === 'todos');
   });
   _candSortKey = 'cap'; _candSortAsc = false;
@@ -2674,11 +2688,12 @@ function renderCandListSplit(candidatos, fromFilter) {
   var totalAuC = sorted.reduce(function(s,r){return s+(r.cap||0);},0);
 
   // Cabeçalho da tabela (mesmo estilo de renderCandList)
-  var _thS2 = 'padding:5px 6px;font-size:8px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);';
+  var _thS2 = 'padding:4px 4px;font-size:8px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule);';
   var _thC2 = _thS2+'cursor:pointer;user-select:none;';
   var TH = '<thead><tr style="background:var(--s2);">'
-    +'<th onclick="sortCandTable(\'n\')" style="'+_thC2+'text-align:left;min-width:110px;">Candidato<span id="csi-n"></span></th>'
+    +'<th onclick="sortCandTable(\'n\')" style="'+_thC2+'text-align:left;">Candidato<span id="csi-n"></span></th>'
     +'<th onclick="sortCandTable(\'dt\')" style="'+_thC2+'text-align:left;white-space:nowrap;">Contrat.<span id="csi-dt"></span></th>'
+    +'<th style="'+_thS2+'text-align:left;white-space:nowrap;">Início</th>'
     +'<th onclick="sortCandTable(\'p\')" style="'+_thC2+'text-align:left;">Praça<span id="csi-p"></span></th>'
     +'<th style="'+_thS2+'text-align:left;">Hunter</th>'
     +'<th style="'+_thS2+'text-align:center;">Sen.</th>'
@@ -2700,7 +2715,7 @@ function renderCandListSplit(candidatos, fromFilter) {
   var fmtR2   = function(v){ if(!v||v===0) return '—'; if(v>=1000000) return 'R$'+(v/1000000).toFixed(1).replace('.',',')+'M'; return 'R$'+Math.round(v/1000)+'K'; };
   var fmtAuC2 = function(v){ if(!v||v===0) return '—'; if(v>=1000) return 'R$'+(v/1000).toFixed(1)+'B'; return 'R$'+v+'M'; };
 
-  var td = 'padding:5px 6px;font-size:10px;border-bottom:1px solid var(--rule);';
+  var td = 'padding:4px 4px;font-size:9px;border-bottom:1px solid var(--rule);';
   var makeRows = function(arr) {
     return arr.map(function(r){
       var fin = window.Blue3Data && window.Blue3Data.financeiros ? window.Blue3Data.financeiros.find(function(f){return f.n===r.n;}) : null;
@@ -2712,6 +2727,7 @@ function renderCandListSplit(candidatos, fromFilter) {
       return '<tr>'
         +'<td style="'+td+'font-weight:600;color:var(--t1);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+r.n+'</td>'
         +'<td style="'+td+'color:var(--t3);white-space:nowrap;">'+(r.dt||'—')+'</td>'
+        +'<td style="'+td+'color:var(--t3);white-space:nowrap;">'+(r.dt_ativacao||r.data_ativacao||r.ativacao||r.dt_inicio||r.data_inicio||r.inicio||'—')+'</td>'
         +'<td style="'+td+'color:var(--t3);font-size:9px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+r.p.replace('Blue3 - ','')+'</td>'
         +'<td style="'+td+'color:var(--t2);white-space:nowrap;">'+(r.h||'—')+'</td>'
         +'<td style="'+td+'text-align:center;"><span style="font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;'+senTag(r.sen)+'">'+senLbl(r.sen)+'</span></td>'
@@ -2729,7 +2745,7 @@ function renderCandListSplit(candidatos, fromFilter) {
 
   var TFOOT = rest.length === 0
     ? '<tfoot><tr style="background:var(--s2);">'
-        +'<td colspan="7" style="padding:7px 6px;font-size:10px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
+        +'<td colspan="8" style="padding:7px 6px;font-size:10px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
         +'<td style="padding:7px 6px;font-size:12px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
         +'<td colspan="5" style="padding:7px 6px;"></td>'
         +'</tr></tfoot>'
@@ -2741,7 +2757,7 @@ function renderCandListSplit(candidatos, fromFilter) {
   if (moreEl) {
     if (rest.length) {
       var TFOOT2 = '<tfoot><tr style="background:var(--s2);">'
-        +'<td colspan="7" style="padding:7px 6px;font-size:10px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
+        +'<td colspan="8" style="padding:7px 6px;font-size:10px;font-weight:700;color:var(--t2);">Total AuC mapeado</td>'
         +'<td style="padding:7px 6px;font-size:12px;font-weight:700;color:var(--cobalt);text-align:right;white-space:nowrap;">'+(totalAuC>=1000?'R$'+(totalAuC/1000).toFixed(2).replace('.',',')+' B':'R$'+totalAuC+' MM')+'</td>'
         +'<td colspan="5" style="padding:7px 6px;"></td>'
         +'</tr></tfoot>';
@@ -3296,7 +3312,7 @@ function exportarPDF() {
   });
 
   var dataStr = localStorage.getItem('B3D_DATE') || 'Atual';
-  var titulo  = 'Blue3 Expansão · Relatório Executivo 1S2026';
+  var titulo  = 'Blue3 Expansão · Heads Regionais 1S2026';
   var cover   = document.querySelector('.cover');
   var page    = document.querySelector('.page');
   if (!page) { alert('Carregue os dados antes de exportar.'); return; }
