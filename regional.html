@@ -304,6 +304,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   size: A4 portrait;
   margin: 10mm 12mm 14mm 12mm;
 }
+#filter-bar select{flex:1 1 0;min-width:0;font-size:11px!important;padding:6px 8px!important;text-overflow:ellipsis;}
+#filter-bar > span:first-child{flex:0 0 auto;}
+#filter-bar > div{flex:0 0 auto;}
 </style>
 </head>
 <body>
@@ -347,7 +350,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     </div>
 
     <div class="cr">
-      <div class="rt">Heads Regionais<br>1º Semestre 2026</div>
+      <div class="rt">Heads Regionais<br><span id="rt-periodo">1º Semestre 2026</span></div>
       
       <div class="rc">Atualizado <span id="dyn-update-date">06 abr 2026</span> · Confidencial</div>
     </div>
@@ -368,9 +371,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   <button onclick="setRegional('Yokoy',this)" id="pr-Yokoy" style="font-size:10px;font-weight:600;padding:4px 14px;border-radius:20px;border:1px solid var(--rule);background:var(--canvas);color:var(--t3);cursor:pointer;">Yokoy</button>
   <button onclick="setRegional('Bruno',this)" id="pr-Bruno" style="font-size:10px;font-weight:600;padding:4px 14px;border-radius:20px;border:1px solid var(--rule);background:var(--canvas);color:var(--t3);cursor:pointer;">Bruno</button>
   <button onclick="setRegional('MariaLaura',this)" id="pr-MariaLaura" style="font-size:10px;font-weight:600;padding:4px 14px;border-radius:20px;border:1px solid var(--rule);background:var(--canvas);color:var(--t3);cursor:pointer;">Maria Laura</button>
+  <span style="width:1px;height:16px;background:var(--rule);margin:0 8px;"></span>
+  <span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-right:4px;">Período:</span>
+  <span id="periodo-pills" style="display:flex;gap:4px;">
+    <button onclick="setPeriodo('sem1',this)" class="fpill" data-val="sem1">1º Sem</button>
+    <button onclick="setPeriodo('sem2',this)" class="fpill" data-val="sem2">2º Sem</button>
+    <button onclick="setPeriodo('ano',this)" class="fpill" data-val="ano">Ano</button>
+  </span>
 </div>
 
-<div id="filter-bar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--s2,#F8FAFF);border:1px solid var(--rule,#E5E9F5);border-radius:var(--r12);padding:12px 16px;margin-bottom:20px;">
+<div id="filter-bar" style="display:flex;gap:8px;flex-wrap:nowrap;align-items:center;background:var(--s2,#F8FAFF);border:1px solid var(--rule,#E5E9F5);border-radius:var(--r12);padding:12px 16px;margin-bottom:20px;">
   <span style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-right:4px;">Filtrar por:</span>
   <select id="flt-hunter" onchange="applyFilters()" style="padding:6px 10px;border:1px solid var(--rule,#E5E9F5);border-radius:var(--r8);font-size:12px;color:var(--t1);background:#fff;outline:none;cursor:pointer;">
     <option value="">Todos os hunters</option>
@@ -472,21 +482,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
   <div class="g2">
     <div class="card">
-      <div class="ch">Volume mensal × % sênior</div>
+      <div class="ch">Volume mensal × % sênior <span style="font-size:9px;font-weight:500;color:var(--t4);text-transform:none;letter-spacing:0;">· clique numa barra para ver os nomes</span></div>
       <div style="position:relative;width:100%;height:220px;"><canvas id="chartTrend"></canvas></div>
       <div class="leg"><span class="li"><span class="ld" style="background:var(--cobalt-br);"></span>Ativas</span><span class="li"><span class="ld" style="background:var(--g);"></span>% Sênior</span></div>
+      <div id="vol-names"></div>
     </div>
     <div class="card">
-      <div class="ch">Perfil de contratações ativas · <span id="dyn-periodo-chart">Jan–Abr 2026</span></div>
+      <div class="ch">Perfil de contratações ativas · <span id="dyn-periodo-chart">Jan–Abr 2026</span> <span style="font-size:9px;font-weight:500;color:var(--t4);text-transform:none;letter-spacing:0;">· clique numa fatia</span></div>
       <div style="position:relative;width:100%;height:200px;"><canvas id="chartPerfil"></canvas></div>
       <div class="leg" id="legPerfil"></div>
+      <div id="perfil-names"></div>
     </div>
   </div>
 
   <!-- Visão por Regional -->
   <div id="bloco-regionais" style="display:none;margin-top:24px;">
     <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--rule);">Contratações por regional — senioridade, praças e origem</div>
-    <div id="regionais-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"></div>
+    <div id="regionais-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;"></div>
   </div>
 
 </div>
@@ -1432,12 +1444,57 @@ function renderAreaBreakdown(candidatos){
 
 // ── Mapeamento regional ───────────────────────────────────────
 var _REGS = {
-  'Tamires':    ['Blue3 - Bauru','Blue3 - Campinas','Blue3 - Curitiba','Blue3 - Franca','Blue3 - Poços de Caldas','Blue3 - Ribeirão Preto','Blue3 - Rio de Janeiro','Blue3 - São José do Rio Preto','Blue3 - Noventena'],
+  'Tamires':    ['Blue3 - Bauru','Blue3 - Campinas','Blue3 - Curitiba','Blue3 - Franca','Blue3 - Poços de Caldas','Blue3 - Ribeirão Preto','Blue3 - Rio de Janeiro','Blue3 - São José do Rio Preto','Blue3 - Noventena','Blue3 - Itajaí'],
   'Yokoy':      ['Blue3 - Anywhere','Blue3 - Marília','Blue3 - São José dos Campos','Blue3 - São Paulo'],
   'Bruno':      ['Blue3 - Goiânia','Blue3 - Uberlândia','Blue3 - Brasília','Blue3 - Belo Horizonte','Blue3 - Belém'],
   'MariaLaura': [] // filtra por área/vaga
 };
 var _regAtiva = 'todas';
+
+// ── Seletor de período (módulo reutilizável) ─────────────────
+var _MESLBL={1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
+var _PERIODOS={
+  ano:  {m1:1,m2:12,nome:function(a){return 'Ano '+a;}},
+  sem1: {m1:1,m2:6, nome:function(a){return '1º Semestre '+a;}},
+  sem2: {m1:7,m2:12,nome:function(a){return '2º Semestre '+a;}}
+};
+var _periodo={ tipo:((new Date().getMonth()+1)<=6?'sem1':'sem2'), ano:new Date().getFullYear() };
+function _periodoMesAno(dt){
+  if(!dt) return null; var z=String(dt);
+  var br=z.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(br) return {m:parseInt(br[2],10),y:parseInt(br[3],10)};
+  var iso=z.match(/^(\d{4})-(\d{1,2})/); if(iso) return {m:parseInt(iso[2],10),y:parseInt(iso[1],10)};
+  return null;
+}
+function _inPeriodo(r){
+  var dt=(r&&(r.dt||r['Data de Contratação']||r['data_contratacao']))||'';
+  var ma=_periodoMesAno(dt); if(!ma) return true;
+  var cfg=_PERIODOS[_periodo.tipo]||_PERIODOS.ano;
+  return ma.y===_periodo.ano && ma.m>=cfg.m1 && ma.m<=cfg.m2;
+}
+function _periodoInfo(){
+  var cfg=_PERIODOS[_periodo.tipo]||_PERIODOS.ano, hoje=new Date();
+  var mFimEf = hoje.getFullYear()>_periodo.ano ? cfg.m2 : (hoje.getFullYear()<_periodo.ano ? cfg.m1-1 : Math.min(cfg.m2, hoje.getMonth()+1));
+  var meses = Math.max(0, mFimEf - cfg.m1 + 1);
+  var rangeFim = meses>0 ? mFimEf : cfg.m1;
+  return {
+    nome: cfg.nome(_periodo.ano),
+    meses: meses,
+    rangeLabel: _MESLBL[cfg.m1]+'–'+_MESLBL[rangeFim]+' '+_periodo.ano,
+    label: _MESLBL[cfg.m1]+'–'+_MESLBL[rangeFim]+' '+_periodo.ano+' · '+meses+' mês'+(meses!==1?'es':'')
+  };
+}
+function setPeriodo(tipo,btn){
+  _periodo.tipo=tipo;
+  var cont=document.getElementById('periodo-pills');
+  if(cont) cont.querySelectorAll('.fpill').forEach(function(b){ b.classList.toggle('fpill-on', b.dataset.val===tipo); });
+  var rt=document.getElementById('rt-periodo'); if(rt) rt.textContent=_periodoInfo().nome;
+  applyFiltersRegional();
+}
+function _syncPeriodoUI(){
+  var cont=document.getElementById('periodo-pills');
+  if(cont) cont.querySelectorAll('.fpill').forEach(function(b){ b.classList.toggle('fpill-on', b.dataset.val===_periodo.tipo); });
+  var rt=document.getElementById('rt-periodo'); if(rt) rt.textContent=_periodoInfo().nome;
+}
 
 function setRegional(reg, btn){
   _regAtiva = reg;
@@ -1482,7 +1539,7 @@ function setRegional(reg, btn){
 
 function applyFiltersRegional(){
   if(!window.Blue3Data) return;
-  var C = window.Blue3Data.candidatos || [];
+  var C = (window.Blue3Data.candidatos || []).filter(_inPeriodo);
   var reg = _regAtiva;
   if(reg==='todas'){
     renderWithFilter(C);
@@ -1515,7 +1572,7 @@ function renderPipelineCRM(regFiltro){
 
   var PRACA_TO_REG = {};
   var REGS_MAP = {
-    'Tamires':    ['Blue3 - Bauru','Blue3 - Campinas','Blue3 - Curitiba','Blue3 - Franca','Blue3 - Poços de Caldas','Blue3 - Ribeirão Preto','Blue3 - Rio de Janeiro','Blue3 - São José do Rio Preto','Blue3 - Noventena'],
+    'Tamires':    ['Blue3 - Bauru','Blue3 - Campinas','Blue3 - Curitiba','Blue3 - Franca','Blue3 - Poços de Caldas','Blue3 - Ribeirão Preto','Blue3 - Rio de Janeiro','Blue3 - São José do Rio Preto','Blue3 - Noventena','Blue3 - Itajaí'],
     'Yokoy':      ['Blue3 - Anywhere','Blue3 - Marília','Blue3 - São José dos Campos','Blue3 - São Paulo'],
     'Bruno':      ['Blue3 - Goiânia','Blue3 - Uberlândia','Blue3 - Brasília','Blue3 - Belo Horizonte','Blue3 - Belém']
   };
@@ -1908,10 +1965,12 @@ function renderWithFilter(filteredC){
   // ── Seção 01 KPIs ──
   var mLabels={1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
   var hoje=new Date(); var mesAtual=hoje.getMonth()+1; var anoAtual=hoje.getFullYear();
-  var mNums=Object.keys(BM).map(Number).sort(function(a,b){return a-b;});
-  var mesInicio=mNums.length>0?mNums[0]:1; var mesFim=mesAtual; var meses=mesFim-mesInicio+1;
-  var periodoLabel=mLabels[mesInicio]+'–'+mLabels[mesFim]+' '+anoAtual+' · '+meses+' mês'+(meses!==1?'es':'');
+  var _pi=_periodoInfo();
+  var meses=_pi.meses;
+  var periodoLabel=_pi.label;
   var ritmo=meses>0?(AT/meses).toFixed(2).replace('.',','):'—';
+  set('dyn-periodo-label', _pi.rangeLabel);
+  (function(){var _r=document.getElementById('rt-periodo');if(_r)_r.textContent=_pi.nome;})();
   var aucB=aucTotal>=1000?'R$'+(aucTotal/1000).toFixed(2).replace('.',',')+'B':'R$'+aucTotal+'M';
   var candComCart=_coreC.filter(function(r){return r.cap>0;}).length;
   var aucMedia=candComCart>0?Math.round(aucTotal/candComCart):0;
@@ -1919,6 +1978,7 @@ function renderWithFilter(filteredC){
   // Desistências do filtro atual
   var rawFiltrado = D._rawRows ? D._rawRows.filter(function(r){
     var af=_activeFilters||{};
+    if(!_inPeriodo(r)) return false;
     // Visão geral é só de assessores
     if(norm(r['Área']||r['area']||r['vaga']||'Assessor')!=='assessor') return false;
     // respeitar a regional ativa (mesma lógica de praças do filtro de cima)
@@ -2096,23 +2156,38 @@ function renderWithFilter(filteredC){
     };
     var tMax=Math.max.apply(null,months.map(function(m){return byMF[m];}).concat([1]));
     var tPalette=['#1A3BAD','#2952E3','#3B82F6','#60A5FA','#93C5FD','#BFDBFE'];
+    // mapas para clique -> nomes
+    window._volMonthsArr = months.slice();
+    window._volMesLabel = {}; window._volMesNomes = {};
+    months.forEach(function(m){
+      window._volMesLabel[m]=mNamesLong[m];
+      window._volMesNomes[m]=_volC.filter(function(r){var dt=r.dt||'';var rm=parseInt((dt.match(/\/(\d{2})\//)||[])[1]||dt.split('-')[1]||0);return rm===m;});
+    });
     sc2('chartTrend',{type:'bar',data:{labels:months.map(function(m){return mNamesLong[m];}),datasets:[
       {label:'Ativas',data:months.map(function(m){return byMF[m]||0;}),backgroundColor:months.map(function(_,i){return tPalette[i%tPalette.length];}),borderRadius:6,yAxisID:'y'},
       {label:'% Sênior',data:months.map(senPct),type:'line',borderColor:'#16A34A',backgroundColor:'rgba(22,163,74,.08)',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#16A34A',tension:.35,yAxisID:'y2',fill:true}
-    ]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#7A82A8',font:{size:11}},min:0,max:Math.ceil(tMax*1.25)},y2:{position:'right',grid:{display:false},ticks:{color:'#16A34A',font:{size:11},callback:function(v){return v+'%';}},min:0,max:100},x:{grid:{display:false},ticks:{color:'#3A4268',font:{size:11}}}},plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10,padding:10,color:'#3A4268'}},tooltip:{callbacks:{label:function(ctx){return ctx.datasetIndex===0?' '+ctx.raw+' ativas':' '+ctx.raw+'% sênior';}}}}}});
+    ]},options:{onClick:_onClickVol,responsive:true,maintainAspectRatio:false,scales:{y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#7A82A8',font:{size:11}},min:0,max:Math.ceil(tMax*1.25)},y2:{position:'right',grid:{display:false},ticks:{color:'#16A34A',font:{size:11},callback:function(v){return v+'%';}},min:0,max:100},x:{grid:{display:false},ticks:{color:'#3A4268',font:{size:11}}}},plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10,padding:10,color:'#3A4268'}},tooltip:{callbacks:{label:function(ctx){return ctx.datasetIndex===0?' '+ctx.raw+' ativas':' '+ctx.raw+'% sênior';}}}}}});
 
-    // Perfil donut
-    var seniors=filteredC.filter(function(r){return(r.sen||'').toLowerCase()==='sênior';}).length;
-    var plenos =filteredC.filter(function(r){return(r.sen||'').toLowerCase()==='pleno';}).length;
-    var juniors=filteredC.filter(function(r){var s=(r.sen||'').toLowerCase();return s==='júnior'||s==='junior';}).length;
+    // Perfil donut (assessores, consistente com o hero)
+    var _sen=_coreC.filter(function(r){return(r.sen||'').toLowerCase()==='sênior';});
+    var _ple=_coreC.filter(function(r){return(r.sen||'').toLowerCase()==='pleno';});
+    var _jun=_coreC.filter(function(r){var s=(r.sen||'').toLowerCase();return s==='júnior'||s==='junior';});
+    var seniors=_sen.length, plenos=_ple.length, juniors=_jun.length;
+    window._perfilNomes={'Sênior':_sen,'Pleno':_ple,'Júnior':_jun};
     var pD=[{l:'Sênior',v:seniors,c:'#16A34A'},{l:'Pleno',v:plenos,c:'#B45309'},{l:'Júnior',v:juniors,c:'#BE185D'}];
-    var AT2=filteredC.length;
-    sc2('chartPerfil',{type:'doughnut',data:{labels:pD.map(function(d){return d.l;}),datasets:[{data:pD.map(function(d){return d.v;}),backgroundColor:pD.map(function(d){return d.c;}),borderWidth:3,borderColor:'#fff',hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'64%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+ctx.raw+' ('+Math.round(ctx.raw/Math.max(AT2,1)*100)+'%)';}}}}}});
+    window._perfilLabels=pD.map(function(d){return d.l;});
+    var AT2=_coreC.length;
+    sc2('chartPerfil',{type:'doughnut',data:{labels:pD.map(function(d){return d.l;}),datasets:[{data:pD.map(function(d){return d.v;}),backgroundColor:pD.map(function(d){return d.c;}),borderWidth:3,borderColor:'#fff',hoverOffset:8}]},options:{onClick:_onClickPerfil,responsive:true,maintainAspectRatio:false,cutout:'64%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+ctx.raw+' ('+Math.round(ctx.raw/Math.max(AT2,1)*100)+'%)';}}}}}});
     var lp=document.getElementById('legPerfil');
     if(lp){lp.innerHTML='';pD.forEach(function(d){lp.innerHTML+='<span class="li"><span class="ld" style="background:'+d.c+';display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;"></span>'+d.l+' — '+d.v+' ('+Math.round(d.v/Math.max(AT2,1)*100)+'%)</span> ';});}
   })();
 }
 
+
+// ── Revelar nomes ao clicar nos gráficos ──────────────────────
+function _chipsNomes(arr){ return (arr||[]).map(function(r){ return '<span style="display:inline-block;font-size:10px;background:var(--s2);border:1px solid var(--rule);border-radius:10px;padding:2px 9px;margin:0 4px 4px 0;color:var(--t2);">'+r.n+(r.p?' · '+String(r.p).replace('Blue3 - ',''):'')+'</span>'; }).join(''); }
+function _onClickVol(evt,els){ var el=document.getElementById('vol-names'); if(!el)return; if(!els||!els.length){el.innerHTML='';return;} var m=(window._volMonthsArr||[])[els[0].index]; var nn=(window._volMesNomes||{})[m]||[]; el.innerHTML='<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin:8px 0 6px;">'+((window._volMesLabel||{})[m]||'')+' — '+nn.length+' contratação'+(nn.length!==1?'ões':'')+'</div>'+_chipsNomes(nn); }
+function _onClickPerfil(evt,els){ var el=document.getElementById('perfil-names'); if(!el)return; if(!els||!els.length){el.innerHTML='';return;} var lbl=(window._perfilLabels||[])[els[0].index]; var nn=(window._perfilNomes||{})[lbl]||[]; el.innerHTML='<div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin:8px 0 6px;">'+lbl+' — '+nn.length+'</div>'+_chipsNomes(nn); }
 
 // ── renderPace ───────────────────────────────────────────────
 function renderPace(candidatos) {
@@ -2392,7 +2467,7 @@ function renderRegionais(candidatos) {
 
   // Mapa praça normalizada → regional
   var REGS = {
-    'Tamires': ['Bauru','Campinas','Curitiba','Franca','Poços de Caldas','Ribeirão Preto','Rio de Janeiro','São José do Rio Preto','Noventena'],
+    'Tamires': ['Bauru','Campinas','Curitiba','Franca','Poços de Caldas','Ribeirão Preto','Rio de Janeiro','São José do Rio Preto','Noventena','Itajaí'],
     'Yokoy':   ['Anywhere','Marília','São José dos Campos','São Paulo'],
     'Bruno':   ['Goiânia','Uberlândia','Brasília','Belo Horizonte','Belém']
   };
@@ -2403,7 +2478,7 @@ function renderRegionais(candidatos) {
   var base = (candidatos || []).filter(function(r){
     var s = (r.st||'').toLowerCase();
     var a = (r.area||r.vaga||'Assessor').trim().toLowerCase();
-    return (s === 'trabalhando' || s === 'contratado(a)') && a === 'assessor';
+    return (s === 'trabalhando' || s === 'contratado(a)') && (a === 'assessor' || a.indexOf('vem ser')>-1 || a.indexOf('future')>-1);
   });
   var total = base.length;
   if (!total) { wrap.style.display = 'none'; return; }
@@ -2413,10 +2488,12 @@ function renderRegionais(candidatos) {
   Object.keys(REGS).forEach(function(r){
     dados[r] = { total:0, senior:0, pleno:0, junior:0, pracas:{}, origens:{} };
   });
+  dados['Outras'] = { total:0, senior:0, pleno:0, junior:0, pracas:{}, origens:{} };
+  dados['MariaLaura'] = { total:0, senior:0, pleno:0, junior:0, pracas:{}, origens:{} };
 
   base.forEach(function(r){
-    var reg = pToR[normP(r.p||'')] || null;
-    if (!reg) return;
+    var _ar=(r.area||r.vaga||'').toLowerCase();
+    var reg = (_ar.indexOf('vem ser')>-1||_ar.indexOf('future')>-1) ? 'MariaLaura' : (pToR[normP(r.p||'')] || 'Outras');
     dados[reg].total++;
     var s = (r.sen||'').toLowerCase();
     if (s === 'sênior') dados[reg].senior++;
@@ -2435,10 +2512,11 @@ function renderRegionais(candidatos) {
     dados[reg].origens[_on]=(dados[reg].origens[_on]||0)+1;
   });
 
-  var cores = { 'Tamires':'#7C3AED', 'Yokoy':'#1A3BAD', 'Bruno':'#00915A' };
-  var bgs   = { 'Tamires':'#F5F3FF', 'Yokoy':'#EEF2FD', 'Bruno':'#F0FDF4' };
+  var cores = { 'Tamires':'#7C3AED', 'Yokoy':'#1A3BAD', 'Bruno':'#00915A', 'MariaLaura':'#0891B2', 'Outras':'#64748B' };
+  var regLabel = { 'MariaLaura':'Maria Laura', 'Outras':'Não atribuídas' };
+  var bgs   = { 'Tamires':'#F5F3FF', 'Yokoy':'#EEF2FD', 'Bruno':'#F0FDF4', 'MariaLaura':'#ECFEFF', 'Outras':'#F1F5F9' };
 
-  grid.innerHTML = ['Tamires','Yokoy','Bruno'].map(function(reg){
+  grid.innerHTML = ['Tamires','Yokoy','Bruno','MariaLaura','Outras'].filter(function(reg){return reg!=='Outras'||dados['Outras'].total>0;}).map(function(reg){
     var d   = dados[reg];
     var pct = total > 0 ? Math.round(d.total/total*100) : 0;
     var cor = cores[reg];
@@ -2461,19 +2539,19 @@ function renderRegionais(candidatos) {
 
     // Lista de praças
     var pracasSorted = Object.keys(d.pracas).sort(function(a,b){ return d.pracas[b]-d.pracas[a]; });
-    var pracasHtml = pracasSorted.slice(0,5).map(function(p){
+    var pracasHtml = pracasSorted.map(function(p){
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--rule);">'
         +'<span style="font-size:10px;color:var(--t2);">'+p+'</span>'
         +'<span style="font-size:10px;font-weight:700;color:var(--t1);">'+d.pracas[p]+'</span>'
         +'</div>';
-    }).join('') + (pracasSorted.length>5?'<div style="font-size:9px;color:var(--t4);padding-top:4px;">+'+(pracasSorted.length-5)+' outras</div>':'');
+    }).join('');
 
     return '<div style="background:var(--surface);border-radius:var(--r12);border:1px solid var(--rule);overflow:hidden;">'
       // Cabeçalho colorido
       +'<div style="background:'+bg+';border-bottom:1px solid var(--rule);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">'
       +'<div>'
-      +'<div style="font-size:13px;font-weight:700;color:'+cor+';">'+reg+'</div>'
-      +'<div style="font-size:10px;color:var(--t3);margin-top:1px;">Head Regional</div>'
+      +'<div style="font-size:13px;font-weight:700;color:'+cor+';">'+(regLabel[reg]||reg)+'</div>'
+      +'<div style="font-size:10px;color:var(--t3);margin-top:1px;">'+(reg==='Outras'?'Praças sem regional':(reg==='MariaLaura'?'Head · Vem Ser/Future':'Head Regional'))+'</div>'
       +'</div>'
       +'<div style="text-align:right;">'
       +'<div style="font-family:\'Playfair Display\',serif;font-size:28px;font-weight:600;color:'+cor+';">'+d.total+'</div>'
@@ -2493,7 +2571,7 @@ function renderRegionais(candidatos) {
       // Origem institucional (unificada aqui)
       +'<div style="padding:12px 16px;">'
       +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:6px;">Origem (instituições)</div>'
-      +(function(){var ks=Object.keys(d.origens).sort(function(a,b){return d.origens[b]-d.origens[a];});if(!ks.length)return '<div style="font-size:10px;color:var(--t4);">—</div>';return ks.slice(0,4).map(function(k){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--rule);"><span style="font-size:10px;color:var(--t2);">'+k+'</span><span style="font-size:10px;font-weight:700;color:var(--t1);">'+d.origens[k]+'</span></div>';}).join('')+(ks.length>4?'<div style="font-size:9px;color:var(--t4);padding-top:4px;">+'+(ks.length-4)+' instituições</div>':'');})()
+      +(function(){var ks=Object.keys(d.origens).sort(function(a,b){return d.origens[b]-d.origens[a];});if(!ks.length)return '<div style="font-size:10px;color:var(--t4);">—</div>';return ks.map(function(k){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--rule);"><span style="font-size:10px;color:var(--t2);">'+k+'</span><span style="font-size:10px;font-weight:700;color:var(--t1);">'+d.origens[k]+'</span></div>';}).join('');})()
       +'</div>'
       +'</div>';
   }).join('');
@@ -2511,8 +2589,9 @@ function renderPage() {
     Blue3_charts();
     populateFilters();
     renderPipelineCRM(_regAtiva);
-    // Aplicar filtro regional após tudo carregar
-    if(_regAtiva !== 'todas') applyFiltersRegional();
+    // KPIs sempre pelo caminho consistente (renderWithFilter), inclusive em "Todas"
+    applyFiltersRegional();
+    _syncPeriodoUI();
   });
 }
 
@@ -2559,6 +2638,7 @@ function showEmptyState(msg) {
 var _candSortKey = 'cap';
 var _candSortAsc = false;
 var _candDataFull = [];
+var _candDataView = null;  // conjunto atualmente exibido (após filtros)
 
 function _parseDtCand(s) {
   if (!s || s === '—') return null;
@@ -2600,7 +2680,7 @@ function sortCandTable(key) {
   if (_candSortKey === key) { _candSortAsc = !_candSortAsc; }
   else { _candSortKey = key; _candSortAsc = (key === 'n' || key === 'p' || key === 'dt'); }
   _updateCandSortIcons(_candSortKey, _candSortAsc);
-  renderCandListSplit(_candDataFull, true);
+  renderCandListSplit(_candDataView || _candDataFull, true);
 }
 
 // Estado dos filtros da tabela candidatos
@@ -2641,8 +2721,6 @@ function aplicarFiltrosCand() {
     }
     return true;
   });
-  _candSortKey = 'cap'; _candSortAsc = false;
-  _updateCandSortIcons('cap', false);
   renderCandListSplit(filtered, true);
 }
 
@@ -2671,10 +2749,8 @@ function renderCandListSplit(candidatos, fromFilter) {
     _candSortKey = 'cap'; _candSortAsc = false;
   }
 
-  var sorted = _sortCand(
-    fromFilter ? (candidatos||[]) : _candDataFull,
-    _candSortKey, _candSortAsc
-  );
+  _candDataView = fromFilter ? (candidatos||[]) : _candDataFull;
+  var sorted = _sortCand(_candDataView, _candSortKey, _candSortAsc);
 
   if (!sorted.length) {
     topEl.innerHTML = '<p style="color:var(--t3);padding:16px;font-size:13px;">Nenhum candidato encontrado com os filtros selecionados.</p>';
@@ -2783,6 +2859,7 @@ function renderCandListSplit(candidatos, fromFilter) {
   var _s2 = document.getElementById('dyn-bar-comp2'); if(_s2) _s2.textContent = _fmtFt(_compT);
   var _s3 = document.getElementById('dyn-bar-xp2');   if(_s3) _s3.textContent = _fmtFt(_xpT);
   var _s4 = document.getElementById('dyn-bar-liq2');  if(_s4) _s4.textContent = _fmtFt(_liqT);
+  _updateCandSortIcons(_candSortKey, _candSortAsc);
 }
 
 // ── Toggle seção 05 (candidatos) ─────────────────────────────
