@@ -81,18 +81,19 @@ tfoot td:first-child{text-align:left}
 .empty a{padding:10px 24px;background:var(--cobalt);color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600}
 
 /* ── Tabela Impacto por Assessor — compacta ── */
-#tb2-table thead th { padding: 5px 6px; font-size: 8px; white-space: nowrap; }
-#tb2-table tbody td { padding: 5px 6px; font-size: 10px; white-space: nowrap; }
-#tb2-table tfoot td { padding: 5px 6px; font-size: 10px; }
+#tb2-table { table-layout: fixed; }
+#tb2-table thead th { padding: 4px 3px; font-size: 7px; white-space: nowrap; }
+#tb2-table tbody td { padding: 4px 3px; font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#tb2-table tfoot td { padding: 4px 3px; font-size: 9px; }
 /* Colunas de flag: largura mínima */
 #tb2-table thead th:nth-child(12),
 #tb2-table thead th:nth-child(13),
-#tb2-table thead th:nth-child(14) { min-width: 0; width: 54px; text-align: center; }
-#tb2-table tbody td:nth-child(11),
+#tb2-table thead th:nth-child(14) { min-width: 0; width: 40px; text-align: center; }
 #tb2-table tbody td:nth-child(12),
-#tb2-table tbody td:nth-child(13) { width: 54px; padding: 5px 4px; }
+#tb2-table tbody td:nth-child(13),
+#tb2-table tbody td:nth-child(14) { width: 40px; padding: 4px 2px; text-align: center; }
 /* Coluna nome: não truncar demais */
-#tb2-table tbody td:first-child { min-width: 120px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+#tb2-table tbody td:first-child { max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
 /* Hover nos th ordenáveis */
 #tb2-table thead th[onclick]:hover { background: #1a2a4a; color: #fff; }
 </style>
@@ -170,7 +171,7 @@ tfoot td:first-child{text-align:left}
   </div>
 
   <!-- Tabela por assessor -->
-  <div class="sh"><div class="st">Impacto por Assessor</div><div class="ss">Total comprometido por contrato</div><button id="btn-export-csv" style="margin-left:auto;font-size:10px;font-weight:700;padding:5px 14px;border-radius:6px;border:1px solid var(--cobalt);color:var(--cobalt);background:transparent;cursor:pointer;letter-spacing:.04em;display:flex;align-items:center;gap:5px;white-space:nowrap;">⬇ Exportar CSV</button></div>
+  <div class="sh"><div class="st">Impacto por Assessor</div><div class="ss">Total comprometido por contrato</div><button id="btn-export-csv" onclick="exportarCSV()" style="margin-left:auto;font-size:10px;font-weight:700;padding:5px 14px;border-radius:6px;border:1px solid var(--cobalt);color:var(--cobalt);background:transparent;cursor:pointer;letter-spacing:.04em;display:flex;align-items:center;gap:5px;white-space:nowrap;">⬇ Exportar CSV</button></div>
   <div class="tbl-wrap" id="tb2-wrap">
     <table id="tb2-table">
       <thead>
@@ -423,39 +424,71 @@ function _updateSortIcons(key, asc) {
 }
 
 function exportarCSV() {
-  if (!_tbData || !_tbData.length) { alert('Sem dados para exportar.'); return; }
-  var fmtNum = function(v){ return v ? String(Math.round(v)).replace('.',',') : '0'; };
-  var fmtPer = function(v){ return v ? v + ' meses' : ''; };
-  var esc = function(v){
-    var s = String(v == null ? '' : v).replace(/"/g, '""');
-    return (s.indexOf(',') > -1 || s.indexOf(';') > -1 || s.indexOf('"') > -1) ? '"' + s + '"' : s;
-  };
-  var hdr = ['Assessor','Filial','Senioridade','Situacao','Inicio','Piso Mes (R$)','Periodo','Piso Total (R$)','Sign-in (R$)','Triggers (R$)','Total (R$)','Coparticipacao XP','Estrategico','Area'];
-  var rows = _tbData.map(function(a){
-    return [a.n||'', a.p||'', a.sen||'', a.ativo?'Ativo':'A confirmar', a.inicio||'',
-      fmtNum(a.piso), fmtPer(a.periodo), fmtNum(a.pisoTotal), fmtNum(a.si), fmtNum(a.trigTotal),
-      fmtNum(a.custoTotal), (a.xp&&a.xp>0)?'Sim':'Nao',
-      (a.estrategico||'').toLowerCase()==='sim'?'Sim':'Nao', a.area||'Assessor'
-    ].map(esc).join(';');
-  });
-  var tp=_tbData.reduce(function(s,a){return s+(a.pisoTotal||0);},0);
-  var ts=_tbData.reduce(function(s,a){return s+(a.si||0);},0);
-  var tt=_tbData.reduce(function(s,a){return s+(a.trigTotal||0);},0);
-  var tg=_tbData.reduce(function(s,a){return s+(a.custoTotal||0);},0);
-  var totRow = ['TOTAL GERAL','','','','','','',fmtNum(tp),fmtNum(ts),fmtNum(tt),fmtNum(tg),'','',''].join(';');
-  var csv = '\uFEFF' + hdr.join(';') + '\n' + rows.join('\n') + '\n' + totRow;
+  var btn = document.getElementById('btn-export-csv');
+  try {
+    if (btn) btn.textContent = '\u23F3 Gerando...';
+    if (!_tbData || !_tbData.length) { alert('Sem dados para exportar.'); if(btn) btn.textContent='\u2B07 Exportar CSV'; return; }
+    var fmtNum = function(v){ return v ? String(Math.round(v)).replace('.',',') : '0'; };
+    var fmtPer = function(v){ return v ? v + ' meses' : ''; };
+    var esc = function(v){
+      var t = String(v == null ? '' : v).replace(/"/g, '""');
+      return (t.indexOf(',') > -1 || t.indexOf(';') > -1 || t.indexOf('"') > -1) ? '"' + t + '"' : t;
+    };
+    var hdr = ['Assessor','Filial','Senioridade','Situacao','Inicio','Piso Mes (R$)','Periodo','Piso Total (R$)','Sign-in (R$)','Triggers (R$)','Total (R$)','Coparticipacao XP','Estrategico','Area'];
+    var rows = _tbData.map(function(a){
+      return [a.n||'',a.p||'',a.sen||'',a.ativo?'Ativo':'A confirmar',a.inicio||'',
+        fmtNum(a.piso),fmtPer(a.periodo),fmtNum(a.pisoTotal),fmtNum(a.si),fmtNum(a.trigTotal),
+        fmtNum(a.custoTotal),(a.xp&&a.xp>0)?'Sim':'Nao',
+        (a.estrategico||'').toLowerCase()==='sim'?'Sim':'Nao',a.area||'Assessor'
+      ].map(esc).join(';');
+    });
+    var tp=_tbData.reduce(function(s,a){return s+(a.pisoTotal||0);},0);
+    var ts=_tbData.reduce(function(s,a){return s+(a.si||0);},0);
+    var tt=_tbData.reduce(function(s,a){return s+(a.trigTotal||0);},0);
+    var tg=_tbData.reduce(function(s,a){return s+(a.custoTotal||0);},0);
+    var totRow=['TOTAL GERAL','','','','','','',fmtNum(tp),fmtNum(ts),fmtNum(tt),fmtNum(tg),'','',''].join(';');
+    var csv = '\uFEFF' + hdr.join(';') + '\n' + rows.join('\n') + '\n' + totRow;
 
-  // Download via data URI (funciona em qualquer ambiente, incl. Vercel/HTTPS)
-  var d = new Date();
-  var fname = 'blue3_impacto_assessores_' + d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + '.csv';
-  var dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  var link = document.createElement('a');
-  link.setAttribute('href', dataUri);
-  link.setAttribute('download', fname);
-  link.style.display = 'none';
-  document.body.appendChild(link);
-  link.click();
-  setTimeout(function(){ try { document.body.removeChild(link); } catch(e){} }, 300);
+    var d = new Date();
+    var fname = 'blue3_impacto_'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.csv';
+
+    // Método 1: data URI + <a> click
+    var ok = false;
+    try {
+      var link = document.createElement('a');
+      link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      link.download = fname;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      ok = true;
+      setTimeout(function(){ try{document.body.removeChild(link);}catch(e){} }, 500);
+    } catch(e1) { console.warn('[CSV] método 1 falhou:', e1); }
+
+    // Método 2: Blob URL (fallback)
+    if (!ok) {
+      try {
+        var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+        var url = URL.createObjectURL(blob);
+        var a2 = document.createElement('a');
+        a2.href = url; a2.download = fname; a2.style.display='none';
+        document.body.appendChild(a2); a2.click();
+        ok = true;
+        setTimeout(function(){try{document.body.removeChild(a2);URL.revokeObjectURL(url);}catch(e){}},500);
+      } catch(e2) { console.warn('[CSV] método 2 falhou:', e2); }
+    }
+
+    // Método 3: window.open (último recurso)
+    if (!ok) {
+      window.open('data:text/csv;charset=utf-8,' + encodeURIComponent(csv));
+    }
+
+    setTimeout(function(){ if(btn) btn.textContent = '\u2B07 Exportar CSV'; }, 1500);
+  } catch(e) {
+    console.error('[exportarCSV] erro:', e);
+    alert('Erro ao exportar: ' + e.message);
+    if(btn) btn.textContent = '\u2B07 Exportar CSV';
+  }
 }
 
 function sortTable(key) {
@@ -487,7 +520,7 @@ function _renderTb2(sorted) {
     var _areaCheck = (_areaVal.toLowerCase() !== 'assessor')
       ? '<span title="'+_areaVal+'" style="color:#B45309;font-size:15px;font-weight:700;">✓</span>'
       : '<span style="color:#CBD5E1;font-size:12px;">—</span>';
-    return '<tr><td>'+a.n+'</td><td style="color:var(--t3)">'+a.p+'</td>'
+    return '<tr><td>'+a.n+'</td><td style="color:var(--t3)">'+(a.p||'').replace(/^Blue3\s*[-–]\s*/i,'')+'</td>'
       +'<td style="font-size:10px;">'+(a.sen||'—')+'</td><td>'+badge+'</td>'
       +'<td>'+inicio+'</td><td>'+fmt(a.piso)+'</td><td>'+fmtPer(a.periodo)+'</td>'
       +'<td>'+fmt(a.pisoTotal)+'</td><td>'+fmt(a.si)+'</td><td>'+fmt(a.trigTotal)+'</td>'
