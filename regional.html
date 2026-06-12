@@ -1467,7 +1467,8 @@ function _periodoMesAno(dt){
 }
 function _inPeriodo(r){
   var dt=(r&&(r.dt||r['Data de Contratação']||r['data_contratacao']))||'';
-  var ma=_periodoMesAno(dt); if(!ma) return true;
+  var ma=_periodoMesAno(dt);
+  if(!ma) return _periodo.tipo==='ano';
   var cfg=_PERIODOS[_periodo.tipo]||_PERIODOS.ano;
   return ma.y===_periodo.ano && ma.m>=cfg.m1 && ma.m<=cfg.m2;
 }
