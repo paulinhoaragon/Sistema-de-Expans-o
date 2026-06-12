@@ -170,7 +170,7 @@ tfoot td:first-child{text-align:left}
   </div>
 
   <!-- Tabela por assessor -->
-  <div class="sh"><div class="st">Impacto por Assessor</div><div class="ss">Total comprometido por contrato</div><button onclick="exportarCSV()" style="margin-left:auto;font-size:10px;font-weight:700;padding:5px 14px;border-radius:6px;border:1px solid var(--cobalt);color:var(--cobalt);background:transparent;cursor:pointer;letter-spacing:.04em;display:flex;align-items:center;gap:5px;white-space:nowrap;">⬇ Exportar CSV</button></div>
+  <div class="sh"><div class="st">Impacto por Assessor</div><div class="ss">Total comprometido por contrato</div><button id="btn-export-csv" style="margin-left:auto;font-size:10px;font-weight:700;padding:5px 14px;border-radius:6px;border:1px solid var(--cobalt);color:var(--cobalt);background:transparent;cursor:pointer;letter-spacing:.04em;display:flex;align-items:center;gap:5px;white-space:nowrap;">⬇ Exportar CSV</button></div>
   <div class="tbl-wrap" id="tb2-wrap">
     <table id="tb2-table">
       <thead>
@@ -696,6 +696,16 @@ function showEmptyState(msg) {
     + '<a href="index.html">Ir para a home</a>'
     + '</div>';
 }
+
+// ── Bind de eventos (compatível com CSP strict) ──
+(function(){
+  var _bindCSV = function(){
+    var btn = document.getElementById('btn-export-csv');
+    if (btn && !btn._bound) { btn.addEventListener('click', exportarCSV); btn._bound = true; }
+  };
+  _bindCSV();
+  document.addEventListener('DOMContentLoaded', _bindCSV);
+})();
 
 // ── Inicialização ──
 (function() {
