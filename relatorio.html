@@ -347,7 +347,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     </div>
 
     <div class="cr">
-      <div class="rt">Relatório Executivo<br>1º Semestre 2026</div>
+      <div class="rt">Relatório Executivo<br><span id="rt-periodo">1º Semestre 2026</span></div>
       
       <div class="rc">Atualizado <span id="dyn-update-date">06 abr 2026</span> · Confidencial</div>
     </div>
@@ -359,6 +359,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
 <div class="page">
 
+<!-- SELETOR DE PERÍODO -->
+<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+  <span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-right:4px;">Período:</span>
+  <span id="periodo-pills" style="display:flex;gap:4px;">
+    <button onclick="setPeriodo('sem1',this)" class="fpill fpill-on" data-val="sem1">1º Sem</button>
+    <button onclick="setPeriodo('sem2',this)" class="fpill" data-val="sem2">2º Sem</button>
+    <button onclick="setPeriodo('ano',this)" class="fpill" data-val="ano">Ano</button>
+  </span>
+</div>
 <!-- BARRA DE FILTROS DINÂMICOS -->
 <div id="filter-bar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--s2,#F8FAFF);border:1px solid var(--rule,#E5E9F5);border-radius:var(--r12);padding:12px 16px;margin-bottom:20px;">
   <span style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-right:4px;">Filtrar por:</span>
@@ -836,13 +845,52 @@ function Blue3_charts() {
   console.log('[Blue3] Blue3_charts iniciando...');
 
   var D  = window.Blue3Data;
-  var G  = D.resumoGeral || {};
-  var C  = D.candidatos  || [];
+  var C  = (D.candidatos  || []).filter(_inPeriodo);
+  var G  = _resumoPeriodo(C, D.resumoGeral || {});
   var H  = D.hunters     || [];
   var AT = G.total || C.length;
   var BM = G.byMonth || {};
 
-  if (!C.length) { console.warn('[Blue3] candidatos vazio'); return; }
+  if (!C.length) {
+    console.warn('[Blue3] candidatos vazio no período');
+    // Limpar TODOS os KPIs e labels
+    var _z=function(id,v){var e=document.getElementById(id);if(e)e.textContent=(v||'—');};
+    ['dyn-liq','dyn-auc','dyn-auc-estrat','dyn-brutas','dyn-pracas','dyn-senior-pct','dyn-maior',
+     'dyn-cont','dyn-trab','dyn-comp','dyn-custo-mm','dyn-cap-total','dyn-cap-total-meta',
+     'dyn-si','dyn-xp','dyn-mou-ok','dyn-mou-pend','dyn-ancord','dyn-liq-blue3',
+     'dyn-ma-total','dyn-ma-count','dyn-bar-comp','dyn-bar-xp','dyn-bar-liq',
+     'dyn-bar-comp2','dyn-bar-xp2','dyn-bar-liq2','dyn-desist-pos','dyn-desist-prec'
+    ].forEach(function(id){_z(id,'0');});
+    ['dyn-liq-sub-el','dyn-maior-label-el','dyn-comp-sub','dyn-comp-media',
+     'dyn-auc-sub','dyn-auc-sub-el','dyn-auc-media-label','dyn-auc-estrat-sub',
+     'dyn-si-sub','dyn-si-footer','dyn-desist-label','dyn-ritmo-label',
+     'dyn-periodo-label','dyn-periodo-chart'
+    ].forEach(function(id){_z(id,'');});
+    _z('dyn-liq-sub-el','Sem dados no período selecionado');
+    ['dyn-bar-brutas','dyn-bar-desist','dyn-bar-pracas','dyn-bar-senior','dyn-bar-maior'].forEach(function(id){_z(id,'—');});
+    // Limpar containers de seções
+    ['comp-periodos','pace-card','funil-container','funil-details','hunter-cards','origemLista','strat-cards'].forEach(function(id){
+      var e=document.getElementById(id); if(e) e.innerHTML='<p style="color:var(--t3);font-size:12px;padding:12px;">Sem dados no período selecionado.</p>';
+    });
+    // Limpar total estratégico
+    var _se=document.getElementById('dyn-auc-estrat-total'); if(_se) _se.textContent='R$ 0';
+    var _ae=document.getElementById('dyn-auc-estrat'); if(_ae) _ae.textContent='0';
+    // Limpar gráficos (destroy) + legendas
+    ['chartTrend','chartPerfil','chartHunter','chartHunterTotal'].forEach(function(id){
+      if(window._chartReg&&window._chartReg[id]){try{window._chartReg[id].destroy();}catch(e){}}
+      var cv=document.getElementById(id); if(cv){var ctx=cv.getContext('2d');if(ctx)ctx.clearRect(0,0,cv.width,cv.height);}
+    });
+    var _lp=document.getElementById('legPerfil'); if(_lp) _lp.innerHTML='';
+    var _hs=document.getElementById('hunters-subtitle'); if(_hs) _hs.textContent='';
+    // Chamar renders com arrays vazios para que limpem suas seções
+    if(typeof renderAssessoresMensal==='function') renderAssessoresMensal([]);
+    if(typeof renderOutrasAreas==='function') renderOutrasAreas([]);
+    if(typeof renderConsolidadorPracas==='function') renderConsolidadorPracas([]);
+    if(typeof renderRegionais==='function') renderRegionais([]);
+    if(typeof renderAreaBreakdown==='function') renderAreaBreakdown([]);
+    if(typeof renderCandListSplit==='function') renderCandListSplit([]);
+    return;
+  }
   console.log('[Blue3] candidatos:', C.length, 'hunters:', H.length);
 
   // ── helpers locais ──
@@ -901,7 +949,7 @@ function fmtM(v) {
     set('dyn-ma-total', fmtMaB(maTotal));
     set('dyn-ma-count', D.ma.length + ' operações em andamento');
   }
-  var allCands = window.Blue3Data && window.Blue3Data._rawRows ? window.Blue3Data._rawRows : [];
+  var allCands = (window.Blue3Data && window.Blue3Data._rawRows ? window.Blue3Data._rawRows : []).filter(_inPeriodo);
 
   // Brutas = todos os candidatos contratados + desistentes (todas as áreas)
   var brutasStatuses = ['trabalhando','contratado(a)','contratado','desistência','desistencia'];
@@ -919,12 +967,13 @@ function fmtM(v) {
   var hoje = new Date();
   var mesAtual = hoje.getMonth() + 1;
   var anoAtual = hoje.getFullYear();
-  var mNums = Object.keys(G.byMonth||{}).map(Number).sort(function(a,b){return a-b;});
-  // Período vai de Jan (ou primeiro mês com dados) até o mês atual
-  var mesInicio = mNums.length > 0 ? mNums[0] : 1;
-  var mesFim = mesAtual;
-  var meses = mesFim - mesInicio + 1;
-  var periodoLabel = mLabels[mesInicio]+'–'+mLabels[mesFim]+' '+anoAtual+' · '+meses+' mês'+(meses!==1?'es':'');
+  // Período dirigido pelo seletor (1º Sem / 2º Sem / Ano)
+  var _pi = _periodoInfo();
+  var _cfgP = _PERIODOS[_periodo.tipo]||_PERIODOS.ano;
+  var mesInicio = _cfgP.m1;
+  var mesFim = _pi.meses>0 ? (_cfgP.m1 + _pi.meses - 1) : _cfgP.m1;
+  var meses = _pi.meses;
+  var periodoLabel = _pi.label;
 
   // Taxa de desistência: pós-contrato / (ativos + pós-contrato)
   var baseDesist = AT + desistPos;
@@ -1082,28 +1131,34 @@ function fmtM(v) {
   var lp = document.getElementById('legPerfil');
   if (lp) { lp.innerHTML=''; pD.forEach(function(d){ lp.innerHTML+='<span class="li"><span class="ld" style="background:'+d.c+';display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;"></span>'+d.l+' — '+d.v+' ('+Math.round(d.v/Math.max(AT,1)*100)+'%)</span> '; }); }
 
-  // ── Pace card ──
+  // ── Pace card (período-consciente) ──
   (function(){
-    var META=40, MESES=6;
-    var DEC = new Date().getMonth() + 1; // mês atual (1=Jan...6=Jun)
-    if (DEC < 1) DEC = 1; if (DEC > MESES) DEC = MESES;
+    var _cfgP=_PERIODOS[_periodo.tipo]||_PERIODOS.sem1;
+    var META=(_periodo.tipo==='ano'?80:40);
+    var MESES=_cfgP.m2-_cfgP.m1+1;
+    var hoje=new Date();
+    var mesAtualAbs=hoje.getFullYear()===_periodo.ano?hoje.getMonth()+1:(_periodo.ano<hoje.getFullYear()?_cfgP.m2:_cfgP.m1);
+    var DEC=Math.max(0,Math.min(MESES, mesAtualAbs-_cfgP.m1+1));
 
     // Somente Assessores
-    var allCands = window.Blue3Data ? (window.Blue3Data.candidatos||[]) : [];
+    var allCands = (window.Blue3Data ? (window.Blue3Data.candidatos||[]) : []).filter(_inPeriodo);
     var AT = allCands.filter(function(r){ return ['assessor','assessores'].indexOf((r.area||'Assessores').toLowerCase()) !== -1; }).length;
 
-    var mLabels=['Jan','Fev','Mar','Abr','Mai','Jun'];
-    var mesLabel = mLabels[DEC-1] || 'Abr';
-    var pctSem = Math.round(DEC/MESES*100);
-    var proj=Math.round(AT/Math.max(1,DEC)*MESES), pct=Math.min(100,Math.round(AT/META*100));
-    var esp=Math.round(DEC/MESES*META), saldo=AT-esp, falt=Math.max(0,META-AT), nec=Math.ceil(falt/Math.max(1,MESES-DEC+1)), ok=proj>=META;
+    var mesLabel = _MESLBL[_cfgP.m1+DEC-1] || _MESLBL[_cfgP.m2];
+    var mesFimLabel = _MESLBL[_cfgP.m2];
+    var pctPer = DEC>0?Math.round(DEC/MESES*100):0;
+    var proj=DEC>0?Math.round(AT/Math.max(1,DEC)*MESES):0, pct=Math.min(100,Math.round(AT/META*100));
+    var esp=DEC>0?Math.round(DEC/MESES*META):0, saldo=AT-esp, falt=Math.max(0,META-AT), restMeses=Math.max(1,MESES-DEC+1), nec=Math.ceil(falt/restMeses), ok=proj>=META;
+    var perNome=_periodo.tipo==='ano'?'no ano':'no semestre';
+    // Atualizar título da seção
+    var stEl=document.querySelector('#sect-pace .st'); if(stEl) stEl.textContent='Pace de contratações — Meta '+META+' '+perNome;
     var el=document.getElementById('pace-card'); if(!el)return;
     el.innerHTML='<div class="pstats">'
       +'<div class="ps"><div class="psl">Ativas realizadas</div><div class="psv">'+AT+'</div><div class="psn">de '+META+' na meta</div></div>'
-      +'<div class="ps"><div class="psl">Esperado até '+mesLabel+'</div><div class="psv">'+esp+'</div><div class="psn">'+pctSem+'% do semestre</div></div>'
+      +'<div class="ps"><div class="psl">Esperado até '+mesLabel+'</div><div class="psv">'+esp+'</div><div class="psn">'+pctPer+'% '+perNome+'</div></div>'
       +'<div class="ps" style="background:#FFF7ED;border:1px solid #FED7AA;"><div class="psl" style="color:#92400E;">Saldo vs. pace</div><div class="psv" style="color:#C2410C;">'+saldo+'</div><div class="psn" style="color:#92400E;">'+(saldo>=0?'no pace':'abaixo')+'</div></div>'
-      +'<div class="ps"><div class="psl">Projeção Jun 2026</div><div class="psv" style="color:'+(ok?'#16A34A':'#DC2626')+';">'+proj+'</div><div class="psn">ativas estimadas</div></div>'
-      +'<div class="ps"><div class="psl">Ritmo necessário</div><div class="psv">'+nec+'</div><div class="psn">ativas/mês (Mai–Jun)</div></div>'
+      +'<div class="ps"><div class="psl">Projeção '+mesFimLabel+' '+_periodo.ano+'</div><div class="psv" style="color:'+(ok?'#16A34A':'#DC2626')+';">'+proj+'</div><div class="psn">ativas estimadas</div></div>'
+      +'<div class="ps"><div class="psl">Ritmo necessário</div><div class="psv">'+nec+'</div><div class="psn">ativas/mês ('+_MESLBL[_cfgP.m1+DEC]+'–'+mesFimLabel+')</div></div>'
       +'</div>'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;margin-top:12px;">'
       +'<span style="font-size:11px;font-weight:600;color:var(--t2);">Régua — Meta: '+META+'</span>'
@@ -1115,8 +1170,8 @@ function fmtM(v) {
       +'<span>0</span><span style="position:relative;left:calc(50% - 30px);color:var(--t2);font-weight:600;">↑ pace esperado</span><span>Meta '+META+'</span>'
       +'</div>'
       +(ok
-        ? '<div style="margin-top:10px;padding:8px 12px;background:#F0FDF4;border-left:3px solid #16A34A;border-radius:0 var(--r8) var(--r8) 0;"><span style="font-size:11px;font-weight:600;color:#15803D;">✓ No pace. </span><span style="font-size:11px;color:#15803D;">Projeção de '+proj+' assessores até junho. Manter ritmo de '+nec+'/mês.</span></div>'
-        : '<div style="margin-top:10px;padding:8px 12px;background:#FFF7ED;border-left:3px solid #F59E0B;border-radius:0 var(--r8) var(--r8) 0;"><span style="font-size:11px;font-weight:600;color:#92400E;">⚠ Abaixo do pace. </span><span style="font-size:11px;color:#92400E;">Faltam '+falt+' contratações de assessores. Necessário: '+nec+'/mês até junho.</span></div>'
+        ? '<div style="margin-top:10px;padding:8px 12px;background:#F0FDF4;border-left:3px solid #16A34A;border-radius:0 var(--r8) var(--r8) 0;"><span style="font-size:11px;font-weight:600;color:#15803D;">✓ No pace. </span><span style="font-size:11px;color:#15803D;">Projeção de '+proj+' assessores até '+mesFimLabel+'. Manter ritmo de '+nec+'/mês.</span></div>'
+        : '<div style="margin-top:10px;padding:8px 12px;background:#FFF7ED;border-left:3px solid #F59E0B;border-radius:0 var(--r8) var(--r8) 0;"><span style="font-size:11px;font-weight:600;color:#92400E;">⚠ Abaixo do pace. </span><span style="font-size:11px;color:#92400E;">Faltam '+falt+' contratações de assessores. Necessário: '+nec+'/mês até '+mesFimLabel+'.</span></div>'
       );
   })();
 
@@ -1393,6 +1448,84 @@ function fmtM(v) {
 // ── Filtros dinâmicos ──
 var _activeFilters={hunter:'',praca:'',sen:'',status:'',area:''};
 
+// ── Seletor de período (módulo reutilizável) ─────────────────
+var _MESLBL={1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
+var _PERIODOS={
+  ano:  {m1:1,m2:12,nome:function(a){return 'Ano '+a;}},
+  sem1: {m1:1,m2:6, nome:function(a){return '1º Semestre '+a;}},
+  sem2: {m1:7,m2:12,nome:function(a){return '2º Semestre '+a;}}
+};
+var _periodo={ tipo:((new Date().getMonth()+1)<=6?'sem1':'sem2'), ano:new Date().getFullYear() };
+function _periodoMesAno(dt){
+  if(!dt) return null; var z=String(dt);
+  var br=z.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(br) return {m:parseInt(br[2],10),y:parseInt(br[3],10)};
+  var iso=z.match(/^(\d{4})-(\d{1,2})/); if(iso) return {m:parseInt(iso[2],10),y:parseInt(iso[1],10)};
+  return null;
+}
+function _inPeriodo(r){
+  var dt=(r&&(r.dt||r['Data de Contratação']||r['data_contratacao']))||'';
+  var ma=_periodoMesAno(dt);
+  if(!ma) return _periodo.tipo==='ano';
+  var cfg=_PERIODOS[_periodo.tipo]||_PERIODOS.ano;
+  return ma.y===_periodo.ano && ma.m>=cfg.m1 && ma.m<=cfg.m2;
+}
+function _periodoInfo(){
+  var cfg=_PERIODOS[_periodo.tipo]||_PERIODOS.ano, hoje=new Date();
+  var mFimEf = hoje.getFullYear()>_periodo.ano ? cfg.m2 : (hoje.getFullYear()<_periodo.ano ? cfg.m1-1 : Math.min(cfg.m2, hoje.getMonth()+1));
+  var meses = Math.max(0, mFimEf - cfg.m1 + 1);
+  var rangeFim = meses>0 ? mFimEf : cfg.m1;
+  return { nome: cfg.nome(_periodo.ano), meses: meses,
+    rangeLabel: _MESLBL[cfg.m1]+'–'+_MESLBL[rangeFim]+' '+_periodo.ano,
+    label: _MESLBL[cfg.m1]+'–'+_MESLBL[rangeFim]+' '+_periodo.ano+' · '+meses+' mês'+(meses!==1?'es':'') };
+}
+function _resumoPeriodo(C, base){
+  C=C||[]; var n=function(x){return String(x||'').trim().toLowerCase();};
+  var g={};
+  g.total=C.length;
+  g.trab=C.filter(function(r){return n(r.st)==='trabalhando';}).length;
+  g.contCount=C.filter(function(r){var s=n(r.st);return s==='contratado'||s==='contratado(a)'||s==='contratada';}).length;
+  g.mouOk=C.filter(function(r){return n(r.mou)==='assinado';}).length;
+  g.mouPend=C.filter(function(r){var m=n(r.mou);return m!=='assinado'&&m!=='';}).length;
+  g.ancord=C.filter(function(r){return n(r.ancord)==='sim';}).length;
+  g.seniors=C.filter(function(r){return n(r.sen)==='sênior';}).length;
+  g.plenos=C.filter(function(r){return n(r.sen)==='pleno';}).length;
+  g.juniors=C.filter(function(r){var s=n(r.sen);return s==='júnior'||s==='junior';}).length;
+  g.seniorPct=g.total>0?Math.round(g.seniors/g.total*100):0;
+  g.compTotal=C.reduce(function(s,r){return s+(r.comp||0);},0);
+  g.xpTotal=C.reduce(function(s,r){return s+(r.xp||0);},0);
+  g.siTotal=C.reduce(function(s,r){return s+(r.si||0);},0);
+  g.siCount=C.filter(function(r){return (r.si||0)>0;}).length;
+  g.aucTotal=C.reduce(function(s,r){return s+(r.cap||0);},0);
+  g.aucB=g.aucTotal>0?(g.aucTotal/1000).toFixed(2).replace('.',','):'0';
+  g.blue3Liq=g.compTotal-g.xpTotal;
+  var mc=null; C.forEach(function(r){ if((r.cap||0)>((mc&&mc.cap)||0)) mc={cap:r.cap,n:r.n||r.nome||'',p:r.p||''}; });
+  g.maiorCand=mc;
+  var bm={},sbm={}; C.forEach(function(r){ var ma=_periodoMesAno(r.dt||r['Data de Contratação']); if(!ma)return; bm[ma.m]=(bm[ma.m]||0)+1; if(n(r.sen)==='sênior') sbm[ma.m]=(sbm[ma.m]||0)+1; });
+  g.byMonth=bm; g.senByMonth=sbm;
+  return g;
+}
+function setPeriodo(tipo,btn){
+  _periodo.tipo=tipo; _syncPeriodoUI();
+  try { if(typeof Blue3_charts==='function') Blue3_charts(); } catch(e){ console.error('[setPeriodo] Blue3_charts erro:', e); }
+  try { if(typeof renderSec08==='function') renderSec08(); } catch(e){ console.error('[setPeriodo] renderSec08 erro:', e); }
+  // Garantir re-render de TODAS as seções (mesmo se Blue3_charts crashar no meio)
+  var _C = ((window.Blue3Data||{}).candidatos || []).filter(_inPeriodo);
+  try { if(typeof renderAssessoresMensal==='function') renderAssessoresMensal(_C); } catch(e){}
+  try { if(typeof renderOutrasAreas==='function') renderOutrasAreas(_C); } catch(e){}
+  try { if(typeof renderConsolidadorPracas==='function') renderConsolidadorPracas(_C); } catch(e){}
+  try { if(typeof renderRegionais==='function') renderRegionais(_C); } catch(e){}
+  try { if(typeof renderAreaBreakdown==='function') renderAreaBreakdown(_C); } catch(e){}
+  try { if(typeof renderCandListSplit==='function') renderCandListSplit(_C); } catch(e){}
+  // Se houver filtros ativos, aplicar sobre o período
+  var hasF=_activeFilters && (_activeFilters.hunter||_activeFilters.praca||_activeFilters.sen||_activeFilters.status||_activeFilters.area);
+  if(hasF && typeof applyFilters==='function') applyFilters();
+}
+function _syncPeriodoUI(){
+  var cont=document.getElementById('periodo-pills');
+  if(cont) cont.querySelectorAll('.fpill').forEach(function(b){ b.classList.toggle('fpill-on', b.dataset.val===_periodo.tipo); });
+  var rt=document.getElementById('rt-periodo'); if(rt) rt.textContent=_periodoInfo().nome;
+}
+
 
 // ── Complementa candidatos com desistentes a partir dos dados brutos do pipeline ──
 // O pipeline guarda todas as linhas em window.Blue3Data._rawRows (após correção do pipeline.js)
@@ -1400,7 +1533,7 @@ var _activeFilters={hunter:'',praca:'',sen:'',status:'',area:''};
 function getDesistentesExtras(candidatosAtuais) {
   try {
     // Sempre usar _rawRows do pipeline — nunca localStorage (dados podem estar desatualizados)
-    var rawRows = (window.Blue3Data && window.Blue3Data._rawRows) || [];
+    var rawRows = ((window.Blue3Data && window.Blue3Data._rawRows) || []).filter(_inPeriodo);
     if (!rawRows || !rawRows.length) return [];
 
     var nomesAtuais = {};
@@ -1412,7 +1545,8 @@ function getDesistentesExtras(candidatosAtuais) {
       var s = norm(r['Status']||'');
       var isDesist = s === 'desistência' || s === 'desistencia';
       if (!isDesist) return false;
-      // Mostrar todos os desistentes que têm data (aparecem nos cards mensais)
+      // Só desistência pós-contrato (exclui precoce)
+      if (!(r['foiContratado']===true||r['_foi_contratado']===true)) return false;
       if (!r['Data de Contratação']) return false;
       var nome = (r['Candidato']||r['nome']||'').trim().toLowerCase();
       if (nomesAtuais[nome]) return false;
@@ -1706,6 +1840,7 @@ function getFilteredCandidatos(){
   if(!window.Blue3Data||!window.Blue3Data.candidatos)return[];
   var f=_activeFilters;
   return window.Blue3Data.candidatos.filter(function(r){
+    if(!_inPeriodo(r))return false;
     if(f.hunter&&r.h!==f.hunter)return false;
     if(f.praca&&r.p!==f.praca)return false;
     if(f.sen&&(r.sen||'').toLowerCase()!==f.sen.toLowerCase())return false;
@@ -1805,6 +1940,7 @@ function renderConsolidadorPracas(candidatos) {
   if (!wrap || !grid) return;
 
   var base = candidatos || (window.Blue3Data && window.Blue3Data.candidatos) || [];
+  if (!base.length) { grid.innerHTML='<p style="color:var(--t3);font-size:12px;padding:12px;">Sem dados no período.</p>'; return; }
   // Apenas assessores no consolidado por praça
   base = base.filter(function(r){ return (r.area||'Assessor').trim().toLowerCase() === 'assessor'; });
   var ativos = base.filter(function(r){
@@ -1884,6 +2020,7 @@ function renderRegionais(candidatos) {
     return (s === 'trabalhando' || s === 'contratado(a)') && a === 'assessor';
   });
   var total = base.length;
+  if (!total) { grid.innerHTML='<p style="color:var(--t3);font-size:12px;padding:12px;">Sem dados no período.</p>'; return; }
   if (!total) { wrap.style.display = 'none'; return; }
 
   // Acumular por regional
@@ -1975,6 +2112,7 @@ function renderPage() {
     Blue3_charts();
     populateFilters();
     renderSec08();
+    _syncPeriodoUI();
   });
 }
 
@@ -2770,7 +2908,7 @@ function exportarPDF() {
   });
 
   var dataStr = localStorage.getItem('B3D_DATE') || 'Atual';
-  var titulo  = 'Blue3 Expansão · Relatório Executivo 1S2026';
+  var titulo  = 'Blue3 Expansão · Relatório Executivo · ' + _periodoInfo().nome;
   var cover   = document.querySelector('.cover');
   var page    = document.querySelector('.page');
   if (!page) { alert('Carregue os dados antes de exportar.'); return; }
@@ -2968,13 +3106,22 @@ if (_regEstrat) _regEstrat.addEventListener('change',function(){
 
 // ── Seção 08: Custo de Expansão — usa Blue3Data já carregado ──
 function renderSec08() {
-  var F  = (window.Blue3Data && window.Blue3Data.financeiros)  || [];
-  var PB = (window.Blue3Data && window.Blue3Data.paybacks)     || [];
+  var F  = ((window.Blue3Data && window.Blue3Data.financeiros)  || []).filter(_inPeriodo);
+  var PB = ((window.Blue3Data && window.Blue3Data.paybacks)     || []).filter(_inPeriodo);
   var el = function(id){ return document.getElementById(id); };
   var fmt = function(v){ if(!v) return '—'; return v >= 1000 ? 'R$'+Math.round(v/1000).toLocaleString('pt-BR')+'K' : 'R$'+Math.round(v).toLocaleString('pt-BR'); };
   var mLabels = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
 
-  if(!F.length){ console.warn('[Sec08] Blue3Data.financeiros vazio'); return; }
+  if(!F.length){
+    console.warn('[Sec08] financeiros vazio no período');
+    ['sec08-pb-medio','sec08-pb-mediana','sec08-pb-range','sec08-piso-medio','sec08-piso-moda','sec08-analisados'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent='—';});
+    ['sec08-chart-piso','sec08-chart-scatter'].forEach(function(id){
+      if(window._chartReg&&window._chartReg[id]){try{window._chartReg[id].destroy();}catch(e){}}
+      var cv=document.getElementById(id);if(cv){var ctx=cv.getContext('2d');if(ctx)ctx.clearRect(0,0,cv.width,cv.height);}
+    });
+    var _ct=document.getElementById('sec08-canal-table');if(_ct)_ct.innerHTML='<p style="color:var(--t3);font-size:12px;padding:12px;">Sem dados no período.</p>';
+    return;
+  }
 
   // ── Mapear payback por candidato (pelo nome) ──
   var pbMap = {};
