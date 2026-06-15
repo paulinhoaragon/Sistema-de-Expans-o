@@ -456,31 +456,18 @@ function exportarCSV() {
     fname = 'blue3_impacto_' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '.csv';
   } catch(e) { alert('Erro ao montar CSV: ' + e.message); return; }
 
-  // Documento HTML que AUTO-baixa o CSV — aberto numa aba top-level (fora do iframe/sandbox)
-  var enc = encodeURIComponent(csv);
-  var htmlDoc = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + fname + '</title>'
-    + '<style>body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;padding:48px;text-align:center;color:#0B1220;background:#F5F7FB}'
-    + 'button{font-size:15px;font-weight:700;padding:14px 28px;border-radius:10px;border:none;background:#1F4DD8;color:#fff;cursor:pointer;margin-top:8px}'
-    + 'p{color:#5B6472;font-size:14px;line-height:1.6}</style></head><body>'
-    + '<h2>Download do arquivo</h2>'
-    + '<p>O download deve iniciar automaticamente.<br>Se n\u00e3o iniciar, clique no bot\u00e3o abaixo.</p>'
-    + '<button id="b">\u2B07 Baixar ' + fname + '</button>'
-    + '<scr' + 'ipt>'
-    + 'var csv=decodeURIComponent("' + enc + '");'
-    + 'function dl(){var bl=new Blob([csv],{type:"text/csv;charset=utf-8;"});'
-    + 'if(navigator.msSaveBlob){navigator.msSaveBlob(bl,"' + fname + '");return;}'
-    + 'var u=URL.createObjectURL(bl);var a=document.createElement("a");a.href=u;a.download="' + fname + '";'
-    + 'document.body.appendChild(a);a.click();setTimeout(function(){try{document.body.removeChild(a);}catch(e){}URL.revokeObjectURL(u);},3000);}'
-    + 'document.getElementById("b").onclick=dl;setTimeout(dl,250);'
-    + '<\/scr' + 'ipt></body></html>';
+  // Diagnóstico de ambiente
+  var inIframe = false;
+  try { inIframe = (window.self !== window.top); } catch(e) { inIframe = true; }
 
-  var urlHtml, urlTxt;
+  var enc = encodeURIComponent(csv);
+  var urlOctet, urlTxt;
   try {
-    urlHtml = URL.createObjectURL(new Blob([htmlDoc], {type:'text/html;charset=utf-8;'}));
-    urlTxt  = URL.createObjectURL(new Blob([csv], {type:'text/plain;charset=utf-8;'}));
+    urlOctet = URL.createObjectURL(new Blob([csv], {type:'application/octet-stream'}));
+    urlTxt   = URL.createObjectURL(new Blob([csv], {type:'text/plain;charset=utf-8;'}));
   } catch(e) {
-    urlHtml = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlDoc);
-    urlTxt  = 'data:text/plain;charset=utf-8,' + enc;
+    urlOctet = 'data:application/octet-stream;charset=utf-8,' + enc;
+    urlTxt   = 'data:text/plain;charset=utf-8,' + enc;
   }
 
   var prev = document.getElementById('csv-overlay');
@@ -495,15 +482,23 @@ function exportarCSV() {
   var title = document.createElement('div');
   title.textContent = 'Exportar tabela (CSV)';
   title.style.cssText = 'font-size:16px;font-weight:700;color:#0B1220;margin-bottom:6px;';
+
   var sub = document.createElement('div');
-  sub.innerHTML = 'Clique em <b>Baixar arquivo</b>: abre uma aba que faz o download (necess\u00e1rio porque o relat\u00f3rio roda dentro de um quadro restrito). Alternativas: <b>Abrir como texto</b> (salve com Ctrl/Cmd+S) ou <b>Copiar</b>.';
-  sub.style.cssText = 'font-size:12px;color:#5B6472;line-height:1.5;margin-bottom:16px;';
+  sub.innerHTML = 'Clique em <b>Baixar arquivo</b>. Se n\u00e3o baixar, use <b>Abrir como texto</b> (Ctrl/Cmd+S) ou <b>Copiar</b>.';
+  sub.style.cssText = 'font-size:12px;color:#5B6472;line-height:1.5;margin-bottom:10px;';
+
+  // Linha de diagnóstico (nos ajuda a confirmar a causa)
+  var diag = document.createElement('div');
+  diag.style.cssText = 'font-size:11px;color:#92400E;background:#FFF7ED;border:1px solid #FED7AA;border-radius:6px;padding:7px 10px;margin-bottom:14px;line-height:1.4;';
+  diag.innerHTML = inIframe
+    ? '\u26A0 O relat\u00f3rio est\u00e1 sendo exibido <b>dentro de um quadro embutido (iframe)</b>. Isso \u00e9 o que bloqueia o download autom\u00e1tico. Solu\u00e7\u00e3o definitiva no fim do painel.'
+    : '\u2139 P\u00e1gina em contexto normal (n\u00e3o-iframe). Se o download falhar, \u00e9 restri\u00e7\u00e3o do navegador.';
 
   var linkRow = document.createElement('div');
   linkRow.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;';
 
   var dl = document.createElement('a');
-  dl.href = urlHtml; dl.target = '_blank'; dl.rel = 'noopener';
+  dl.href = urlOctet; dl.download = fname; dl.target = '_blank'; dl.rel = 'noopener';
   dl.textContent = '\u2B07  Baixar arquivo';
   dl.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#1F4DD8;color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:11px 20px;border-radius:8px;cursor:pointer;';
 
@@ -512,12 +507,18 @@ function exportarCSV() {
   openTab.textContent = '\uD83D\uDCC4  Abrir como texto';
   openTab.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#fff;color:#1F4DD8;text-decoration:none;font-size:13px;font-weight:700;padding:11px 20px;border-radius:8px;border:1px solid #1F4DD8;cursor:pointer;';
 
-  linkRow.appendChild(dl);
-  linkRow.appendChild(openTab);
+  linkRow.appendChild(dl); linkRow.appendChild(openTab);
 
   var ta = document.createElement('textarea');
   ta.value = csv; ta.readOnly = true;
-  ta.style.cssText = 'width:100%;height:120px;font-family:monospace;font-size:10px;border:1px solid #DCE1EA;border-radius:8px;padding:10px;resize:vertical;color:#333;background:#FAFBFE;margin-bottom:12px;box-sizing:border-box;';
+  ta.style.cssText = 'width:100%;height:110px;font-family:monospace;font-size:10px;border:1px solid #DCE1EA;border-radius:8px;padding:10px;resize:vertical;color:#333;background:#FAFBFE;margin-bottom:10px;box-sizing:border-box;';
+
+  // Nota técnica (solução definitiva)
+  var note = document.createElement('div');
+  note.style.cssText = 'font-size:10px;color:#8A93A2;line-height:1.5;margin-bottom:12px;border-top:1px solid #EEF1F6;padding-top:10px;';
+  note.innerHTML = inIframe
+    ? '<b>Para o download autom\u00e1tico funcionar:</b> no embed que carrega este relat\u00f3rio, adicione <code>allow-downloads</code> ao atributo <code>sandbox</code> do iframe \u2014 ex.: <code>sandbox="allow-scripts allow-same-origin allow-downloads"</code>. Sem isso, o navegador bloqueia o download por seguran\u00e7a.'
+    : '';
 
   var btnRow = document.createElement('div');
   btnRow.style.cssText = 'display:flex;gap:10px;justify-content:flex-end;';
@@ -536,14 +537,16 @@ function exportarCSV() {
   closeBtn.textContent = 'Fechar';
   closeBtn.style.cssText = 'font-size:12px;font-weight:600;padding:9px 18px;border-radius:7px;border:1px solid #DCE1EA;color:#5B6472;background:#fff;cursor:pointer;';
   closeBtn.onclick = function(){
-    if (String(urlHtml).indexOf('blob:')===0) { try{URL.revokeObjectURL(urlHtml);}catch(e){} }
+    if (String(urlOctet).indexOf('blob:')===0) { try{URL.revokeObjectURL(urlOctet);}catch(e){} }
     if (String(urlTxt).indexOf('blob:')===0) { try{URL.revokeObjectURL(urlTxt);}catch(e){} }
     ov.parentNode.removeChild(ov);
   };
   ov.onclick = function(e){ if (e.target === ov) closeBtn.onclick(); };
 
   btnRow.appendChild(copyBtn); btnRow.appendChild(closeBtn);
-  box.appendChild(title); box.appendChild(sub); box.appendChild(linkRow); box.appendChild(ta); box.appendChild(btnRow);
+  box.appendChild(title); box.appendChild(sub); box.appendChild(diag); box.appendChild(linkRow); box.appendChild(ta);
+  if (note.innerHTML) box.appendChild(note);
+  box.appendChild(btnRow);
   ov.appendChild(box); document.body.appendChild(ov);
 }
 
