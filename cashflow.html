@@ -423,60 +423,89 @@ function _updateSortIcons(key, asc) {
   if (el) el.textContent = asc ? ' ↑' : ' ↓';
 }
 
+function _csvBuild() {
+  var fmtNum = function(v){ return v ? String(Math.round(v)).replace('.',',') : '0'; };
+  var fmtPer = function(v){ return v ? v + ' meses' : ''; };
+  var esc = function(v){
+    var t = String(v == null ? '' : v).replace(/"/g, '""');
+    return (t.indexOf(',') > -1 || t.indexOf(';') > -1 || t.indexOf('"') > -1) ? '"' + t + '"' : t;
+  };
+  var hdr = ['Assessor','Filial','Senioridade','Situacao','Inicio','Piso Mes (R$)','Periodo','Piso Total (R$)','Sign-in (R$)','Triggers (R$)','Total (R$)','Coparticipacao XP','Estrategico','Area'];
+  var rows = _tbData.map(function(a){
+    return [a.n||'',a.p||'',a.sen||'',a.ativo?'Ativo':'A confirmar',a.inicio||'',
+      fmtNum(a.piso),fmtPer(a.periodo),fmtNum(a.pisoTotal),fmtNum(a.si),fmtNum(a.trigTotal),
+      fmtNum(a.custoTotal),(a.xp&&a.xp>0)?'Sim':'Nao',
+      (a.estrategico||'').toLowerCase()==='sim'?'Sim':'Nao',a.area||'Assessor'
+    ].map(esc).join(';');
+  });
+  var tp=_tbData.reduce(function(s,a){return s+(a.pisoTotal||0);},0);
+  var ts=_tbData.reduce(function(s,a){return s+(a.si||0);},0);
+  var tt=_tbData.reduce(function(s,a){return s+(a.trigTotal||0);},0);
+  var tg=_tbData.reduce(function(s,a){return s+(a.custoTotal||0);},0);
+  var totRow=['TOTAL GERAL','','','','','','',fmtNum(tp),fmtNum(ts),fmtNum(tt),fmtNum(tg),'','',''].join(';');
+  return '\uFEFF' + hdr.join(';') + '\n' + rows.join('\n') + '\n' + totRow;
+}
+
 function exportarCSV() {
   var btn = document.getElementById('btn-export-csv');
+  var orig = '\u2B07 Exportar CSV';
+  if (!_tbData || !_tbData.length) { alert('Sem dados para exportar.'); return; }
+
+  var csv, fname;
   try {
-    if (btn) btn.textContent = '\u23F3 Gerando...';
-    if (!_tbData || !_tbData.length) { alert('Sem dados para exportar.'); if(btn) btn.textContent='\u2B07 Exportar CSV'; return; }
-    var fmtNum = function(v){ return v ? String(Math.round(v)).replace('.',',') : '0'; };
-    var fmtPer = function(v){ return v ? v + ' meses' : ''; };
-    var esc = function(v){
-      var t = String(v == null ? '' : v).replace(/"/g, '""');
-      return (t.indexOf(',') > -1 || t.indexOf(';') > -1 || t.indexOf('"') > -1) ? '"' + t + '"' : t;
-    };
-    var hdr = ['Assessor','Filial','Senioridade','Situacao','Inicio','Piso Mes (R$)','Periodo','Piso Total (R$)','Sign-in (R$)','Triggers (R$)','Total (R$)','Coparticipacao XP','Estrategico','Area'];
-    var rows = _tbData.map(function(a){
-      return [a.n||'',a.p||'',a.sen||'',a.ativo?'Ativo':'A confirmar',a.inicio||'',
-        fmtNum(a.piso),fmtPer(a.periodo),fmtNum(a.pisoTotal),fmtNum(a.si),fmtNum(a.trigTotal),
-        fmtNum(a.custoTotal),(a.xp&&a.xp>0)?'Sim':'Nao',
-        (a.estrategico||'').toLowerCase()==='sim'?'Sim':'Nao',a.area||'Assessor'
-      ].map(esc).join(';');
-    });
-    var tp=_tbData.reduce(function(s,a){return s+(a.pisoTotal||0);},0);
-    var ts=_tbData.reduce(function(s,a){return s+(a.si||0);},0);
-    var tt=_tbData.reduce(function(s,a){return s+(a.trigTotal||0);},0);
-    var tg=_tbData.reduce(function(s,a){return s+(a.custoTotal||0);},0);
-    var totRow=['TOTAL GERAL','','','','','','',fmtNum(tp),fmtNum(ts),fmtNum(tt),fmtNum(tg),'','',''].join(';');
-    var csv = '\uFEFF' + hdr.join(';') + '\n' + rows.join('\n') + '\n' + totRow;
-
+    csv = _csvBuild();
     var d = new Date();
-    var fname = 'blue3_impacto_'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.csv';
+    fname = 'blue3_impacto_'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.csv';
+  } catch(e) {
+    alert('Erro ao montar CSV: ' + e.message); return;
+  }
 
-    // Blob URL = same-origin = download attribute funciona em qualquer deploy
+  // MÉTODO 1: Blob + createObjectURL + <a download>
+  try {
     var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    if (typeof window.navigator.msSaveBlob === 'function') {        // IE/Edge antigo
+      window.navigator.msSaveBlob(blob, fname);
+      return;
+    }
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
-    a.href = url;
-    a.download = fname;
+    a.href = url; a.download = fname; a.rel = 'noopener';
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    setTimeout(function(){
-      try { document.body.removeChild(a); } catch(e){}
-      URL.revokeObjectURL(url);
-      if (btn) btn.textContent = '\u2B07 Exportar CSV';
-    }, 500);
-  } catch(e) {
-    console.error('[exportarCSV]', e);
-    // Fallback: forçar download via location (sem controle de nome)
-    try {
-      var csv2 = '\uFEFF' + document.querySelector('#tb2').closest('table').innerText;
-      window.location.href = 'data:application/octet-stream,' + encodeURIComponent(csv2);
-    } catch(e2) {
-      alert('Erro ao exportar. Tente Ctrl+S na página ou copie a tabela manualmente.\n\nDetalhe: ' + e.message);
-    }
-    if (btn) btn.textContent = '\u2B07 Exportar CSV';
+    setTimeout(function(){ try{document.body.removeChild(a);}catch(_){} URL.revokeObjectURL(url); }, 1000);
+    return;
+  } catch(e1) {
+    console.error('[CSV m1]', e1);
   }
+
+  // MÉTODO 2: nova aba com o conteúdo (usuário salva com Ctrl+S)
+  try {
+    var w = window.open('', '_blank');
+    if (w && w.document) {
+      w.document.title = fname;
+      w.document.body.style.cssText = 'margin:0;font-family:monospace;white-space:pre;padding:16px;';
+      w.document.body.textContent = csv;
+      alert('O CSV abriu em nova aba. Use Ctrl+S (ou Cmd+S) para salvar como arquivo.');
+      return;
+    }
+  } catch(e2) {
+    console.error('[CSV m2]', e2);
+  }
+
+  // MÉTODO 3: copiar para a área de transferência
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(csv).then(function(){
+        alert('Download bloqueado pelo navegador. O CSV foi COPIADO para a área de transferência — cole (Ctrl+V) em uma planilha ou bloco de notas.');
+      });
+      return;
+    }
+  } catch(e3) {
+    console.error('[CSV m3]', e3);
+  }
+
+  alert('Não foi possível baixar automaticamente. Abra o console (F12) e me envie o erro.');
 }
 
 function sortTable(key) {
@@ -721,16 +750,6 @@ function showEmptyState(msg) {
     + '<a href="index.html">Ir para a home</a>'
     + '</div>';
 }
-
-// ── Bind de eventos (compatível com CSP strict) ──
-(function(){
-  var _bindCSV = function(){
-    var btn = document.getElementById('btn-export-csv');
-    if (btn && !btn._bound) { btn.addEventListener('click', exportarCSV); btn._bound = true; }
-  };
-  _bindCSV();
-  document.addEventListener('DOMContentLoaded', _bindCSV);
-})();
 
 // ── Inicialização ──
 (function() {
