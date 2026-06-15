@@ -449,19 +449,38 @@ function _csvBuild() {
 function exportarCSV() {
   if (!_tbData || !_tbData.length) { alert('Sem dados para exportar.'); return; }
 
-  var csv, fname, urlCsv = '', urlTxt = '';
+  var csv, fname;
   try {
     csv = _csvBuild();
     var d = new Date();
     fname = 'blue3_impacto_' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '.csv';
   } catch(e) { alert('Erro ao montar CSV: ' + e.message); return; }
 
+  // Documento HTML que AUTO-baixa o CSV — aberto numa aba top-level (fora do iframe/sandbox)
+  var enc = encodeURIComponent(csv);
+  var htmlDoc = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + fname + '</title>'
+    + '<style>body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;padding:48px;text-align:center;color:#0B1220;background:#F5F7FB}'
+    + 'button{font-size:15px;font-weight:700;padding:14px 28px;border-radius:10px;border:none;background:#1F4DD8;color:#fff;cursor:pointer;margin-top:8px}'
+    + 'p{color:#5B6472;font-size:14px;line-height:1.6}</style></head><body>'
+    + '<h2>Download do arquivo</h2>'
+    + '<p>O download deve iniciar automaticamente.<br>Se n\u00e3o iniciar, clique no bot\u00e3o abaixo.</p>'
+    + '<button id="b">\u2B07 Baixar ' + fname + '</button>'
+    + '<scr' + 'ipt>'
+    + 'var csv=decodeURIComponent("' + enc + '");'
+    + 'function dl(){var bl=new Blob([csv],{type:"text/csv;charset=utf-8;"});'
+    + 'if(navigator.msSaveBlob){navigator.msSaveBlob(bl,"' + fname + '");return;}'
+    + 'var u=URL.createObjectURL(bl);var a=document.createElement("a");a.href=u;a.download="' + fname + '";'
+    + 'document.body.appendChild(a);a.click();setTimeout(function(){try{document.body.removeChild(a);}catch(e){}URL.revokeObjectURL(u);},3000);}'
+    + 'document.getElementById("b").onclick=dl;setTimeout(dl,250);'
+    + '<\/scr' + 'ipt></body></html>';
+
+  var urlHtml, urlTxt;
   try {
-    urlCsv = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
-    urlTxt = URL.createObjectURL(new Blob([csv], {type:'text/plain;charset=utf-8;'}));
+    urlHtml = URL.createObjectURL(new Blob([htmlDoc], {type:'text/html;charset=utf-8;'}));
+    urlTxt  = URL.createObjectURL(new Blob([csv], {type:'text/plain;charset=utf-8;'}));
   } catch(e) {
-    urlCsv = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-    urlTxt = urlCsv;
+    urlHtml = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlDoc);
+    urlTxt  = 'data:text/plain;charset=utf-8,' + enc;
   }
 
   var prev = document.getElementById('csv-overlay');
@@ -470,47 +489,38 @@ function exportarCSV() {
   var ov = document.createElement('div');
   ov.id = 'csv-overlay';
   ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(11,18,32,.72);display:flex;align-items:center;justify-content:center;padding:20px;font-family:inherit;';
-
   var box = document.createElement('div');
   box.style.cssText = 'background:#fff;border-radius:14px;max-width:580px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);';
 
   var title = document.createElement('div');
   title.textContent = 'Exportar tabela (CSV)';
   title.style.cssText = 'font-size:16px;font-weight:700;color:#0B1220;margin-bottom:6px;';
-
   var sub = document.createElement('div');
-  sub.innerHTML = 'Tente as op\u00e7\u00f5es na ordem. Se o download for bloqueado pelo ambiente, use <b>Abrir em nova aba</b> e salve com Ctrl+S (Cmd+S no Mac), ou <b>Copiar</b> e cole numa planilha.';
+  sub.innerHTML = 'Clique em <b>Baixar arquivo</b>: abre uma aba que faz o download (necess\u00e1rio porque o relat\u00f3rio roda dentro de um quadro restrito). Alternativas: <b>Abrir como texto</b> (salve com Ctrl/Cmd+S) ou <b>Copiar</b>.';
   sub.style.cssText = 'font-size:12px;color:#5B6472;line-height:1.5;margin-bottom:16px;';
 
   var linkRow = document.createElement('div');
   linkRow.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;';
 
-  // Opção 1: download direto (sem target)
   var dl = document.createElement('a');
-  dl.href = urlCsv;
-  dl.download = fname;
+  dl.href = urlHtml; dl.target = '_blank'; dl.rel = 'noopener';
   dl.textContent = '\u2B07  Baixar arquivo';
   dl.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#1F4DD8;color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:11px 20px;border-radius:8px;cursor:pointer;';
 
-  // Opção 2: abrir em nova aba como texto (exibe, não baixa — contorna bloqueio)
   var openTab = document.createElement('a');
-  openTab.href = urlTxt;
-  openTab.target = '_blank';
-  openTab.rel = 'noopener';
-  openTab.textContent = '\uD83D\uDCC4  Abrir em nova aba';
+  openTab.href = urlTxt; openTab.target = '_blank'; openTab.rel = 'noopener';
+  openTab.textContent = '\uD83D\uDCC4  Abrir como texto';
   openTab.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#fff;color:#1F4DD8;text-decoration:none;font-size:13px;font-weight:700;padding:11px 20px;border-radius:8px;border:1px solid #1F4DD8;cursor:pointer;';
 
   linkRow.appendChild(dl);
   linkRow.appendChild(openTab);
 
   var ta = document.createElement('textarea');
-  ta.value = csv;
-  ta.readOnly = true;
+  ta.value = csv; ta.readOnly = true;
   ta.style.cssText = 'width:100%;height:120px;font-family:monospace;font-size:10px;border:1px solid #DCE1EA;border-radius:8px;padding:10px;resize:vertical;color:#333;background:#FAFBFE;margin-bottom:12px;box-sizing:border-box;';
 
   var btnRow = document.createElement('div');
   btnRow.style.cssText = 'display:flex;gap:10px;justify-content:flex-end;';
-
   var copyBtn = document.createElement('button');
   copyBtn.textContent = 'Copiar';
   copyBtn.style.cssText = 'font-size:12px;font-weight:600;padding:9px 18px;border-radius:7px;border:1px solid #1F4DD8;color:#1F4DD8;background:#fff;cursor:pointer;';
@@ -522,27 +532,19 @@ function exportarCSV() {
       } else { document.execCommand('copy'); copyBtn.textContent='Copiado!'; }
     } catch(e) { try{document.execCommand('copy');}catch(_){} copyBtn.textContent='Copiado!'; }
   };
-
   var closeBtn = document.createElement('button');
   closeBtn.textContent = 'Fechar';
   closeBtn.style.cssText = 'font-size:12px;font-weight:600;padding:9px 18px;border-radius:7px;border:1px solid #DCE1EA;color:#5B6472;background:#fff;cursor:pointer;';
   closeBtn.onclick = function(){
-    if (urlCsv.indexOf('blob:')===0) { try{URL.revokeObjectURL(urlCsv);}catch(e){} }
-    if (urlTxt.indexOf('blob:')===0) { try{URL.revokeObjectURL(urlTxt);}catch(e){} }
+    if (String(urlHtml).indexOf('blob:')===0) { try{URL.revokeObjectURL(urlHtml);}catch(e){} }
+    if (String(urlTxt).indexOf('blob:')===0) { try{URL.revokeObjectURL(urlTxt);}catch(e){} }
     ov.parentNode.removeChild(ov);
   };
-
   ov.onclick = function(e){ if (e.target === ov) closeBtn.onclick(); };
 
-  btnRow.appendChild(copyBtn);
-  btnRow.appendChild(closeBtn);
-  box.appendChild(title);
-  box.appendChild(sub);
-  box.appendChild(linkRow);
-  box.appendChild(ta);
-  box.appendChild(btnRow);
-  ov.appendChild(box);
-  document.body.appendChild(ov);
+  btnRow.appendChild(copyBtn); btnRow.appendChild(closeBtn);
+  box.appendChild(title); box.appendChild(sub); box.appendChild(linkRow); box.appendChild(ta); box.appendChild(btnRow);
+  ov.appendChild(box); document.body.appendChild(ov);
 }
 
 function sortTable(key) {
