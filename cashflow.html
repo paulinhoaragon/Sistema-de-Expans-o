@@ -369,6 +369,16 @@ var _tbSortKey = null;   // coluna atual de ordenação
 var _tbSortAsc = true;   // direção
 var _tbData    = [];     // dados em memória para re-ordenar
 
+function _fmtDataBR(s) {
+  if (!s || s === '—') return '—';
+  // Já está em BR (dd/mm/aaaa)?
+  if (s.indexOf('/') > -1) return s;
+  // ISO yyyy-mm-dd → dd/mm/aaaa (ignora hora se houver)
+  var d = String(s).split('T')[0].split('-');
+  if (d.length < 3) return s;
+  return d[2].padStart(2,'0') + '/' + d[1].padStart(2,'0') + '/' + d[0];
+}
+
 function _parseDate(s) {
   if (!s || s === '—') return null;
   var p = s.indexOf('/') > -1 ? s.split('/') : s.split('-');
@@ -431,7 +441,7 @@ function _csvBuild() {
   };
   var hdr = ['Assessor','Filial','Senioridade','Situacao','Inicio','Piso Mes (R$)','Periodo','Piso Total (R$)','Sign-in (R$)','Triggers (R$)','Total (R$)','Coparticipacao XP','Estrategico','Area'];
   var rows = _tbData.map(function(a){
-    return [a.n||'',a.p||'',a.sen||'',a.ativo?'Ativo':'A confirmar',a.inicio||'',
+    return [a.n||'',a.p||'',a.sen||'',a.ativo?'Ativo':'A confirmar',_fmtDataBR(a.inicio),
       fmtNum(a.piso),fmtPer(a.periodo),fmtNum(a.pisoTotal),fmtNum(a.si),fmtNum(a.trigTotal),
       fmtNum(a.custoTotal),(a.xp&&a.xp>0)?'Sim':'Nao',
       (a.estrategico||'').toLowerCase()==='sim'?'Sim':'Nao',a.area||'Assessor'
@@ -567,7 +577,7 @@ function _renderTb2(sorted) {
     var badge = a.ativo
       ? '<span class="badge bg-g"><span class="bd"></span>Ativo</span>'
       : '<span class="badge bg-a"><span class="bd"></span>A confirmar</span>';
-    var inicio = a.inicio || '—';
+    var inicio = _fmtDataBR(a.inicio);
     var _xpCheck = (a.xp && a.xp > 0)
       ? '<span title="Tem coparticipação" style="color:#16A34A;font-size:15px;font-weight:700;">✓</span>'
       : '<span style="color:#CBD5E1;font-size:12px;">—</span>';
