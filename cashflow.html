@@ -449,7 +449,7 @@ function _csvBuild() {
 function exportarCSV() {
   if (!_tbData || !_tbData.length) { alert('Sem dados para exportar.'); return; }
 
-  var csv, fname, blobUrl = '';
+  var csv, fname, urlCsv = '', urlTxt = '';
   try {
     csv = _csvBuild();
     var d = new Date();
@@ -457,11 +457,13 @@ function exportarCSV() {
   } catch(e) { alert('Erro ao montar CSV: ' + e.message); return; }
 
   try {
-    var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-    blobUrl = URL.createObjectURL(blob);
-  } catch(e) { blobUrl = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); }
+    urlCsv = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+    urlTxt = URL.createObjectURL(new Blob([csv], {type:'text/plain;charset=utf-8;'}));
+  } catch(e) {
+    urlCsv = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    urlTxt = urlCsv;
+  }
 
-  // Remover painel anterior, se houver
   var prev = document.getElementById('csv-overlay');
   if (prev) prev.parentNode.removeChild(prev);
 
@@ -470,23 +472,36 @@ function exportarCSV() {
   ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(11,18,32,.72);display:flex;align-items:center;justify-content:center;padding:20px;font-family:inherit;';
 
   var box = document.createElement('div');
-  box.style.cssText = 'background:#fff;border-radius:14px;max-width:560px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);';
+  box.style.cssText = 'background:#fff;border-radius:14px;max-width:580px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);';
 
   var title = document.createElement('div');
   title.textContent = 'Exportar tabela (CSV)';
   title.style.cssText = 'font-size:16px;font-weight:700;color:#0B1220;margin-bottom:6px;';
 
   var sub = document.createElement('div');
-  sub.textContent = 'Clique no botão abaixo para baixar o arquivo. Se o download não iniciar, use o botão "Copiar" e cole numa planilha.';
+  sub.innerHTML = 'Tente as op\u00e7\u00f5es na ordem. Se o download for bloqueado pelo ambiente, use <b>Abrir em nova aba</b> e salve com Ctrl+S (Cmd+S no Mac), ou <b>Copiar</b> e cole numa planilha.';
   sub.style.cssText = 'font-size:12px;color:#5B6472;line-height:1.5;margin-bottom:16px;';
 
-  // LINK REAL de download — clicado pelo usuário, nunca é bloqueado
+  var linkRow = document.createElement('div');
+  linkRow.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;';
+
+  // Opção 1: download direto (sem target)
   var dl = document.createElement('a');
-  dl.href = blobUrl;
+  dl.href = urlCsv;
   dl.download = fname;
-  dl.textContent = '\u2B07  Baixar ' + fname;
-  dl.setAttribute('target', '_blank');
-  dl.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#1F4DD8;color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:11px 20px;border-radius:8px;margin-bottom:14px;cursor:pointer;';
+  dl.textContent = '\u2B07  Baixar arquivo';
+  dl.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#1F4DD8;color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:11px 20px;border-radius:8px;cursor:pointer;';
+
+  // Opção 2: abrir em nova aba como texto (exibe, não baixa — contorna bloqueio)
+  var openTab = document.createElement('a');
+  openTab.href = urlTxt;
+  openTab.target = '_blank';
+  openTab.rel = 'noopener';
+  openTab.textContent = '\uD83D\uDCC4  Abrir em nova aba';
+  openTab.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#fff;color:#1F4DD8;text-decoration:none;font-size:13px;font-weight:700;padding:11px 20px;border-radius:8px;border:1px solid #1F4DD8;cursor:pointer;';
+
+  linkRow.appendChild(dl);
+  linkRow.appendChild(openTab);
 
   var ta = document.createElement('textarea');
   ta.value = csv;
@@ -503,15 +518,19 @@ function exportarCSV() {
     ta.select(); ta.setSelectionRange(0, ta.value.length);
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(ta.value).then(function(){ copyBtn.textContent='Copiado!'; }, function(){ document.execCommand('copy'); copyBtn.textContent='Copiado!'; });
+        navigator.clipboard.writeText(ta.value).then(function(){ copyBtn.textContent='Copiado!'; }, function(){ try{document.execCommand('copy');}catch(_){} copyBtn.textContent='Copiado!'; });
       } else { document.execCommand('copy'); copyBtn.textContent='Copiado!'; }
-    } catch(e) { document.execCommand('copy'); copyBtn.textContent='Copiado!'; }
+    } catch(e) { try{document.execCommand('copy');}catch(_){} copyBtn.textContent='Copiado!'; }
   };
 
   var closeBtn = document.createElement('button');
   closeBtn.textContent = 'Fechar';
   closeBtn.style.cssText = 'font-size:12px;font-weight:600;padding:9px 18px;border-radius:7px;border:1px solid #DCE1EA;color:#5B6472;background:#fff;cursor:pointer;';
-  closeBtn.onclick = function(){ if (blobUrl.indexOf('blob:')===0) { try{URL.revokeObjectURL(blobUrl);}catch(e){} } ov.parentNode.removeChild(ov); };
+  closeBtn.onclick = function(){
+    if (urlCsv.indexOf('blob:')===0) { try{URL.revokeObjectURL(urlCsv);}catch(e){} }
+    if (urlTxt.indexOf('blob:')===0) { try{URL.revokeObjectURL(urlTxt);}catch(e){} }
+    ov.parentNode.removeChild(ov);
+  };
 
   ov.onclick = function(e){ if (e.target === ov) closeBtn.onclick(); };
 
@@ -519,7 +538,7 @@ function exportarCSV() {
   btnRow.appendChild(closeBtn);
   box.appendChild(title);
   box.appendChild(sub);
-  box.appendChild(dl);
+  box.appendChild(linkRow);
   box.appendChild(ta);
   box.appendChild(btnRow);
   ov.appendChild(box);
