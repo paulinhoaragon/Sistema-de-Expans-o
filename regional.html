@@ -801,7 +801,7 @@ function renderCandList(candidatos, el) {
     var xp     = fin ? fin.xp     : (r.xp    ||0);
     return '<tr>'
       +'<td style="padding:8px 10px;font-size:12px;font-weight:600;color:var(--t1);border-bottom:1px solid var(--rule);">'+r.n+'</td>'
-      +'<td style="padding:8px 10px;font-size:11px;color:var(--t3);border-bottom:1px solid var(--rule);white-space:nowrap;">'+(r.dt||'—')+'</td>'
+      +'<td style="padding:8px 10px;font-size:11px;color:var(--t3);border-bottom:1px solid var(--rule);white-space:nowrap;">'+_fmtDataBR(r.dt)+'</td>'
       +'<td style="padding:8px 10px;font-size:11px;color:var(--t3);border-bottom:1px solid var(--rule);">'+r.p+'</td>'
       +'<td style="padding:8px 10px;font-size:11px;color:var(--t2);border-bottom:1px solid var(--rule);">'+(r.h||'—')+'</td>'
       +'<td style="padding:8px 10px;border-bottom:1px solid var(--rule);"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;'+senTag(r.sen)+'">'+r.sen+'</span></td>'
@@ -2641,10 +2641,23 @@ var _candSortAsc = false;
 var _candDataFull = [];
 var _candDataView = null;  // conjunto atualmente exibido (após filtros)
 
+function _fmtDataBR(s) {
+  if (!s || s === '—') return '—';
+  s = String(s);
+  if (s.indexOf('/') > -1) return s;            // já em BR
+  var d = s.split('T')[0].split('-');           // ISO yyyy-mm-dd
+  if (d.length < 3) return s;
+  return d[2].padStart(2,'0') + '/' + d[1].padStart(2,'0') + '/' + d[0];
+}
+
 function _parseDtCand(s) {
   if (!s || s === '—') return null;
-  var p = s.split('/');
-  return p.length === 3 ? new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0])) : null;
+  s = String(s);
+  var br = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (br) return new Date(parseInt(br[3]), parseInt(br[2])-1, parseInt(br[1]));
+  var iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) return new Date(parseInt(iso[1]), parseInt(iso[2])-1, parseInt(iso[3]));
+  return null;
 }
 
 function _sortCand(arr, key, asc) {
@@ -2803,8 +2816,8 @@ function renderCandListSplit(candidatos, fromFilter) {
       var pb   = fin ? (fin.payback_meses||0) : (r.payback_meses||0);
       return '<tr>'
         +'<td style="'+td+'font-weight:600;color:var(--t1);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+r.n+'</td>'
-        +'<td style="'+td+'color:var(--t3);white-space:nowrap;">'+(r.dt||'—')+'</td>'
-        +'<td style="'+td+'color:var(--t3);white-space:nowrap;">'+(r.dt_ativacao||r.data_ativacao||r.ativacao||r.dt_inicio||r.data_inicio||r.inicio||'—')+'</td>'
+        +'<td style="'+td+'color:var(--t3);white-space:nowrap;">'+_fmtDataBR(r.dt)+'</td>'
+        +'<td style="'+td+'color:var(--t3);white-space:nowrap;">'+_fmtDataBR(r.dt_ativacao||r.data_ativacao||r.ativacao||r.dt_inicio||r.data_inicio||r.inicio||'—')+'</td>'
         +'<td style="'+td+'color:var(--t3);font-size:9px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+r.p.replace('Blue3 - ','')+'</td>'
         +'<td style="'+td+'color:var(--t2);white-space:nowrap;">'+(r.h||'—')+'</td>'
         +'<td style="'+td+'text-align:center;"><span style="font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;'+senTag(r.sen)+'">'+senLbl(r.sen)+'</span></td>'
