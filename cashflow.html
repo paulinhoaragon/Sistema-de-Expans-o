@@ -73,7 +73,11 @@ tfoot td:first-child{text-align:left}
 
 /* BADGES */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
-.bg-g{background:#DCFCE7;color:#15803D}.bg-a{background:#FEF3C7;color:#92400E}
+.bg-g{background:#DCFCE7;color:#15803D}.bg-a{background:#FEF3C7;color:#92400E}.bg-b{background:#DBEAFE;color:#1E40AF}
+.tbf-pill{font-size:10px;font-weight:600;padding:5px 12px;border-radius:14px;border:1px solid var(--rule);background:#fff;color:var(--t2);cursor:pointer;transition:all .12s;letter-spacing:.02em}
+.tbf-pill:hover{border-color:var(--cobalt);color:var(--cobalt)}
+.tbf-pill.on{background:var(--cobalt);border-color:var(--cobalt);color:#fff}
+.tbf-c{opacity:.7;font-weight:700;margin-left:2px}
 .bd{width:5px;height:5px;border-radius:50%;background:currentColor}
 
 /* EMPTY STATE */
@@ -172,6 +176,12 @@ tfoot td:first-child{text-align:left}
 
   <!-- Tabela por assessor -->
   <div class="sh"><div class="st">Impacto por Assessor</div><div class="ss">Total comprometido por contrato</div><button id="btn-export-csv" onclick="exportarCSV()" style="margin-left:auto;font-size:10px;font-weight:700;padding:5px 14px;border-radius:6px;border:1px solid var(--cobalt);color:var(--cobalt);background:transparent;cursor:pointer;letter-spacing:.04em;display:flex;align-items:center;gap:5px;white-space:nowrap;">⬇ Exportar CSV</button></div>
+  <div id="tb-filtros" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+    <button class="tbf-pill" data-f="todos" onclick="setTbFilter('todos',this)">Todos <span class="tbf-c"></span></button>
+    <button class="tbf-pill" data-f="ativo" onclick="setTbFilter('ativo',this)">Ativos <span class="tbf-c"></span></button>
+    <button class="tbf-pill" data-f="assinado" onclick="setTbFilter('assinado',this)">Assinado, sem início <span class="tbf-c"></span></button>
+    <button class="tbf-pill" data-f="aconf" onclick="setTbFilter('aconf',this)">A confirmar <span class="tbf-c"></span></button>
+  </div>
   <div class="tbl-wrap" id="tb2-wrap">
     <table id="tb2-table">
       <thead>
@@ -390,6 +400,14 @@ function rP() {
 var _tbSortKey = null;   // coluna atual de ordenação
 var _tbSortAsc = true;   // direção
 var _tbData    = [];     // dados em memória para re-ordenar
+var _tbFilter  = 'todos';// filtro de situação ativo
+
+// Classifica a situação de um assessor: 'ativo' | 'assinado' | 'aconf'
+function _situacao(a) {
+  if (a.ativo) return 'ativo';
+  if (a.assinadoSemInicio) return 'assinado';
+  return 'aconf';
+}
 
 function _fmtDataBR(s) {
   if (!s || s === '—') return '—';
@@ -462,8 +480,11 @@ function _csvBuild() {
     return (t.indexOf(',') > -1 || t.indexOf(';') > -1 || t.indexOf('"') > -1) ? '"' + t + '"' : t;
   };
   var hdr = ['Assessor','Filial','Senioridade','Situacao','Inicio','Piso Mes (R$)','Periodo','Piso Total (R$)','Sign-in (R$)','Triggers (R$)','Total (R$)','Coparticipacao XP','Estrategico','Area'];
-  var rows = _tbData.map(function(a){
-    return [a.n||'',a.p||'',a.sen||'',a.ativo?'Ativo':'A confirmar',_fmtDataBR(a.inicio),
+  var _base = (_tbFilter && _tbFilter !== 'todos')
+    ? _tbData.filter(function(a){ return _situacao(a) === _tbFilter; })
+    : _tbData;
+  var rows = _base.map(function(a){
+    return [a.n||'',a.p||'',a.sen||'',(a.ativo?'Ativo':(a.assinadoSemInicio?'Assinado, sem inicio':'A confirmar')),_fmtDataBR(a.inicio),
       fmtNum(a.piso),fmtPer(a.periodo),fmtNum(a.pisoTotal),fmtNum(a.si),fmtNum(a.trigTotal),
       fmtNum(a.custoTotal),(a.xp&&a.xp>0)?'Sim':'Nao',
       (a.estrategico||'').toLowerCase()==='sim'?'Sim':'Nao',a.area||'Assessor'
@@ -581,6 +602,28 @@ function exportarCSV() {
   ov.appendChild(box); document.body.appendChild(ov);
 }
 
+function setTbFilter(f, btn) {
+  _tbFilter = f;
+  var pills = document.querySelectorAll('#tb-filtros .tbf-pill');
+  for (var i=0;i<pills.length;i++) pills[i].classList.remove('on');
+  if (btn) btn.classList.add('on');
+  // Re-render respeitando ordenação atual
+  var ordered = _tbSortKey ? _sortData(_tbData, _tbSortKey, _tbSortAsc)
+    : _tbData.slice().sort(function(a,b){ return (b.ativo?1:0)-(a.ativo?1:0) || b.custoTotal-a.custoTotal; });
+  _renderTb2(ordered);
+}
+
+function _updateTbFilterCounts() {
+  var c = {todos:_tbData.length, ativo:0, assinado:0, aconf:0};
+  _tbData.forEach(function(a){ c[_situacao(a)]++; });
+  var pills = document.querySelectorAll('#tb-filtros .tbf-pill');
+  for (var i=0;i<pills.length;i++) {
+    var f = pills[i].getAttribute('data-f');
+    var span = pills[i].querySelector('.tbf-c');
+    if (span) span.textContent = '('+(c[f]!=null?c[f]:0)+')';
+  }
+}
+
 function sortTable(key) {
   if (_tbSortKey === key) {
     _tbSortAsc = !_tbSortAsc;
@@ -593,12 +636,17 @@ function sortTable(key) {
 }
 
 function _renderTb2(sorted) {
+  if (_tbFilter && _tbFilter !== 'todos') {
+    sorted = sorted.filter(function(a){ return _situacao(a) === _tbFilter; });
+  }
   var tp = 0, ts = 0, tt = 0, ta = 0;
   document.getElementById('tb2').innerHTML = sorted.map(function(a) {
     tp += a.pisoTotal; ts += a.si; tt += a.trigTotal; ta += a.custoTotal;
     var badge = a.ativo
       ? '<span class="badge bg-g"><span class="bd"></span>Ativo</span>'
-      : '<span class="badge bg-a"><span class="bd"></span>A confirmar</span>';
+      : (a.assinadoSemInicio
+        ? '<span class="badge bg-b"><span class="bd"></span>Assinado, sem início</span>'
+        : '<span class="badge bg-a"><span class="bd"></span>A confirmar</span>');
     var inicio = _fmtDataBR(a.inicio);
     var _xpCheck = (a.xp && a.xp > 0)
       ? '<span title="Tem coparticipação" style="color:#16A34A;font-size:15px;font-weight:700;">✓</span>'
@@ -628,6 +676,12 @@ function rA(financeiros) {
   _tbData = financeiros;
   _tbSortKey = null;
   _tbSortAsc = true;
+  _updateTbFilterCounts();
+  // Ativa visualmente a pill "Todos" se nenhuma estiver marcada
+  var pills = document.querySelectorAll('#tb-filtros .tbf-pill');
+  var algumaOn = false;
+  for (var i=0;i<pills.length;i++) if (pills[i].classList.contains('on')) algumaOn = true;
+  if (!algumaOn && pills.length) { pills[0].classList.add('on'); _tbFilter = 'todos'; }
   // Ordenação padrão: ativos primeiro, depois por custo total
   var defaultSorted = financeiros.slice().sort(function(a,b){
     return (b.ativo?1:0) - (a.ativo?1:0) || b.custoTotal - a.custoTotal;
