@@ -122,7 +122,6 @@ function blue3SaveCSV(rows, onDone){
           prev_inicio:      (r['Prev. Inicio']||'').trim()||null,
           ancord:           (r['Ancord']||'').trim(),
           coparticipacao:   pn(r['Detalhe Coparticipação']),
-          coparticipacao_cond: (r.detalhe_coparticipacao || '').toString().trim(),
           trigger1_tri:     pn(r['Trigger 1 Tri']),
           trigger1:         pn(r['Trigger 1']),
           trigger2:         pn(r['Trigger 2']),
@@ -239,7 +238,7 @@ function _processCrmRows(rows, pbByIdMap, pbByNomeMap, callback){
       o['Ancord']                = (r.status_ancord||'').trim();
       o['Área']                  = (r.vaga||'Assessor').trim();
       o['Detalhe Coparticipação']= parseFloat(r.coparticipacao)||0;
-      o['Coparticipação Condição']= r.coparticipacao_cond || '';
+      o['Coparticipação Condição']= (r.detalhe_coparticipacao || '').toString().trim();
       o['Trigger 1 Tri']         = parseFloat(r.trigger1_tri_val)||0;
       o['Trigger 1']             = parseFloat(r.trigger1_val)||0;
       o['Trigger 2']             = parseFloat(r.trigger2_val)||0;
