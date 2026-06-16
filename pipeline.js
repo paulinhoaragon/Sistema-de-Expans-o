@@ -287,6 +287,8 @@ function Blue3_dataLoader(){
       dt:(r['Data de Contratação']||null),
       foiContratado:!!(r['_foi_contratado']),
       inicio:(r['Data Inicio']||r['Prev. Inicio']||null),
+      inicioReal:(r['Data Inicio']||null),
+      prevInicio:(r['Prev. Inicio']||null),
       estrategico:(r['Estratégico']||'Não').trim(),
       tel:(r['Telefone']||'').trim(),
       _id:(r['_crm_id']||''),
@@ -341,7 +343,10 @@ function Blue3_financeMetrics(){
         custoTotal_calculado: Math.round(pt+r.si+tt)
       });
     }
-    return{n:r.n,p:r.p,h:r.h,sen:r.sen,mou:r.mou,st:r.st,piso:r.piso,periodo:r.periodo,si:r.si,xp:r.xp,xpCond:r.xpCond||'',comp:r.comp,cap:r.cap,pisoTotal:Math.round(pt),trigTotal:Math.round(tt),custoTotal:Math.round(pt+r.si+tt),trigMap:tm,ativo:!!r.inicio,inicio:r.inicio,dt:r.dt,org:r.org,ancord:r.ancord,estrategico:r.estrategico||"Não",data_mou:r.data_mou||'',area:r.area||'Assessor',payback_meses:r.payback_meses||0};
+    var _temInicioReal = !!(r.inicioReal && String(r.inicioReal).trim());
+    var _mouAssinado = (r.mou||'').trim().toLowerCase() === 'assinado';
+    var _assinadoSemInicio = _mouAssinado && !_temInicioReal;
+    return{n:r.n,p:r.p,h:r.h,sen:r.sen,mou:r.mou,st:r.st,piso:r.piso,periodo:r.periodo,si:r.si,xp:r.xp,xpCond:r.xpCond||'',comp:r.comp,cap:r.cap,pisoTotal:Math.round(pt),trigTotal:Math.round(tt),custoTotal:Math.round(pt+r.si+tt),trigMap:tm,ativo:_temInicioReal,assinadoSemInicio:_assinadoSemInicio,inicio:r.inicio,inicioReal:r.inicioReal||null,prevInicio:r.prevInicio||null,dt:r.dt,org:r.org,ancord:r.ancord,estrategico:r.estrategico||"Não",data_mou:r.data_mou||'',area:r.area||'Assessor',payback_meses:r.payback_meses||0};
   });
   var F=window.Blue3Data.financeiros,bm={},sbm={};
   F.forEach(function(r){var mo=getMonth(r.dt);if(mo){bm[mo]=(bm[mo]||0)+1;if(norm(r.sen)==='sênior')sbm[mo]=(sbm[mo]||0)+1;}});
