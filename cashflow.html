@@ -206,9 +206,11 @@ tfoot td:first-child{text-align:left}
         <tr>
           <th style="text-align:left;cursor:pointer;user-select:none" onclick="sortXP('n')">Candidato <span id="xs-n"></span></th>
           <th style="text-align:left;cursor:pointer;user-select:none" onclick="sortXP('p')">Filial <span id="xs-p"></span></th>
+          <th style="text-align:left;cursor:pointer;user-select:none" onclick="sortXP('st')">Situação <span id="xs-st"></span></th>
           <th style="text-align:right;cursor:pointer;user-select:none" onclick="sortXP('comp')">Total Comp. <span id="xs-comp"></span></th>
           <th style="text-align:right;cursor:pointer;user-select:none" onclick="sortXP('xp')">Coparticip. XP <span id="xs-xp"></span></th>
           <th style="text-align:right;cursor:pointer;user-select:none" onclick="sortXP('pct')">% s/ Comp. <span id="xs-pct"></span></th>
+          <th style="text-align:center;cursor:pointer;user-select:none" onclick="sortXP('pb')">Payback <span id="xs-pb"></span></th>
           <th style="text-align:left">Condição</th>
         </tr>
       </thead>
@@ -736,8 +738,14 @@ function _renderXPRows() {
       va = (a[k]||'').toLowerCase(); vb = (b[k]||'').toLowerCase();
       return asc ? va.localeCompare(vb) : vb.localeCompare(va);
     }
+    if (k === 'st') {
+      va = a.ativo ? 1 : 0; vb = b.ativo ? 1 : 0;
+      return asc ? va - vb : vb - va;
+    }
     if (k === 'pct') {
       va = a.comp > 0 ? a.xp/a.comp : 0; vb = b.comp > 0 ? b.xp/b.comp : 0;
+    } else if (k === 'pb') {
+      va = a.payback_meses||0; vb = b.payback_meses||0;
     } else {
       va = a[k]||0; vb = b[k]||0;
     }
@@ -747,13 +755,19 @@ function _renderXPRows() {
   var filialFmt = function(p){ return (p||'').replace(/^Blue3\s*[-–]\s*/i,''); };
   tb.innerHTML = data.map(function(a){
     var pct = a.comp > 0 ? Math.round(a.xp / a.comp * 100) : 0;
+    var badge = a.ativo
+      ? '<span class="badge bg-g"><span class="bd"></span>Ativo</span>'
+      : '<span class="badge bg-a"><span class="bd"></span>A confirmar</span>';
+    var pb = (a.payback_meses && a.payback_meses > 0) ? (a.payback_meses + ' m') : '—';
     return '<tr>'
       + '<td>'+(a.n||'—')+'</td>'
       + '<td style="color:var(--t3)" title="'+(a.p||'')+'">'+filialFmt(a.p)+'</td>'
+      + '<td>'+badge+'</td>'
       + '<td style="text-align:right;">'+fmt(a.comp)+'</td>'
       + '<td style="text-align:right;color:#DC2626;font-weight:600;">'+fmt(a.xp)+'</td>'
       + '<td style="text-align:right;">'+pct+'%</td>'
-      + '<td style="color:var(--t3);font-size:10px;">'+(a.xpCond || '—')+'</td>'
+      + '<td style="text-align:center;">'+pb+'</td>'
+      + '<td style="text-align:left;color:var(--t3);font-size:10px;">'+(a.xpCond || '—')+'</td>'
       + '</tr>';
   }).join('');
 
@@ -761,10 +775,10 @@ function _renderXPRows() {
   var totComp = _xpData.reduce(function(s,a){ return s + (a.comp||0); }, 0);
   var pctTot  = totComp > 0 ? Math.round(totXP / totComp * 100) : 0;
   if (tf) {
-    tf.innerHTML = '<tr><td>TOTAL ('+_xpData.length+')</td><td></td>'
+    tf.innerHTML = '<tr><td>TOTAL ('+_xpData.length+')</td><td></td><td></td>'
       + '<td style="text-align:right;">'+fmt(totComp)+'</td>'
       + '<td style="text-align:right;color:#DC2626;">'+fmt(totXP)+'</td>'
-      + '<td style="text-align:right;">'+pctTot+'%</td><td></td></tr>';
+      + '<td style="text-align:right;">'+pctTot+'%</td><td></td><td></td></tr>';
   }
   _updateXPSortIcons();
 }
@@ -776,7 +790,7 @@ function sortXP(key) {
 }
 
 function _updateXPSortIcons() {
-  ['n','p','comp','xp','pct'].forEach(function(c){
+  ['n','p','st','comp','xp','pct','pb'].forEach(function(c){
     var el = document.getElementById('xs-'+c);
     if (el) el.textContent = '';
   });
