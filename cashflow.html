@@ -197,6 +197,26 @@ tfoot td:first-child{text-align:left}
     </table>
   </div>
 
+  <!-- Coparticipação XP -->
+  <div class="sh" style="margin-top:28px"><div class="st">Coparticipação XP</div><div class="ss">Candidatos com coparticipação da XP · controle do financeiro</div></div>
+  <div id="xp-kpis" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;"></div>
+  <div class="tbl-wrap">
+    <table id="xp-table">
+      <thead>
+        <tr>
+          <th style="text-align:left;cursor:pointer;user-select:none" onclick="sortXP('n')">Candidato <span id="xs-n"></span></th>
+          <th style="text-align:left;cursor:pointer;user-select:none" onclick="sortXP('p')">Filial <span id="xs-p"></span></th>
+          <th style="text-align:right;cursor:pointer;user-select:none" onclick="sortXP('comp')">Total Comp. <span id="xs-comp"></span></th>
+          <th style="text-align:right;cursor:pointer;user-select:none" onclick="sortXP('xp')">Coparticip. XP <span id="xs-xp"></span></th>
+          <th style="text-align:right;cursor:pointer;user-select:none" onclick="sortXP('pct')">% s/ Comp. <span id="xs-pct"></span></th>
+          <th style="text-align:left">Condição</th>
+        </tr>
+      </thead>
+      <tbody id="xp-tbody"></tbody>
+      <tfoot id="xp-tfoot"></tfoot>
+    </table>
+  </div>
+
   <!-- Custo por Praça -->
   <div class="sh" style="margin-top:28px"><div class="st">Custo por Praça</div><div class="ss">Investimento consolidado por cidade · automático via CSV</div></div>
   <div class="tbl-wrap">
@@ -664,6 +684,104 @@ function renderPage() {
   rP();
   rA(fin);
   renderPraca(fin);
+  renderXP(fin);
+}
+
+// ── Coparticipação XP (controle financeiro) ──
+var _xpData = [];
+var _xpSort = { key: 'xp', asc: false };
+
+function renderXP(fin) {
+  var tb = document.getElementById('xp-tbody');
+  var tf = document.getElementById('xp-tfoot');
+  var kp = document.getElementById('xp-kpis');
+  if (!tb) return;
+
+  // Somente candidatos com coparticipação da XP
+  _xpData = (fin || []).filter(function(a){ return (a.xp || 0) > 0; });
+
+  if (!_xpData.length) {
+    tb.innerHTML = '<tr><td colspan="6" style="padding:12px;color:var(--t3);font-size:11px;">Nenhum candidato com coparticipação XP no período.</td></tr>';
+    if (tf) tf.innerHTML = '';
+    if (kp) kp.innerHTML = '';
+    return;
+  }
+
+  // KPIs
+  var totXP   = _xpData.reduce(function(s,a){ return s + (a.xp||0); }, 0);
+  var totComp = _xpData.reduce(function(s,a){ return s + (a.comp||0); }, 0);
+  var pctMed  = totComp > 0 ? Math.round(totXP / totComp * 100) : 0;
+  if (kp) {
+    var card = function(lbl, val, cor){
+      return '<div style="flex:1;min-width:150px;background:#fff;border:1px solid var(--rule);border-radius:10px;padding:12px 14px;">'
+        + '<div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;">'+lbl+'</div>'
+        + '<div style="font-size:18px;font-weight:700;color:'+(cor||'var(--t1)')+';">'+val+'</div></div>';
+    };
+    kp.innerHTML = card('Candidatos com XP', _xpData.length, 'var(--cobalt)')
+      + card('Total Coparticipação XP', fmt(totXP), '#DC2626')
+      + card('% médio sobre Comp.', pctMed + '%', 'var(--gold)');
+  }
+
+  _renderXPRows();
+}
+
+function _renderXPRows() {
+  var tb = document.getElementById('xp-tbody');
+  var tf = document.getElementById('xp-tfoot');
+  if (!tb) return;
+
+  var data = _xpData.slice().sort(function(a,b){
+    var k = _xpSort.key, asc = _xpSort.asc, va, vb;
+    if (k === 'n' || k === 'p') {
+      va = (a[k]||'').toLowerCase(); vb = (b[k]||'').toLowerCase();
+      return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    }
+    if (k === 'pct') {
+      va = a.comp > 0 ? a.xp/a.comp : 0; vb = b.comp > 0 ? b.xp/b.comp : 0;
+    } else {
+      va = a[k]||0; vb = b[k]||0;
+    }
+    return asc ? va - vb : vb - va;
+  });
+
+  var filialFmt = function(p){ return (p||'').replace(/^Blue3\s*[-–]\s*/i,''); };
+  tb.innerHTML = data.map(function(a){
+    var pct = a.comp > 0 ? Math.round(a.xp / a.comp * 100) : 0;
+    return '<tr>'
+      + '<td>'+(a.n||'—')+'</td>'
+      + '<td style="color:var(--t3)" title="'+(a.p||'')+'">'+filialFmt(a.p)+'</td>'
+      + '<td style="text-align:right;">'+fmt(a.comp)+'</td>'
+      + '<td style="text-align:right;color:#DC2626;font-weight:600;">'+fmt(a.xp)+'</td>'
+      + '<td style="text-align:right;">'+pct+'%</td>'
+      + '<td style="color:var(--t3);font-size:10px;">'+(a.xpCond || '—')+'</td>'
+      + '</tr>';
+  }).join('');
+
+  var totXP   = _xpData.reduce(function(s,a){ return s + (a.xp||0); }, 0);
+  var totComp = _xpData.reduce(function(s,a){ return s + (a.comp||0); }, 0);
+  var pctTot  = totComp > 0 ? Math.round(totXP / totComp * 100) : 0;
+  if (tf) {
+    tf.innerHTML = '<tr><td>TOTAL ('+_xpData.length+')</td><td></td>'
+      + '<td style="text-align:right;">'+fmt(totComp)+'</td>'
+      + '<td style="text-align:right;color:#DC2626;">'+fmt(totXP)+'</td>'
+      + '<td style="text-align:right;">'+pctTot+'%</td><td></td></tr>';
+  }
+  _updateXPSortIcons();
+}
+
+function sortXP(key) {
+  if (_xpSort.key === key) _xpSort.asc = !_xpSort.asc;
+  else { _xpSort.key = key; _xpSort.asc = (key === 'n' || key === 'p'); }
+  _renderXPRows();
+}
+
+function _updateXPSortIcons() {
+  ['n','p','comp','xp','pct'].forEach(function(c){
+    var el = document.getElementById('xs-'+c);
+    if (el) el.textContent = '';
+  });
+  var el = document.getElementById('xs-'+_xpSort.key);
+  if (el) el.textContent = _xpSort.asc ? ' ↑' : ' ↓';
 }
 
 // ── Custo por Praça ──
