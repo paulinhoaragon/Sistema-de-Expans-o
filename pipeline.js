@@ -122,7 +122,7 @@ function blue3SaveCSV(rows, onDone){
           prev_inicio:      (r['Prev. Inicio']||'').trim()||null,
           ancord:           (r['Ancord']||'').trim(),
           coparticipacao:   pn(r['Detalhe Coparticipação']),
-          coparticipacao_cond: (r.coparticipacao_detalhe || r.coparticipacao_condicao || r.detalhe_coparticipacao || r.coparticipacao_obs || r.coparticipacao_desc || '').toString().trim(),
+          coparticipacao_cond: (r.detalhe_coparticipacao || '').toString().trim(),
           trigger1_tri:     pn(r['Trigger 1 Tri']),
           trigger1:         pn(r['Trigger 1']),
           trigger2:         pn(r['Trigger 2']),
