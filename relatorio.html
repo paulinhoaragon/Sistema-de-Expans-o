@@ -951,10 +951,17 @@ function fmtM(v) {
   }
   var allCands = (window.Blue3Data && window.Blue3Data._rawRows ? window.Blue3Data._rawRows : []).filter(_inPeriodo);
 
-  // Brutas = todos os candidatos contratados + desistentes (todas as áreas)
+  // Brutas = contratações líquidas (ativas) + desistências PÓS-contrato.
+  // Precoces (desistência sem ter sido contratada) NÃO entram nas brutas.
   var brutasStatuses = ['trabalhando','contratado(a)','contratado','desistência','desistencia'];
   var totalBrutas = allCands.filter(function(r){
-    return brutasStatuses.indexOf(norm(r['Status']||'')) > -1;
+    var s = norm(r['Status']||'');
+    if (brutasStatuses.indexOf(s) === -1) return false;
+    // Se é desistência, só conta se foi contratada (pós-contrato)
+    if (s==='desistência' || s==='desistencia') {
+      return (r['foiContratado']===true || r['_foi_contratado']===true);
+    }
+    return true;
   }).length;
 
   // Desistências: só pós-contrato (foiContratado = true)
@@ -1465,6 +1472,12 @@ function _periodoMesAno(dt){
 function _inPeriodo(r){
   var dt=(r&&(r.dt||r['Data de Contratação']||r['data_contratacao']))||'';
   var ma=_periodoMesAno(dt);
+  // Sem data de contratação: tenta a data de declínio (caso de desistências precoces,
+  // que nunca foram contratadas mas têm data de saída do funil).
+  if(!ma){
+    var dd=(r&&(r['data_declinio']||r.dataDeclinio||r['Data Declínio']))||'';
+    ma=_periodoMesAno(dd);
+  }
   if(!ma) return _periodo.tipo==='ano';
   var cfg=_PERIODOS[_periodo.tipo]||_PERIODOS.ano;
   return ma.y===_periodo.ano && ma.m>=cfg.m1 && ma.m<=cfg.m2;
