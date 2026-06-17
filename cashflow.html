@@ -176,11 +176,17 @@ tfoot td:first-child{text-align:left}
 
   <!-- Tabela por assessor -->
   <div class="sh"><div class="st">Impacto por Assessor</div><div class="ss">Total comprometido por contrato</div><button id="btn-export-csv" onclick="exportarCSV()" style="margin-left:auto;font-size:10px;font-weight:700;padding:5px 14px;border-radius:6px;border:1px solid var(--cobalt);color:var(--cobalt);background:transparent;cursor:pointer;letter-spacing:.04em;display:flex;align-items:center;gap:5px;white-space:nowrap;">⬇ Exportar CSV</button></div>
-  <div id="tb-filtros" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
-    <button class="tbf-pill" data-f="todos" onclick="setTbFilter('todos',this)">Todos <span class="tbf-c"></span></button>
-    <button class="tbf-pill" data-f="ativo" onclick="setTbFilter('ativo',this)">Ativos <span class="tbf-c"></span></button>
-    <button class="tbf-pill" data-f="assinado" onclick="setTbFilter('assinado',this)">Assinado, sem início <span class="tbf-c"></span></button>
-    <button class="tbf-pill" data-f="aconf" onclick="setTbFilter('aconf',this)">A confirmar <span class="tbf-c"></span></button>
+  <div id="tb-filtros-wrap" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+    <div id="tb-filtros" style="display:flex;gap:6px;align-items:center;">
+      <button class="tbf-pill" data-f="todos" onclick="setTbFilter('todos',this)">Todos <span class="tbf-c"></span></button>
+      <button class="tbf-pill" data-f="ativo" onclick="setTbFilter('ativo',this)">Ativos <span class="tbf-c"></span></button>
+      <button class="tbf-pill" data-f="assinado" onclick="setTbFilter('assinado',this)">Assinado, sem início <span class="tbf-c"></span></button>
+      <button class="tbf-pill" data-f="aconf" onclick="setTbFilter('aconf',this)">A confirmar <span class="tbf-c"></span></button>
+    </div>
+    <span id="tb-filtros-sep" style="width:1px;height:18px;background:var(--rule);margin:0 4px;"></span>
+    <div id="tb-filtros-area" style="display:flex;gap:6px;align-items:center;">
+      <span style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-right:2px;">Área:</span>
+    </div>
   </div>
   <div class="tbl-wrap" id="tb2-wrap">
     <table id="tb2-table">
@@ -401,12 +407,22 @@ var _tbSortKey = null;   // coluna atual de ordenação
 var _tbSortAsc = true;   // direção
 var _tbData    = [];     // dados em memória para re-ordenar
 var _tbFilter  = 'todos';// filtro de situação ativo
+var _tbFilterArea = 'todos';// filtro de área ativo
 
 // Classifica a situação de um assessor: 'ativo' | 'assinado' | 'aconf'
 function _situacao(a) {
   if (a.ativo) return 'ativo';
   if (a.assinadoSemInicio) return 'assinado';
   return 'aconf';
+}
+
+// Aplica os filtros combinados (situação E área) a um array
+function _aplicaFiltros(arr) {
+  return arr.filter(function(a){
+    var okSit = (!_tbFilter || _tbFilter === 'todos') || _situacao(a) === _tbFilter;
+    var okArea = (!_tbFilterArea || _tbFilterArea === 'todos') || (a.area||'Assessor') === _tbFilterArea;
+    return okSit && okArea;
+  });
 }
 
 function _fmtDataBR(s) {
@@ -480,9 +496,7 @@ function _csvBuild() {
     return (t.indexOf(',') > -1 || t.indexOf(';') > -1 || t.indexOf('"') > -1) ? '"' + t + '"' : t;
   };
   var hdr = ['Assessor','Filial','Senioridade','Situacao','Inicio','Piso Mes (R$)','Periodo','Piso Total (R$)','Sign-in (R$)','Triggers (R$)','Total (R$)','Coparticipacao XP','Estrategico','Area'];
-  var _base = (_tbFilter && _tbFilter !== 'todos')
-    ? _tbData.filter(function(a){ return _situacao(a) === _tbFilter; })
-    : _tbData;
+  var _base = _aplicaFiltros(_tbData);
   var rows = _base.map(function(a){
     return [a.n||'',a.p||'',a.sen||'',(a.ativo?'Ativo':(a.assinadoSemInicio?'Assinado, sem inicio':'A confirmar')),_fmtDataBR(a.inicio),
       fmtNum(a.piso),fmtPer(a.periodo),fmtNum(a.pisoTotal),fmtNum(a.si),fmtNum(a.trigTotal),
@@ -602,15 +616,26 @@ function exportarCSV() {
   ov.appendChild(box); document.body.appendChild(ov);
 }
 
+function _rerenderTb() {
+  var ordered = _tbSortKey ? _sortData(_tbData, _tbSortKey, _tbSortAsc)
+    : _tbData.slice().sort(function(a,b){ return (b.ativo?1:0)-(a.ativo?1:0) || b.custoTotal-a.custoTotal; });
+  _renderTb2(ordered);
+}
+
 function setTbFilter(f, btn) {
   _tbFilter = f;
   var pills = document.querySelectorAll('#tb-filtros .tbf-pill');
   for (var i=0;i<pills.length;i++) pills[i].classList.remove('on');
   if (btn) btn.classList.add('on');
-  // Re-render respeitando ordenação atual
-  var ordered = _tbSortKey ? _sortData(_tbData, _tbSortKey, _tbSortAsc)
-    : _tbData.slice().sort(function(a,b){ return (b.ativo?1:0)-(a.ativo?1:0) || b.custoTotal-a.custoTotal; });
-  _renderTb2(ordered);
+  _rerenderTb();
+}
+
+function setTbFilterArea(f, btn) {
+  _tbFilterArea = f;
+  var pills = document.querySelectorAll('#tb-filtros-area .tbf-pill');
+  for (var i=0;i<pills.length;i++) pills[i].classList.remove('on');
+  if (btn) btn.classList.add('on');
+  _rerenderTb();
 }
 
 function _updateTbFilterCounts() {
@@ -622,6 +647,41 @@ function _updateTbFilterCounts() {
     var span = pills[i].querySelector('.tbf-c');
     if (span) span.textContent = '('+(c[f]!=null?c[f]:0)+')';
   }
+  _buildAreaPills();
+}
+
+function _buildAreaPills() {
+  var cont = document.getElementById('tb-filtros-area');
+  if (!cont) return;
+  // Conta por área
+  var counts = {}; var ordem = [];
+  _tbData.forEach(function(a){
+    var ar = (a.area||'Assessor');
+    if (counts[ar] == null) { counts[ar] = 0; ordem.push(ar); }
+    counts[ar]++;
+  });
+  // Se só existe uma área (ou nenhuma), não faz sentido mostrar o filtro
+  var sep = document.getElementById('tb-filtros-sep');
+  if (ordem.length <= 1) {
+    cont.style.display = 'none';
+    if (sep) sep.style.display = 'none';
+    return;
+  }
+  cont.style.display = 'flex';
+  if (sep) sep.style.display = 'block';
+  // Ordena: Assessor primeiro, depois alfabético
+  ordem.sort(function(x,y){
+    if (x === 'Assessor') return -1;
+    if (y === 'Assessor') return 1;
+    return x.localeCompare(y);
+  });
+  var html = '<span style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-right:2px;">Área:</span>';
+  html += '<button class="tbf-pill'+(_tbFilterArea==='todos'?' on':'')+'" data-fa="todos" onclick="setTbFilterArea(\'todos\',this)">Todas ('+_tbData.length+')</button>';
+  ordem.forEach(function(ar){
+    var sel = (_tbFilterArea === ar) ? ' on' : '';
+    html += '<button class="tbf-pill'+sel+'" data-fa="'+ar+'" onclick="setTbFilterArea(\''+ar.replace(/'/g,"\\'")+'\',this)">'+ar+' ('+counts[ar]+')</button>';
+  });
+  cont.innerHTML = html;
 }
 
 function sortTable(key) {
@@ -636,9 +696,7 @@ function sortTable(key) {
 }
 
 function _renderTb2(sorted) {
-  if (_tbFilter && _tbFilter !== 'todos') {
-    sorted = sorted.filter(function(a){ return _situacao(a) === _tbFilter; });
-  }
+  sorted = _aplicaFiltros(sorted);
   var tp = 0, ts = 0, tt = 0, ta = 0;
   document.getElementById('tb2').innerHTML = sorted.map(function(a) {
     tp += a.pisoTotal; ts += a.si; tt += a.trigTotal; ta += a.custoTotal;
