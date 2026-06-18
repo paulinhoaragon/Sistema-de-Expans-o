@@ -836,7 +836,7 @@ function abrirEdicao(id) {
   document.getElementById('m-inst').value     = r.instituicao||'';
   document.getElementById('m-praca').value    = r.praca||'';
   document.getElementById('m-hunter').value   = r.hunter||'';
-  document.getElementById('m-lider').value    = r.lider||'';
+  _setLiderSelect(r.lider||'');
   document.getElementById('m-nivel').value    = r.nivel||'';
   document.getElementById('m-etapa').value    = r.etapa||'Prospecção';
   document.getElementById('m-auc').value      = r.auc_mm > 0 ? r.auc_mm + ' MM' : '';
@@ -1758,12 +1758,52 @@ function popularSelectsHunter(hunters) {
   }
 }
 
+// Garante que o líder atual do candidato exista como opção (mesmo inativo),
+// preservando o vínculo histórico ao editar.
+function _setLiderSelect(valor) {
+  var sel = document.getElementById('m-lider');
+  if (!sel) return;
+  if (valor) {
+    var existe = false;
+    for (var i=0;i<sel.options.length;i++){ if(sel.options[i].value===valor){ existe=true; break; } }
+    if (!existe) {
+      var opt = document.createElement('option');
+      opt.value = valor; opt.textContent = valor + ' (inativo)';
+      var ref = sel.querySelector('option[value="__novo__"]');
+      if (ref) sel.insertBefore(opt, ref); else sel.appendChild(opt);
+    }
+  }
+  sel.value = valor;
+}
+
+function popularSelectsLider(lideres) {
+  var ativos = lideres.filter(function(l){ return (l.status||'Ativo') === 'Ativo'; });
+  var nomesAtivos = ativos.map(function(l){ return l.nome; });
+  // Select do modal (preserva o valor atual mesmo se for um líder inativo, p/ não perder vínculo)
+  var selModal = document.getElementById('m-lider');
+  if (selModal) {
+    var valAtual = selModal.value;
+    var lista = nomesAtivos.slice();
+    if (valAtual && valAtual !== '__novo__' && lista.indexOf(valAtual) === -1) {
+      lista.push(valAtual + ' (inativo)');
+    }
+    selModal.innerHTML = '<option value="">— Selecione —</option>'
+      + lista.map(function(n){ var v=n.replace(' (inativo)',''); return '<option value="'+esc(v)+'"'+(v===valAtual?' selected':'')+'>'+esc(n)+'</option>'; }).join('')
+      + '<option value="__novo__">+ Adicionar novo líder...</option>';
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────
 // Carregar hunters antes do board
 if (typeof NexusConfig !== 'undefined') {
   NexusConfig.getHunters(function(err, hunters) {
     if (!err && hunters && hunters.length) popularSelectsHunter(hunters);
   });
+  if (NexusConfig.getLideres) {
+    NexusConfig.getLideres(function(err, lideres) {
+      if (!err && lideres && lideres.length) popularSelectsLider(lideres);
+    });
+  }
 }
 carregar();
 
