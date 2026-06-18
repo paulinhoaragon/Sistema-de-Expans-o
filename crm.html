@@ -251,83 +251,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           <div class="f-row"><label>Instituição de origem</label><input id="m-inst" placeholder="ex: XP, BTG, Itaú..."></div>
           <div class="f-row"><label>Praça</label>
             <select id="m-praca">
-            <option value="">— Selecione —</option>
-            <optgroup label="Blue3 — Cidades">
-              <option value="Blue3 - Anywhere">Anywhere</option>
-              <option value="Blue3 - Bauru">Bauru</option>
-              <option value="Blue3 - Belém">Belém</option>
-              <option value="Blue3 - Belo Horizonte">Belo Horizonte</option>
-              <option value="Blue3 - Brasília">Brasília</option>
-              <option value="Blue3 - Campinas">Campinas</option>
-              <option value="Blue3 - Curitiba">Curitiba</option>
-              <option value="Blue3 - Franca">Franca</option>
-              <option value="Blue3 - Galpão Franca">Galpão Franca</option>
-              <option value="Blue3 - Goiânia">Goiânia</option>
-              <option value="Blue3 - Internacional">Internacional</option>
-              <option value="Blue3 - Itajaí">Itajaí</option>
-              <option value="Blue3 - Marília">Marília</option>
-              <option value="Blue3 - Poços de Caldas">Poços de Caldas</option>
-              <option value="Blue3 - Ribeirão Preto">Ribeirão Preto</option>
-              <option value="Blue3 - Rio de Janeiro">Rio de Janeiro</option>
-              <option value="Blue3 - São José do Rio Preto">São José do Rio Preto</option>
-              <option value="Blue3 - São José dos Campos">São José dos Campos</option>
-              <option value="Blue3 - São Paulo">São Paulo</option>
-              <option value="Blue3 - Uberaba">Uberaba</option>
-              <option value="Blue3 - Uberlândia">Uberlândia</option>
-            </optgroup>
-            <optgroup label="Blue3 — Segmentos">
-              <option value="Blue3 - Advisor RF">Advisor RF</option>
-              <option value="Blue3 - Broker RV">Broker RV</option>
-              <option value="Blue3 - Corporate">Corporate</option>
-            </optgroup>
-            <optgroup label="Parceiros & Outros">
-              <option>B2B - M&A</option>
-              <option>Contabilidade da Bolsa</option>
-              <option>DV Invest</option>
-              <option>Oby Capital</option>
-              <option>Troon Capital</option>
-              <option>Troon - MFO</option>
-            </optgroup>
-            <option value="__nova__">+ Adicionar nova praça...</option>
+              <option value="">— Selecione —</option>
+              <!-- Praças populadas dinamicamente via NexusConfig.getPracas() -->
           </select>
           </div>
           <div class="f-row"><label>Líder</label>
             <select id="m-lider">
-            <option value="">— Selecione —</option>
-            <option>Adilson Schelbauer</option>
-            <option>André Resende</option>
-            <option>Bruno Bigueti</option>
-            <option>Bruno Carvalho</option>
-            <option>Bruno Pereira</option>
-            <option>Celio Cintra</option>
-            <option>Cristiane Obregon</option>
-            <option>Daniel Hannun</option>
-            <option>Danilo Ferreira</option>
-            <option>Diego Rodrigues</option>
-            <option>Guilherme Yokoy</option>
-            <option>Henrique Fernandes</option>
-            <option>Jailson Ronconi Portugal</option>
-            <option>Jorge Cantarelli</option>
-            <option>Jorge Marcondas</option>
-            <option>Lais Souza</option>
-            <option>Leandro Canizza</option>
-            <option>Liliane Fernandes</option>
-            <option>Lucas Martins</option>
-            <option>Maickel Curiel</option>
-            <option>Marcely</option>
-            <option>Márcio</option>
-            <option>Marco Tulio Schiavinato</option>
-            <option>Claudio Nascimento</option>
-            <option>Pedro Gimenes</option>
-            <option>Pedro Nunes</option>
-            <option>Rafael Viola</option>
-            <option>Rosana Justo</option>
-            <option>Samuel M. Guimarães</option>
-            <option>Tamires Barrionuevo</option>
-            <option>Tony Firjam</option>
-            <option>VANME</option>
-            <option>Victor Falarino</option>
-            <option value="__novo__">+ Adicionar novo líder...</option>
+              <option value="">— Selecione —</option>
+              <!-- Líderes populados dinamicamente via NexusConfig.getLideres() -->
           </select>
           </div>
           <div class="f-row"><label>Hunter</label>
@@ -834,7 +765,7 @@ function abrirEdicao(id) {
   var estEl = document.getElementById('m-estrategico'); if (estEl) estEl.value = r.estrategico||'Não';
   document.getElementById('m-email').value    = r.email||'';
   document.getElementById('m-inst').value     = r.instituicao||'';
-  document.getElementById('m-praca').value    = r.praca||'';
+  _setPracaSelect(r.praca||'');
   document.getElementById('m-hunter').value   = r.hunter||'';
   _setLiderSelect(r.lider||'');
   document.getElementById('m-nivel').value    = r.nivel||'';
@@ -1481,31 +1412,10 @@ function fmtBRL(n) {
   return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
-// ── Nova praça / novo líder ───────────────────────────────────────
-document.addEventListener('change', function(e) {
-  if (e.target.id === 'm-praca' && e.target.value === '__nova__') {
-    var nova = prompt('Nome da nova praça:');
-    if (nova && nova.trim()) {
-      var opt = document.createElement('option');
-      opt.value = nova.trim(); opt.textContent = nova.trim();
-      e.target.insertBefore(opt, e.target.querySelector('option[value="__nova__"]'));
-      e.target.value = nova.trim();
-    } else {
-      e.target.value = '';
-    }
-  }
-  if (e.target.id === 'm-lider' && e.target.value === '__novo__') {
-    var novo = prompt('Nome do novo líder:');
-    if (novo && novo.trim()) {
-      var opt2 = document.createElement('option');
-      opt2.value = novo.trim(); opt2.textContent = novo.trim();
-      e.target.insertBefore(opt2, e.target.querySelector('option[value="__novo__"]'));
-      e.target.value = novo.trim();
-    } else {
-      e.target.value = '';
-    }
-  }
-});
+// ── Praças e líderes: cadastro só em Configurações ────────────────
+// A criação livre de praça/líder no CRM foi desabilitada de propósito.
+// O cadastro central (parâmetros) é a fonte única, evitando registros
+// fora do padrão (ex.: praças inexistentes).
 
 
 // ── Histórico de contatos ─────────────────────────────────────────
@@ -1788,8 +1698,54 @@ function popularSelectsLider(lideres) {
       lista.push(valAtual + ' (inativo)');
     }
     selModal.innerHTML = '<option value="">— Selecione —</option>'
-      + lista.map(function(n){ var v=n.replace(' (inativo)',''); return '<option value="'+esc(v)+'"'+(v===valAtual?' selected':'')+'>'+esc(n)+'</option>'; }).join('')
-      + '<option value="__novo__">+ Adicionar novo líder...</option>';
+      + lista.map(function(n){ var v=n.replace(' (inativo)',''); return '<option value="'+esc(v)+'"'+(v===valAtual?' selected':'')+'>'+esc(n)+'</option>'; }).join('');
+  }
+}
+
+// Garante que a praça atual do candidato exista como opção (mesmo inativa),
+// preservando o vínculo histórico ao editar.
+function _setPracaSelect(valor) {
+  var sel = document.getElementById('m-praca');
+  if (!sel) return;
+  if (valor) {
+    var existe = false;
+    for (var i=0;i<sel.options.length;i++){ if(sel.options[i].value===valor){ existe=true; break; } }
+    if (!existe) {
+      var opt = document.createElement('option');
+      opt.value = valor; opt.textContent = (valor.replace(/^Blue3\s*[-–]\s*/i,'')) + ' (inativa)';
+      sel.appendChild(opt);
+    }
+  }
+  sel.value = valor;
+}
+
+// Popula o select de praça do modal a partir do cadastro central (banco).
+// Praças inativas não aparecem como opção nova, mas a do candidato é preservada.
+function popularSelectsPraca(pracas) {
+  var ativas = pracas.filter(function(p){ return (p.status||'Ativo') === 'Ativo'; });
+  var selModal = document.getElementById('m-praca');
+  if (selModal) {
+    var valAtual = selModal.value;
+    // Agrupa por 'grupo' preservando a categorização
+    var grupos = {};
+    ativas.forEach(function(p){ var g=p.grupo||'Cidades'; (grupos[g]=grupos[g]||[]).push(p); });
+    var ordemGrupos = ['Cidades','Segmentos','Parceiros & Outros'];
+    var nomesGrupos = Object.keys(grupos).sort(function(a,b){
+      var ia=ordemGrupos.indexOf(a), ib=ordemGrupos.indexOf(b);
+      return (ia<0?99:ia)-(ib<0?99:ib);
+    });
+    var html = '<option value="">— Selecione —</option>';
+    nomesGrupos.forEach(function(g){
+      html += '<optgroup label="'+esc(g)+'">';
+      grupos[g].forEach(function(p){
+        var lbl = p.label || p.nome.replace(/^Blue3\s*[-–]\s*/i,'');
+        html += '<option value="'+esc(p.nome)+'"'+(p.nome===valAtual?' selected':'')+'>'+esc(lbl)+'</option>';
+      });
+      html += '</optgroup>';
+    });
+    selModal.innerHTML = html;
+    // preserva praça do candidato mesmo se foi inativada
+    if (valAtual) _setPracaSelect(valAtual);
   }
 }
 
@@ -1801,11 +1757,41 @@ if (typeof NexusConfig !== 'undefined') {
   });
   if (NexusConfig.getLideres) {
     NexusConfig.getLideres(function(err, lideres) {
-      if (!err && lideres && lideres.length) popularSelectsLider(lideres);
+      if (err) { console.error('[CRM] getLideres ERRO:', err); _liderFallbackDosCandidatos(); return; }
+      console.log('[CRM] getLideres OK —', (lideres||[]).length, 'líderes do banco:', (lideres||[]).map(function(l){return l.nome;}));
+      if (lideres && lideres.length) popularSelectsLider(lideres);
+      else { console.warn('[CRM] getLideres vazio — verifique a tabela "lideres" no Supabase'); _liderFallbackDosCandidatos(); }
     });
+  } else {
+    console.warn('[CRM] NexusConfig.getLideres não existe — config.js desatualizado no deploy');
+    _liderFallbackDosCandidatos();
+  }
+  if (NexusConfig.getPracas) {
+    NexusConfig.getPracas(function(err, pracas) {
+      if (err) { console.error('[CRM] getPracas ERRO:', err); return; }
+      console.log('[CRM] getPracas OK —', (pracas||[]).length, 'praças do banco');
+      if (pracas && pracas.length) popularSelectsPraca(pracas);
+      else console.warn('[CRM] getPracas vazio — rode setup_pracas.sql no Supabase');
+    });
+  } else {
+    console.warn('[CRM] NexusConfig.getPracas não existe — config.js desatualizado no deploy');
   }
 }
 carregar();
+
+// Fallback: popula o select de líder a partir dos líderes já presentes nos candidatos
+// (usado só se o cadastro central falhar/estiver vazio), para nunca ficar sem opções.
+function _liderFallbackDosCandidatos(){
+  try {
+    var base = (typeof _todos !== 'undefined' && _todos) ? _todos : [];
+    var set = {};
+    base.forEach(function(r){ var l=(r.lider||'').trim(); if(l) set[l]=true; });
+    var nomes = Object.keys(set).sort();
+    if(!nomes.length) return;
+    popularSelectsLider(nomes.map(function(n){ return {nome:n, status:'Ativo'}; }));
+    console.log('[CRM] fallback de líderes (dos candidatos):', nomes.length);
+  } catch(e){ console.error('[CRM] fallback falhou', e); }
+}
 
 function toggleDataMou(val){
   var row = document.getElementById('row-data-mou');
