@@ -129,6 +129,7 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
   <button class="main-tab active" onclick="showTab('tab-hunters',this)">Hunters</button>
   <button class="main-tab" onclick="showTab('tab-regionais',this);carregarRegionais()">Regionais</button>
   <button class="main-tab" onclick="showTab('tab-lideres',this);carregarLideres()">Líderes</button>
+  <button class="main-tab" onclick="showTab('tab-pracas',this);carregarPracas()">Praças</button>
   <button class="main-tab" onclick="showTab('tab-params',this)">Parâmetros</button>
   <button class="main-tab" onclick="showTab('tab-usuarios',this);carregarUsuarios()">Usuários</button>
 </div>
@@ -264,6 +265,48 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
 
     <div id="lideres-lista">
       <div class="empty-hunters">Carregando líderes...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     TAB — PRAÇAS
+══════════════════════════════════════════════════ -->
+<div class="tab-content page" id="tab-pracas">
+  <div class="card">
+    <div class="card-title">Gestão de Praças</div>
+    <div class="card-sub">Cadastro central de praças. Esta é a única fonte de praças do sistema — o CRM e os cadastros de líder/regional escolhem desta lista. Praças não podem ser criadas em outros lugares.</div>
+
+    <div style="background:var(--canvas);border-radius:var(--r8);padding:16px 18px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:12px;">Adicionar / Editar Praça</div>
+      <input type="hidden" id="p-edit-id">
+      <div class="fgrid">
+        <div class="f-row"><label>Nome canônico * <span style="font-weight:400;color:var(--t4);">(ex.: Blue3 - São Paulo)</span></label><input id="p-nome" placeholder="Blue3 - Cidade"></div>
+        <div class="f-row"><label>Rótulo curto <span style="font-weight:400;color:var(--t4);">(ex.: São Paulo)</span></label><input id="p-label" placeholder="Cidade"></div>
+        <div class="f-row">
+          <label>Grupo</label>
+          <select id="p-grupo">
+            <option value="Cidades">Cidades</option>
+            <option value="Segmentos">Segmentos</option>
+            <option value="Parceiros & Outros">Parceiros &amp; Outros</option>
+          </select>
+        </div>
+        <div class="f-row">
+          <label>Status</label>
+          <select id="p-status">
+            <option value="Ativo">Ativo</option>
+            <option value="Inativo">Inativo</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="salvarPraca()"><span id="btn-p-txt">Salvar praça</span></button>
+        <button class="btn-secondary" onclick="limparFormPraca()">Limpar</button>
+      </div>
+    </div>
+
+    <div id="pracas-lista">
+      <div class="empty-hunters">Carregando praças...</div>
     </div>
   </div>
 </div>
@@ -687,6 +730,99 @@ function limparFormLider() {
   document.getElementById('l-pracas').value  = '';
   document.getElementById('l-status').value  = 'Ativo';
   document.getElementById('btn-l-txt').textContent = 'Salvar líder';
+}
+
+// ════════════ PRAÇAS ══════════════════════════════════════════════
+function carregarPracas() {
+  NexusConfig.getPracas(function(err, pracas) {
+    var el = document.getElementById('pracas-lista');
+    if (err || !pracas.length) {
+      el.innerHTML = '<div class="empty-hunters">Nenhuma praça cadastrada ainda.<br>Use o formulário acima para adicionar.</div>';
+      return;
+    }
+    // Agrupa por grupo
+    var grupos = {};
+    pracas.forEach(function(p){ var g=p.grupo||'Cidades'; (grupos[g]=grupos[g]||[]).push(p); });
+    var ordem = ['Cidades','Segmentos','Parceiros & Outros'];
+    var nomesGrupos = Object.keys(grupos).sort(function(a,b){
+      var ia=ordem.indexOf(a), ib=ordem.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib);
+    });
+    el.innerHTML = nomesGrupos.map(function(g){
+      return '<div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin:14px 0 8px;">'+esc(g)+'</div>'
+        + '<div class="hunters-grid">'
+        + grupos[g].map(function(p){
+            var inicial = (p.label||p.nome||'?').charAt(0).toUpperCase();
+            return '<div class="hunter-row">'
+              + '<div class="h-avatar">'+inicial+'</div>'
+              + '<div class="h-info">'
+              + '<div class="h-nome">'+esc(p.label||p.nome)+'</div>'
+              + '<div class="h-meta">'+esc(p.nome)+'</div>'
+              + '</div>'
+              + '<span class="badge '+(p.status==='Ativo'?'b-ativo':'b-inativo')+'">'+p.status+'</span>'
+              + '<div class="h-actions">'
+              + '<button class="btn-secondary" style="font-size:10px;padding:6px 10px;" onclick="editarPraca(\''+p.id+'\')">Editar</button>'
+              + '<button class="btn-danger" onclick="excluirPraca(\''+p.id+'\')">✕</button>'
+              + '</div>'
+              + '</div>';
+          }).join('')
+        + '</div>';
+    }).join('');
+  });
+}
+
+function salvarPraca() {
+  var nome = (document.getElementById('p-nome').value||'').trim();
+  if (!nome) { toast('Informe o nome canônico da praça.','err'); return; }
+  var dados = {
+    nome:   nome,
+    label:  (document.getElementById('p-label').value||'').trim() || nome.replace(/^Blue3\s*[-–]\s*/i,''),
+    grupo:  document.getElementById('p-grupo').value||'Cidades',
+    status: document.getElementById('p-status').value||'Ativo',
+  };
+  var id = document.getElementById('p-edit-id').value;
+  if (id) dados.id = id;
+  document.getElementById('btn-p-txt').textContent = 'Salvando...';
+  NexusConfig.savePraca(dados, function(err) {
+    document.getElementById('btn-p-txt').textContent = 'Salvar praça';
+    if (err) { toast('Erro ao salvar praça.','err'); return; }
+    toast('Praça salva com sucesso!','ok');
+    if (NexusConfig.clearCache) NexusConfig.clearCache();
+    limparFormPraca();
+    carregarPracas();
+  });
+}
+
+function editarPraca(id) {
+  NexusConfig.getPracas(function(err, pracas) {
+    var p = pracas.find(function(x){ return x.id===id; });
+    if (!p) return;
+    document.getElementById('p-edit-id').value = p.id;
+    document.getElementById('p-nome').value    = p.nome||'';
+    document.getElementById('p-label').value   = p.label||'';
+    document.getElementById('p-grupo').value   = p.grupo||'Cidades';
+    document.getElementById('p-status').value  = p.status||'Ativo';
+    document.getElementById('btn-p-txt').textContent = 'Atualizar praça';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+function excluirPraca(id) {
+  if (!confirm('Excluir esta praça? Candidatos já vinculados a ela mantêm o histórico, mas ela deixa de ser oferecida. Considere Inativar em vez de excluir.')) return;
+  NexusConfig.deletePraca(id, function(err) {
+    if (err) { toast('Erro ao excluir.','err'); return; }
+    toast('Praça removida.','ok');
+    if (NexusConfig.clearCache) NexusConfig.clearCache();
+    carregarPracas();
+  });
+}
+
+function limparFormPraca() {
+  document.getElementById('p-edit-id').value = '';
+  document.getElementById('p-nome').value    = '';
+  document.getElementById('p-label').value   = '';
+  document.getElementById('p-grupo').value   = 'Cidades';
+  document.getElementById('p-status').value  = 'Ativo';
+  document.getElementById('btn-p-txt').textContent = 'Salvar praça';
 }
 
 // ════════════ PARÂMETROS ══════════════════════════════════════════
