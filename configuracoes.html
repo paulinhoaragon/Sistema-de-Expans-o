@@ -127,6 +127,8 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
 <!-- Tabs principais -->
 <div class="main-tabs">
   <button class="main-tab active" onclick="showTab('tab-hunters',this)">Hunters</button>
+  <button class="main-tab" onclick="showTab('tab-regionais',this);carregarRegionais()">Regionais</button>
+  <button class="main-tab" onclick="showTab('tab-lideres',this);carregarLideres()">Líderes</button>
   <button class="main-tab" onclick="showTab('tab-params',this)">Parâmetros</button>
   <button class="main-tab" onclick="showTab('tab-usuarios',this);carregarUsuarios()">Usuários</button>
 </div>
@@ -188,6 +190,82 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
     </div>
   </div>
 
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     TAB — REGIONAIS
+══════════════════════════════════════════════════ -->
+<div class="tab-content page" id="tab-regionais">
+  <div class="card">
+    <div class="card-title">Gestão de Regionais</div>
+    <div class="card-sub">Cada regional assiste um bloco de praças. Esses dados alimentam o relatório regional e os filtros do sistema.</div>
+
+    <div style="background:var(--canvas);border-radius:var(--r8);padding:16px 18px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:12px;">Adicionar / Editar Regional</div>
+      <input type="hidden" id="r-edit-id">
+      <div class="fgrid">
+        <div class="f-row"><label>Nome *</label><input id="r-nome" placeholder="Nome do regional"></div>
+        <div class="f-row">
+          <label>Status</label>
+          <select id="r-status">
+            <option value="Ativo">Ativo</option>
+            <option value="Inativo">Inativo</option>
+          </select>
+        </div>
+        <div class="f-row" style="grid-column:1/-1;">
+          <label>Praças (uma por linha, ou separadas por vírgula)</label>
+          <textarea id="r-pracas" rows="4" placeholder="Blue3 - São Paulo&#10;Blue3 - Campinas&#10;Blue3 - Rio de Janeiro" style="width:100%;font-family:'DM Sans',sans-serif;font-size:12px;padding:10px 12px;border:1px solid var(--rule);border-radius:var(--r8);resize:vertical;"></textarea>
+          <div style="font-size:9px;color:var(--t4);margin-top:3px;">Use o nome exato da praça como aparece no CRM (ex.: "Blue3 - São Paulo").</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="salvarRegional()"><span id="btn-r-txt">Salvar regional</span></button>
+        <button class="btn-secondary" onclick="limparFormRegional()">Limpar</button>
+      </div>
+    </div>
+
+    <div id="regionais-lista">
+      <div class="empty-hunters">Carregando regionais...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     TAB — LÍDERES
+══════════════════════════════════════════════════ -->
+<div class="tab-content page" id="tab-lideres">
+  <div class="card">
+    <div class="card-title">Gestão de Líderes</div>
+    <div class="card-sub">Cada líder assiste suas praças. O vínculo dos candidatos vem do campo "Líder" no CRM; as praças aqui complementam filtros e exibição.</div>
+
+    <div style="background:var(--canvas);border-radius:var(--r8);padding:16px 18px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:12px;">Adicionar / Editar Líder</div>
+      <input type="hidden" id="l-edit-id">
+      <div class="fgrid">
+        <div class="f-row"><label>Nome * <span style="font-weight:400;color:var(--t4);">(igual ao campo Líder no CRM)</span></label><input id="l-nome" placeholder="Nome do líder"></div>
+        <div class="f-row">
+          <label>Status</label>
+          <select id="l-status">
+            <option value="Ativo">Ativo</option>
+            <option value="Inativo">Inativo</option>
+          </select>
+        </div>
+        <div class="f-row" style="grid-column:1/-1;">
+          <label>Praças (uma por linha, ou separadas por vírgula)</label>
+          <textarea id="l-pracas" rows="4" placeholder="Blue3 - São Paulo&#10;Blue3 - Campinas" style="width:100%;font-family:'DM Sans',sans-serif;font-size:12px;padding:10px 12px;border:1px solid var(--rule);border-radius:var(--r8);resize:vertical;"></textarea>
+          <div style="font-size:9px;color:var(--t4);margin-top:3px;">Use o nome exato da praça como aparece no CRM.</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="salvarLider()"><span id="btn-l-txt">Salvar líder</span></button>
+        <button class="btn-secondary" onclick="limparFormLider()">Limpar</button>
+      </div>
+    </div>
+
+    <div id="lideres-lista">
+      <div class="empty-hunters">Carregando líderes...</div>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════
@@ -434,6 +512,181 @@ function limparFormHunter() {
   document.getElementById('h-status').value  = 'Ativo';
   limparFoto();
   document.getElementById('btn-h-txt').textContent = 'Salvar hunter';
+}
+
+// ════════════ PRAÇAS (helper) ═════════════════════════════════════
+// Converte textarea (linhas ou vírgulas) em array; e array em texto.
+function _parsePracas(txt) {
+  return (txt||'').split(/[\n,]+/).map(function(s){ return s.trim(); }).filter(Boolean);
+}
+function _pracasToText(arr) {
+  if (!arr) return '';
+  if (typeof arr === 'string') { try { arr = JSON.parse(arr); } catch(e) { return arr; } }
+  return (arr||[]).join('\n');
+}
+function _pracasResumo(arr) {
+  if (!arr) return '';
+  if (typeof arr === 'string') { try { arr = JSON.parse(arr); } catch(e) { arr = []; } }
+  if (!arr.length) return '<span style="color:var(--t4);">Sem praças (filtra por área)</span>';
+  return arr.map(function(p){ return p.replace(/^Blue3\s*[-–]\s*/i,''); }).join(' · ');
+}
+
+// ════════════ REGIONAIS ═══════════════════════════════════════════
+function carregarRegionais() {
+  NexusConfig.getRegionais(function(err, regs) {
+    var el = document.getElementById('regionais-lista');
+    if (err || !regs.length) {
+      el.innerHTML = '<div class="empty-hunters">Nenhum regional cadastrado ainda.<br>Use o formulário acima para adicionar.</div>';
+      return;
+    }
+    el.innerHTML = '<div class="hunters-grid">' +
+      regs.map(function(r) {
+        var inicial = (r.nome||'?').charAt(0).toUpperCase();
+        return '<div class="hunter-row">'
+          + '<div class="h-avatar">'+inicial+'</div>'
+          + '<div class="h-info">'
+          + '<div class="h-nome">'+esc(r.nome)+'</div>'
+          + '<div class="h-meta">'+_pracasResumo(r.pracas)+'</div>'
+          + '</div>'
+          + '<span class="badge '+(r.status==='Ativo'?'b-ativo':'b-inativo')+'">'+r.status+'</span>'
+          + '<div class="h-actions">'
+          + '<button class="btn-secondary" style="font-size:10px;padding:6px 10px;" onclick="editarRegional(\''+r.id+'\')">Editar</button>'
+          + '<button class="btn-danger" onclick="excluirRegional(\''+r.id+'\')">✕</button>'
+          + '</div>'
+          + '</div>';
+      }).join('') + '</div>';
+  });
+}
+
+function salvarRegional() {
+  var nome = (document.getElementById('r-nome').value||'').trim();
+  if (!nome) { toast('Informe o nome do regional.','err'); return; }
+  var dados = {
+    nome:   nome,
+    pracas: _parsePracas(document.getElementById('r-pracas').value),
+    status: document.getElementById('r-status').value||'Ativo',
+  };
+  var id = document.getElementById('r-edit-id').value;
+  if (id) dados.id = id;
+  document.getElementById('btn-r-txt').textContent = 'Salvando...';
+  NexusConfig.saveRegional(dados, function(err) {
+    document.getElementById('btn-r-txt').textContent = 'Salvar regional';
+    if (err) { toast('Erro ao salvar regional.','err'); return; }
+    toast('Regional salvo com sucesso!','ok');
+    if (NexusConfig.clearCache) NexusConfig.clearCache();
+    limparFormRegional();
+    carregarRegionais();
+  });
+}
+
+function editarRegional(id) {
+  NexusConfig.getRegionais(function(err, regs) {
+    var r = regs.find(function(x){ return x.id===id; });
+    if (!r) return;
+    document.getElementById('r-edit-id').value = r.id;
+    document.getElementById('r-nome').value    = r.nome||'';
+    document.getElementById('r-status').value  = r.status||'Ativo';
+    document.getElementById('r-pracas').value  = _pracasToText(r.pracas);
+    document.getElementById('btn-r-txt').textContent = 'Atualizar regional';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+function excluirRegional(id) {
+  if (!confirm('Excluir este regional? Esta ação não pode ser desfeita.')) return;
+  NexusConfig.deleteRegional(id, function(err) {
+    if (err) { toast('Erro ao excluir.','err'); return; }
+    toast('Regional removido.','ok');
+    if (NexusConfig.clearCache) NexusConfig.clearCache();
+    carregarRegionais();
+  });
+}
+
+function limparFormRegional() {
+  document.getElementById('r-edit-id').value = '';
+  document.getElementById('r-nome').value    = '';
+  document.getElementById('r-pracas').value  = '';
+  document.getElementById('r-status').value  = 'Ativo';
+  document.getElementById('btn-r-txt').textContent = 'Salvar regional';
+}
+
+// ════════════ LÍDERES ═════════════════════════════════════════════
+function carregarLideres() {
+  NexusConfig.getLideres(function(err, lids) {
+    var el = document.getElementById('lideres-lista');
+    if (err || !lids.length) {
+      el.innerHTML = '<div class="empty-hunters">Nenhum líder cadastrado ainda.<br>Use o formulário acima para adicionar.</div>';
+      return;
+    }
+    el.innerHTML = '<div class="hunters-grid">' +
+      lids.map(function(l) {
+        var inicial = (l.nome||'?').charAt(0).toUpperCase();
+        return '<div class="hunter-row">'
+          + '<div class="h-avatar">'+inicial+'</div>'
+          + '<div class="h-info">'
+          + '<div class="h-nome">'+esc(l.nome)+'</div>'
+          + '<div class="h-meta">'+_pracasResumo(l.pracas)+'</div>'
+          + '</div>'
+          + '<span class="badge '+(l.status==='Ativo'?'b-ativo':'b-inativo')+'">'+l.status+'</span>'
+          + '<div class="h-actions">'
+          + '<button class="btn-secondary" style="font-size:10px;padding:6px 10px;" onclick="editarLider(\''+l.id+'\')">Editar</button>'
+          + '<button class="btn-danger" onclick="excluirLider(\''+l.id+'\')">✕</button>'
+          + '</div>'
+          + '</div>';
+      }).join('') + '</div>';
+  });
+}
+
+function salvarLider() {
+  var nome = (document.getElementById('l-nome').value||'').trim();
+  if (!nome) { toast('Informe o nome do líder.','err'); return; }
+  var dados = {
+    nome:   nome,
+    pracas: _parsePracas(document.getElementById('l-pracas').value),
+    status: document.getElementById('l-status').value||'Ativo',
+  };
+  var id = document.getElementById('l-edit-id').value;
+  if (id) dados.id = id;
+  document.getElementById('btn-l-txt').textContent = 'Salvando...';
+  NexusConfig.saveLider(dados, function(err) {
+    document.getElementById('btn-l-txt').textContent = 'Salvar líder';
+    if (err) { toast('Erro ao salvar líder.','err'); return; }
+    toast('Líder salvo com sucesso!','ok');
+    if (NexusConfig.clearCache) NexusConfig.clearCache();
+    limparFormLider();
+    carregarLideres();
+  });
+}
+
+function editarLider(id) {
+  NexusConfig.getLideres(function(err, lids) {
+    var l = lids.find(function(x){ return x.id===id; });
+    if (!l) return;
+    document.getElementById('l-edit-id').value = l.id;
+    document.getElementById('l-nome').value    = l.nome||'';
+    document.getElementById('l-status').value  = l.status||'Ativo';
+    document.getElementById('l-pracas').value  = _pracasToText(l.pracas);
+    document.getElementById('btn-l-txt').textContent = 'Atualizar líder';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+function excluirLider(id) {
+  if (!confirm('Excluir este líder? Esta ação não pode ser desfeita.')) return;
+  NexusConfig.deleteLider(id, function(err) {
+    if (err) { toast('Erro ao excluir.','err'); return; }
+    toast('Líder removido.','ok');
+    if (NexusConfig.clearCache) NexusConfig.clearCache();
+    carregarLideres();
+  });
+}
+
+function limparFormLider() {
+  document.getElementById('l-edit-id').value = '';
+  document.getElementById('l-nome').value    = '';
+  document.getElementById('l-pracas').value  = '';
+  document.getElementById('l-status').value  = 'Ativo';
+  document.getElementById('btn-l-txt').textContent = 'Salvar líder';
 }
 
 // ════════════ PARÂMETROS ══════════════════════════════════════════
