@@ -15,6 +15,7 @@ var NexusConfig = (function() {
     hunters:    null,
     lideres:    null,
     regionais:  null,
+    pracas:     null,
   };
 
   function headers() {
@@ -188,6 +189,37 @@ var NexusConfig = (function() {
       .then(function() { cb(null); }).catch(function(e) { cb(e); });
   }
 
+  // ── Praças ──────────────────────────────────────────────────────
+  // Cadastro central de praças. Fonte única para CRM e cadastros.
+  function getPracas(cb) {
+    supa('pracas?order=grupo.asc,nome.asc&limit=300')
+      .then(function(rows) {
+        _cache.pracas = rows || [];
+        cb(null, _cache.pracas);
+      })
+      .catch(function(e) { cb(e, []); });
+  }
+
+  function savePraca(dados, cb) {
+    _cache.pracas = null;
+    var isNew = !dados.id;
+    dados.atualizado_em = new Date().toISOString();
+    if (isNew) {
+      supa('pracas', { method: 'POST', body: JSON.stringify(dados) })
+        .then(function(r) { cb(null, r); }).catch(function(e) { cb(e, null); });
+    } else {
+      var id = dados.id; delete dados.id;
+      supa('pracas?id=eq.' + id, { method: 'PATCH', body: JSON.stringify(dados) })
+        .then(function(r) { cb(null, r); }).catch(function(e) { cb(e, null); });
+    }
+  }
+
+  function deletePraca(id, cb) {
+    _cache.pracas = null;
+    supa('pracas?id=eq.' + id, { method: 'DELETE' })
+      .then(function() { cb(null); }).catch(function(e) { cb(e); });
+  }
+
   // ── Histórico de etapas CRM ─────────────────────────────────────
   // Registra automaticamente a mudança de etapa
   // Chamar sempre que etapa mudar (drag ou select)
@@ -315,6 +347,7 @@ var NexusConfig = (function() {
     _cache.hunters    = null;
     _cache.lideres    = null;
     _cache.regionais  = null;
+    _cache.pracas     = null;
   }
 
   // API pública
@@ -334,6 +367,9 @@ var NexusConfig = (function() {
     getRegionais:           getRegionais,
     saveRegional:           saveRegional,
     deleteRegional:         deleteRegional,
+    getPracas:              getPracas,
+    savePraca:              savePraca,
+    deletePraca:            deletePraca,
     registrarMudancaEtapa:  registrarMudancaEtapa,
     calcularTempoEtapas:    calcularTempoEtapas,
     clearCache:             clearCache,
