@@ -766,7 +766,7 @@ function abrirEdicao(id) {
   document.getElementById('m-email').value    = r.email||'';
   document.getElementById('m-inst').value     = r.instituicao||'';
   _setPracaSelect(r.praca||'');
-  document.getElementById('m-hunter').value   = r.hunter||'';
+  _setHunterSelect(r.hunter||'');
   _setLiderSelect(r.lider||'');
   document.getElementById('m-nivel').value    = r.nivel||'';
   document.getElementById('m-etapa').value    = r.etapa||'Prospecção';
@@ -1651,7 +1651,7 @@ function gerarProposta() {
 
 // ── Hunters dinâmicos ────────────────────────────────────────────
 function popularSelectsHunter(hunters) {
-  var ativos = hunters.filter(function(h){ return h.status === 'Ativo'; });
+  var ativos = hunters.filter(function(h){ return (h.status||'Ativo') !== 'Inativo'; });
   // Select do modal
   var selModal = document.getElementById('m-hunter');
   if (selModal) {
@@ -1666,6 +1666,23 @@ function popularSelectsHunter(hunters) {
     selFiltro.innerHTML = '<option value="">Todos os hunters</option>'
       + ativos.map(function(h){ return '<option value="'+esc(h.nome)+'"'+(h.nome===valFiltro?' selected':'')+'>'+esc(h.nome)+'</option>'; }).join('');
   }
+}
+
+// Garante que o hunter atual do candidato exista como opção (mesmo inativo),
+// preservando o vínculo histórico ao editar.
+function _setHunterSelect(valor) {
+  var sel = document.getElementById('m-hunter');
+  if (!sel) return;
+  if (valor) {
+    var existe = false;
+    for (var i=0;i<sel.options.length;i++){ if(sel.options[i].value===valor){ existe=true; break; } }
+    if (!existe) {
+      var opt = document.createElement('option');
+      opt.value = valor; opt.textContent = valor + ' (inativo)';
+      sel.appendChild(opt);
+    }
+  }
+  sel.value = valor;
 }
 
 // Garante que o líder atual do candidato exista como opção (mesmo inativo),
@@ -1753,7 +1770,10 @@ function popularSelectsPraca(pracas) {
 // Carregar hunters antes do board
 if (typeof NexusConfig !== 'undefined') {
   NexusConfig.getHunters(function(err, hunters) {
-    if (!err && hunters && hunters.length) popularSelectsHunter(hunters);
+    if (err) { console.error('[CRM] getHunters ERRO:', err); return; }
+    console.log('[CRM] getHunters OK —', (hunters||[]).length, 'hunters:', (hunters||[]).map(function(h){return h.nome+'('+(h.status||'?')+')';}));
+    if (hunters && hunters.length) popularSelectsHunter(hunters);
+    else console.warn('[CRM] getHunters vazio — verifique a tabela "hunters" no Supabase');
   });
   if (NexusConfig.getLideres) {
     NexusConfig.getLideres(function(err, lideres) {
