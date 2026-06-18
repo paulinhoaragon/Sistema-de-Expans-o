@@ -1443,12 +1443,60 @@ function renderAreaBreakdown(candidatos){
 }
 
 // ── Mapeamento regional ───────────────────────────────────────
-var _REGS = {
+// Fallback (usado só se o cadastro do banco falhar). A fonte de verdade é
+// NexusConfig.getRegionais(); este mapa fixo é a rede de segurança.
+var _REGS_DEFAULT = {
   'Tamires':    ['Blue3 - Bauru','Blue3 - Campinas','Blue3 - Curitiba','Blue3 - Franca','Blue3 - Poços de Caldas','Blue3 - Ribeirão Preto','Blue3 - Rio de Janeiro','Blue3 - São José do Rio Preto','Blue3 - Noventena','Blue3 - Itajaí'],
   'Yokoy':      ['Blue3 - Anywhere','Blue3 - Marília','Blue3 - São José dos Campos','Blue3 - São Paulo'],
   'Bruno':      ['Blue3 - Goiânia','Blue3 - Uberlândia','Blue3 - Brasília','Blue3 - Belo Horizonte','Blue3 - Belém'],
   'MariaLaura': [] // filtra por área/vaga
 };
+// _REGS ativo: inicia com o default e é sobrescrito pelo banco no boot.
+var _REGS = JSON.parse(JSON.stringify(_REGS_DEFAULT));
+
+// Mapeia o nome do regional no banco para a chave usada nos botões do relatório.
+// (os botões são fixos: Tamires, Yokoy, Bruno, MariaLaura)
+function _regKeyFromNome(nome){
+  var n=(nome||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(n.indexOf('tamires')>-1) return 'Tamires';
+  if(n.indexOf('yokoy')>-1)   return 'Yokoy';
+  if(n.indexOf('bruno')>-1)   return 'Bruno';
+  if(n.indexOf('maria')>-1 && n.indexOf('laura')>-1) return 'MariaLaura';
+  return null; // regional fora do conjunto de botões fixos (ignorado por ora)
+}
+
+// Carrega o mapa regional→praças do banco, com timeout e fallback ao _REGS_DEFAULT.
+function carregarRegionaisRel(cb){
+  var _fin=false;
+  function _done(usouBanco){ if(_fin)return; _fin=true; if(cb)cb(usouBanco); }
+  var _to=setTimeout(function(){ console.warn('[Blue3] carregarRegionaisRel timeout — usando _REGS_DEFAULT'); _done(false); },3000);
+  if(typeof NexusConfig==='undefined'||typeof NexusConfig.getRegionais!=='function'){
+    clearTimeout(_to); console.warn('[Blue3] getRegionais indisponível — usando _REGS_DEFAULT'); _done(false); return;
+  }
+  try {
+    NexusConfig.getRegionais(function(err,list){
+      clearTimeout(_to);
+      if(err || !list || !list.length){ console.warn('[Blue3] getRegionais vazio/erro — usando _REGS_DEFAULT'); _done(false); return; }
+      var novo={};
+      list.forEach(function(rg){
+        if((rg.status||'Ativo')==='Inativo') return; // inativo some dos filtros
+        var key=_regKeyFromNome(rg.nome);
+        if(!key) return;
+        var pr=rg.pracas;
+        if(typeof pr==='string'){ try{ pr=JSON.parse(pr); }catch(e){ pr=[]; } }
+        novo[key]=Array.isArray(pr)?pr:[];
+      });
+      // MariaLaura permanece como caso especial (sem praças → filtra por área)
+      if(!('MariaLaura' in novo)) novo['MariaLaura']=[];
+      // Só sobrescreve se veio algo útil; senão mantém default
+      if(Object.keys(novo).length){
+        _REGS=novo;
+        console.log('[Blue3] _REGS carregado do banco:', Object.keys(_REGS));
+      }
+      _done(true);
+    });
+  } catch(e){ clearTimeout(_to); console.warn('[Blue3] getRegionais exceção:',e); _done(false); }
+}
 var _regAtiva = 'todas';
 
 // ── Seletor de período (módulo reutilizável) ─────────────────
@@ -2586,13 +2634,15 @@ function renderPage() {
   if (!window.Blue3Data || !window.Blue3Data.candidatos || !window.Blue3Data.candidatos.length) {
     showEmptyState(); return;
   }
-   carregarHuntersRelatorio(function(){
-    Blue3_charts();
-    populateFilters();
-    renderPipelineCRM(_regAtiva);
-    // KPIs sempre pelo caminho consistente (renderWithFilter), inclusive em "Todas"
-    applyFiltersRegional();
-    _syncPeriodoUI();
+   carregarRegionaisRel(function(){
+    carregarHuntersRelatorio(function(){
+      Blue3_charts();
+      populateFilters();
+      renderPipelineCRM(_regAtiva);
+      // KPIs sempre pelo caminho consistente (renderWithFilter), inclusive em "Todas"
+      applyFiltersRegional();
+      _syncPeriodoUI();
+    });
   });
 }
 
