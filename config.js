@@ -13,6 +13,8 @@ var NexusConfig = (function() {
     parametros: null,
     whiteLabel: null,
     hunters:    null,
+    lideres:    null,
+    regionais:  null,
   };
 
   function headers() {
@@ -121,6 +123,68 @@ var NexusConfig = (function() {
   function deleteHunter(id, cb) {
     _cache.hunters = null;
     supa('hunters?id=eq.' + id, { method: 'DELETE' })
+      .then(function() { cb(null); }).catch(function(e) { cb(e); });
+  }
+
+  // ── Líderes ─────────────────────────────────────────────────────
+  // Líder assiste uma ou mais praças. Campo 'pracas' = array (jsonb no banco).
+  function getLideres(cb) {
+    supa('lideres?order=nome.asc&limit=200')
+      .then(function(rows) {
+        _cache.lideres = rows || [];
+        cb(null, _cache.lideres);
+      })
+      .catch(function(e) { cb(e, []); });
+  }
+
+  function saveLider(dados, cb) {
+    _cache.lideres = null;
+    var isNew = !dados.id;
+    dados.atualizado_em = new Date().toISOString();
+    if (isNew) {
+      supa('lideres', { method: 'POST', body: JSON.stringify(dados) })
+        .then(function(r) { cb(null, r); }).catch(function(e) { cb(e, null); });
+    } else {
+      var id = dados.id; delete dados.id;
+      supa('lideres?id=eq.' + id, { method: 'PATCH', body: JSON.stringify(dados) })
+        .then(function(r) { cb(null, r); }).catch(function(e) { cb(e, null); });
+    }
+  }
+
+  function deleteLider(id, cb) {
+    _cache.lideres = null;
+    supa('lideres?id=eq.' + id, { method: 'DELETE' })
+      .then(function() { cb(null); }).catch(function(e) { cb(e); });
+  }
+
+  // ── Regionais ───────────────────────────────────────────────────
+  // Regional assiste um bloco de praças. Campo 'pracas' = array (jsonb no banco).
+  function getRegionais(cb) {
+    supa('regionais?order=nome.asc&limit=200')
+      .then(function(rows) {
+        _cache.regionais = rows || [];
+        cb(null, _cache.regionais);
+      })
+      .catch(function(e) { cb(e, []); });
+  }
+
+  function saveRegional(dados, cb) {
+    _cache.regionais = null;
+    var isNew = !dados.id;
+    dados.atualizado_em = new Date().toISOString();
+    if (isNew) {
+      supa('regionais', { method: 'POST', body: JSON.stringify(dados) })
+        .then(function(r) { cb(null, r); }).catch(function(e) { cb(e, null); });
+    } else {
+      var id = dados.id; delete dados.id;
+      supa('regionais?id=eq.' + id, { method: 'PATCH', body: JSON.stringify(dados) })
+        .then(function(r) { cb(null, r); }).catch(function(e) { cb(e, null); });
+    }
+  }
+
+  function deleteRegional(id, cb) {
+    _cache.regionais = null;
+    supa('regionais?id=eq.' + id, { method: 'DELETE' })
       .then(function() { cb(null); }).catch(function(e) { cb(e); });
   }
 
@@ -249,6 +313,8 @@ var NexusConfig = (function() {
     _cache.parametros = null;
     _cache.whiteLabel = null;
     _cache.hunters    = null;
+    _cache.lideres    = null;
+    _cache.regionais  = null;
   }
 
   // API pública
@@ -262,6 +328,12 @@ var NexusConfig = (function() {
     getHunters:             getHunters,
     saveHunter:             saveHunter,
     deleteHunter:           deleteHunter,
+    getLideres:             getLideres,
+    saveLider:              saveLider,
+    deleteLider:            deleteLider,
+    getRegionais:           getRegionais,
+    saveRegional:           saveRegional,
+    deleteRegional:         deleteRegional,
     registrarMudancaEtapa:  registrarMudancaEtapa,
     calcularTempoEtapas:    calcularTempoEtapas,
     clearCache:             clearCache,
