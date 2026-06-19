@@ -606,6 +606,7 @@ var COR_ETAPA = {
 };
 
 var _todos = [];   // cache local
+var _PRACAS_CAD = [];   // praças do cadastro central (NexusConfig.getPracas)
 var _csvRows = [], _csvHeaders = [];
 
 // ── Supabase ──────────────────────────────────────────────────────
@@ -626,12 +627,51 @@ function carregar() {
 }
 
 function popularFiltrosPraca() {
-  var pracas = [...new Set(_todos.map(function(r){ return r.praca||''; }).filter(Boolean))].sort();
   var sel = document.getElementById('f-praca');
-  var cur = sel.value;
-  sel.innerHTML = '<option value="">Todas as praças</option>' + pracas.map(function(p){ return '<option'+(p===cur?' selected':'')+'>'+p+'</option>'; }).join('');
+  if (sel) {
+    var cur = sel.value;
+    // Praças que aparecem nos candidatos (p/ garantir histórico mesmo se fora do cadastro)
+    var nosCandidatos = {};
+    _todos.forEach(function(r){ var p=(r.praca||'').trim(); if(p) nosCandidatos[p]=true; });
 
-  // Popular líderes
+    if (_PRACAS_CAD && _PRACAS_CAD.length) {
+      // Fonte: cadastro central, agrupado em Cidades/Segmentos/etc.
+      var ativas = _PRACAS_CAD.filter(function(p){ return (p.status||'Ativo') !== 'Inativo'; });
+      var noCad = {};
+      ativas.forEach(function(p){ noCad[p.nome]=true; });
+      var grupos = {};
+      ativas.forEach(function(p){ var g=p.grupo||'Cidades'; (grupos[g]=grupos[g]||[]).push(p); });
+      var ordem = ['Cidades','Segmentos','Parceiros & Outros'];
+      var nomesGrupos = Object.keys(grupos).sort(function(a,b){
+        var ia=ordem.indexOf(a), ib=ordem.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib);
+      });
+      var html = '<option value="">Todas as praças</option>';
+      nomesGrupos.forEach(function(g){
+        html += '<optgroup label="'+esc(g)+'">';
+        grupos[g].forEach(function(p){
+          var lbl = p.label || p.nome.replace(/^Blue3\s*[-–]\s*/i,'');
+          html += '<option value="'+esc(p.nome)+'"'+(p.nome===cur?' selected':'')+'>'+esc(lbl)+'</option>';
+        });
+        html += '</optgroup>';
+      });
+      // Praças órfãs (em candidatos mas fora do cadastro) — preserva histórico
+      var orfas = Object.keys(nosCandidatos).filter(function(p){ return !noCad[p]; }).sort();
+      if (orfas.length) {
+        html += '<optgroup label="Fora do cadastro">';
+        orfas.forEach(function(p){
+          html += '<option value="'+esc(p)+'"'+(p===cur?' selected':'')+'>'+esc(p.replace(/^Blue3\s*[-–]\s*/i,''))+'</option>';
+        });
+        html += '</optgroup>';
+      }
+      sel.innerHTML = html;
+    } else {
+      // Fallback (cadastro indisponível): praças dos candidatos, como antes
+      var pracas = Object.keys(nosCandidatos).sort();
+      sel.innerHTML = '<option value="">Todas as praças</option>' + pracas.map(function(p){ return '<option'+(p===cur?' selected':'')+'>'+p+'</option>'; }).join('');
+    }
+  }
+
+  // Popular líderes (dos candidatos — mantém histórico inclusive inativos)
   var lideres = [...new Set(_todos.map(function(r){ return r.lider||''; }).filter(Boolean))].sort();
   var selLider = document.getElementById('f-lider');
   var curLider = selLider ? selLider.value : '';
@@ -1588,7 +1628,7 @@ function gerarProposta() {
   var nome  = g('m-nome').trim();
   var tel   = g('m-tel').trim();
   var pracaEl = document.getElementById('m-praca');
-  var pracaVal = pracaEl ? (pracaEl.options[pracaEl.selectedIndex] ? pracaEl.options[pracaEl.selectedIndex].text : '') : '';
+  var pracaVal = pracaEl ? pracaEl.value : '';
   if (pracaVal === '— Selecione —') pracaVal = '';
 
   var crmId = g('m-id'); // ID do registro no Supabase
@@ -1790,7 +1830,11 @@ if (typeof NexusConfig !== 'undefined') {
     NexusConfig.getPracas(function(err, pracas) {
       if (err) { console.error('[CRM] getPracas ERRO:', err); return; }
       console.log('[CRM] getPracas OK —', (pracas||[]).length, 'praças do banco');
-      if (pracas && pracas.length) popularSelectsPraca(pracas);
+      if (pracas && pracas.length) {
+        _PRACAS_CAD = pracas;
+        popularSelectsPraca(pracas);
+        popularFiltrosPraca(); // re-popula o filtro do board já com o cadastro
+      }
       else console.warn('[CRM] getPracas vazio — rode setup_pracas.sql no Supabase');
     });
   } else {
