@@ -607,6 +607,7 @@ var COR_ETAPA = {
 
 var _todos = [];   // cache local
 var _PRACAS_CAD = [];   // praças do cadastro central (NexusConfig.getPracas)
+var _LIDERES_CAD = [];  // líderes do cadastro central (NexusConfig.getLideres)
 var _csvRows = [], _csvHeaders = [];
 
 // ── Supabase ──────────────────────────────────────────────────────
@@ -671,11 +672,36 @@ function popularFiltrosPraca() {
     }
   }
 
-  // Popular líderes (dos candidatos — mantém histórico inclusive inativos)
-  var lideres = [...new Set(_todos.map(function(r){ return r.lider||''; }).filter(Boolean))].sort();
+  // Líderes: função própria (usa cadastro + órfãos dos candidatos)
+  popularFiltrosLider();
+}
+
+function popularFiltrosLider() {
   var selLider = document.getElementById('f-lider');
-  var curLider = selLider ? selLider.value : '';
-  if (selLider) selLider.innerHTML = '<option value="">Todos os líderes</option>' + lideres.map(function(l){ return '<option'+(l===curLider?' selected':'')+'>'+esc(l)+'</option>'; }).join('');
+  if (!selLider) return;
+  var curLider = selLider.value;
+
+  // Líderes presentes nos candidatos (preserva histórico, inclusive inativos)
+  var nosCandidatos = {};
+  _todos.forEach(function(r){ var l=(r.lider||'').trim(); if(l) nosCandidatos[l]=true; });
+
+  var nomes = [];
+  if (_LIDERES_CAD && _LIDERES_CAD.length) {
+    // Ativos do cadastro
+    _LIDERES_CAD.forEach(function(l){
+      if ((l.status||'Ativo') !== 'Inativo') nomes.push(l.nome);
+    });
+    // + líderes que têm candidato mas não estão entre os ativos listados
+    var jaTem = {}; nomes.forEach(function(n){ jaTem[n]=true; });
+    Object.keys(nosCandidatos).forEach(function(l){ if(!jaTem[l]) nomes.push(l); });
+  } else {
+    // Fallback: só os dos candidatos
+    nomes = Object.keys(nosCandidatos);
+  }
+  nomes.sort(function(a,b){ return a.localeCompare(b); });
+
+  selLider.innerHTML = '<option value="">Todos os líderes</option>'
+    + nomes.map(function(l){ return '<option value="'+esc(l)+'"'+(l===curLider?' selected':'')+'>'+esc(l)+'</option>'; }).join('');
 }
 
 // ── Board ─────────────────────────────────────────────────────────
@@ -1819,7 +1845,11 @@ if (typeof NexusConfig !== 'undefined') {
     NexusConfig.getLideres(function(err, lideres) {
       if (err) { console.error('[CRM] getLideres ERRO:', err); _liderFallbackDosCandidatos(); return; }
       console.log('[CRM] getLideres OK —', (lideres||[]).length, 'líderes do banco:', (lideres||[]).map(function(l){return l.nome;}));
-      if (lideres && lideres.length) popularSelectsLider(lideres);
+      if (lideres && lideres.length) {
+        _LIDERES_CAD = lideres;
+        popularSelectsLider(lideres);
+        popularFiltrosLider(); // re-popula o filtro do board com o cadastro
+      }
       else { console.warn('[CRM] getLideres vazio — verifique a tabela "lideres" no Supabase'); _liderFallbackDosCandidatos(); }
     });
   } else {
