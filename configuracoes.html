@@ -574,6 +574,46 @@ function _pracasResumo(arr) {
   return arr.map(function(p){ return p.replace(/^Blue3\s*[-–]\s*/i,''); }).join(' · ');
 }
 
+// ════════════ AUDITORIA (log com de → para) ═══════════════════════
+// Guarda o estado do registro no momento em que "Editar" é clicado,
+// para podermos comparar antigo × novo ao salvar.
+var _editSnap = { regional:null, lider:null, praca:null };
+
+function _logCad(tipo, acao, novo, antigo){
+  if (typeof NexusConfig==='undefined' || typeof NexusConfig.log!=='function') return;
+  try {
+    var meta = { entidade: tipo, nome: (novo&&novo.nome)||(antigo&&antigo.nome)||'—' };
+    if (acao==='editar' && antigo) {
+      var mudancas = _diffCampos(antigo, novo, ['nome','status','grupo','label','pracas']);
+      if (!mudancas.length) return; // nada mudou, não loga
+      meta.mudancas = mudancas;
+    }
+    NexusConfig.log(tipo+'.'+acao, meta);
+  } catch(e){}
+}
+
+// Compara os campos relevantes e retorna lista de {campo, de, para}
+function _diffCampos(antigo, novo, campos){
+  var out=[];
+  campos.forEach(function(c){
+    var a=antigo[c], n=novo[c];
+    // praças (arrays) → compara como texto ordenado
+    if (c==='pracas'){
+      var sa=_pracasComparavel(a), sn=_pracasComparavel(n);
+      if (sa!==sn) out.push({campo:'praças', de:sa||'—', para:sn||'—'});
+      return;
+    }
+    a=(a==null?'':String(a)); n=(n==null?'':String(n));
+    if (a!==n) out.push({campo:c, de:a||'—', para:n||'—'});
+  });
+  return out;
+}
+function _pracasComparavel(p){
+  if(!p) return '';
+  if(typeof p==='string'){ try{ p=JSON.parse(p); }catch(e){ return p; } }
+  return (p||[]).slice().sort().join(', ');
+}
+
 // ════════════ REGIONAIS ═══════════════════════════════════════════
 function carregarRegionais() {
   NexusConfig.getRegionais(function(err, regs) {
@@ -612,9 +652,13 @@ function salvarRegional() {
   var id = document.getElementById('r-edit-id').value;
   if (id) dados.id = id;
   document.getElementById('btn-r-txt').textContent = 'Salvando...';
+  var _ehEdicao = !!id;
+  var _antigo = _editSnap.regional;
   NexusConfig.saveRegional(dados, function(err) {
     document.getElementById('btn-r-txt').textContent = 'Salvar regional';
     if (err) { toast('Erro ao salvar regional.','err'); return; }
+    _logCad('regional', _ehEdicao?'editar':'criar', dados, _antigo);
+    _editSnap.regional = null;
     toast('Regional salvo com sucesso!','ok');
     if (NexusConfig.clearCache) NexusConfig.clearCache();
     limparFormRegional();
@@ -626,6 +670,7 @@ function editarRegional(id) {
   NexusConfig.getRegionais(function(err, regs) {
     var r = regs.find(function(x){ return x.id===id; });
     if (!r) return;
+    _editSnap.regional = { nome:r.nome, status:r.status, pracas:r.pracas };
     document.getElementById('r-edit-id').value = r.id;
     document.getElementById('r-nome').value    = r.nome||'';
     document.getElementById('r-status').value  = r.status||'Ativo';
@@ -637,11 +682,15 @@ function editarRegional(id) {
 
 function excluirRegional(id) {
   if (!confirm('Excluir este regional? Esta ação não pode ser desfeita.')) return;
-  NexusConfig.deleteRegional(id, function(err) {
-    if (err) { toast('Erro ao excluir.','err'); return; }
-    toast('Regional removido.','ok');
-    if (NexusConfig.clearCache) NexusConfig.clearCache();
-    carregarRegionais();
+  NexusConfig.getRegionais(function(e0, regs){
+    var alvo = (regs||[]).find(function(x){ return x.id===id; });
+    NexusConfig.deleteRegional(id, function(err) {
+      if (err) { toast('Erro ao excluir.','err'); return; }
+      _logCad('regional','excluir', alvo||{nome:'—'}, null);
+      toast('Regional removido.','ok');
+      if (NexusConfig.clearCache) NexusConfig.clearCache();
+      carregarRegionais();
+    });
   });
 }
 
@@ -691,9 +740,13 @@ function salvarLider() {
   var id = document.getElementById('l-edit-id').value;
   if (id) dados.id = id;
   document.getElementById('btn-l-txt').textContent = 'Salvando...';
+  var _ehEdicao = !!id;
+  var _antigo = _editSnap.lider;
   NexusConfig.saveLider(dados, function(err) {
     document.getElementById('btn-l-txt').textContent = 'Salvar líder';
     if (err) { toast('Erro ao salvar líder.','err'); return; }
+    _logCad('lider', _ehEdicao?'editar':'criar', dados, _antigo);
+    _editSnap.lider = null;
     toast('Líder salvo com sucesso!','ok');
     if (NexusConfig.clearCache) NexusConfig.clearCache();
     limparFormLider();
@@ -705,6 +758,7 @@ function editarLider(id) {
   NexusConfig.getLideres(function(err, lids) {
     var l = lids.find(function(x){ return x.id===id; });
     if (!l) return;
+    _editSnap.lider = { nome:l.nome, status:l.status, pracas:l.pracas };
     document.getElementById('l-edit-id').value = l.id;
     document.getElementById('l-nome').value    = l.nome||'';
     document.getElementById('l-status').value  = l.status||'Ativo';
@@ -716,11 +770,15 @@ function editarLider(id) {
 
 function excluirLider(id) {
   if (!confirm('Excluir este líder? Esta ação não pode ser desfeita.')) return;
-  NexusConfig.deleteLider(id, function(err) {
-    if (err) { toast('Erro ao excluir.','err'); return; }
-    toast('Líder removido.','ok');
-    if (NexusConfig.clearCache) NexusConfig.clearCache();
-    carregarLideres();
+  NexusConfig.getLideres(function(e0, lids){
+    var alvo = (lids||[]).find(function(x){ return x.id===id; });
+    NexusConfig.deleteLider(id, function(err) {
+      if (err) { toast('Erro ao excluir.','err'); return; }
+      _logCad('lider','excluir', alvo||{nome:'—'}, null);
+      toast('Líder removido.','ok');
+      if (NexusConfig.clearCache) NexusConfig.clearCache();
+      carregarLideres();
+    });
   });
 }
 
@@ -782,9 +840,13 @@ function salvarPraca() {
   var id = document.getElementById('p-edit-id').value;
   if (id) dados.id = id;
   document.getElementById('btn-p-txt').textContent = 'Salvando...';
+  var _ehEdicao = !!id;
+  var _antigo = _editSnap.praca;
   NexusConfig.savePraca(dados, function(err) {
     document.getElementById('btn-p-txt').textContent = 'Salvar praça';
     if (err) { toast('Erro ao salvar praça.','err'); return; }
+    _logCad('praca', _ehEdicao?'editar':'criar', dados, _antigo);
+    _editSnap.praca = null;
     toast('Praça salva com sucesso!','ok');
     if (NexusConfig.clearCache) NexusConfig.clearCache();
     limparFormPraca();
@@ -796,6 +858,7 @@ function editarPraca(id) {
   NexusConfig.getPracas(function(err, pracas) {
     var p = pracas.find(function(x){ return x.id===id; });
     if (!p) return;
+    _editSnap.praca = { nome:p.nome, label:p.label, grupo:p.grupo, status:p.status };
     document.getElementById('p-edit-id').value = p.id;
     document.getElementById('p-nome').value    = p.nome||'';
     document.getElementById('p-label').value   = p.label||'';
@@ -808,11 +871,15 @@ function editarPraca(id) {
 
 function excluirPraca(id) {
   if (!confirm('Excluir esta praça? Candidatos já vinculados a ela mantêm o histórico, mas ela deixa de ser oferecida. Considere Inativar em vez de excluir.')) return;
-  NexusConfig.deletePraca(id, function(err) {
-    if (err) { toast('Erro ao excluir.','err'); return; }
-    toast('Praça removida.','ok');
-    if (NexusConfig.clearCache) NexusConfig.clearCache();
-    carregarPracas();
+  NexusConfig.getPracas(function(e0, pracas){
+    var alvo = (pracas||[]).find(function(x){ return x.id===id; });
+    NexusConfig.deletePraca(id, function(err) {
+      if (err) { toast('Erro ao excluir.','err'); return; }
+      _logCad('praca','excluir', alvo||{nome:'—'}, null);
+      toast('Praça removida.','ok');
+      if (NexusConfig.clearCache) NexusConfig.clearCache();
+      carregarPracas();
+    });
   });
 }
 
