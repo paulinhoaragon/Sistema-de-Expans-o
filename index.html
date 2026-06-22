@@ -460,9 +460,12 @@ body{
       <div class="row">
         <input type="password" id="add-pw" placeholder="Senha inicial">
         <select id="add-role">
-          <option value="viewer">Viewer (Relatório + Simulador)</option>
-          <option value="gerente">Gerente (Tudo exceto Upload e Admin)</option>
-          <option value="master">Master (Acesso total)</option>
+          <option value="viewer">Viewer (só leitura de relatórios)</option>
+          <option value="lider">Líder (relatórios da sua praça, sem editar)</option>
+          <option value="hunter">Hunter (operação, sem financeiro)</option>
+          <option value="regional">Regional (tudo exceto M&A e config)</option>
+          <option value="gerente">Gerente (tudo exceto config)</option>
+          <option value="master">Master (acesso total)</option>
         </select>
       </div>
       <button class="btn-add" onclick="b3AddUser()">Adicionar Usuário</button>
@@ -535,11 +538,11 @@ body{
 
       <!-- Comercial -->
       <div class="sb-section">Comercial</div>
-      <a class="sb-item" onclick="navTo('simulador.html','Simulador de Propostas')" href="#">
+      <a class="sb-item b3-sb-propostas" onclick="navTo('simulador.html','Simulador de Propostas')" href="#">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 7H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-2"/><path d="M13 5h6v6"/><path d="M19 5l-8 8" stroke-linecap="round"/></svg>
         <span class="sb-label">Simulador de Propostas</span>
       </a>
-      <a class="sb-item" onclick="navTo('propostas.html','Histórico de Propostas')" href="#">
+      <a class="sb-item b3-sb-propostas" onclick="navTo('propostas.html','Histórico de Propostas')" href="#">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
         <span class="sb-label">Histórico de Propostas</span>
       </a>
@@ -730,19 +733,35 @@ function b3Start() {
   if (av) av.textContent = name.charAt(0).toUpperCase();
   if (un) un.textContent = name;
   if (ur) {
-    var rm = { master:'Master', gerente:'Gerente', hunter:'Hunter', viewer:'Viewer' };
+    var rm = { master:'Master', gerente:'Gerente', regional:'Regional', hunter:'Hunter', lider:'Líder', viewer:'Viewer' };
     ur.textContent = rm[r] || r;
   }
-  var isMaster  = r === 'master';
-  var isGerente = r === 'master' || r === 'gerente';
-  var isCf      = r !== 'hunter';
-  document.querySelectorAll('.b3-sb-ma').forEach(function(el){ el.style.display = isGerente ? '' : 'none'; });
-  document.querySelectorAll('.b3-sb-cf').forEach(function(el){ el.style.display = isCf ? '' : 'none'; });
-  document.querySelectorAll('.b3-sb-admin').forEach(function(el){ el.style.display = isMaster ? '' : 'none'; });
-  document.querySelectorAll('.b3-sb-logs').forEach(function(el){ el.style.display = isGerente ? '' : 'none'; });
-  document.querySelectorAll('.b3-sb-upload').forEach(function(el){ el.style.display = isMaster ? '' : 'none'; });
+
+  // ── Matriz de permissões por perfil ──────────────────────────────
+  // Cada capability liga/desliga itens de menu (e o CRM checa 'crmEdit').
+  // Perfis: master, gerente, regional, hunter, lider, viewer.
+  var CAPS = {
+    master:   { ma:1, cashflow:1, propostas:1, logs:1, admin:1, upload:1, crmEdit:1, escopo:'todos' },
+    gerente:  { ma:1, cashflow:1, propostas:1, logs:1, admin:0, upload:0, crmEdit:1, escopo:'todos' },
+    regional: { ma:0, cashflow:1, propostas:1, logs:1, admin:0, upload:0, crmEdit:1, escopo:'regiao' },
+    hunter:   { ma:0, cashflow:0, propostas:1, logs:0, admin:0, upload:0, crmEdit:1, escopo:'todos' },
+    lider:    { ma:0, cashflow:0, propostas:0, logs:0, admin:0, upload:0, crmEdit:0, escopo:'praca' },
+    viewer:   { ma:0, cashflow:0, propostas:0, logs:0, admin:0, upload:0, crmEdit:0, escopo:'todos' },
+  };
+  var cap = CAPS[r] || CAPS.viewer; // desconhecido cai no mais restrito
+  // Expõe pra casca e páginas-filhas (ex.: CRM consulta crmEdit/escopo)
+  B3CU.caps = cap;
+  sessionStorage.setItem('b3s', JSON.stringify(B3CU));
+
+  function _show(sel, on){ document.querySelectorAll(sel).forEach(function(el){ el.style.display = on ? '' : 'none'; }); }
+  _show('.b3-sb-ma',        cap.ma);
+  _show('.b3-sb-cf',        cap.cashflow);
+  _show('.b3-sb-propostas', cap.propostas);
+  _show('.b3-sb-logs',      cap.logs);
+  _show('.b3-sb-admin',     cap.admin);
+  _show('.b3-sb-upload',    cap.upload);
   var maSection = document.getElementById('sb-ma-section');
-  if (maSection) maSection.style.display = isGerente ? '' : 'none';
+  if (maSection) maSection.style.display = cap.ma ? '' : 'none';
   updateCSVStatus();
 }
 
@@ -1031,7 +1050,7 @@ function b3AdminRender() {
         tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:12px;color:#94A3B8;font-size:11px;">Nenhum usuário encontrado.</td></tr>';
         return;
       }
-      var rm = { master:'Master', gerente:'Gerente', hunter:'Hunter', viewer:'Viewer' };
+      var rm = { master:'Master', gerente:'Gerente', regional:'Regional', hunter:'Hunter', lider:'Líder', viewer:'Viewer' };
       var curId = B3CU ? String(B3CU.id) : '';
       tb.innerHTML = users.map(function(u){
         var isMe = String(u.id) === curId;
