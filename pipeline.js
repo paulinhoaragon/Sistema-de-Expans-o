@@ -456,7 +456,13 @@ function Blue3_pipelineStrategic(){
     var isAtivo  = etapasAtivas.indexOf(norm(r.st)) > -1;
     return isEstrat && isAtivo;
   }).map(function(r){
-    return { n:r.n, p:r.p, i:r.org||'', a:r.cap||0, tipo:'Contratado' };
+    // Situação de transição (mesma lógica do cashflow):
+    //  ativo (trabalhando/tombou) > assinado sem início (MOU ok, sem início real) > a confirmar
+    var _temInicio = !!r.inicioReal;
+    var _mouOk = (r.mou||'').toLowerCase() === 'assinado';
+    var _sit = _temInicio ? 'trabalhando' : (_mouOk ? 'assinado' : 'aconf');
+    return { n:r.n, p:r.p, i:r.org||'', a:r.cap||0, tipo:'Contratado',
+             sit:_sit, mou:r.mou||'', st:r.st||'' };
   });
 
   window.Blue3Data.pipelineNeg = window.Blue3Data._pipelineNeg || [];
