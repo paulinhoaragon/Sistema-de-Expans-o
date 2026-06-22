@@ -809,6 +809,7 @@ function dropCard(e, etapa) {
 
 // ── Modal Candidato ───────────────────────────────────────────────
 function abrirModal(etapaInicial) {
+  if (window._CRM_READONLY) { alert('Seu perfil tem acesso somente leitura ao CRM.'); return; }
   limparModal();
   document.getElementById('modal-titulo').textContent = 'Novo candidato';
   document.getElementById('modal-etapa-label').textContent = '';
@@ -998,6 +999,7 @@ function gn(id){ return parseFloat(g(id))||0; }
 function gi(id){ return parseInt(g(id))||0; }
 
 function salvarCandidato() {
+  if (window._CRM_READONLY) { alert('Seu perfil tem acesso somente leitura ao CRM.'); return; }
   var nome = g('m-nome').trim();
   if (!nome) { alert('Informe o nome do candidato.'); return; }
   var vaga = g('m-vaga');
@@ -1872,9 +1874,27 @@ if (typeof NexusConfig !== 'undefined') {
   }
 }
 carregar();
+_aplicaPermissaoCRM();
 
-// Fallback: popula o select de líder a partir dos líderes já presentes nos candidatos
-// (usado só se o cadastro central falhar/estiver vazio), para nunca ficar sem opções.
+// ── Permissão de edição (Líder/Viewer = só leitura) ──────────────
+function _crmPodeEditar(){
+  try {
+    var cu = (window.parent && window.parent.B3CU) ? window.parent.B3CU
+           : (sessionStorage.getItem('b3s') ? JSON.parse(sessionStorage.getItem('b3s')) : null);
+    if (!cu) return true; // sem sessão (ex.: aberto solto em dev) → não trava
+    if (cu.caps && typeof cu.caps.crmEdit !== 'undefined') return !!cu.caps.crmEdit;
+    var r = cu.r || cu.perfil || '';
+    return ['lider','viewer'].indexOf(r) === -1;
+  } catch(e){ return true; }
+}
+
+function _aplicaPermissaoCRM(){
+  if (_crmPodeEditar()) return;
+  var add = document.querySelector('.btn-add'); if (add) add.style.display = 'none';
+  document.querySelectorAll('.btn-salvar').forEach(function(b){ b.style.display = 'none'; });
+  var del = document.getElementById('btn-excluir'); if (del) del.style.display = 'none';
+  window._CRM_READONLY = true;
+}
 function _liderFallbackDosCandidatos(){
   try {
     var base = (typeof _todos !== 'undefined' && _todos) ? _todos : [];
