@@ -205,6 +205,13 @@ function parseMeta(m){
 function resumoMeta(m){
   var o=parseMeta(m),keys=Object.keys(o);
   if(!keys.length)return'—';
+  // Se tem mudanças (de→para), resume os campos alterados
+  if(o.mudancas && o.mudancas.length){
+    var campos=o.mudancas.map(function(c){return c.campo;}).join(', ');
+    var ent=o.entidade?(o.entidade+': '):'';
+    return esc(ent+(o.nome||'')+' — alterou '+campos);
+  }
+  if(o.entidade && o.nome) return esc(o.entidade+': '+o.nome);
   var prio=['candidato','nome','cargo','de','para','acao'];
   for(var i=0;i<prio.length;i++){if(o[prio[i]])return esc(String(o[prio[i]]));}
   return esc(String(o[keys[0]]));
@@ -344,7 +351,27 @@ function abrirDet(id){
   if(!r)return;
   var m=parseMeta(r.meta);
   var rows=[['Data/Hora',fmtDt(r.criado_em)],['Ação',r.acao||'—'],['Usuário',r.usuario||'—']];
-  Object.keys(m).forEach(function(k){rows.push([k,String(m[k])]);});
+  if(m.entidade) rows.push(['Entidade', esc(String(m.entidade))]);
+  if(m.nome) rows.push(['Nome', esc(String(m.nome))]);
+  // Renderiza mudanças de→para se houver
+  if(m.mudancas && m.mudancas.length){
+    var mud='<div style="display:flex;flex-direction:column;gap:6px;">'
+      + m.mudancas.map(function(c){
+          return '<div style="font-size:12px;">'
+            + '<strong>'+esc(c.campo)+':</strong> '
+            + '<span style="color:#B91C1C;text-decoration:line-through;">'+esc(String(c.de))+'</span>'
+            + ' <span style="color:var(--t3);">→</span> '
+            + '<span style="color:#15803D;font-weight:600;">'+esc(String(c.para))+'</span>'
+            + '</div>';
+        }).join('')
+      + '</div>';
+    rows.push(['Mudanças', mud]);
+  }
+  // Demais chaves do meta (exceto as já tratadas)
+  Object.keys(m).forEach(function(k){
+    if(['entidade','nome','mudancas'].indexOf(k)>-1) return;
+    rows.push([k, esc(String(m[k]))]);
+  });
   document.getElementById('modal-bd').innerHTML=rows.map(function(row){
     return '<div class="mr"><span class="mk">'+esc(row[0])+'</span><span class="mv">'+row[1]+'</span></div>';
   }).join('');
