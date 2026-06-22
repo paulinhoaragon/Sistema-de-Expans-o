@@ -408,6 +408,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
       <option value="desistencia">Desistência</option>
     </select>
   </div>
+  <div style="width:1px;align-self:stretch;background:var(--rule);margin:0 4px;"></div>
+  <div>
+    <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;">Agrupar por</div>
+    <select id="ld-group" class="ld-select" style="min-width:150px;" onchange="renderLider()">
+      <option value="">Nenhum</option>
+      <option value="situacao">Situação</option>
+      <option value="praca">Praça</option>
+      <option value="senioridade">Senioridade</option>
+    </select>
+  </div>
   <button onclick="_limparFiltrosLd()" style="padding:8px 14px;border:1px solid var(--rule);border-radius:var(--r8);background:#fff;font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;">Limpar filtros</button>
 </div>
 
@@ -673,7 +683,7 @@ function _aplicaFiltrosLd(cands){
 }
 
 function _limparFiltrosLd(){
-  ['ld-f-praca','ld-f-sen','ld-f-sit'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  ['ld-f-praca','ld-f-sen','ld-f-sit','ld-group'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   renderLider();
 }
 
@@ -783,8 +793,54 @@ function _thTabela(){
     .map(function(h,i){ var al=(i>=4&&i<=5)?'right':'left'; return '<th style="text-align:'+al+';padding:8px 10px;border-bottom:2px solid var(--rule);font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);">'+h+'</th>'; }).join('');
 }
 
-function _linhasTabela(cands){
+// Retorna {chave, ordem} do grupo de um candidato, conforme o campo escolhido.
+function _grupoDe(r, campo){
+  if(campo==='situacao'){
+    var s=_statusCand(r);
+    // ordem fixa para situação
+    var ord={'Ativo':0,'Contratação':1,'Desist. pós':4,'Desist. precoce':5};
+    return {chave:s.txt, ordem:(ord[s.txt]!=null?ord[s.txt]:3), cls:s.cls};
+  }
+  if(campo==='praca'){
+    var p=_filial(r.p||r['Filial']||'')||'(sem praça)';
+    return {chave:p, ordem:0};
+  }
+  if(campo==='senioridade'){
+    var sen=(r.sen||r['Senioridade']||'').trim()||'(sem senioridade)';
+    var os={'Sênior':0,'Senior':0,'Pleno':1,'Júnior':2,'Junior':2};
+    return {chave:sen, ordem:(os[sen]!=null?os[sen]:3)};
+  }
+  return {chave:'', ordem:0};
+}
+
+// Monta as linhas agrupadas: um cabeçalho por grupo + subtotal + as linhas.
+function _linhasAgrupadas(cands, campo){
   if(!cands.length) return '<tr><td colspan="7" style="padding:14px;color:var(--t3);font-size:11px;">Nenhum candidato corresponde aos filtros.</td></tr>';
+  var grupos={};
+  cands.forEach(function(r){
+    var g=_grupoDe(r,campo);
+    if(!grupos[g.chave]) grupos[g.chave]={ordem:g.ordem, cls:g.cls, itens:[]};
+    grupos[g.chave].itens.push(r);
+  });
+  var chaves=Object.keys(grupos).sort(function(a,b){
+    var d=grupos[a].ordem-grupos[b].ordem;
+    return d!==0?d:a.localeCompare(b);
+  });
+  return chaves.map(function(ch){
+    var g=grupos[ch];
+    var n=g.itens.length;
+    var comp=g.itens.reduce(function(s,r){ return s+(parseFloat(r['Total Comp.']||r.comp||0)||0); },0);
+    var badge = g.cls ? '<span class="badge '+g.cls+'" style="margin-right:6px;"><span class="bd"></span>'+esc(ch)+'</span>' : esc(ch);
+    var headerRow = '<tr><td colspan="7" style="padding:11px 10px 7px;background:var(--canvas,#F4F6FB);border-bottom:1px solid var(--rule);">'
+      + '<span style="font-size:11px;font-weight:700;color:var(--t1);">'+badge+'</span>'
+      + '<span style="font-size:10px;color:var(--t3);font-weight:500;margin-left:8px;">'+n+(n===1?' candidato':' candidatos')+' · Comp. '+fmtVal(comp)+'</span>'
+      + '</td></tr>';
+    return headerRow + _linhasSimples(g.itens);
+  }).join('');
+}
+
+// Linhas sem cabeçalho de grupo (uso interno; mantém a ordenação ativos→comp).
+function _linhasSimples(cands){
   var data=cands.slice().sort(function(a,b){
     var aa=(a.st||a['Status']||'').toLowerCase().indexOf('trabalh')>-1?1:0;
     var bb=(b.st||b['Status']||'').toLowerCase().indexOf('trabalh')>-1?1:0;
@@ -808,6 +864,13 @@ function _linhasTabela(cands){
       + '<td style="padding:8px 10px;text-align:left;color:var(--t3);font-size:10px;">'+(cond?esc(cond):'—')+'</td>'
       + '</tr>';
   }).join('');
+}
+
+function _linhasTabela(cands){
+  if(!cands.length) return '<tr><td colspan="7" style="padding:14px;color:var(--t3);font-size:11px;">Nenhum candidato corresponde aos filtros.</td></tr>';
+  var campo=(document.getElementById('ld-group')||{}).value||'';
+  if(campo) return _linhasAgrupadas(cands, campo);
+  return _linhasSimples(cands);
 }
 
 function _renderTabela(cands){
