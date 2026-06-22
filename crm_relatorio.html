@@ -296,6 +296,10 @@ function renderCRM(cands){
     if(c.etapa==='Trabalhando'||c.etapa==='Contratação')liderMap[l].ativos++;
   });
   var lideresTop=Object.keys(liderMap).sort(function(a,b){return liderMap[b].ativos-liderMap[a].ativos;}).slice(0,3);
+  // Ranking completo (todos os líderes), ordenado por contratações ativas desc, depois total
+  var lideresRank=Object.keys(liderMap).sort(function(a,b){
+    return liderMap[b].ativos-liderMap[a].ativos || liderMap[b].total-liderMap[a].total || a.localeCompare(b);
+  });
 
   // ── Contratação por status ──
   var contSorted=contratacao.slice().sort(function(a,b){
@@ -657,6 +661,71 @@ function renderCRM(cands){
 
     '</div>',
 
+    // ⑥ RANKING DE LÍDERES — contratações por líder (vaga Assessor)
+    '<div class="sec-label">Ranking de líderes · contratações</div>',
+    (function(){
+      if(!lideresRank.length) return '<div style="font-size:12px;color:var(--t4);padding:8px 0;">Sem dados de líder.</div>';
+      var maxAtivos = liderMap[lideresRank[0]].ativos || 1;
+      var total = lideresRank.length;
+
+      function linha(l, pos){
+        var d=liderMap[l];
+        var pct = Math.round((d.ativos/maxAtivos)*100);
+        var medalha = pos===1?'🥇':pos===2?'🥈':pos===3?'🥉':'<span style="display:inline-block;width:20px;text-align:center;color:var(--t4);font-size:10px;">'+pos+'º</span>';
+        var zerado = d.ativos===0;
+        return '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--rule);'+(zerado?'opacity:.7;':'')+'">'
+          + '<div style="width:22px;flex-shrink:0;font-size:13px;">'+medalha+'</div>'
+          + '<div style="flex:1;min-width:0;">'
+          +   '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">'
+          +     '<span style="font-size:12px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(l)+(zerado?' <span style="font-size:9px;font-weight:700;color:#B91C1C;background:#FEE2E2;padding:1px 6px;border-radius:8px;margin-left:4px;">sem contratação</span>':'')+'</span>'
+          +     '<span style="font-size:12px;font-weight:700;color:var(--cobalt);flex-shrink:0;margin-left:8px;">'+d.ativos+'<span style="font-weight:400;color:var(--t4);font-size:10px;"> / '+d.total+' no funil</span></span>'
+          +   '</div>'
+          +   '<div style="height:4px;background:var(--rule);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+(zerado?'#FCA5A5':'var(--cobalt)')+';border-radius:3px;"></div></div>'
+          + '</div>'
+          + '</div>';
+      }
+
+      // Cortes: Top 3 sempre visível; Top 4-10 e o resto em blocos expansíveis
+      var top3 = lideresRank.slice(0,3);
+      var top10 = lideresRank.slice(3,10);
+      var resto = lideresRank.slice(10);
+
+      var html = '<div style="background:#fff;border:1px solid var(--rule);border-radius:var(--r12);padding:14px 16px;">';
+      // contador
+      html += '<div style="font-size:10px;color:var(--t3);margin-bottom:8px;">'+total+' líderes · ordenados por contratações ativas (Trabalhando + Contratação)</div>';
+      // Top 3
+      top3.forEach(function(l,i){ html += linha(l, i+1); });
+
+      // Bloco Top 4-10
+      if(top10.length){
+        html += '<div id="rk-top10" style="display:none;">';
+        top10.forEach(function(l,i){ html += linha(l, i+4); });
+        html += '</div>';
+      }
+      // Bloco resto (11+)
+      if(resto.length){
+        html += '<div id="rk-resto" style="display:none;">';
+        resto.forEach(function(l,i){ html += linha(l, i+11); });
+        html += '</div>';
+      }
+
+      // Botões de corte
+      if(top10.length || resto.length){
+        html += '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">';
+        if(top10.length){
+          html += '<button id="rk-btn-top10" onclick="_rkToggle(\'top10\')" style="font-size:11px;font-weight:600;color:var(--cobalt);background:#EEF2FD;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;">▸ Ver Top 10</button>';
+        }
+        if(resto.length){
+          html += '<button id="rk-btn-resto" onclick="_rkToggle(\'resto\')" style="font-size:11px;font-weight:600;color:var(--t2);background:var(--canvas,#F4F6FB);border:1px solid var(--rule);border-radius:8px;padding:6px 12px;cursor:pointer;">▸ Ver todos ('+total+')</button>';
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+      return html;
+    })(),
+
+    '</div>',
+
   ].join('');
 }
 
@@ -687,6 +756,29 @@ function filtCont(btn, filtro){
       document.getElementById('crm-root').innerHTML='<div class="loading"><div class="loading-icon">❌</div><div>Erro ao carregar: '+e+'</div></div>';
     });
 })();
+
+// Toggle dos cortes do ranking de líderes
+function _rkToggle(qual){
+  if(qual==='top10'){
+    var el=document.getElementById('rk-top10');
+    var btn=document.getElementById('rk-btn-top10');
+    if(!el) return;
+    var abrir = el.style.display==='none';
+    el.style.display = abrir?'block':'none';
+    if(btn) btn.innerHTML = abrir?'▴ Ocultar Top 10':'▸ Ver Top 10';
+  } else if(qual==='resto'){
+    var elR=document.getElementById('rk-resto');
+    var el10=document.getElementById('rk-top10');
+    var btnR=document.getElementById('rk-btn-resto');
+    var btn10=document.getElementById('rk-btn-top10');
+    if(!elR && !el10) return;
+    var abrirR = (elR && elR.style.display==='none') || (el10 && el10.style.display==='none');
+    if(el10) el10.style.display = abrirR?'block':'none';
+    if(elR)  elR.style.display  = abrirR?'block':'none';
+    if(btnR) btnR.innerHTML = abrirR?'▴ Ocultar todos':'▸ Ver todos';
+    if(btn10 && el10) btn10.innerHTML = el10.style.display==='block'?'▴ Ocultar Top 10':'▸ Ver Top 10';
+  }
+}
 
 window.b3OnCSVLoaded=function(){};
 </script>
