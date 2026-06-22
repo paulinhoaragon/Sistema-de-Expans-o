@@ -592,10 +592,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 <div style="margin-bottom:32px;">
   <div class="sh"><span class="sn">06</span><span class="st">Contratações estratégicas — assessores com carteira confirmada</span></div>
   <div class="sgrid" id="strat-cards"></div>
-  <div id="strat-total" style="display:none;justify-content:space-between;align-items:center;margin-top:12px;padding:12px 16px;background:var(--cobalt-pl);border-radius:var(--r8);border:1px solid var(--rule);">
-    <span style="font-size:11px;font-weight:700;color:var(--cobalt);text-transform:uppercase;letter-spacing:.08em;">AuC total estratégico confirmado</span>
-    <span id="strat-total-val" style="font-size:15px;font-weight:700;color:var(--cobalt);">—</span>
-  </div>
+  <div id="strat-total" style="display:none;margin-top:12px;padding:12px 16px;background:var(--cobalt-pl);border-radius:var(--r8);border:1px solid var(--rule);"></div>
   <div class="card" id="neg-card" style="margin-top:16px;display:none;">
     <div class="ch">Em negociação</div>
     <div id="neg-rows"></div>
@@ -1361,19 +1358,52 @@ function fmtM(v) {
   var sEl = document.getElementById('strat-cards');
   if (sEl && D.pipeline && D.pipeline.length) {
     var totalEstrat = D.pipeline.reduce(function(s,p){ return s + (parseFloat(p.a)||0); }, 0);
+    // Config visual por situação de transição
+    var SIT = {
+      trabalhando: { txt:'Trabalhando',          bg:'#DCFCE7', fg:'#15803D', dot:'#15803D' },
+      assinado:    { txt:'Contratado · MOU ok',   bg:'#DBEAFE', fg:'#1E40AF', dot:'#1E40AF' },
+      aconf:       { txt:'Contratado · sem MOU',  bg:'#FEF3C7', fg:'#92400E', dot:'#92400E' }
+    };
     sEl.innerHTML = D.pipeline.map(function(p) {
+      var s = SIT[p.sit] || SIT.aconf;
       return '<div class="hc" style="background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:14px 16px;">'
-        +'<div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:4px;">'+p.n+'</div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;">'
+        +'<span style="font-size:13px;font-weight:700;color:var(--t1);">'+p.n+'</span>'
+        +'<span style="display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+s.bg+';color:'+s.fg+';white-space:nowrap;"><span style="width:5px;height:5px;border-radius:50%;background:'+s.dot+';"></span>'+s.txt+'</span>'
+        +'</div>'
         +'<div style="font-size:11px;color:var(--t3);margin-bottom:8px;">'+p.i+'</div>'
         +'<div style="font-size:12px;font-weight:600;color:var(--cobalt);">R$ '+p.a+'MM</div>'
         +'</div>';
     }).join('');
-    // Rodapé com total consolidado
+
+    // Consolidação por status
+    var porSit = { trabalhando:{n:0,auc:0}, assinado:{n:0,auc:0}, aconf:{n:0,auc:0} };
+    D.pipeline.forEach(function(p){
+      var k = porSit[p.sit] ? p.sit : 'aconf';
+      porSit[k].n++; porSit[k].auc += (parseFloat(p.a)||0);
+    });
+
     var totalBox = document.getElementById('strat-total');
     if (totalBox) {
-      totalBox.style.display = 'flex';
-      var totalEl = document.getElementById('strat-total-val');
-      if (totalEl) totalEl.textContent = 'R$ ' + totalEstrat.toLocaleString('pt-BR') + 'MM';
+      totalBox.style.display = 'block';
+      // Breakdown por status + total
+      function _linhaSit(sit, lbl, cor){
+        var d = porSit[sit];
+        if (!d.n) return '';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;">'
+          +'<span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--t2);"><span style="width:7px;height:7px;border-radius:50%;background:'+cor+';"></span>'+lbl+' <span style="color:var(--t4);font-weight:400;">· '+d.n+' assessor'+(d.n!==1?'es':'')+'</span></span>'
+          +'<span style="font-size:13px;font-weight:700;color:var(--t1);">R$ '+d.auc.toLocaleString('pt-BR')+'MM</span>'
+          +'</div>';
+      }
+      var html = ''
+        + _linhaSit('trabalhando','Trabalhando · tombando base','#15803D')
+        + _linhaSit('assinado','Contratado · MOU assinado','#1E40AF')
+        + _linhaSit('aconf','Contratado · MOU pendente','#92400E')
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:10px;border-top:1px solid var(--rule);">'
+        +   '<span style="font-size:11px;font-weight:700;color:var(--cobalt);text-transform:uppercase;letter-spacing:.08em;">AuC total estratégico confirmado</span>'
+        +   '<span style="font-size:15px;font-weight:700;color:var(--cobalt);">R$ '+totalEstrat.toLocaleString('pt-BR')+'MM</span>'
+        + '</div>';
+      totalBox.innerHTML = html;
     }
   }
 
