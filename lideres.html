@@ -388,15 +388,38 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 <!-- KPIs -->
 <div id="ld-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;"></div>
 
-<!-- FUNIL -->
-<div style="margin-bottom:28px;">
-  <div class="st" style="margin-bottom:12px;">Funil — etapas do processo</div>
-  <div id="ld-funil" style="display:flex;gap:0;border-radius:var(--r12);overflow:hidden;margin-bottom:8px;"></div>
-  <div id="ld-funil-vazio" style="display:none;font-size:11px;color:var(--t3);padding:10px;">Sem candidatos no período para este líder.</div>
+<!-- FILTROS (praça, senioridade, situação) -->
+<div id="ld-filtros" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;">
+  <div>
+    <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;">Praça</div>
+    <select id="ld-f-praca" class="ld-select" style="min-width:160px;" onchange="renderLider()"><option value="">Todas</option></select>
+  </div>
+  <div>
+    <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;">Senioridade</div>
+    <select id="ld-f-sen" class="ld-select" style="min-width:140px;" onchange="renderLider()"><option value="">Todas</option></select>
+  </div>
+  <div>
+    <div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;">Situação</div>
+    <select id="ld-f-sit" class="ld-select" style="min-width:140px;" onchange="renderLider()">
+      <option value="">Todas</option>
+      <option value="ativo">Ativo</option>
+      <option value="contratacao">Contratação</option>
+      <option value="processo">Em processo</option>
+      <option value="desistencia">Desistência</option>
+    </select>
+  </div>
+  <button onclick="_limparFiltrosLd()" style="padding:8px 14px;border:1px solid var(--rule);border-radius:var(--r8);background:#fff;font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;">Limpar filtros</button>
 </div>
 
-<!-- TABELA -->
-<div>
+<!-- FUNIL -->
+<div style="margin-bottom:28px;">
+  <div class="st" style="margin-bottom:12px;" id="ld-funil-title">Funil — etapas do processo</div>
+  <div id="ld-funil" style="display:flex;gap:0;border-radius:var(--r12);overflow:hidden;margin-bottom:8px;"></div>
+  <div id="ld-funil-vazio" style="display:none;font-size:11px;color:var(--t3);padding:10px;">Sem candidatos no período.</div>
+</div>
+
+<!-- TABELA ÚNICA (visão de um líder) -->
+<div id="ld-detalhe">
   <div class="st" style="margin-bottom:12px;">Candidatos <span id="ld-tbl-count" style="font-size:11px;color:var(--t3);font-weight:400;"></span></div>
   <div style="overflow-x:auto;">
     <table id="ld-tbl" style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -405,6 +428,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     </table>
   </div>
 </div>
+
+<!-- BLOCOS POR LÍDER (visão Todos) -->
+<div id="ld-blocos" style="display:none;"></div>
 
 </div>
 <script>
@@ -464,36 +490,63 @@ function boot(){
   _syncPeriodoUI();
   var _upd=document.getElementById('dyn-update-date');
   if(_upd){ var d=new Date(); var ms=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']; _upd.textContent=String(d.getDate()).padStart(2,'0')+' '+ms[d.getMonth()]+' '+d.getFullYear(); }
-  // 1) Carrega candidatos via pipeline
+
   function _afterData(){
     _ALL = (window.Blue3Data && window.Blue3Data._rawRows) ? window.Blue3Data._rawRows : [];
-    // 2) Carrega líderes do cadastro central
+    console.log('[Lideres] _afterData — candidatos:', _ALL.length);
     if(typeof NexusConfig!=='undefined' && NexusConfig.getLideres){
       NexusConfig.getLideres(function(err,list){
         _LIDERES_ALL = list||[];
         _LIDERES = _LIDERES_ALL.filter(function(l){ return (l.status||'Ativo')==='Ativo'; });
+        console.log('[Lideres] getLideres —', _LIDERES_ALL.length, 'líderes (', _LIDERES.length, 'ativos)');
+        if(typeof _complementarLideresDosCandidatos==='function') _complementarLideresDosCandidatos();
         _popularDropdown();
         renderLider();
       });
     } else {
-      // Fallback: deriva líderes do próprio campo lider dos candidatos
+      console.warn('[Lideres] NexusConfig.getLideres indisponível — derivando dos candidatos');
       _derivaLideresDosCandidatos();
       _popularDropdown();
       renderLider();
     }
   }
-  // pipeline expõe Blue3_init? Tenta os padrões comuns
-  if(window.Blue3Data && window.Blue3Data._rawRows && window.Blue3Data._rawRows.length){ _afterData(); }
-  else if(typeof Blue3_init==='function'){ Blue3_init(_afterData); }
-  else if(typeof carregarDados==='function'){ carregarDados(_afterData); }
-  else {
-    // Aguarda o pipeline popular (polling curto)
-    var tries=0; var iv=setInterval(function(){
-      tries++;
-      if(window.Blue3Data && window.Blue3Data._rawRows && window.Blue3Data._rawRows.length){ clearInterval(iv); _afterData(); }
-      else if(tries>40){ clearInterval(iv); _afterData(); }
-    },150);
+
+  // 1) Já populado pela casca (index.html)? usa direto.
+  if(window.Blue3Data && window.Blue3Data._rawRows && window.Blue3Data._rawRows.length){
+    console.log('[Lideres] Blue3Data já populado pela casca');
+    _afterData(); return;
   }
+
+  // 2) Padrão comprovado do hunters: buscar do Supabase via blue3LoadData.
+  if(typeof blue3LoadData==='function'){
+    console.log('[Lideres] buscando dados via blue3LoadData...');
+    blue3LoadData(function(rows){
+      if(!rows || !rows.length){ console.warn('[Lideres] blue3LoadData sem dados'); _afterData(); return; }
+      window.Blue3Data = {
+        candidatos:[], financeiros:[], paybacks:[],
+        hunters:[], pipeline:[], ma:[], resumoGeral:{},
+        _rawRows: rows, _ma:[], _pipeline:[], _pipelineNeg:[]
+      };
+      if(typeof Blue3_dataLoader==='function' && Blue3_dataLoader()){
+        if(typeof Blue3_financeMetrics==='function') Blue3_financeMetrics();
+        if(typeof Blue3_payback==='function') Blue3_payback();
+        window.Blue3Ready = true;
+      }
+      _afterData();
+    });
+    return;
+  }
+
+  // 3) Fallback final: Blue3_init, se existir.
+  if(typeof Blue3_init==='function'){ Blue3_init(function(){ _afterData(); }); return; }
+
+  // 4) Último recurso: polling aguardando a casca.
+  console.warn('[Lideres] aguardando Blue3Data (polling)...');
+  var tries=0; var iv=setInterval(function(){
+    tries++;
+    if(window.Blue3Data && window.Blue3Data._rawRows && window.Blue3Data._rawRows.length){ clearInterval(iv); _afterData(); }
+    else if(tries>40){ clearInterval(iv); console.warn('[Lideres] timeout — seguindo vazio'); _afterData(); }
+  },150);
 }
 
 function _derivaLideresDosCandidatos(){
@@ -501,6 +554,20 @@ function _derivaLideresDosCandidatos(){
   _ALL.forEach(function(r){ var l=(r.lider||r['lider']||'').trim(); if(l) set[l]=true; });
   _LIDERES_ALL = Object.keys(set).sort().map(function(n){ return {nome:n,status:'Ativo',pracas:[]}; });
   _LIDERES = _LIDERES_ALL.slice();
+}
+
+// Garante que líderes presentes nos candidatos, mas ausentes do cadastro,
+// também apareçam — para nunca "sumir" candidatos da visão Todos.
+function _complementarLideresDosCandidatos(){
+  var existentes={};
+  _LIDERES_ALL.forEach(function(l){ existentes[l.nome]=true; });
+  var novos={};
+  _ALL.forEach(function(r){ var l=(r.lider||r['lider']||'').trim(); if(l && !existentes[l]) novos[l]=true; });
+  Object.keys(novos).forEach(function(n){
+    var obj={nome:n,status:'Ativo',pracas:[]};
+    _LIDERES_ALL.push(obj);
+    _LIDERES.push(obj);
+  });
 }
 
 function _popularDropdown(){
@@ -516,7 +583,8 @@ function _popularDropdown(){
       nomes.push(l.nome+' (inativo)');
     }
   });
-  sel.innerHTML = nomes.map(function(n){ return '<option value="'+esc(n.replace(' (inativo)',''))+'">'+esc(n)+'</option>'; }).join('');
+  sel.innerHTML = '<option value="__todos__">Todos os líderes</option>'
+    + nomes.map(function(n){ return '<option value="'+esc(n.replace(' (inativo)',''))+'">'+esc(n)+'</option>'; }).join('');
 }
 
 // ════════════ Render principal ════════════
@@ -524,21 +592,140 @@ function renderLider(){
   _syncPeriodoUI();
   var sel=document.getElementById('ld-lider');
   var lider = sel ? sel.value : '';
-  // Candidatos do líder (campo lider = motor) no período
-  var doLider = _ALL.filter(function(r){
-    return (r.lider||r['lider']||'').trim()===lider;
+  var ehTodos = (lider==='__todos__' || !lider);
+
+  // Candidatos do conjunto (um líder, ou todos os que têm líder), no período
+  var base = _ALL.filter(function(r){
+    var l=(r.lider||r['lider']||'').trim();
+    return ehTodos ? !!l : (l===lider);
   });
-  var noPeriodo = doLider.filter(_inPeriodo);
+  var noPeriodo = base.filter(_inPeriodo);
 
-  // Praças do líder (do cadastro)
-  var cad=_LIDERES_ALL.find(function(l){ return l.nome===lider; });
-  var pracas = cad ? (typeof cad.pracas==='string'?(function(){try{return JSON.parse(cad.pracas);}catch(e){return [];}})():(cad.pracas||[])) : [];
+  // Popular selects de filtro com base no conjunto do período (antes de filtrar)
+  _popularFiltrosLd(noPeriodo);
+
+  // Aplicar filtros (praça, senioridade, situação)
+  var cands = _aplicaFiltrosLd(noPeriodo);
+
+  var detalhe=document.getElementById('ld-detalhe');
+  var blocos=document.getElementById('ld-blocos');
+  var funilTitle=document.getElementById('ld-funil-title');
   var infoEl=document.getElementById('ld-praças-info');
-  if(infoEl) infoEl.innerHTML = pracas.length ? ('Praças: '+pracas.map(_filial).join(' · ')) : '';
 
-  _renderKPIs(noPeriodo);
-  _renderFunil(noPeriodo);
-  _renderTabela(noPeriodo);
+  // KPIs e funil no topo: refletem o conjunto JÁ filtrado
+  _renderKPIs(cands);
+  _renderFunil(cands);
+
+  if(ehTodos){
+    if(infoEl) infoEl.innerHTML = 'Visão consolidada · '+_LIDERES.length+' líderes ativos';
+    if(funilTitle) funilTitle.textContent = 'Funil consolidado — todos os líderes';
+    if(detalhe) detalhe.style.display='none';
+    if(blocos) blocos.style.display='block';
+    _renderBlocos(cands);
+  } else {
+    var cad=_LIDERES_ALL.find(function(l){ return l.nome===lider; });
+    var pracas = cad ? (typeof cad.pracas==='string'?(function(){try{return JSON.parse(cad.pracas);}catch(e){return [];}})():(cad.pracas||[])) : [];
+    if(infoEl) infoEl.innerHTML = pracas.length ? ('Praças: '+pracas.map(_filial).join(' · ')) : '';
+    if(funilTitle) funilTitle.textContent = 'Funil — etapas do processo';
+    if(detalhe) detalhe.style.display='block';
+    if(blocos){ blocos.style.display='none'; blocos.innerHTML=''; }
+    _renderTabela(cands);
+  }
+}
+
+// ── Filtros da guia de líderes ────────────────────────────────────
+function _popularFiltrosLd(cands){
+  // Praça
+  var selP=document.getElementById('ld-f-praca');
+  if(selP){
+    var cur=selP.value;
+    var pracas=[...new Set(cands.map(function(r){ return (r.p||r['Filial']||'').trim(); }).filter(Boolean))].sort();
+    selP.innerHTML='<option value="">Todas</option>'+pracas.map(function(p){ return '<option value="'+esc(p)+'"'+(p===cur?' selected':'')+'>'+esc(_filial(p))+'</option>'; }).join('');
+  }
+  // Senioridade
+  var selS=document.getElementById('ld-f-sen');
+  if(selS){
+    var curS=selS.value;
+    var sens=[...new Set(cands.map(function(r){ return (r.sen||r['Senioridade']||'').trim(); }).filter(Boolean))].sort();
+    selS.innerHTML='<option value="">Todas</option>'+sens.map(function(s){ return '<option value="'+esc(s)+'"'+(s===curS?' selected':'')+'>'+esc(s)+'</option>'; }).join('');
+  }
+}
+
+function _aplicaFiltrosLd(cands){
+  var fp=(document.getElementById('ld-f-praca')||{}).value||'';
+  var fs=(document.getElementById('ld-f-sen')||{}).value||'';
+  var fsit=(document.getElementById('ld-f-sit')||{}).value||'';
+  return cands.filter(function(r){
+    if(fp && (r.p||r['Filial']||'').trim()!==fp) return false;
+    if(fs && (r.sen||r['Senioridade']||'').trim()!==fs) return false;
+    if(fsit){
+      var st=(r.st||r['Status']||'').toString().toLowerCase();
+      var foi=(r.foiContratado===true||r['_foi_contratado']===true);
+      var cat;
+      if(st.indexOf('trabalh')>-1) cat='ativo';
+      else if(st.indexOf('contrat')>-1) cat='contratacao';
+      else if(st.indexOf('desist')>-1||st.indexOf('declin')>-1) cat='desistencia';
+      else cat='processo';
+      if(cat!==fsit) return false;
+    }
+    return true;
+  });
+}
+
+function _limparFiltrosLd(){
+  ['ld-f-praca','ld-f-sen','ld-f-sit'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  renderLider();
+}
+
+// Blocos por líder (visão "Todos"): cabeçalho + mini-totais + tabela de cada um
+function _renderBlocos(cands){
+  var cont=document.getElementById('ld-blocos');
+  if(!cont) return;
+  var grupos={};
+  cands.forEach(function(r){
+    var l=(r.lider||r['lider']||'').trim()||'—';
+    (grupos[l]=grupos[l]||[]).push(r);
+  });
+  var nomes=Object.keys(grupos).sort(function(a,b){ return a.localeCompare(b); });
+  if(!nomes.length){ cont.innerHTML='<div style="font-size:11px;color:var(--t3);padding:10px;">Nenhum candidato corresponde aos filtros.</div>'; return; }
+
+  cont.innerHTML = nomes.map(function(nome){
+    var g=grupos[nome];
+    var total=g.length;
+    var ativos=g.filter(function(r){ return (r.st||r['Status']||'').toLowerCase().indexOf('trabalh')>-1; }).length;
+    var aucMM=g.reduce(function(s,r){ var v=parseFloat(r['Total Captação (MM)']||r.cap||0)||0; return s+v; },0);
+    if(aucMM>10000) aucMM=Math.round(aucMM/1e6);
+    var comp=g.reduce(function(s,r){ return s+(parseFloat(r['Total Comp.']||r.comp||0)||0); },0);
+    var cad=_LIDERES_ALL.find(function(l){ return l.nome===nome; });
+    var pracas = cad ? (typeof cad.pracas==='string'?(function(){try{return JSON.parse(cad.pracas);}catch(e){return [];}})():(cad.pracas||[])) : [];
+    var inativo = cad && (cad.status||'Ativo')!=='Ativo';
+
+    var head = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;background:var(--ink);border-radius:var(--r12) var(--r12) 0 0;">'
+      + '<div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(140deg,var(--cobalt),var(--cobalt-br));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;">'+esc((nome||'?').charAt(0).toUpperCase())+'</div>'
+      + '<div style="flex:1;min-width:160px;">'
+      +   '<div style="font-size:14px;font-weight:700;color:#fff;">'+esc(nome)+(inativo?' <span style="font-size:9px;color:#FCA5A5;font-weight:600;">(inativo)</span>':'')+'</div>'
+      +   '<div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:1px;">'+(pracas.length?pracas.map(_filial).join(' · '):'Sem praças cadastradas')+'</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:18px;flex-wrap:wrap;">'
+      +   _miniStat('Candidatos', total)
+      +   _miniStat('Ativos', ativos)
+      +   _miniStat('AuC', fmtMM(aucMM))
+      +   _miniStat('Comp.', fmtVal(comp))
+      + '</div>'
+      + '</div>';
+
+    var tabela = '<div style="overflow-x:auto;border:1px solid var(--rule);border-top:none;border-radius:0 0 var(--r12) var(--r12);">'
+      + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+      + '<thead><tr>'+_thTabela()+'</tr></thead>'
+      + '<tbody>'+_linhasTabela(g)+'</tbody>'
+      + '</table></div>';
+
+    return '<div style="margin-bottom:22px;">'+head+tabela+'</div>';
+  }).join('');
+}
+
+function _miniStat(lbl,val){
+  return '<div style="text-align:right;"><div style="font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.5);">'+lbl+'</div><div style="font-size:15px;font-weight:700;color:#fff;">'+val+'</div></div>';
 }
 
 function _statusCand(r){
@@ -591,21 +778,19 @@ function _renderFunil(cands){
   }).join('');
 }
 
-function _renderTabela(cands){
-  var head=document.getElementById('ld-tbl-head');
-  var body=document.getElementById('ld-tbl-body');
-  var cnt=document.getElementById('ld-tbl-count');
-  if(cnt) cnt.textContent='('+cands.length+')';
-  head.innerHTML = ['Candidato','Praça','Senioridade','Situação','Comp.','Coparticip. XP','Condição']
+function _thTabela(){
+  return ['Candidato','Praça','Senioridade','Situação','Comp.','Coparticip. XP','Condição']
     .map(function(h,i){ var al=(i>=4&&i<=5)?'right':'left'; return '<th style="text-align:'+al+';padding:8px 10px;border-bottom:2px solid var(--rule);font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);">'+h+'</th>'; }).join('');
-  if(!cands.length){ body.innerHTML='<tr><td colspan="7" style="padding:14px;color:var(--t3);font-size:11px;">Sem candidatos no período para este líder.</td></tr>'; return; }
-  // Ordena: ativos primeiro, depois por comp
+}
+
+function _linhasTabela(cands){
+  if(!cands.length) return '<tr><td colspan="7" style="padding:14px;color:var(--t3);font-size:11px;">Nenhum candidato corresponde aos filtros.</td></tr>';
   var data=cands.slice().sort(function(a,b){
     var aa=(a.st||a['Status']||'').toLowerCase().indexOf('trabalh')>-1?1:0;
     var bb=(b.st||b['Status']||'').toLowerCase().indexOf('trabalh')>-1?1:0;
     return bb-aa || (parseFloat(b['Total Comp.']||b.comp||0)-parseFloat(a['Total Comp.']||a.comp||0));
   });
-  body.innerHTML = data.map(function(r){
+  return data.map(function(r){
     var sit=_statusCand(r);
     var comp=parseFloat(r['Total Comp.']||r.comp||0)||0;
     var xp=parseFloat(r['Detalhe Coparticipação']||r.xp||0)||0;
@@ -623,6 +808,15 @@ function _renderTabela(cands){
       + '<td style="padding:8px 10px;text-align:left;color:var(--t3);font-size:10px;">'+(cond?esc(cond):'—')+'</td>'
       + '</tr>';
   }).join('');
+}
+
+function _renderTabela(cands){
+  var head=document.getElementById('ld-tbl-head');
+  var body=document.getElementById('ld-tbl-body');
+  var cnt=document.getElementById('ld-tbl-count');
+  if(cnt) cnt.textContent='('+cands.length+')';
+  head.innerHTML = _thTabela();
+  body.innerHTML = _linhasTabela(cands);
 }
 
 // Init
