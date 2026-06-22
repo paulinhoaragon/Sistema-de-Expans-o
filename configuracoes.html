@@ -411,10 +411,12 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
       <div class="f-row">
         <label>Perfil de acesso *</label>
         <select id="usr-perfil">
-          <option value="viewer">Viewer — Relatórios e Simulador</option>
-          <option value="hunter">Hunter — Acesso ao próprio funil</option>
-          <option value="gerente">Gerente — Tudo exceto Admin</option>
-          <option value="master">Master — Acesso total</option>
+          <option value="viewer">Viewer — só leitura de relatórios</option>
+          <option value="lider">Líder — relatórios da sua praça, sem editar</option>
+          <option value="hunter">Hunter — operação, sem financeiro</option>
+          <option value="regional">Regional — tudo exceto M&A e config</option>
+          <option value="gerente">Gerente — tudo exceto config</option>
+          <option value="master">Master — acesso total</option>
         </select>
       </div>
     </div>
@@ -1088,12 +1090,12 @@ function carregarUsuarios() {
         tb.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--t3);">Nenhum usuário cadastrado.</td></tr>';
         return;
       }
-      var rm = { master:'Master', gerente:'Gerente', hunter:'Hunter', viewer:'Viewer' };
-      var perfilCor = { master:'#1A3BAD', gerente:'#7C3AED', hunter:'#B45309', viewer:'#475569' };
+      var rm = { master:'Master', gerente:'Gerente', regional:'Regional', hunter:'Hunter', lider:'Líder', viewer:'Viewer' };
+      var perfilCor = { master:'#1A3BAD', gerente:'#7C3AED', regional:'#0E7490', hunter:'#B45309', lider:'#BE185D', viewer:'#475569' };
       tb.innerHTML = users.map(function(u){
         var ativo = u.ativo !== false;
-        var rm = { master:'Master', gerente:'Gerente', hunter:'Hunter', viewer:'Viewer' };
-        var perfilCor = { master:'#1A3BAD', gerente:'#7C3AED', hunter:'#B45309', viewer:'#475569' };
+        var rm = { master:'Master', gerente:'Gerente', regional:'Regional', hunter:'Hunter', lider:'Líder', viewer:'Viewer' };
+        var perfilCor = { master:'#1A3BAD', gerente:'#7C3AED', regional:'#0E7490', hunter:'#B45309', lider:'#BE185D', viewer:'#475569' };
         return '<tr style="border-bottom:1px solid var(--rule);">'
           +'<td style="padding:10px;font-weight:600;">'+u.nome+'</td>'
           +'<td style="padding:10px;color:var(--t3);font-size:11px;">'+u.email+'</td>'
