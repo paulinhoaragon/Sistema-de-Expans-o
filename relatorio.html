@@ -2970,6 +2970,10 @@ function exportarPDF() {
   if (!page) { alert('Carregue os dados antes de exportar.'); return; }
 
   var win = window.open('', '_blank', 'width=900,height=1200');
+  if (!win || typeof win.document === 'undefined') {
+    alert('Não foi possível abrir a janela de impressão. Verifique se o navegador está bloqueando pop-ups para este site, permita e tente novamente.');
+    return;
+  }
   win.document.write('<!DOCTYPE html><html lang="pt-BR"><head>');
   win.document.write('<meta charset="UTF-8">');
   win.document.write('<title>' + titulo + '</title>');
@@ -3078,18 +3082,23 @@ function exportarPDF() {
   win.document.write('<scr'+'ipt>');
   win.document.write('var imgMap = ' + imgMap + ';');
   win.document.write('window.onload = function() {');
-  // Para cada canvas, inserir <img> com o dataURL logo após
-  win.document.write('  Object.keys(imgMap).forEach(function(id) {');
+  win.document.write('  var ids = Object.keys(imgMap);');
+  win.document.write('  var pendentes = ids.length;');
+  win.document.write('  var disparado = false;');
+  win.document.write('  function dispara(){ if(disparado) return; disparado = true; try{ window.focus(); }catch(e){} window.print(); }');
+  win.document.write('  if (!ids.length) { setTimeout(dispara, 400); return; }');
+  win.document.write('  ids.forEach(function(id) {');
   win.document.write('    var cv = document.getElementById(id);');
-  win.document.write('    if (!cv) return;');
+  win.document.write('    if (!cv) { pendentes--; if(pendentes<=0) setTimeout(dispara,300); return; }');
   win.document.write('    var img = document.createElement("img");');
-  win.document.write('    img.src = imgMap[id];');
   win.document.write('    img.className = "chart-img";');
   win.document.write('    img.style.maxHeight = "140px";');
   win.document.write('    img.style.objectFit = "contain";');
+  win.document.write('    img.onload = img.onerror = function(){ pendentes--; if(pendentes<=0) setTimeout(dispara,300); };');
+  win.document.write('    img.src = imgMap[id];');
   win.document.write('    cv.parentNode.insertBefore(img, cv.nextSibling);');
   win.document.write('  });');
-  win.document.write('  setTimeout(function(){ window.print(); }, 1200);');
+  win.document.write('  setTimeout(dispara, 3000);'); // fallback: dispara mesmo se algo travar
   win.document.write('};');
   win.document.write('<\/script>');
   win.document.write('</body></html>');
