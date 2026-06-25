@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nexus · Heads Regionais · Blue3</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script><script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script><script src="config.js"></script>
 <script src="config.js"></script>
 <script src="pipeline.js"></script>
 <style>
@@ -307,6 +307,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 #filter-bar select{flex:1 1 0;min-width:0;font-size:11px!important;padding:6px 8px!important;text-overflow:ellipsis;}
 #filter-bar > span:first-child{flex:0 0 auto;}
 #filter-bar > div{flex:0 0 auto;}
+
+/* ===== Impressão nativa (Exportar PDF) ===== */
+@media print {
+  @page { size: A4 portrait; margin: 10mm 8mm; }
+  body { background:#fff !important; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+  /* esconde a UI que não deve sair no PDF */
+  #filter-bar, #btn-export-pdf, #btn-clear-flt, #flt-count, #area-breakdown { display:none !important; }
+  /* aproveita a largura da página */
+  .page { max-width:100% !important; margin:0 !important; padding:6mm 0 0 !important; box-shadow:none !important; }
+  .cover { page-break-after:avoid; }
+  /* evita cortar cards/linhas no meio */
+  .card, .kc, .mc, tr, .hc { page-break-inside:avoid; }
+  /* gráficos cabem na página */
+  canvas { max-width:100% !important; height:auto !important; }
+  /* quebra de página antes da seção estratégica, se existir */
+  #sect-estrategico { page-break-before:always; }
+  /* marca d'água discreta */
+  body::after { content:"CONFIDENCIAL \00B7 BLUE3 EXPANS\00C3O"; position:fixed; bottom:5mm; right:8mm;
+    font-size:7px; font-weight:700; letter-spacing:.12em; color:rgba(0,0,0,.18); text-transform:uppercase; }
+}
 </style>
 </head>
 <body>
@@ -3444,90 +3464,16 @@ function gerarPropostaFromModal(){
 
 // ── Exportar PDF executivo ──
 function exportarPDF() {
-  var btn = document.getElementById('btn-export-pdf');
-  if (typeof html2pdf === 'undefined') {
-    alert('Biblioteca de PDF ainda carregando. Aguarde alguns segundos e tente novamente.');
-    return;
-  }
-  var page = document.querySelector('.page');
-  var cover = document.querySelector('.cover');
-  if (!page) { alert('Carregue os dados antes de exportar.'); return; }
-
-  var txtOrig = btn ? btn.innerHTML : '';
-  if (btn) { btn.innerHTML = 'Gerando PDF...'; btn.style.pointerEvents = 'none'; btn.style.opacity = '0.7'; }
-
-  // ── PASSO 1: capturar TODOS os gráficos como imagem (data URL) ──
-  // Canvas de tamanho 0 não conseguem virar imagem; tratamos isso.
-  var canvasImages = {};
-  document.querySelectorAll('canvas').forEach(function(cv) {
-    if (!cv.id) return;
-    try {
-      if (cv.width > 0 && cv.height > 0) {
-        canvasImages[cv.id] = cv.toDataURL('image/png');
-      }
-    } catch(err) {}
-  });
-
-  // ── PASSO 2: blindar o documento REAL contra canvas de tamanho 0 ──
-  // (o html2canvas clona o documento inteiro e quebra em canvas 0x0;
-  //  damos 1px de tamanho temporário e restauramos depois)
-  var restaurar = [];
-  document.querySelectorAll('canvas').forEach(function(cv){
-    if (cv.width === 0 || cv.height === 0) {
-      restaurar.push({ el: cv, w: cv.width, h: cv.height });
-      if (cv.width === 0) cv.width = 1;
-      if (cv.height === 0) cv.height = 1;
-    }
-  });
-
-  // ── PASSO 3: montar o conteúdo do PDF (capa + página), só com imagens ──
-  var wrap = document.createElement('div');
-  wrap.style.background = '#fff';
-  if (cover) wrap.appendChild(cover.cloneNode(true));
-  var pageClone = page.cloneNode(true);
-  pageClone.querySelectorAll('canvas').forEach(function(cv){
-    if (cv.id && canvasImages[cv.id]) {
-      var img = document.createElement('img');
-      img.src = canvasImages[cv.id];
-      img.style.width = '100%';
-      img.style.maxHeight = '220px';
-      img.style.objectFit = 'contain';
-      if (cv.parentNode) cv.parentNode.insertBefore(img, cv.nextSibling);
-    }
-    if (cv.parentNode) cv.parentNode.removeChild(cv);
-  });
-  ['#filter-bar','#btn-export-pdf','#btn-clear-flt','#flt-count','#area-breakdown'].forEach(function(sel){
-    var el = pageClone.querySelector(sel);
-    if (el) el.style.display = 'none';
-  });
-  wrap.appendChild(pageClone);
-  wrap.querySelectorAll('canvas').forEach(function(cv){ if (cv.parentNode) cv.parentNode.removeChild(cv); });
-
-  function _restaura(){
-    restaurar.forEach(function(r){ try { r.el.width = r.w; r.el.height = r.h; } catch(e){} });
-  }
-
-  var opt = {
-    margin:       [8, 8, 10, 8],
-    filename:     'Blue3_Heads_Regionais_1S2026.pdf',
-    image:        { type: 'jpeg', quality: 0.95 },
-    html2canvas:  {
-      scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
-      // não tenta rasterizar nenhum canvas remanescente do documento clonado
-      ignoreElements: function(el){ return el.tagName === 'CANVAS'; }
-    },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
-  };
-
-  html2pdf().set(opt).from(wrap).save().then(function(){
-    _restaura();
-    if (btn) { btn.innerHTML = txtOrig; btn.style.pointerEvents = ''; btn.style.opacity = ''; }
-  }).catch(function(e){
-    _restaura();
-    if (btn) { btn.innerHTML = txtOrig; btn.style.pointerEvents = ''; btn.style.opacity = ''; }
-    alert('Erro ao gerar PDF: ' + e);
-  });
+  // Impressão nativa do navegador: sem popup, sem bibliotecas, sem rasterizar canvas.
+  // O CSS @media print (no <style> da página) cuida de esconder a UI e formatar.
+  // O usuário escolhe "Salvar como PDF" no destino da impressão.
+  document.body.classList.add('printing');
+  function _limpa(){ document.body.classList.remove('printing'); window.removeEventListener('afterprint', _limpa); }
+  window.addEventListener('afterprint', _limpa);
+  // pequeno atraso para o navegador aplicar o CSS de impressão antes de abrir o diálogo
+  setTimeout(function(){ try { window.focus(); } catch(e){} window.print(); }, 150);
+  // rede de segurança caso afterprint não dispare
+  setTimeout(_limpa, 60000);
 }
 
 
