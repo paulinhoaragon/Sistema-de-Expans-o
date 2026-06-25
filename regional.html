@@ -309,21 +309,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 #filter-bar > div{flex:0 0 auto;}
 
 /* ===== Impressão nativa (Exportar PDF) ===== */
+.print-chart-img { display:none; }
 @media print {
   @page { size: A4 portrait; margin: 10mm 8mm; }
   body { background:#fff !important; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
-  /* esconde a UI que não deve sair no PDF */
   #filter-bar, #btn-export-pdf, #btn-clear-flt, #flt-count, #area-breakdown { display:none !important; }
-  /* aproveita a largura da página */
   .page { max-width:100% !important; margin:0 !important; padding:6mm 0 0 !important; box-shadow:none !important; }
   .cover { page-break-after:avoid; }
-  /* evita cortar cards/linhas no meio */
   .card, .kc, .mc, tr, .hc { page-break-inside:avoid; }
-  /* gráficos cabem na página */
-  canvas { max-width:100% !important; height:auto !important; }
-  /* quebra de página antes da seção estratégica, se existir */
+  canvas { display:none !important; }
+  .print-chart-img { display:block !important; max-width:100% !important; height:auto !important; }
   #sect-estrategico { page-break-before:always; }
-  /* marca d'água discreta */
   body::after { content:"CONFIDENCIAL \00B7 BLUE3 EXPANS\00C3O"; position:fixed; bottom:5mm; right:8mm;
     font-size:7px; font-weight:700; letter-spacing:.12em; color:rgba(0,0,0,.18); text-transform:uppercase; }
 }
@@ -3464,15 +3460,38 @@ function gerarPropostaFromModal(){
 
 // ── Exportar PDF executivo ──
 function exportarPDF() {
-  // Impressão nativa do navegador: sem popup, sem bibliotecas, sem rasterizar canvas.
-  // O CSS @media print (no <style> da página) cuida de esconder a UI e formatar.
-  // O usuário escolhe "Salvar como PDF" no destino da impressão.
+  // Impressão nativa. Captura gráficos como imagem (impressão não renderiza canvas),
+  // mostra a imagem durante a impressão e remove depois.
+  var page = document.querySelector('.page');
+  if (!page) { alert('Carregue os dados antes de exportar.'); return; }
+
+  var imgsTemp = [];
+  document.querySelectorAll('canvas').forEach(function(cv){
+    if (!cv.id) return;
+    if (!(cv.width > 0 && cv.height > 0)) return;
+    var data;
+    try { data = cv.toDataURL('image/png'); } catch(e){ return; }
+    var img = document.createElement('img');
+    img.className = 'print-chart-img';
+    img.src = data;
+    img.style.width = '100%';
+    img.style.height = 'auto';
+    img.style.maxHeight = (cv.offsetHeight || 240) + 'px';
+    img.style.objectFit = 'contain';
+    img.style.display = 'none';
+    if (cv.parentNode) cv.parentNode.insertBefore(img, cv.nextSibling);
+    imgsTemp.push(img);
+  });
+
   document.body.classList.add('printing');
-  function _limpa(){ document.body.classList.remove('printing'); window.removeEventListener('afterprint', _limpa); }
+  function _limpa(){
+    document.body.classList.remove('printing');
+    imgsTemp.forEach(function(img){ if (img.parentNode) img.parentNode.removeChild(img); });
+    imgsTemp = [];
+    window.removeEventListener('afterprint', _limpa);
+  }
   window.addEventListener('afterprint', _limpa);
-  // pequeno atraso para o navegador aplicar o CSS de impressão antes de abrir o diálogo
-  setTimeout(function(){ try { window.focus(); } catch(e){} window.print(); }, 150);
-  // rede de segurança caso afterprint não dispare
+  setTimeout(function(){ try { window.focus(); } catch(e){} window.print(); }, 200);
   setTimeout(_limpa, 60000);
 }
 
