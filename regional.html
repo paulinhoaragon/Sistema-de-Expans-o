@@ -3453,24 +3453,38 @@ function exportarPDF() {
   var cover = document.querySelector('.cover');
   if (!page) { alert('Carregue os dados antes de exportar.'); return; }
 
-  // Feedback visual
   var txtOrig = btn ? btn.innerHTML : '';
   if (btn) { btn.innerHTML = 'Gerando PDF...'; btn.style.pointerEvents = 'none'; btn.style.opacity = '0.7'; }
 
-  // Capturar gráficos como imagem
+  // ── PASSO 1: capturar TODOS os gráficos como imagem (data URL) ──
+  // Canvas de tamanho 0 não conseguem virar imagem; tratamos isso.
   var canvasImages = {};
   document.querySelectorAll('canvas').forEach(function(cv) {
-    if (cv.id) { try { canvasImages[cv.id] = cv.toDataURL('image/png'); } catch(err) {} }
+    if (!cv.id) return;
+    try {
+      if (cv.width > 0 && cv.height > 0) {
+        canvasImages[cv.id] = cv.toDataURL('image/png');
+      }
+    } catch(err) {}
   });
 
-  // Montar um container temporário com capa + página, fora da tela
+  // ── PASSO 2: blindar o documento REAL contra canvas de tamanho 0 ──
+  // (o html2canvas clona o documento inteiro e quebra em canvas 0x0;
+  //  damos 1px de tamanho temporário e restauramos depois)
+  var restaurar = [];
+  document.querySelectorAll('canvas').forEach(function(cv){
+    if (cv.width === 0 || cv.height === 0) {
+      restaurar.push({ el: cv, w: cv.width, h: cv.height });
+      if (cv.width === 0) cv.width = 1;
+      if (cv.height === 0) cv.height = 1;
+    }
+  });
+
+  // ── PASSO 3: montar o conteúdo do PDF (capa + página), só com imagens ──
   var wrap = document.createElement('div');
   wrap.style.background = '#fff';
-  if (cover) { var cc = cover.cloneNode(true); wrap.appendChild(cc); }
+  if (cover) wrap.appendChild(cover.cloneNode(true));
   var pageClone = page.cloneNode(true);
-
-  // Substituir cada canvas pela imagem capturada e REMOVER o canvas do clone
-  // (html2canvas quebra em canvas de tamanho 0; como já temos as imagens, removemos os canvas)
   pageClone.querySelectorAll('canvas').forEach(function(cv){
     if (cv.id && canvasImages[cv.id]) {
       var img = document.createElement('img');
@@ -3480,34 +3494,37 @@ function exportarPDF() {
       img.style.objectFit = 'contain';
       if (cv.parentNode) cv.parentNode.insertBefore(img, cv.nextSibling);
     }
-    // Remove o canvas do clone (com ou sem imagem) para não disparar o erro
     if (cv.parentNode) cv.parentNode.removeChild(cv);
   });
-  // Ocultar a barra de filtros e botões no clone
   ['#filter-bar','#btn-export-pdf','#btn-clear-flt','#flt-count','#area-breakdown'].forEach(function(sel){
     var el = pageClone.querySelector(sel);
     if (el) el.style.display = 'none';
   });
   wrap.appendChild(pageClone);
+  wrap.querySelectorAll('canvas').forEach(function(cv){ if (cv.parentNode) cv.parentNode.removeChild(cv); });
 
-  // Rede de segurança: remove do container QUALQUER canvas remanescente
-  // (incluindo os de tamanho 0), que é o que disparava o InvalidStateError.
-  wrap.querySelectorAll('canvas').forEach(function(cv){
-    if (cv.parentNode) cv.parentNode.removeChild(cv);
-  });
+  function _restaura(){
+    restaurar.forEach(function(r){ try { r.el.width = r.w; r.el.height = r.h; } catch(e){} });
+  }
 
   var opt = {
     margin:       [8, 8, 10, 8],
     filename:     'Blue3_Heads_Regionais_1S2026.pdf',
     image:        { type: 'jpeg', quality: 0.95 },
-    html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
+    html2canvas:  {
+      scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
+      // não tenta rasterizar nenhum canvas remanescente do documento clonado
+      ignoreElements: function(el){ return el.tagName === 'CANVAS'; }
+    },
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
   };
 
   html2pdf().set(opt).from(wrap).save().then(function(){
+    _restaura();
     if (btn) { btn.innerHTML = txtOrig; btn.style.pointerEvents = ''; btn.style.opacity = ''; }
   }).catch(function(e){
+    _restaura();
     if (btn) { btn.innerHTML = txtOrig; btn.style.pointerEvents = ''; btn.style.opacity = ''; }
     alert('Erro ao gerar PDF: ' + e);
   });
