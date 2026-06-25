@@ -3469,7 +3469,8 @@ function exportarPDF() {
   if (cover) { var cc = cover.cloneNode(true); wrap.appendChild(cc); }
   var pageClone = page.cloneNode(true);
 
-  // Substituir canvas por imagens no clone
+  // Substituir cada canvas pela imagem capturada e REMOVER o canvas do clone
+  // (html2canvas quebra em canvas de tamanho 0; como já temos as imagens, removemos os canvas)
   pageClone.querySelectorAll('canvas').forEach(function(cv){
     if (cv.id && canvasImages[cv.id]) {
       var img = document.createElement('img');
@@ -3477,9 +3478,10 @@ function exportarPDF() {
       img.style.width = '100%';
       img.style.maxHeight = '220px';
       img.style.objectFit = 'contain';
-      cv.parentNode.insertBefore(img, cv.nextSibling);
-      cv.style.display = 'none';
+      if (cv.parentNode) cv.parentNode.insertBefore(img, cv.nextSibling);
     }
+    // Remove o canvas do clone (com ou sem imagem) para não disparar o erro
+    if (cv.parentNode) cv.parentNode.removeChild(cv);
   });
   // Ocultar a barra de filtros e botões no clone
   ['#filter-bar','#btn-export-pdf','#btn-clear-flt','#flt-count','#area-breakdown'].forEach(function(sel){
@@ -3487,6 +3489,12 @@ function exportarPDF() {
     if (el) el.style.display = 'none';
   });
   wrap.appendChild(pageClone);
+
+  // Rede de segurança: remove do container QUALQUER canvas remanescente
+  // (incluindo os de tamanho 0), que é o que disparava o InvalidStateError.
+  wrap.querySelectorAll('canvas').forEach(function(cv){
+    if (cv.parentNode) cv.parentNode.removeChild(cv);
+  });
 
   var opt = {
     margin:       [8, 8, 10, 8],
