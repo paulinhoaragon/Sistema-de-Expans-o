@@ -309,16 +309,18 @@ function saiuDoFunil(c){
   var e=estado(c);
   return e==='contratado' || e==='ancord' || e==='trabalhando';
 }
-// filtro de período (1º sem, 2º sem, ano).
-// Contratados: pela data de contratação. Ainda no funil: pela data de entrada.
+// filtro de período (1º sem, 2º sem, ano) — recorte SEMPRE pela data de contratação,
+// que é a regra de negócio: o candidato pertence ao semestre em que foi contratado.
+// Valida também o ANO vigente, para o sistema ser perpétuo (2026, 2027, ...).
+var _ANO = (new Date()).getFullYear();   // ano de referência (atual)
 function noPeriodo(c){
+  var d=parseDate(c.data_contratacao);
+  if(!d) return false;                    // sem data de contratação não entra em recorte de período
+  if(d.getFullYear() !== _ANO) return false;  // só conta o ano vigente
   if(_per==='ano') return true;
-  var base = saiuDoFunil(c) ? c.data_contratacao : c.data_entrada;
-  var d=parseDate(base);
-  if(!d) return false;
-  var mes=d.getMonth();           // 0..11
-  if(_per==='1') return mes<=5;   // jan–jun
-  return mes>=6;                  // jul–dez
+  var mes=d.getMonth();                   // 0..11
+  if(_per==='1') return mes<=5;           // jan–jun
+  return mes>=6;                          // jul–dez
 }
 
 // ====== Boot ======
@@ -370,11 +372,14 @@ function renderTudo(){
 
 // ====== KPIs ======
 function renderKpis(){
-  var lista=_ALL.filter(naArea).filter(noPeriodo);
+  var naAreaList=_ALL.filter(naArea);
+  // Funil/pipeline: candidatos ainda não contratados — atemporais, sem recorte de período.
+  var funil=naAreaList.filter(function(c){return estado(c)==='funil';}).length;
+  // Contratados e adiante: respeitam o período (recorte pela data de contratação).
+  var lista=naAreaList.filter(noPeriodo);
   var cont=lista.filter(function(c){var e=estado(c);return e==='contratado'||e==='ancord'||e==='trabalhando';}).length;
   var anc =lista.filter(function(c){return estado(c)==='ancord';}).length;
   var trab=lista.filter(function(c){return estado(c)==='trabalhando';}).length;
-  var funil=lista.filter(function(c){return estado(c)==='funil';}).length;
   var taxa=cont>0?Math.round(trab/cont*100):0;
   var html='';
   html+='<div class="kc cont"><div class="kc-l">No pipeline</div><div class="kc-v">'+funil+'</div><div class="kc-s">candidatos ainda no funil</div></div>';
@@ -409,7 +414,7 @@ function renderFlow(){
     return '<div class="node '+cls+'"><div class="node-dot">'+cnt+'</div><div class="node-cnt">'+cnt+'</div><div class="node-lbl">'+lbl+'</div><div class="node-sub">'+sub+'</div></div>';
   }
   var h='';
-  h+=nodeHtml('node-c1', nEntrada, 'Entrada', 'no funil');
+  h+=nodeHtml('node-c1', nEntrada, 'Entrada', 'cadastro no CRM');
   h+=segHtml(t1,'','até contratar');
   h+=nodeHtml('node-c2', nCont, 'Contratação', 'aguardando MOU');
   h+=segHtml(t2,'s2','até assinar MOU');
