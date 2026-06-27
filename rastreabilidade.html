@@ -287,9 +287,11 @@ function media(arr){ var v=arr.filter(function(x){return x!==null&&x!==undefined
 function estado(c){
   var etapa=(c.etapa||'').toLowerCase();
   if(etapa.indexOf('declin')>-1 || etapa.indexOf('declj')>-1) return 'declinou';
-  if(c.data_inicio) return 'trabalhando';
-  // assinou MOU mas não começou = em ANCORD
-  if(c.data_mou || (c.mou||'').toLowerCase()==='assinado') return 'ancord';
+  // Trabalhando = etapa Trabalhando + MOU assinado + data de início (regra de negócio)
+  if(etapa==='trabalhando' && c.data_inicio && ((c.mou||'').toLowerCase()==='assinado' || c.data_mou)) return 'trabalhando';
+  // Contrato (em ANCORD) = assinou MOU mas ainda não opera
+  if((c.mou||'').toLowerCase()==='assinado' && c.data_mou) return 'ancord';
+  // Contratação = tem data de contratação (ou está na etapa), sem MOU ainda
   if(c.data_contratacao || etapa==='contratação' || etapa==='contratacao') return 'contratado';
   return 'funil';
 }
