@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus · Rastreabilidade · Blue3</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+:root{
+  --ink:#0A0F1E;--cobalt:#1A3BAD;--cobalt-br:#2952E3;--cobalt-gl:#4A70F5;
+  --gold:#B8962E;--g:#16A34A;--am:#B45309;--rose:#BE185D;--red:#DC2626;
+  --canvas:#F0F2FA;--surface:#fff;--rule:#E2E5F0;
+  --t1:#0A0F1E;--t2:#3A4268;--t3:#7A82A8;--t4:#A8B0CC;
+  --r8:8px;--r12:12px;--sh:0 1px 4px rgba(10,15,30,.07),0 4px 16px rgba(10,15,30,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:13px;min-height:100vh}
+
+/* Capa — idêntica aos demais relatórios da suíte */
+.cover{background:var(--ink);min-height:210px;position:relative;overflow:hidden;}
+.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:56px 56px;pointer-events:none;}
+.cgl{position:absolute;top:-100px;right:-60px;width:480px;height:480px;background:radial-gradient(ellipse,rgba(41,82,227,.2) 0%,transparent 65%);pointer-events:none;}
+.cgl2{position:absolute;bottom:-60px;left:220px;width:280px;height:280px;background:radial-gradient(ellipse,rgba(184,150,46,.07) 0%,transparent 65%);pointer-events:none;}
+.cover-in{position:relative;max-width:1160px;margin:0 auto;padding:32px 44px 28px;display:flex;justify-content:space-between;align-items:flex-end;gap:32px;}
+.bl{display:flex;flex-direction:column;gap:18px;}
+.cr{text-align:right;flex-shrink:0;}
+.rt{font-family:'Playfair Display',serif;font-size:31px;font-weight:600;color:#fff;line-height:1.18;}
+.rc{display:inline-block;margin-top:12px;font-size:10px;font-weight:500;color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:4px 14px;letter-spacing:.05em;}
+.cover-rule{height:1px;background:linear-gradient(90deg,transparent,rgba(74,112,245,.4),rgba(184,150,46,.25),transparent);}
+
+/* Barra de filtros */
+.fbar{background:var(--surface);border-bottom:1px solid var(--rule);padding:14px 32px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+.fbar-lbl{font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.1em;text-transform:uppercase}
+.seg{display:flex;gap:4px;background:var(--canvas);padding:4px;border-radius:10px}
+.seg button{border:none;background:transparent;color:var(--t2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:7px 14px;border-radius:7px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.seg button:hover{color:var(--cobalt)}
+.seg button.on{background:var(--cobalt);color:#fff;box-shadow:0 1px 4px rgba(26,59,173,.3)}
+.fbar-sp{flex:1}
+.btn-pdf{background:var(--cobalt);border:none;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.04em;padding:9px 16px;border-radius:var(--r8);cursor:pointer;display:flex;align-items:center;gap:7px;transition:background .15s}
+.btn-pdf:hover{background:var(--cobalt-br)}
+
+.wrap{max-width:1180px;margin:0 auto;padding:26px 32px 60px}
+
+/* Section headers */
+.sec{margin:34px 0 16px}
+.sec:first-child{margin-top:6px}
+.sec-n{font-size:10px;font-weight:700;color:var(--cobalt);letter-spacing:.14em;background:#EEF2FD;padding:3px 9px;border-radius:5px;display:inline-block}
+.sec-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:1px solid var(--rule);padding-bottom:9px;margin-top:9px;flex-wrap:wrap}
+.sec-t{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
+.sec-s{font-size:11px;color:var(--t3)}
+
+/* KPIs de topo */
+.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:8px}
+.kc{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r12);padding:16px 18px;box-shadow:var(--sh);border-top:3px solid var(--cobalt)}
+.kc.cont{border-top-color:var(--cobalt)}
+.kc.form{border-top-color:var(--gold)}
+.kc.anc{border-top-color:var(--am)}
+.kc.trab{border-top-color:var(--g)}
+.kc-l{font-size:10px;font-weight:600;color:var(--t3);letter-spacing:.08em;text-transform:uppercase}
+.kc-v{font-family:'Playfair Display',serif;font-size:30px;font-weight:600;color:var(--ink);line-height:1;margin:8px 0 4px}
+.kc-v small{font-size:14px;color:var(--t3);font-family:'DM Sans',sans-serif;font-weight:500}
+.kc-s{font-size:11px;color:var(--t2)}
+
+/* ===== ASSINATURA: a linha do tempo do funil ===== */
+.flow{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r12);box-shadow:var(--sh);padding:34px 30px 26px;margin-top:6px;overflow-x:auto}
+.flow-track{display:flex;align-items:flex-start;min-width:760px}
+.node{display:flex;flex-direction:column;align-items:center;text-align:center;flex:0 0 auto;width:130px;position:relative;z-index:2}
+.node-dot{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;border:4px solid #fff;box-shadow:0 0 0 1px var(--rule),0 4px 12px rgba(10,15,30,.12)}
+.node-c1 .node-dot{background:var(--ink)}
+.node-c2 .node-dot{background:var(--cobalt)}
+.node-c3 .node-dot{background:var(--gold)}
+.node-c4 .node-dot{background:var(--am)}
+.node-c5 .node-dot{background:var(--g)}
+.node-cnt{font-family:'Playfair Display',serif;font-size:24px;font-weight:600;color:var(--ink);margin-top:12px;line-height:1}
+.node-lbl{font-size:11px;font-weight:600;color:var(--t1);margin-top:5px}
+.node-sub{font-size:9.5px;color:var(--t3);margin-top:2px;line-height:1.3;max-width:120px}
+/* segmento entre nós: carrega o tempo médio */
+.seg-link{flex:1 1 auto;min-width:60px;display:flex;flex-direction:column;align-items:center;padding-top:26px;position:relative}
+.seg-bar{height:5px;width:100%;border-radius:3px;background:linear-gradient(90deg,var(--cobalt-gl),var(--gold))}
+.seg-bar.s2{background:linear-gradient(90deg,var(--gold),var(--am))}
+.seg-bar.s3{background:linear-gradient(90deg,var(--am),var(--g))}
+.seg-time{font-size:13px;font-weight:700;color:var(--ink);margin-top:9px;white-space:nowrap}
+.seg-time small{font-weight:500;color:var(--t3);font-size:10px}
+.seg-cap{font-size:9px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-top:2px;white-space:nowrap}
+.seg-time.slow{color:var(--red)}
+.seg-time.warn{color:var(--am)}
+
+/* Linha por candidato */
+.cand-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 14px}
+.search{flex:1;min-width:200px;max-width:340px;padding:9px 13px;border:1px solid var(--rule);border-radius:9px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--t1);background:var(--surface);outline:none}
+.search:focus{border-color:var(--cobalt)}
+.mini-seg{display:flex;gap:3px;background:var(--canvas);padding:3px;border-radius:9px}
+.mini-seg button{border:none;background:transparent;color:var(--t2);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:6px 11px;border-radius:6px;cursor:pointer}
+.mini-seg button.on{background:var(--surface);color:var(--cobalt);box-shadow:0 1px 3px rgba(10,15,30,.1)}
+
+.crow{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r12);padding:14px 18px;margin-bottom:10px;box-shadow:0 1px 3px rgba(10,15,30,.05)}
+.crow-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:13px}
+.crow-id{display:flex;align-items:center;gap:11px;min-width:0}
+.crow-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--cobalt),var(--cobalt-gl));color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.crow-nm{font-weight:600;font-size:13.5px;color:var(--ink);line-height:1.2}
+.crow-mt{font-size:10.5px;color:var(--t3);margin-top:1px}
+.crow-st{font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap}
+.st-cont{background:#EEF2FD;color:var(--cobalt)}
+.st-form{background:#FBF3DE;color:#8A6D1F}
+.st-anc{background:#FDF0E0;color:var(--am)}
+.st-trab{background:#DCFCE7;color:#15803D}
+.st-prosp{background:#F1F2F7;color:var(--t2)}
+
+/* régua individual */
+.ruler{display:flex;align-items:center;position:relative;padding:6px 0 2px}
+.r-node{display:flex;flex-direction:column;align-items:center;flex:0 0 auto;width:84px;z-index:2}
+.r-dot{width:15px;height:15px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--rule)}
+.r-dot.done{background:var(--cobalt)}
+.r-dot.done.last{background:var(--g)}
+.r-dot.todo{background:var(--rule)}
+.r-dt{font-size:9.5px;font-weight:600;color:var(--t1);margin-top:6px;white-space:nowrap}
+.r-dt.empty{color:var(--t4);font-weight:500}
+.r-cap{font-size:8.5px;color:var(--t3);letter-spacing:.04em;text-transform:uppercase;margin-top:1px;white-space:nowrap}
+.r-link{flex:1 1 auto;min-width:24px;height:3px;border-radius:2px;margin:0 -2px;margin-bottom:34px;position:relative;z-index:1}
+.r-link.done{background:var(--cobalt-gl)}
+.r-link.todo{background:var(--rule)}
+.r-gap{position:absolute;top:-2px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;color:var(--cobalt);background:var(--surface);padding:0 4px;white-space:nowrap}
+.r-gap.slow{color:var(--red)}
+
+.empty{text-align:center;padding:60px 20px;color:var(--t3)}
+.empty-ic{font-size:30px;opacity:.4;margin-bottom:8px}
+.loading{text-align:center;padding:50px;color:var(--t3);font-size:13px}
+
+.foot{text-align:center;color:var(--t4);font-size:10px;letter-spacing:.06em;margin-top:40px}
+
+/* ===== Impressão ===== */
+.print-only{display:none}
+@media print{
+  @page{size:A4 portrait;margin:10mm 8mm}
+  body{background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  .fbar,.btn-pdf,.cand-tools{display:none!important}
+  .wrap{max-width:100%!important;padding:6mm 0 0!important}
+  .flow{overflow:visible!important}
+  .crow,.kc,.flow{page-break-inside:avoid;box-shadow:none!important}
+  .sec.brk{page-break-before:always}
+  body::after{content:"CONFIDENCIAL \00B7 BLUE3 EXPANS\00C3O";position:fixed;bottom:5mm;right:8mm;font-size:7px;font-weight:700;letter-spacing:.12em;color:rgba(0,0,0,.18);text-transform:uppercase}
+}
+
+@media (max-width:720px){
+  .kgrid{grid-template-columns:repeat(2,1fr)}
+  .cover-in{padding:20px;flex-direction:column;align-items:flex-start;gap:16px}
+  .cr{text-align:left}
+  .rt{font-size:22px}
+  .wrap{padding:18px}
+}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cg"></div><div class="cgl"></div><div class="cgl2"></div>
+  <div class="cover-in">
+
+    <div class="bl">
+      <!-- Nexus + Blue3 Expansão -->
+      <div style="display:flex;align-items:center;gap:12px;">
+        <svg width="32" height="32" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+          <radialGradient id="ncg" cx="40%" cy="30%" r="70%"><stop offset="0%" stop-color="#7AA3FF"/><stop offset="100%" stop-color="#1A3BAD"/></radialGradient>
+          <line x1="30" y1="8" x2="46" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="46" y1="17" x2="46" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="46" y1="35" x2="30" y2="44" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="30" y1="44" x2="14" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="14" y1="35" x2="14" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="14" y1="17" x2="30" y2="8" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="30" y1="8" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="46" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="46" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="30" y1="44" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="14" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="14" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <circle cx="30" cy="8"  r="3" fill="#4A70F5"/>
+          <circle cx="46" cy="17" r="3" fill="#4A70F5"/>
+          <circle cx="46" cy="35" r="3" fill="#4A70F5"/>
+          <circle cx="30" cy="44" r="3" fill="#4A70F5"/>
+          <circle cx="14" cy="35" r="3" fill="#4A70F5"/>
+          <circle cx="14" cy="17" r="3" fill="#4A70F5"/>
+          <circle cx="30" cy="26" r="5.5" fill="url(#ncg)" stroke="#4A70F5" stroke-width="1.5"/>
+          <circle cx="28.5" cy="24.5" r="1.8" fill="white" fill-opacity=".45"/>
+        </svg>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:#fff;letter-spacing:.06em;font-family:'Playfair Display',serif;">NEXUS</div>
+          <div style="font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#4A70F5;margin-top:1px;">Blue3 Expansão Suite</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cr">
+      <div class="rt">Rastreabilidade<br><span id="rt-periodo">1º Semestre 2026</span></div>
+      <div class="rc">Atualizado <span id="dyn-update-date">27 jun 2026</span> · Confidencial</div>
+    </div>
+  </div>
+</div>
+<div class="cover-rule"></div>
+
+<div class="fbar">
+  <span class="fbar-lbl">Área</span>
+  <div class="seg" id="seg-area">
+    <button class="on" data-area="assessor">Assessores</button>
+    <button data-area="vem ser blue">Vem Ser Blue</button>
+    <button data-area="future">Blue3 Future</button>
+    <button data-area="planejador/consultor">Planejadores</button>
+    <button data-area="__outras">Demais áreas</button>
+  </div>
+  <span class="fbar-lbl">Período</span>
+  <div class="seg" id="seg-per">
+    <button class="on" data-per="1">1º Sem</button>
+    <button data-per="2">2º Sem</button>
+    <button data-per="ano">Ano</button>
+  </div>
+  <span class="fbar-sp"></span>
+  <button class="btn-pdf" id="btn-pdf" onclick="exportarPDF()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+    Exportar PDF
+  </button>
+</div>
+
+<div class="wrap" id="root">
+  <div class="loading" id="loading">Carregando candidatos do banco…</div>
+  <div id="content" style="display:none">
+
+    <!-- KPIs -->
+    <div class="kgrid" id="kpis"></div>
+
+    <!-- Funil agregado: a linha do tempo -->
+    <div class="sec">
+      <span class="sec-n">01 · FUNIL</span>
+      <div class="sec-row">
+        <div class="sec-t">Linha do tempo do processo</div>
+        <div class="sec-s">Tempo médio que os candidatos levam entre cada etapa</div>
+      </div>
+    </div>
+    <div class="flow"><div class="flow-track" id="flow"></div></div>
+
+    <!-- Linha por candidato -->
+    <div class="sec brk">
+      <span class="sec-n">02 · CANDIDATOS</span>
+      <div class="sec-row">
+        <div class="sec-t">Trajetória individual</div>
+        <div class="sec-s" id="cand-count"></div>
+      </div>
+    </div>
+    <div class="cand-tools">
+      <input class="search" id="search" placeholder="Buscar por nome ou praça…" oninput="renderCands()">
+      <div class="mini-seg" id="mini-st">
+        <button class="on" data-st="">Todos contratados</button>
+        <button data-st="trabalhando">Trabalhando</button>
+        <button data-st="ancord">Em ANCORD</button>
+        <button data-st="contratado">Contratado</button>
+      </div>
+    </div>
+    <div id="cands"></div>
+
+  </div>
+  <div class="foot">Blue3 Expansão · Growth &amp; Talent Division · Documento confidencial · uso interno</div>
+</div>
+
+<script>
+// ====== Estado ======
+var _ALL = [];                 // todos os candidatos do banco
+var _area = 'assessor';        // área selecionada
+var _per = '1';                // período: '1' (1º sem), '2' (2º sem), 'ano'
+var _stFilter = '';            // filtro de status na lista
+var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+
+function supa(path){
+  var h={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
+  return fetch(SUPA_URL+'/rest/v1/'+path,{headers:h});
+}
+
+// ====== Utilidades de data ======
+function parseDate(s){ if(!s) return null; var d=new Date(s); return isNaN(d.getTime())?null:d; }
+function diffDias(a,b){ var da=parseDate(a),db=parseDate(b); if(!da||!db) return null; return Math.round((db-da)/86400000); }
+function fmtDate(s){ var d=parseDate(s); if(!d) return null; return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear(); }
+function fmtDateCurta(s){ var d=parseDate(s); if(!d) return ''; var m=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']; return ('0'+d.getDate()).slice(-2)+' '+m[d.getMonth()]+' '+d.getFullYear(); }
+function fmtDias(n){ if(n===null||n===undefined) return null; if(n<0) n=0; if(n<31) return n+(n===1?' dia':' dias'); var m=Math.floor(n/30.4); var r=Math.round(n-m*30.4); return m+(m===1?' mês':' meses')+(r>3?' '+r+'d':''); }
+function media(arr){ var v=arr.filter(function(x){return x!==null&&x!==undefined;}); if(!v.length) return null; return Math.round(v.reduce(function(a,b){return a+b;},0)/v.length); }
+
+// ====== Classificação de etapa ======
+// Estado atual do candidato no processo, derivado das datas/etapa.
+function estado(c){
+  var etapa=(c.etapa||'').toLowerCase();
+  if(etapa.indexOf('declin')>-1 || etapa.indexOf('declj')>-1) return 'declinou';
+  if(c.data_inicio) return 'trabalhando';
+  // assinou MOU mas não começou = em ANCORD
+  if(c.data_mou || (c.mou||'').toLowerCase()==='assinado') return 'ancord';
+  if(c.data_contratacao || etapa==='contratação' || etapa==='contratacao') return 'contratado';
+  return 'funil';
+}
+function areaDe(c){
+  var v=(c.vaga||'').toLowerCase().trim();
+  return v;
+}
+function naArea(c){
+  var v=areaDe(c);
+  if(_area==='__outras'){
+    return v!=='assessor' && v!=='vem ser blue' && v!=='future' && v!=='planejador/consultor';
+  }
+  return v===_area;
+}
+// saiu do funil = foi efetivamente contratado em diante (tem data de contratação)
+function saiuDoFunil(c){
+  var e=estado(c);
+  return e==='contratado' || e==='ancord' || e==='trabalhando';
+}
+// filtro de período (1º sem, 2º sem, ano).
+// Contratados: pela data de contratação. Ainda no funil: pela data de entrada.
+function noPeriodo(c){
+  if(_per==='ano') return true;
+  var base = saiuDoFunil(c) ? c.data_contratacao : c.data_entrada;
+  var d=parseDate(base);
+  if(!d) return false;
+  var mes=d.getMonth();           // 0..11
+  if(_per==='1') return mes<=5;   // jan–jun
+  return mes>=6;                  // jul–dez
+}
+
+// ====== Boot ======
+function boot(){
+  supa('crm_candidatos?order=criado_em.desc&limit=1000')
+    .then(function(r){ return r.json(); })
+    .then(function(rows){
+      _ALL = Array.isArray(rows)?rows:[];
+      document.getElementById('loading').style.display='none';
+      document.getElementById('content').style.display='block';
+      bindFiltros();
+      renderTudo();
+    })
+    .catch(function(){
+      document.getElementById('loading').innerHTML='<div class="empty"><div class="empty-ic">⚠️</div>Não foi possível carregar os candidatos. Recarregue a página.</div>';
+    });
+}
+
+function bindFiltros(){
+  document.querySelectorAll('#seg-area button').forEach(function(b){
+    b.onclick=function(){
+      document.querySelectorAll('#seg-area button').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on'); _area=b.getAttribute('data-area'); renderTudo();
+    };
+  });
+  document.querySelectorAll('#seg-per button').forEach(function(b){
+    b.onclick=function(){
+      document.querySelectorAll('#seg-per button').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on'); _per=b.getAttribute('data-per'); renderTudo();
+    };
+  });
+  document.querySelectorAll('#mini-st button').forEach(function(b){
+    b.onclick=function(){
+      document.querySelectorAll('#mini-st button').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on'); _stFilter=b.getAttribute('data-st'); renderCands();
+    };
+  });
+}
+
+function renderTudo(){
+  renderKpis();
+  renderFlow();
+  renderCands();
+  var nomePer=document.querySelector('#seg-per button.on').textContent;
+  var perTxt=(_per==='ano'?'Ano 2026':(_per==='1'?'1º Semestre 2026':'2º Semestre 2026'));
+  var elP=document.getElementById('rt-periodo'); if(elP) elP.textContent=perTxt;
+  var elD=document.getElementById('dyn-update-date'); if(elD) elD.textContent=fmtDateCurta(new Date().toISOString());
+}
+
+// ====== KPIs ======
+function renderKpis(){
+  var lista=_ALL.filter(naArea).filter(noPeriodo);
+  var cont=lista.filter(function(c){var e=estado(c);return e==='contratado'||e==='ancord'||e==='trabalhando';}).length;
+  var anc =lista.filter(function(c){return estado(c)==='ancord';}).length;
+  var trab=lista.filter(function(c){return estado(c)==='trabalhando';}).length;
+  var funil=lista.filter(function(c){return estado(c)==='funil';}).length;
+  var taxa=cont>0?Math.round(trab/cont*100):0;
+  var html='';
+  html+='<div class="kc cont"><div class="kc-l">No pipeline</div><div class="kc-v">'+funil+'</div><div class="kc-s">candidatos ainda no funil</div></div>';
+  html+='<div class="kc form"><div class="kc-l">Contratados</div><div class="kc-v">'+cont+'</div><div class="kc-s">do aceite em diante</div></div>';
+  html+='<div class="kc anc"><div class="kc-l">Em ANCORD</div><div class="kc-v">'+anc+'</div><div class="kc-s">assinaram, ainda não operam</div></div>';
+  html+='<div class="kc trab"><div class="kc-l">Trabalhando</div><div class="kc-v">'+trab+' <small>'+taxa+'%</small></div><div class="kc-s">já tombando base</div></div>';
+  document.getElementById('kpis').innerHTML=html;
+}
+
+// ====== Funil agregado (linha do tempo) ======
+function renderFlow(){
+  var lista=_ALL.filter(naArea).filter(noPeriodo);
+  // contagens por "passou por" cada etapa
+  var nEntrada=lista.length;
+  var nCont=lista.filter(function(c){return c.data_contratacao||['contratado','ancord','trabalhando'].indexOf(estado(c))>-1;}).length;
+  var nMou =lista.filter(function(c){return c.data_mou||(c.mou||'').toLowerCase()==='assinado'||estado(c)==='trabalhando';}).length;
+  var nTrab=lista.filter(function(c){return c.data_inicio;}).length;
+
+  // tempos médios entre marcos (só de quem tem as duas datas)
+  var t1=media(lista.map(function(c){return diffDias(c.data_entrada,c.data_contratacao);}));
+  var t2=media(lista.map(function(c){return diffDias(c.data_contratacao,c.data_mou);}));
+  var t3=media(lista.map(function(c){return diffDias(c.data_mou,c.data_inicio);}));
+
+  function segHtml(t,cls,cap){
+    var cl=cls; var txt;
+    if(t===null){ txt='<span class="seg-time"><small>sem dados</small></span>'; }
+    else { var sev=(t>60?' slow':(t>30?' warn':'')); txt='<span class="seg-time'+sev+'">'+fmtDias(t)+'</span>'; }
+    return '<div class="seg-link"><div class="seg-bar '+cl+'"></div>'+txt+'<div class="seg-cap">'+cap+'</div></div>';
+  }
+  function nodeHtml(cls,cnt,lbl,sub){
+    return '<div class="node '+cls+'"><div class="node-dot">'+cnt+'</div><div class="node-cnt">'+cnt+'</div><div class="node-lbl">'+lbl+'</div><div class="node-sub">'+sub+'</div></div>';
+  }
+  var h='';
+  h+=nodeHtml('node-c1', nEntrada, 'Entrada', 'entraram no funil');
+  h+=segHtml(t1,'','funil → contrato');
+  h+=nodeHtml('node-c2', nCont, 'Contratação', 'aceite registrado');
+  h+=segHtml(t2,'s2','até assinar MOU');
+  h+=nodeHtml('node-c3', nMou, 'Contrato', 'MOU assinado');
+  h+=segHtml(t3,'s3','certificação ANCORD');
+  h+=nodeHtml('node-c5', nTrab, 'Trabalhando', 'em operação');
+  document.getElementById('flow').innerHTML=h;
+}
+
+// ====== Lista por candidato ======
+function iniciais(nome){ var p=(nome||'?').trim().split(/\s+/); return ((p[0]||'')[0]||'')+((p[1]||'')[0]||''); }
+function stBadge(e){
+  if(e==='trabalhando') return '<span class="crow-st st-trab">Trabalhando</span>';
+  if(e==='ancord')      return '<span class="crow-st st-anc">Em ANCORD</span>';
+  if(e==='contratado')  return '<span class="crow-st st-cont">Contratado</span>';
+  if(e==='declinou')    return '<span class="crow-st st-prosp">Declinou</span>';
+  return '<span class="crow-st st-prosp">No funil</span>';
+}
+function passaFiltroSt(e){
+  if(!_stFilter) return true;   // "Todos contratados" — a lista já só traz quem saiu do funil
+  return e===_stFilter;
+}
+
+function rulerHtml(c){
+  var marcos=[
+    {dt:c.data_entrada, cap:'Entrada'},
+    {dt:c.data_contratacao, cap:'Contratação'},
+    {dt:c.data_mou, cap:'Contrato'},
+    {dt:c.data_inicio, cap:'Trabalhando'}
+  ];
+  var h='';
+  for(var i=0;i<marcos.length;i++){
+    var m=marcos[i], done=!!parseDate(m.dt);
+    var last=(i===marcos.length-1);
+    var dotCls='r-dot '+(done?'done':'todo')+(last&&done?' last':'');
+    var dtTxt = done?fmtDate(m.dt):'—';
+    h+='<div class="r-node"><div class="'+dotCls+'"></div><div class="r-dt'+(done?'':' empty')+'">'+dtTxt+'</div><div class="r-cap">'+m.cap+'</div></div>';
+    if(i<marcos.length-1){
+      var nx=marcos[i+1];
+      var gap=diffDias(m.dt,nx.dt);
+      var linkDone=!!(parseDate(m.dt)&&parseDate(nx.dt));
+      var gapTxt = gap!==null?('<span class="r-gap'+(gap>60?' slow':'')+'">'+fmtDias(gap)+'</span>'):'';
+      h+='<div class="r-link '+(linkDone?'done':'todo')+'">'+gapTxt+'</div>';
+    }
+  }
+  return '<div class="ruler">'+h+'</div>';
+}
+
+function renderCands(){
+  var q=(document.getElementById('search').value||'').toLowerCase().trim();
+  var lista=_ALL.filter(naArea).filter(noPeriodo).filter(function(c){
+    // seção 02: somente candidatos que saíram do funil (contratação em diante)
+    if(!saiuDoFunil(c)) return false;
+    var e=estado(c);
+    if(!passaFiltroSt(e)) return false;
+    if(q){ var hay=((c.nome||'')+' '+(c.praca||'')).toLowerCase(); if(hay.indexOf(q)<0) return false; }
+    return true;
+  });
+  // ordena: trabalhando, ancord, contratado — e por data de contratação recente
+  var ordem={trabalhando:0,ancord:1,contratado:2};
+  lista.sort(function(a,b){
+    var ea=ordem[estado(a)], eb=ordem[estado(b)];
+    if(ea!==eb) return ea-eb;
+    return (parseDate(b.data_contratacao)||0)-(parseDate(a.data_contratacao)||0);
+  });
+
+  document.getElementById('cand-count').textContent=lista.length+(lista.length===1?' candidato':' candidatos');
+  if(!lista.length){
+    document.getElementById('cands').innerHTML='<div class="empty"><div class="empty-ic">○</div>Nenhum candidato nessa combinação de filtros.</div>';
+    return;
+  }
+  var h='';
+  lista.forEach(function(c){
+    var e=estado(c);
+    var praca=(c.praca||'—');
+    var hunter=c.hunter?(' · '+c.hunter):'';
+    h+='<div class="crow">';
+    h+=  '<div class="crow-head"><div class="crow-id"><div class="crow-av">'+esc(iniciais(c.nome).toUpperCase())+'</div>';
+    h+=    '<div><div class="crow-nm">'+esc(c.nome||'(sem nome)')+'</div><div class="crow-mt">'+esc(praca)+esc(hunter)+'</div></div></div>';
+    h+=    stBadge(e)+'</div>';
+    h+=  rulerHtml(c);
+    h+='</div>';
+  });
+  document.getElementById('cands').innerHTML=h;
+}
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m];}); }
+
+// ====== Exportar PDF (impressão nativa) ======
+function exportarPDF(){
+  document.body.classList.add('printing');
+  function _limpa(){ document.body.classList.remove('printing'); window.removeEventListener('afterprint',_limpa); }
+  window.addEventListener('afterprint',_limpa);
+  setTimeout(function(){ try{window.focus();}catch(e){} window.print(); },180);
+  setTimeout(_limpa,60000);
+}
+
+// se a casca já injetou os dados, aproveita; senão busca
+boot();
+</script>
+</body>
+</html>
