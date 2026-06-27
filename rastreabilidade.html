@@ -275,7 +275,16 @@ function supa(path){
 }
 
 // ====== Utilidades de data ======
-function parseDate(s){ if(!s) return null; var d=new Date(s); return isNaN(d.getTime())?null:d; }
+function parseDate(s){
+  if(!s) return null;
+  // Datas no formato YYYY-MM-DD devem ser interpretadas como LOCAIS, não UTC,
+  // senão em fusos negativos (ex: Brasil UTC-3) "2026-01-01" vira 31/12/2025.
+  if(typeof s==='string'){
+    var m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m){ return new Date(parseInt(m[1],10), parseInt(m[2],10)-1, parseInt(m[3],10)); }
+  }
+  var d=new Date(s); return isNaN(d.getTime())?null:d;
+}
 function diffDias(a,b){ var da=parseDate(a),db=parseDate(b); if(!da||!db) return null; return Math.round((db-da)/86400000); }
 function fmtDate(s){ var d=parseDate(s); if(!d) return null; return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear(); }
 function fmtDateCurta(s){ var d=parseDate(s); if(!d) return ''; var m=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']; return ('0'+d.getDate()).slice(-2)+' '+m[d.getMonth()]+' '+d.getFullYear(); }
@@ -285,14 +294,16 @@ function media(arr){ var v=arr.filter(function(x){return x!==null&&x!==undefined
 // ====== Classificação de etapa ======
 // Estado atual do candidato no processo, derivado das datas/etapa.
 function estado(c){
-  var etapa=(c.etapa||'').toLowerCase();
+  var etapa=(c.etapa||'').toLowerCase().trim();
+  var mou=(c.mou||'').toLowerCase().trim();
+  var temMou = (mou==='assinado') || !!c.data_mou;
   if(etapa.indexOf('declin')>-1 || etapa.indexOf('declj')>-1) return 'declinou';
-  // Trabalhando = etapa Trabalhando + MOU assinado + data de início (regra de negócio)
-  if(etapa==='trabalhando' && c.data_inicio && ((c.mou||'').toLowerCase()==='assinado' || c.data_mou)) return 'trabalhando';
+  // Trabalhando = etapa Trabalhando + data de início + MOU (tolerante a variações de escrita)
+  if(etapa.indexOf('trabalh')>-1 && c.data_inicio && temMou) return 'trabalhando';
   // Contrato (em ANCORD) = assinou MOU mas ainda não opera
-  if((c.mou||'').toLowerCase()==='assinado' && c.data_mou) return 'ancord';
+  if(mou==='assinado' && c.data_mou) return 'ancord';
   // Contratação = tem data de contratação (ou está na etapa), sem MOU ainda
-  if(c.data_contratacao || etapa==='contratação' || etapa==='contratacao') return 'contratado';
+  if(c.data_contratacao || etapa.indexOf('contrat')>-1) return 'contratado';
   return 'funil';
 }
 function areaDe(c){
