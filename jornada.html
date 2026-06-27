@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexus · Rastreabilidade · Blue3</title>
+<title>Nexus · Jornada de Contratação · Blue3</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="config.js"></script>
 <style>
@@ -191,7 +191,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     </div>
 
     <div class="cr">
-      <div class="rt">Rastreabilidade<br><span id="rt-periodo">1º Semestre 2026</span></div>
+      <div class="rt" style="font-size:26px;">Jornada de Contratação<br><span id="rt-periodo" style="font-size:20px;opacity:.85;">1º Semestre 2026</span></div>
       <div class="rc">Atualizado <span id="dyn-update-date">27 jun 2026</span> · Confidencial · v2.1</div>
     </div>
   </div>
@@ -404,10 +404,10 @@ function renderKpis(){
 
 // ====== Funil agregado (linha do tempo) ======
 function renderFlow(){
-  var lista=_ALL.filter(naArea).filter(noPeriodo);
-  // Cada candidato está em UM estado atual. Os nós contam quem está em cada etapa
-  // agora — exatamente como as colunas do CRM. Cada pessoa aparece em um nó só.
-  var nEntrada=lista.length;                                                    // total no recorte
+  // Líquido: exclui declinados, para o nó Entrada bater com o KPI "Contratados".
+  var lista=_ALL.filter(naArea).filter(noPeriodo).filter(function(c){return estado(c)!=='declinou';});
+  // Cada candidato está em UM estado atual. Cada pessoa aparece em um nó só.
+  var nEntrada=lista.length;                                                    // contratados líquidos no recorte
   var nCont=lista.filter(function(c){return estado(c)==='contratado';}).length; // contratado, sem MOU
   var nMou =lista.filter(function(c){return estado(c)==='ancord';}).length;     // assinou MOU, não opera
   var nTrab=lista.filter(function(c){return estado(c)==='trabalhando';}).length;// já operando
