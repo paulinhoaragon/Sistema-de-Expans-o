@@ -387,13 +387,14 @@ function renderKpis(){
 // ====== Funil agregado (linha do tempo) ======
 function renderFlow(){
   var lista=_ALL.filter(naArea).filter(noPeriodo);
-  // contagens por "passou por" cada etapa
-  var nEntrada=lista.length;
-  var nCont=lista.filter(function(c){return c.data_contratacao||['contratado','ancord','trabalhando'].indexOf(estado(c))>-1;}).length;
-  var nMou =lista.filter(function(c){return c.data_mou||(c.mou||'').toLowerCase()==='assinado'||estado(c)==='trabalhando';}).length;
-  var nTrab=lista.filter(function(c){return c.data_inicio;}).length;
+  // Cada candidato está em UM estado atual. Os nós contam quem está em cada etapa
+  // agora — exatamente como as colunas do CRM. Cada pessoa aparece em um nó só.
+  var nEntrada=lista.length;                                                    // total no recorte
+  var nCont=lista.filter(function(c){return estado(c)==='contratado';}).length; // contratado, sem MOU
+  var nMou =lista.filter(function(c){return estado(c)==='ancord';}).length;     // assinou MOU, não opera
+  var nTrab=lista.filter(function(c){return estado(c)==='trabalhando';}).length;// já operando
 
-  // tempos médios entre marcos (só de quem tem as duas datas)
+  // tempos médios entre marcos (só de quem tem as duas datas do trecho)
   var t1=media(lista.map(function(c){return diffDias(c.data_entrada,c.data_contratacao);}));
   var t2=media(lista.map(function(c){return diffDias(c.data_contratacao,c.data_mou);}));
   var t3=media(lista.map(function(c){return diffDias(c.data_mou,c.data_inicio);}));
@@ -408,12 +409,12 @@ function renderFlow(){
     return '<div class="node '+cls+'"><div class="node-dot">'+cnt+'</div><div class="node-cnt">'+cnt+'</div><div class="node-lbl">'+lbl+'</div><div class="node-sub">'+sub+'</div></div>';
   }
   var h='';
-  h+=nodeHtml('node-c1', nEntrada, 'Entrada', 'entraram no funil');
-  h+=segHtml(t1,'','funil → contrato');
-  h+=nodeHtml('node-c2', nCont, 'Contratação', 'aceite registrado');
+  h+=nodeHtml('node-c1', nEntrada, 'Entrada', 'no funil');
+  h+=segHtml(t1,'','até contratar');
+  h+=nodeHtml('node-c2', nCont, 'Contratação', 'aguardando MOU');
   h+=segHtml(t2,'s2','até assinar MOU');
-  h+=nodeHtml('node-c3', nMou, 'Contrato', 'MOU assinado');
-  h+=segHtml(t3,'s3','certificação ANCORD');
+  h+=nodeHtml('node-c3', nMou, 'Contrato', 'em certificação');
+  h+=segHtml(t3,'s3','até começar');
   h+=nodeHtml('node-c5', nTrab, 'Trabalhando', 'em operação');
   document.getElementById('flow').innerHTML=h;
 }
