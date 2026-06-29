@@ -219,12 +219,10 @@ function _processCrmRows(rows, pbByIdMap, pbByNomeMap, callback){
       var _statusFinal = etapaToStatus(r.etapa);
       // _foi_contratado = TRUE se data_contratacao foi gravada no banco
       var _foiContratado = !!(r.data_contratacao);
-      // Data de referência:
-      // Desistentes SEM data_contratacao = precoces → sem data → não aparecem nos cards mensais
-      // Todos os outros: data_contratacao ou data_entrada como fallback
-      var _dataContrat = (_statusFinal === 'Desistência' && !_foiContratado)
-        ? null
-        : (r.data_contratacao || r.data_entrada);
+      // Data de referência = SOMENTE a data de contratação real.
+      // Se não houver data_contratacao, fica null (não usa data_entrada como
+      // fallback, senão a coluna "Contrat." mostraria a entrada disfarçada).
+      var _dataContrat = r.data_contratacao || null;
       o['Data de Contratação']   = _dataContrat
         ? _dataContrat.split('-').reverse().join('/')
         : '';
