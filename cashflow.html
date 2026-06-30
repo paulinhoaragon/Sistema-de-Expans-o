@@ -90,12 +90,12 @@ tfoot td:first-child{text-align:left}
 #tb2-table tbody td { padding: 4px 4px; font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #tb2-table tfoot td { padding: 5px 4px; font-size: 9px; }
 /* Colunas de flag: largura mínima */
-#tb2-table thead th:nth-child(12),
-#tb2-table thead th:nth-child(13),
-#tb2-table thead th:nth-child(14) { min-width: 0; width: 40px; text-align: center; }
-#tb2-table tbody td:nth-child(12),
-#tb2-table tbody td:nth-child(13),
-#tb2-table tbody td:nth-child(14) { width: 40px; padding: 4px 2px; text-align: center; }
+#tb2-table thead th:nth-child(14),
+#tb2-table thead th:nth-child(15),
+#tb2-table thead th:nth-child(16) { min-width: 0; width: 40px; text-align: center; }
+#tb2-table tbody td:nth-child(14),
+#tb2-table tbody td:nth-child(15),
+#tb2-table tbody td:nth-child(16) { width: 40px; padding: 4px 2px; text-align: center; }
 /* Coluna nome: não truncar demais */
 #tb2-table tbody td:first-child { max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
 /* Hover nos th ordenáveis */
@@ -194,6 +194,8 @@ tfoot td:first-child{text-align:left}
         <tr id="tb2-head">
           <th style="text-align:left;cursor:pointer;user-select:none" onclick="sortTable('n')" title="Ordenar por nome">Assessor <span id="si-n"></span></th>
           <th style="text-align:left;cursor:pointer;user-select:none" onclick="sortTable('p')" title="Ordenar por filial">Filial <span id="si-p"></span></th>
+          <th style="text-align:left;cursor:pointer;user-select:none" onclick="sortTable('org')" title="Ordenar por instituição de origem">Instituição<br>de origem <span id="si-org"></span></th>
+          <th style="cursor:pointer;user-select:none" onclick="sortTable('aucCust')" title="Ordenar por AuC custódia">AuC Custódia<br>(MM) <span id="si-aucCust"></span></th>
           <th style="text-align:left;cursor:pointer;user-select:none" onclick="sortTable('sen')" title="Ordenar por senioridade">Senioridade <span id="si-sen"></span></th>
           <th style="text-align:left">Situação</th>
           <th style="text-align:left;cursor:pointer;user-select:none" onclick="sortTable('inicio')" title="Ordenar por início">Início <span id="si-inicio"></span></th>
@@ -453,7 +455,7 @@ function _sortData(data, key, asc) {
       vb = _parseDate(b.inicio) || new Date(0);
       return asc ? va - vb : vb - va;
     }
-    if (key === 'n' || key === 'p' || key === 'sen') {
+    if (key === 'n' || key === 'p' || key === 'sen' || key === 'org') {
       va = (a[key]||'').toLowerCase();
       vb = (b[key]||'').toLowerCase();
       return asc ? va.localeCompare(vb) : vb.localeCompare(va);
@@ -479,7 +481,7 @@ function _sortData(data, key, asc) {
 }
 
 function _updateSortIcons(key, asc) {
-  var cols = ['n','p','sen','inicio','pisoTotal','custoTotal','xp','estrategico','area'];
+  var cols = ['n','p','org','aucCust','sen','inicio','pisoTotal','custoTotal','xp','estrategico','area'];
   cols.forEach(function(c) {
     var el = document.getElementById('si-'+c);
     if (el) el.textContent = '';
@@ -495,10 +497,10 @@ function _csvBuild() {
     var t = String(v == null ? '' : v).replace(/"/g, '""');
     return (t.indexOf(',') > -1 || t.indexOf(';') > -1 || t.indexOf('"') > -1) ? '"' + t + '"' : t;
   };
-  var hdr = ['Assessor','Filial','Senioridade','Situacao','Inicio','Piso Mes (R$)','Periodo','Piso Total (R$)','Sign-in (R$)','Triggers (R$)','Total (R$)','Coparticipacao XP','Estrategico','Area'];
+  var hdr = ['Assessor','Filial','Instituicao de Origem','AuC Custodia (MM)','Senioridade','Situacao','Inicio','Piso Mes (R$)','Periodo','Piso Total (R$)','Sign-in (R$)','Triggers (R$)','Total (R$)','Coparticipacao XP','Estrategico','Area'];
   var _base = _aplicaFiltros(_tbData);
   var rows = _base.map(function(a){
-    return [a.n||'',a.p||'',a.sen||'',(a.ativo?'Ativo':(a.assinadoSemInicio?'Assinado, sem inicio':'A confirmar')),_fmtDataBR(a.inicio),
+    return [a.n||'',a.p||'',a.org||'',fmtNum(a.aucCust),a.sen||'',(a.ativo?'Ativo':(a.assinadoSemInicio?'Assinado, sem inicio':'A confirmar')),_fmtDataBR(a.inicio),
       fmtNum(a.piso),fmtPer(a.periodo),fmtNum(a.pisoTotal),fmtNum(a.si),fmtNum(a.trigTotal),
       fmtNum(a.custoTotal),(a.xp&&a.xp>0)?'Sim':'Nao',
       (a.estrategico||'').toLowerCase()==='sim'?'Sim':'Nao',a.area||'Assessor'
@@ -508,7 +510,7 @@ function _csvBuild() {
   var ts=_tbData.reduce(function(s,a){return s+(a.si||0);},0);
   var tt=_tbData.reduce(function(s,a){return s+(a.trigTotal||0);},0);
   var tg=_tbData.reduce(function(s,a){return s+(a.custoTotal||0);},0);
-  var totRow=['TOTAL GERAL','','','','','','',fmtNum(tp),fmtNum(ts),fmtNum(tt),fmtNum(tg),'','',''].join(';');
+  var totRow=['TOTAL GERAL','','','','','','','','',fmtNum(tp),fmtNum(ts),fmtNum(tt),fmtNum(tg),'','',''].join(';');
   return '\uFEFF' + hdr.join(';') + '\n' + rows.join('\n') + '\n' + totRow;
 }
 
@@ -717,6 +719,8 @@ function _renderTb2(sorted) {
       ? '<span title="'+_areaVal+'" style="color:#B45309;font-size:15px;font-weight:700;">✓</span>'
       : '<span style="color:#CBD5E1;font-size:12px;">—</span>';
     return '<tr><td>'+a.n+'</td><td style="color:var(--t3)">'+(a.p||'').replace(/^Blue3\s*[-–]\s*/i,'')+'</td>'
+      +'<td style="text-align:left;color:var(--t3)" title="'+(a.org||'')+'">'+(a.org||'—')+'</td>'
+      +'<td>'+(a.aucCust ? Number(a.aucCust).toLocaleString('pt-BR') : '—')+'</td>'
       +'<td style="font-size:10px;">'+(a.sen||'—')+'</td><td>'+badge+'</td>'
       +'<td>'+inicio+'</td><td>'+fmt(a.piso)+'</td><td>'+fmtPer(a.periodo)+'</td>'
       +'<td>'+fmt(a.pisoTotal)+'</td><td>'+fmt(a.si)+'</td><td>'+fmt(a.trigTotal)+'</td>'
@@ -725,7 +729,7 @@ function _renderTb2(sorted) {
       +'<td style="text-align:center">'+_estCheck+'</td>'
       +'<td style="text-align:center">'+_areaCheck+'</td></tr>';
   }).join('');
-  document.getElementById('tf2').innerHTML = '<tr><td>TOTAL GERAL</td><td></td><td></td><td></td><td></td><td></td><td></td>'
+  document.getElementById('tf2').innerHTML = '<tr><td>TOTAL GERAL</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'
     +'<td>'+fmt(tp)+'</td><td>'+fmt(ts)+'</td><td>'+fmt(tt)+'</td><td>'+fmt(ta)+'</td>'
     +'<td></td><td></td><td></td></tr>';
 }
