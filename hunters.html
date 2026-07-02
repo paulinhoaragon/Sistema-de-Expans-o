@@ -100,16 +100,7 @@ tbody td:first-child{text-align:left;font-weight:600;color:var(--t1)}
 <div class="page">
   <div id="view-ov">
     <div class="sh"><div class="st">Performance de Hunters</div><div class="ss" id="hunters-subtitle">Clique em um hunter para detalhes</div></div>
-    <div id="periodo-bar" style="display:flex;align-items:center;gap:8px;margin:2px 0 16px;flex-wrap:wrap;">
-      <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);">Período:</span>
-      <button class="per-pill on" data-per="2" onclick="setPeriodo(2,this)">2º semestre</button>
-      <button class="per-pill" data-per="1" onclick="setPeriodo(1,this)">1º semestre</button>
-      <button class="per-pill" data-per="0" onclick="setPeriodo(0,this)">Anual</button>
-      <select id="periodo-ano" onchange="setAno(this.value)" style="margin-left:4px;font-size:11px;padding:5px 8px;border-radius:8px;border:1px solid var(--rule);background:#fff;color:var(--t1);cursor:pointer;">
-        <option value="2026">2026</option>
-        <option value="2027">2027</option>
-      </select>
-    </div>
+    <div id="periodo-bar-ov"></div>
     <div id="hgrid"></div>
     <div class="sh" style="margin-top:8px;"><div class="st">Rankings</div></div>
     <div class="rank-box"><div class="rank-title">AuC Alvo Total</div><div id="r-auc"></div></div>
@@ -583,6 +574,7 @@ var H = [];
 // ── Período + metas por canal ────────────────────────────────────
 var HUNTER_METAS_CANAL = {};              // nomeKey -> { ano: { sem: { canal: meta } } }
 var _periodo = { ano: 2026, semestre: 2 }; // semestre 0 = Anual
+var _currentDet = null; // hunter aberto na visão de detalhe (null = overview)
 var _CANAIS_FB = ['Assessoria de Investimentos','Vem ser Blue','Blue3 Future','Planejador/Consultor','Vagas Comerciais','M&A'];
 var _VAGA_CANAL_FB = {
   'Assessor':'Assessoria de Investimentos','Vem ser Blue':'Vem ser Blue','Future':'Blue3 Future',
@@ -619,13 +611,7 @@ function _emPeriodoISO(iso){
 function _periodoLabel(){
   return _periodo.semestre ? (_periodo.semestre+'S'+_periodo.ano) : ('Anual '+_periodo.ano);
 }
-function setPeriodo(sem, btn){
-  _periodo.semestre = sem;
-  var pills=document.querySelectorAll('#periodo-bar .per-pill');
-  for(var i=0;i<pills.length;i++) pills[i].classList.remove('on');
-  if(btn) btn.classList.add('on');
-  _repaintPeriodo();
-}
+function setPeriodo(sem, btn){ _periodo.semestre = sem; _repaintPeriodo(); }
 function setAno(ano){ _periodo.ano=parseInt(ano,10)||2026; _repaintPeriodo(); }
 function _repaintPeriodo(){
   var sub=document.getElementById('hunters-subtitle');
@@ -633,8 +619,45 @@ function _repaintPeriodo(){
   if(window.Blue3Data && window.Blue3Data.candidatos){
     _recomputeHunters();
     H=buildH(window.Blue3Data.hunters, window.Blue3Data.candidatos);
-    renderOv();
+    if(_currentDet) showDet(_currentDet); else renderOv();
   }
+}
+// Barra de período reutilizável (overview e detalhe), com o pill ativo correto
+function _periodoBarHTML(){
+  var s=_periodo.semestre;
+  function pill(v,l){ return '<button class="per-pill'+(s===v?' on':'')+'" onclick="setPeriodo('+v+',this)">'+l+'</button>'; }
+  return '<div style="display:flex;align-items:center;gap:8px;margin:2px 0 16px;flex-wrap:wrap;">'
+    +'<span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);">Período:</span>'
+    +pill(1,'1º semestre')+pill(2,'2º semestre')+pill(0,'Anual')
+    +'<select onchange="setAno(this.value)" style="margin-left:4px;font-size:11px;padding:5px 8px;border-radius:8px;border:1px solid var(--rule);background:#fff;color:var(--t1);cursor:pointer;">'
+    +'<option value="2026"'+(_periodo.ano===2026?' selected':'')+'>2026</option>'
+    +'<option value="2027"'+(_periodo.ano===2027?' selected':'')+'>2027</option>'
+    +'</select></div>';
+}
+// Bloco "Objetivos por canal" + linha geral de 100% (reutilizável)
+function _breakdownHTML(hun){
+  var rows=(hun.porCanal||[]).map(function(cc){
+    var pcc=cc.meta>0?Math.round(cc.feitas/cc.meta*100):(cc.feitas>0?100:0);
+    var cor=cc.meta===0?'#94A3B8':(pcc>=100?'#16A34A':pcc>=70?'#B8962E':'#DC2626');
+    return '<div style="display:flex;align-items:center;gap:6px;margin-top:5px;">'
+      +'<span style="flex:1;font-size:10px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+cc.canal+'</span>'
+      +'<span style="font-size:10px;font-weight:700;color:'+cor+';min-width:34px;text-align:right;">'+cc.feitas+'/'+(cc.meta||'—')+'</span>'
+      +'<div style="width:44px;height:5px;border-radius:3px;background:#EEF2F7;overflow:hidden;flex-shrink:0;"><div style="height:100%;width:'+Math.min(pcc,100)+'%;background:'+cor+';"></div></div>'
+      +'</div>';
+  }).join('');
+  var semDataStr=hun.semData>0?'<div style="font-size:9px;color:#B45309;margin-top:6px;">'+hun.semData+' contratação(ões) sem data — fora do recorte</div>':'';
+  if(!rows) return semDataStr?'<div style="margin-top:11px;padding-top:9px;border-top:1px dashed var(--rule);">'+semDataStr+'</div>':'';
+  var tMeta=hun.meta,tFeitas=hun.total;
+  var tPc=tMeta>0?Math.round(tFeitas/tMeta*100):(tFeitas>0?100:0);
+  var tCor=tMeta===0?'#94A3B8':(tPc>=100?'#16A34A':tPc>=70?'#B8962E':'#DC2626');
+  var totalRow='<div style="display:flex;align-items:center;gap:6px;margin-top:7px;padding-top:6px;border-top:1px solid var(--rule);">'
+    +'<span style="flex:1;font-size:10px;font-weight:700;color:var(--t1);">Total · 100% do objetivo</span>'
+    +'<span style="font-size:10px;font-weight:700;color:'+tCor+';min-width:34px;text-align:right;">'+tFeitas+'/'+(tMeta||'—')+'</span>'
+    +'<div style="width:44px;height:5px;border-radius:3px;background:#EEF2F7;overflow:hidden;flex-shrink:0;"><div style="height:100%;width:'+Math.min(tPc,100)+'%;background:'+tCor+';"></div></div>'
+    +'</div>';
+  return '<div style="margin-top:11px;padding-top:9px;border-top:1px dashed var(--rule);">'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t4);margin-bottom:1px;">Objetivos por canal</div>'
+    +rows+totalRow+semDataStr+'</div>';
 }
 var _PALETA = ['#6366F1','#EC4899','#B8962E','#16A34A','#0891B2','#DC2626','#7C3AED','#EA580C'];
 
@@ -779,18 +802,19 @@ function buildH(hunters,cands){
     var color=HUNTER_COLORS[nomKey]||'#64748B';
     var meta=h.metaTotal||0;
     var pace=meta>0?Math.round(h.total/meta*100):0,hn=ns(h.nome);
-    var cs=cands.filter(function(c){return ns(c.h)===hn;}).map(function(c){
+    var cs=cands.filter(function(c){return ns(c.h)===hn && _emPeriodo(c.dt);}).map(function(c){
       return{nome:c.n,filial:c.p,status:c.st,mou:c.mou,inicio:c.inicio||null,auc:c.cap,piso:c.piso,periodo:c.periodo,comp:c.comp,sen:c.sen};
     });
     return{nome:h.nome,total:h.total,meta:meta,porCanal:h.porCanal||[],semData:h.semData||0,pace_pct:pace,trabalhando:h.trab,auc:h.auc*1e6,comp:h.comp,mou_ok:h.mouOk,mou_pend:h.total-h.mouOk,senior:h.senior,pleno:h.pleno,junior:h.junior,candidatos:cs,color:color,txDesist:h.txDesist||0,tempoMedio:h.tempoMedio||null,totalFunil:h.totalFunil||0};
   });
 }
 
-function showOv(){document.getElementById('view-ov').style.display='block';document.getElementById('view-det').style.display='none';}
+function showOv(){_currentDet=null;document.getElementById('view-ov').style.display='block';document.getElementById('view-det').style.display='none';}
 function kc(l,v,s){return'<div class="kc" style="border-top:3px solid var(--cobalt)"><div class="kl">'+l+'</div><div class="kv">'+v+'</div><div class="ks">'+s+'</div></div>';}
 
 function showDet(nome){
   var h=H.find(function(x){return x.nome===nome;});if(!h)return;
+  _currentDet=nome;
   document.getElementById('view-ov').style.display='none';
   document.getElementById('view-det').style.display='block';
   var pc=h.pace_pct,pcC=pc>=100?'#16A34A':pc>=70?'#B8962E':'#DC2626';
@@ -799,6 +823,7 @@ function showDet(nome){
     +'<div style="width:10px;height:40px;border-radius:4px;background:'+h.color+'"></div>'
     +'<div><div style="font-family:Playfair Display,serif;font-size:22px;font-weight:600;color:var(--t1)">'+h.nome+'</div>'
     +'<div style="font-size:11px;color:var(--t3)">'+h.total+' contratos - Meta: '+h.meta+' - Pace: '+pc+'%</div></div></div>'
+    +_periodoBarHTML()
     +'<div class="krow">'+kc('Contratacoes',h.total+'/'+h.meta,'meta '+h.meta)+kc('AuC Alvo',fmt(h.auc),'total')+kc('Comp.',fmt(h.comp),'contratos')+kc('Trabalhando',h.trabalhando,'iniciados')+'</div>'
     +'<div class="mou-row">'
     +'<div class="mou-box" style="background:#DCFCE7"><div style="font-size:11px;font-weight:700;color:#15803D">MOU OK</div><div style="font-size:26px;font-weight:700;color:#15803D">'+h.mou_ok+'</div></div>'
@@ -810,6 +835,7 @@ function showDet(nome){
     +'<div style="height:100%;width:'+Math.min(pc,100)+'%;background:'+pcC+';border-radius:4px"></div></div>'
     +'<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-top:4px"><span>0</span><span style="font-weight:700;color:'+pcC+'">'+pc+'%</span><span>'+h.meta+'</span></div>'
     +'</div></div>'
+    +_breakdownHTML(h)
     +'<div class="sh"><div class="st">Candidatos</div><div class="ss">'+h.total+'</div></div>'
     +'<div class="tbl-wrap"><table><thead><tr><th>Candidato</th><th>Filial</th><th>Status</th><th>MOU</th><th>Inicio</th><th>Piso</th><th>Periodo</th><th>AuC</th><th>Comp.</th></tr></thead>'
     +'<tbody>'+h.candidatos.map(function(c){
@@ -886,6 +912,7 @@ function renderBonusCards(){
 
 function renderOv(){
   renderBonusCards();
+  var pbEl=document.getElementById('periodo-bar-ov'); if(pbEl) pbEl.innerHTML=_periodoBarHTML();
   var el=document.getElementById('hgrid');if(!el)return;
   el.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px;';
   el.innerHTML=H.map(function(hun){
@@ -952,23 +979,8 @@ function renderOv(){
       +'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:#FEF3C7;color:#92400E;">'+hun.pleno+' Pleno</span>'
       +'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:#FCE7F3;color:#9D174D;">'+hun.junior+' Júnior</span>'
       +'</div>';
-    // Breakdown por canal (objetivos do período)
-    var canalRows=(hun.porCanal||[]).map(function(cc){
-      var pcc=cc.meta>0?Math.round(cc.feitas/cc.meta*100):(cc.feitas>0?100:0);
-      var cor=cc.meta===0?'#94A3B8':(pcc>=100?'#16A34A':pcc>=70?'#B8962E':'#DC2626');
-      return '<div style="display:flex;align-items:center;gap:6px;margin-top:5px;">'
-        +'<span style="flex:1;font-size:10px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+cc.canal+'</span>'
-        +'<span style="font-size:10px;font-weight:700;color:'+cor+';min-width:34px;text-align:right;">'+cc.feitas+'/'+(cc.meta||'—')+'</span>'
-        +'<div style="width:44px;height:5px;border-radius:3px;background:#EEF2F7;overflow:hidden;flex-shrink:0;"><div style="height:100%;width:'+Math.min(pcc,100)+'%;background:'+cor+';"></div></div>'
-        +'</div>';
-    }).join('');
-    var semDataStr=hun.semData>0
-      ?'<div style="font-size:9px;color:#B45309;margin-top:6px;">'+hun.semData+' contratação(ões) sem data — fora do recorte</div>':'';
-    var breakdownHtml=canalRows
-      ?'<div style="margin-top:11px;padding-top:9px;border-top:1px dashed var(--rule);">'
-        +'<div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t4);margin-bottom:1px;">Objetivos por canal</div>'
-        +canalRows+semDataStr+'</div>'
-      :(semDataStr?'<div style="margin-top:11px;padding-top:9px;border-top:1px dashed var(--rule);">'+semDataStr+'</div>':'');
+    // Breakdown por canal (objetivos do período) + linha geral 100%
+    var breakdownHtml=_breakdownHTML(hun);
     // Pace
     var paceHtml=semMeta
       ?'<div class="pace-bar"><div class="pace-fill" style="width:0%;background:#E2E8F0;"></div></div>'
