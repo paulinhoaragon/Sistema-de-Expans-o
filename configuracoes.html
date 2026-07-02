@@ -614,15 +614,22 @@ function _supaMetasReq(path, opts) {
   var key='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
   return fetch(url+'/rest/v1/'+path, Object.assign({ headers:{
     'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'return=representation','Accept':'application/json'
-  }}, opts||{})).then(function(r){ return r.json(); });
+  }}, opts||{})).then(function(res){
+    return res.text().then(function(t){
+      var data=null; try { data=t?JSON.parse(t):null; } catch(e){ data=t; }
+      if(!res.ok){ // NÃO tratar erro de permissão/RLS como sucesso
+        var msg=(data&&data.message)?data.message:('HTTP '+res.status);
+        throw new Error(msg);
+      }
+      return data;
+    });
+  });
 }
 function _getMetasAll(cb) {
-  if (typeof NexusConfig !== 'undefined' && NexusConfig.getMetasHunter) return NexusConfig.getMetasHunter(cb);
   _supaMetasReq('hunter_metas?order=canal.asc&limit=5000')
     .then(function(rows){ cb(null, rows||[]); }).catch(function(e){ cb(e, []); });
 }
 function _saveMetas(hunterId, ano, sem, metas, cb) {
-  if (typeof NexusConfig !== 'undefined' && NexusConfig.saveMetasHunter) return NexusConfig.saveMetasHunter(hunterId, ano, sem, metas, cb);
   var filtro='hunter_metas?hunter_id=eq.'+hunterId+'&ano=eq.'+ano+'&semestre=eq.'+sem;
   _supaMetasReq(filtro, { method:'DELETE' }).then(function(){
     var rows=(metas||[]).filter(function(m){ return (m.meta_contratacoes||0)>0; })
@@ -667,7 +674,7 @@ function salvarHunter() {
     }
     _saveMetas(hunterId, p.ano, p.semestre, metas, function(errM) {
       document.getElementById('btn-h-txt').textContent = 'Salvar hunter';
-      if (errM) toast('Hunter salvo, mas houve erro nas metas por canal.','err');
+      if (errM) toast('Hunter salvo, mas as METAS falharam: '+(errM.message||errM)+' — verifique permissão da tabela hunter_metas.','err');
       else toast('Hunter e metas salvos!','ok');
       _recarregarMetasCache(function() { limparFormHunter(); carregarHunters(); });
     });
