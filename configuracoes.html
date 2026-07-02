@@ -152,7 +152,16 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
       <input type="hidden" id="h-edit-id">
       <div class="fgrid">
         <div class="f-row"><label>Nome *</label><input id="h-nome" placeholder="Nome completo" oninput="atualizarInicialFoto()"></div>
-        <div class="f-row"><label>Meta (contratações)</label><input id="h-meta" type="number" placeholder="0" min="0"></div>
+        <div class="f-row">
+          <label>Semestre das metas</label>
+          <select id="h-meta-semestre" onchange="onSemestreMetaChange()">
+            <option value="2026-1">1S2026</option>
+            <option value="2026-2" selected>2S2026</option>
+            <option value="2027-1">1S2027</option>
+            <option value="2027-2">2S2027</option>
+          </select>
+        </div>
+        <input type="hidden" id="h-meta">
         <div class="f-row">
           <label>Status</label>
           <select id="h-status">
@@ -178,6 +187,14 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
           </div>
           <input type="hidden" id="h-foto">
         </div>
+      </div>
+      <div id="h-metas-wrap" style="margin-top:6px;">
+        <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+          Metas por canal
+          <span style="font-weight:500;color:var(--t4);">contratações no semestre selecionado</span>
+          <span id="h-metas-total" style="margin-left:auto;font-weight:700;color:var(--cobalt);"></span>
+        </div>
+        <div id="h-metas-canais" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;"></div>
       </div>
       <div class="btn-row">
         <button class="btn-primary" onclick="salvarHunter()"><span id="btn-h-txt">Salvar hunter</span></button>
@@ -497,6 +514,85 @@ function carregarHunters() {
   });
 }
 
+// ── Metas por canal (hunter × semestre × canal) ──────────────────
+var _metasCache = null; // todas as linhas de hunter_metas do banco
+
+// Lista canônica de canais — fallback local para o form desenhar os campos
+// mesmo antes do config.js novo estar em produção. Deve espelhar NexusConfig.CANAIS.
+var _CANAIS_FALLBACK = ['Assessoria de Investimentos','Vem ser Blue','Blue3 Future','Planejador/Consultor','Vagas Comerciais','M&A'];
+
+function _canaisMeta() {
+  return (typeof NexusConfig !== 'undefined' && NexusConfig.CANAIS && NexusConfig.CANAIS.length)
+    ? NexusConfig.CANAIS : _CANAIS_FALLBACK;
+}
+
+function renderMetasCanaisInputs() {
+  var wrap = document.getElementById('h-metas-canais');
+  if (!wrap) return;
+  wrap.innerHTML = _canaisMeta().map(function(canal, i) {
+    return '<div class="f-row"><label style="font-size:10px;">' + canal + '</label>'
+      + '<input id="h-mc-' + i + '" type="number" min="0" placeholder="0" oninput="_updateMetasTotal()"></div>';
+  }).join('');
+  _updateMetasTotal();
+}
+
+function _updateMetasTotal() {
+  var total = 0;
+  _canaisMeta().forEach(function(_, i) {
+    var el = document.getElementById('h-mc-' + i);
+    if (el) total += parseInt(el.value, 10) || 0;
+  });
+  var badge = document.getElementById('h-metas-total');
+  if (badge) badge.textContent = 'Total: ' + total;
+  var hidden = document.getElementById('h-meta'); // legado: hunters.meta = total do semestre
+  if (hidden) hidden.value = total;
+}
+
+function _parseSemestreSel() {
+  var v = (document.getElementById('h-meta-semestre').value || '2026-2').split('-');
+  return { ano: parseInt(v[0], 10) || 2026, semestre: parseInt(v[1], 10) || 2 };
+}
+
+function _preencherMetasInputs(hunterId, ano, semestre) {
+  _canaisMeta().forEach(function(_, i) {
+    var el = document.getElementById('h-mc-' + i); if (el) el.value = '';
+  });
+  if (hunterId && _metasCache) {
+    var mapa = {};
+    _metasCache.forEach(function(m) {
+      if (String(m.hunter_id) === String(hunterId) && Number(m.ano) === ano && Number(m.semestre) === semestre) {
+        mapa[m.canal] = m.meta_contratacoes;
+      }
+    });
+    _canaisMeta().forEach(function(canal, i) {
+      var el = document.getElementById('h-mc-' + i);
+      if (el && mapa[canal] != null) el.value = mapa[canal];
+    });
+  }
+  _updateMetasTotal();
+}
+
+function onSemestreMetaChange() {
+  var id = document.getElementById('h-edit-id').value;
+  var p = _parseSemestreSel();
+  _preencherMetasInputs(id, p.ano, p.semestre);
+}
+
+function _coletarMetasCanais() {
+  return _canaisMeta().map(function(canal, i) {
+    var el = document.getElementById('h-mc-' + i);
+    return { canal: canal, meta_contratacoes: (el ? (parseInt(el.value, 10) || 0) : 0) };
+  });
+}
+
+function _recarregarMetasCache(cb) {
+  if (typeof NexusConfig === 'undefined' || !NexusConfig.getMetasHunter) { if (cb) cb(); return; }
+  NexusConfig.getMetasHunter(function(err, rows) {
+    _metasCache = err ? [] : rows;
+    if (cb) cb();
+  });
+}
+
 function salvarHunter() {
   var nome = (document.getElementById('h-nome').value||'').trim();
   if (!nome) { toast('Informe o nome do hunter.','err'); return; }
@@ -508,13 +604,26 @@ function salvarHunter() {
   };
   var id = document.getElementById('h-edit-id').value;
   if (id) dados.id = id;
+  var p = _parseSemestreSel();
+  var metas = _coletarMetasCanais();
   document.getElementById('btn-h-txt').textContent = 'Salvando...';
-  NexusConfig.saveHunter(dados, function(err) {
-    document.getElementById('btn-h-txt').textContent = 'Salvar hunter';
-    if (err) { toast('Erro ao salvar hunter.','err'); return; }
-    toast('Hunter salvo com sucesso!','ok');
-    limparFormHunter();
-    carregarHunters();
+  NexusConfig.saveHunter(dados, function(err, r) {
+    if (err) {
+      document.getElementById('btn-h-txt').textContent = 'Salvar hunter';
+      toast('Erro ao salvar hunter.','err'); return;
+    }
+    var hunterId = id || (r && r[0] && r[0].id);
+    if (!hunterId) {
+      document.getElementById('btn-h-txt').textContent = 'Salvar hunter';
+      toast('Hunter salvo, mas sem id para gravar as metas.','err');
+      limparFormHunter(); carregarHunters(); return;
+    }
+    NexusConfig.saveMetasHunter(hunterId, p.ano, p.semestre, metas, function(errM) {
+      document.getElementById('btn-h-txt').textContent = 'Salvar hunter';
+      if (errM) toast('Hunter salvo, mas houve erro nas metas por canal.','err');
+      else toast('Hunter e metas salvos!','ok');
+      _recarregarMetasCache(function() { limparFormHunter(); carregarHunters(); });
+    });
   });
 }
 
@@ -537,6 +646,8 @@ function editarHunter(id) {
       prev.innerHTML = '<span id="h-foto-inicial">'+h.nome.charAt(0).toUpperCase()+'</span>';
     }
     document.getElementById('btn-h-txt').textContent = 'Atualizar hunter';
+    if (!_metasCache) { _recarregarMetasCache(function() { onSemestreMetaChange(); }); }
+    else onSemestreMetaChange();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
@@ -555,6 +666,11 @@ function limparFormHunter() {
   document.getElementById('h-nome').value    = '';
   document.getElementById('h-meta').value    = '';
   document.getElementById('h-status').value  = 'Ativo';
+  var sel = document.getElementById('h-meta-semestre'); if (sel) sel.value = '2026-2';
+  _canaisMeta().forEach(function(_, i) {
+    var el = document.getElementById('h-mc-' + i); if (el) el.value = '';
+  });
+  _updateMetasTotal();
   limparFoto();
   document.getElementById('btn-h-txt').textContent = 'Salvar hunter';
 }
@@ -1070,6 +1186,8 @@ function atualizarInicialFoto() {
 carregarHunters();
 carregarParametros();
 carregarWL();
+renderMetasCanaisInputs();
+_recarregarMetasCache();
 
 // ── Gestão de Usuários ─────────────────────────────────────────
 function supaUsrCfg(path, opts) {
