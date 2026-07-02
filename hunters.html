@@ -713,9 +713,16 @@ NexusConfig.getHunters(function(err,hunters){
       });
     }
     function _done(){ _recomputeHunters(); if(cb) cb(hunters); }
-    if(NexusConfig.getMetasHunter){
-      NexusConfig.getMetasHunter(function(e2,rows){ _buildCanalIndex(e2?[]:rows); _done(); });
-    } else { _buildCanalIndex([]); _done(); }
+    // Leitura self-contained: se o config.js em produção não tiver getMetasHunter,
+    // busca hunter_metas direto no Supabase (chave anon, já pública no pipeline).
+    function _getMetasReport(mcb){
+      if(typeof NexusConfig!=='undefined' && NexusConfig.getMetasHunter) return NexusConfig.getMetasHunter(mcb);
+      var url='https://cjimsplgxrwkqgzegnkq.supabase.co';
+      var key='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+      fetch(url+'/rest/v1/hunter_metas?order=canal.asc&limit=5000',{headers:{'apikey':key,'Authorization':'Bearer '+key,'Accept':'application/json'}})
+        .then(function(r){return r.json();}).then(function(rows){mcb(null,rows||[]);}).catch(function(e){mcb(e,[]);});
+    }
+    _getMetasReport(function(e2,rows){ _buildCanalIndex(e2?[]:rows); _done(); });
   });
 }
 
