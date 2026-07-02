@@ -498,11 +498,15 @@ function carregarHunters() {
         var avatarHTML = h.foto_url
           ? '<img src="'+h.foto_url+'" alt="'+h.nome+'">'
           : inicial;
+        var mr = _metasResumoHunter(h.id);
+        var metaLinha = mr
+          ? '2S2026: ' + mr.str + ' · <b style="color:var(--cobalt)">total ' + mr.total + '</b>'
+          : 'Metas 2S2026: a definir';
         return '<div class="hunter-row">'
           + '<div class="h-avatar">'+avatarHTML+'</div>'
           + '<div class="h-info">'
           + '<div class="h-nome">'+esc(h.nome)+'</div>'
-          + '<div class="h-meta">Meta: '+h.meta+' contratações</div>'
+          + '<div class="h-meta">'+metaLinha+'</div>'
           + '</div>'
           + '<span class="badge '+(h.status==='Ativo'?'b-ativo':'b-inativo')+'">'+h.status+'</span>'
           + '<div class="h-actions">'
@@ -516,6 +520,23 @@ function carregarHunters() {
 
 // ── Metas por canal (hunter × semestre × canal) ──────────────────
 var _metasCache = null; // todas as linhas de hunter_metas do banco
+
+// Rótulo curto do canal para a lista compacta
+var _CANAL_CURTO = {
+  'Assessoria de Investimentos':'Assessoria','Vem ser Blue':'Vem ser Blue','Blue3 Future':'Future',
+  'Planejador/Consultor':'Planejador','Vagas Comerciais':'Vagas Com.','M&A':'M&A'
+};
+// Resumo das metas do semestre vigente (2S2026) de um hunter, para a lista
+function _metasResumoHunter(hunterId){
+  if(!_metasCache || !_metasCache.length) return null;
+  var rows=_metasCache.filter(function(m){
+    return String(m.hunter_id)===String(hunterId) && Number(m.ano)===2026 && Number(m.semestre)===2 && (m.meta_contratacoes||0)>0;
+  });
+  if(!rows.length) return null;
+  var total=rows.reduce(function(s,m){ return s+(m.meta_contratacoes||0); },0);
+  var str=rows.map(function(m){ return (_CANAL_CURTO[m.canal]||m.canal)+' '+m.meta_contratacoes; }).join(' · ');
+  return { total:total, str:str };
+}
 
 // Lista canônica de canais — fallback local para o form desenhar os campos
 // mesmo antes do config.js novo estar em produção. Deve espelhar NexusConfig.CANAIS.
@@ -585,9 +606,35 @@ function _coletarMetasCanais() {
   });
 }
 
+// Camada de metas self-contained: grava/le direto do Supabase se o config.js
+// em produção estiver desatualizado (sem get/saveMetasHunter). Usa a chave anon
+// já presente neste arquivo (supaUsrCfg).
+function _supaMetasReq(path, opts) {
+  var url='https://cjimsplgxrwkqgzegnkq.supabase.co';
+  var key='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+  return fetch(url+'/rest/v1/'+path, Object.assign({ headers:{
+    'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'return=representation','Accept':'application/json'
+  }}, opts||{})).then(function(r){ return r.json(); });
+}
+function _getMetasAll(cb) {
+  if (typeof NexusConfig !== 'undefined' && NexusConfig.getMetasHunter) return NexusConfig.getMetasHunter(cb);
+  _supaMetasReq('hunter_metas?order=canal.asc&limit=5000')
+    .then(function(rows){ cb(null, rows||[]); }).catch(function(e){ cb(e, []); });
+}
+function _saveMetas(hunterId, ano, sem, metas, cb) {
+  if (typeof NexusConfig !== 'undefined' && NexusConfig.saveMetasHunter) return NexusConfig.saveMetasHunter(hunterId, ano, sem, metas, cb);
+  var filtro='hunter_metas?hunter_id=eq.'+hunterId+'&ano=eq.'+ano+'&semestre=eq.'+sem;
+  _supaMetasReq(filtro, { method:'DELETE' }).then(function(){
+    var rows=(metas||[]).filter(function(m){ return (m.meta_contratacoes||0)>0; })
+      .map(function(m){ return { hunter_id:hunterId, ano:ano, semestre:sem, canal:m.canal, meta_contratacoes:m.meta_contratacoes||0 }; });
+    if(!rows.length){ cb(null, []); return; }
+    _supaMetasReq('hunter_metas', { method:'POST', body:JSON.stringify(rows) })
+      .then(function(r){ cb(null, r); }).catch(function(e){ cb(e, null); });
+  }).catch(function(e){ cb(e, null); });
+}
+
 function _recarregarMetasCache(cb) {
-  if (typeof NexusConfig === 'undefined' || !NexusConfig.getMetasHunter) { if (cb) cb(); return; }
-  NexusConfig.getMetasHunter(function(err, rows) {
+  _getMetasAll(function(err, rows) {
     _metasCache = err ? [] : rows;
     if (cb) cb();
   });
@@ -618,7 +665,7 @@ function salvarHunter() {
       toast('Hunter salvo, mas sem id para gravar as metas.','err');
       limparFormHunter(); carregarHunters(); return;
     }
-    NexusConfig.saveMetasHunter(hunterId, p.ano, p.semestre, metas, function(errM) {
+    _saveMetas(hunterId, p.ano, p.semestre, metas, function(errM) {
       document.getElementById('btn-h-txt').textContent = 'Salvar hunter';
       if (errM) toast('Hunter salvo, mas houve erro nas metas por canal.','err');
       else toast('Hunter e metas salvos!','ok');
@@ -1187,7 +1234,7 @@ carregarHunters();
 carregarParametros();
 carregarWL();
 renderMetasCanaisInputs();
-_recarregarMetasCache();
+_recarregarMetasCache(function(){ carregarHunters(); });
 
 // ── Gestão de Usuários ─────────────────────────────────────────
 function supaUsrCfg(path, opts) {
