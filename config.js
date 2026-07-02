@@ -127,6 +127,78 @@ var NexusConfig = (function() {
       .then(function() { cb(null); }).catch(function(e) { cb(e); });
   }
 
+  // ── Canais / Metas por (hunter, semestre, canal) ────────────────
+  // Lista canônica de canais (frentes de contratação). Ordem = exibição.
+  var CANAIS = [
+    'Assessoria de Investimentos',
+    'Vem ser Blue',
+    'Blue3 Future',
+    'Planejador/Consultor',
+    'Vagas Comerciais',
+    'M&A'
+  ];
+
+  // Mapa VAGA (campo do CRM) → CANAL. Cobre os 13 valores de vaga.
+  var VAGA_CANAL = {
+    'Assessor':             'Assessoria de Investimentos',
+    'Vem ser Blue':         'Vem ser Blue',
+    'Future':               'Blue3 Future',
+    'Planejador/Consultor': 'Planejador/Consultor',
+    'Líder':                'Vagas Comerciais',
+    'Advisor':              'Vagas Comerciais',
+    'Broker':               'Vagas Comerciais',
+    'Offshore':             'Vagas Comerciais',
+    'Seguros':              'Vagas Comerciais',
+    'Corporate':            'Vagas Comerciais',
+    'Assistente':           'Vagas Comerciais',
+    'Outros':               'Vagas Comerciais',
+    'M&A':                  'M&A'
+  };
+
+  // Resolve o canal a partir do valor de vaga. Vazio → Assessor (igual pipeline).
+  // Vaga desconhecida cai em 'Vagas Comerciais' (catch-all) para nada sumir.
+  function canalDeVaga(vaga) {
+    var v = (vaga || '').trim();
+    if (!v) v = 'Assessor';
+    return VAGA_CANAL[v] || 'Vagas Comerciais';
+  }
+
+  // Lê todas as metas por canal (todos os hunters/períodos).
+  function getMetasHunter(cb) {
+    supa('hunter_metas?order=canal.asc&limit=5000')
+      .then(function(rows) { cb(null, rows || []); })
+      .catch(function(e) { cb(e, []); });
+  }
+
+  // Grava as metas de um (hunter, ano, semestre): substitui o conjunto inteiro.
+  // metas = [{ canal, meta_contratacoes }]. Só grava linhas com meta > 0.
+  function saveMetasHunter(hunterId, ano, semestre, metas, cb) {
+    _cache.hunters = null;
+    var filtro = 'hunter_metas?hunter_id=eq.' + hunterId +
+                 '&ano=eq.' + ano + '&semestre=eq.' + semestre;
+    supa(filtro, { method: 'DELETE' })
+      .then(function() {
+        var rows = (metas || [])
+          .filter(function(m) { return (m.meta_contratacoes || 0) > 0; })
+          .map(function(m) {
+            return {
+              hunter_id:         hunterId,
+              ano:               ano,
+              semestre:          semestre,
+              canal:             m.canal,
+              meta_contratacoes: m.meta_contratacoes || 0,
+              atualizado_em:     new Date().toISOString()
+            };
+          });
+        log('hunter_metas.save', { hunter_id: hunterId, ano: ano, semestre: semestre, metas: rows });
+        if (!rows.length) { cb(null, []); return; }
+        supa('hunter_metas', { method: 'POST', body: JSON.stringify(rows) })
+          .then(function(r) { cb(null, r); })
+          .catch(function(e) { cb(e, null); });
+      })
+      .catch(function(e) { cb(e, null); });
+  }
+
   // ── Líderes ─────────────────────────────────────────────────────
   // Líder assiste uma ou mais praças. Campo 'pracas' = array (jsonb no banco).
   function getLideres(cb) {
@@ -361,6 +433,11 @@ var NexusConfig = (function() {
     getHunters:             getHunters,
     saveHunter:             saveHunter,
     deleteHunter:           deleteHunter,
+    CANAIS:                 CANAIS,
+    VAGA_CANAL:             VAGA_CANAL,
+    canalDeVaga:            canalDeVaga,
+    getMetasHunter:         getMetasHunter,
+    saveMetasHunter:        saveMetasHunter,
     getLideres:             getLideres,
     saveLider:              saveLider,
     deleteLider:            deleteLider,
