@@ -22,6 +22,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .st{font-size:13px;font-weight:600;color:var(--t1)}.ss{font-size:11px;color:var(--t3);margin-left:auto}
 .hgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px}
 @media(max-width:700px){.hgrid{grid-template-columns:1fr}}
+.per-pill{font-size:10px;font-weight:600;padding:5px 12px;border-radius:14px;border:1px solid var(--rule);background:#fff;color:var(--t2);cursor:pointer;letter-spacing:.02em;transition:all .12s}
+.per-pill:hover{border-color:var(--cobalt);color:var(--cobalt)}
+.per-pill.on{background:var(--cobalt);border-color:var(--cobalt);color:#fff}
 .hcard{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:18px;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .3s,box-shadow .3s;position:relative;}
 .hcard.meta-atingida{border-color:rgba(250,204,21,.5);animation:hcard-pulse 2.5s ease-in-out infinite;}
 @keyframes hcard-pulse{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.0),var(--sh);}50%{box-shadow:0 0 24px 4px rgba(250,204,21,.18),var(--sh);}}
@@ -97,6 +100,16 @@ tbody td:first-child{text-align:left;font-weight:600;color:var(--t1)}
 <div class="page">
   <div id="view-ov">
     <div class="sh"><div class="st">Performance de Hunters</div><div class="ss" id="hunters-subtitle">Clique em um hunter para detalhes</div></div>
+    <div id="periodo-bar" style="display:flex;align-items:center;gap:8px;margin:2px 0 16px;flex-wrap:wrap;">
+      <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);">Período:</span>
+      <button class="per-pill on" data-per="2" onclick="setPeriodo(2,this)">2º semestre</button>
+      <button class="per-pill" data-per="1" onclick="setPeriodo(1,this)">1º semestre</button>
+      <button class="per-pill" data-per="0" onclick="setPeriodo(0,this)">Anual</button>
+      <select id="periodo-ano" onchange="setAno(this.value)" style="margin-left:4px;font-size:11px;padding:5px 8px;border-radius:8px;border:1px solid var(--rule);background:#fff;color:var(--t1);cursor:pointer;">
+        <option value="2026">2026</option>
+        <option value="2027">2027</option>
+      </select>
+    </div>
     <div id="hgrid"></div>
     <div class="sh" style="margin-top:8px;"><div class="st">Rankings</div></div>
     <div class="rank-box"><div class="rank-title">AuC Alvo Total</div><div id="r-auc"></div></div>
@@ -245,6 +258,7 @@ function Blue3_dataLoader() {
       h:       (r['Hunter'] || '').trim(),
       sen:     (r['Senioridade'] || '').trim(),
       org:     (r['Origem'] || '').trim(),
+      area:    (r['Área'] || r['Area'] || 'Assessor').trim(),
       mou:     (r['MOU'] || '').trim(),
       st:      (r['Status'] || '').trim(),
       ancord:  (r['Ancord'] || '').trim(),
@@ -565,6 +579,63 @@ var HUNTER_METAS  = {}; // preenchido pelo Supabase (meta)
 var HUNTER_COLORS = {}; // cores auto-geradas por índice
 var HUNTER_ORDER  = []; // ordem por nome
 var H = [];
+
+// ── Período + metas por canal ────────────────────────────────────
+var HUNTER_METAS_CANAL = {};              // nomeKey -> { ano: { sem: { canal: meta } } }
+var _periodo = { ano: 2026, semestre: 2 }; // semestre 0 = Anual
+var _CANAIS_FB = ['Assessoria de Investimentos','Vem ser Blue','Blue3 Future','Planejador/Consultor','Vagas Comerciais','M&A'];
+var _VAGA_CANAL_FB = {
+  'Assessor':'Assessoria de Investimentos','Vem ser Blue':'Vem ser Blue','Future':'Blue3 Future',
+  'Planejador/Consultor':'Planejador/Consultor','Líder':'Vagas Comerciais','Advisor':'Vagas Comerciais',
+  'Broker':'Vagas Comerciais','Offshore':'Vagas Comerciais','Seguros':'Vagas Comerciais',
+  'Corporate':'Vagas Comerciais','Assistente':'Vagas Comerciais','Outros':'Vagas Comerciais','M&A':'M&A'
+};
+function _canaisRep(){
+  return (typeof NexusConfig!=='undefined' && NexusConfig.CANAIS && NexusConfig.CANAIS.length) ? NexusConfig.CANAIS : _CANAIS_FB;
+}
+function _canalDe(area){
+  if(typeof NexusConfig!=='undefined' && NexusConfig.canalDeVaga) return NexusConfig.canalDeVaga(area);
+  var v=(area||'').trim(); if(!v) v='Assessor';
+  return _VAGA_CANAL_FB[v] || 'Vagas Comerciais';
+}
+// Contratação (dt = "DD/MM/YYYY") dentro do período? (parse manual = seguro p/ fuso)
+function _emPeriodo(dtStr){
+  if(!dtStr) return false;
+  var p=String(dtStr).split('/'); if(p.length<3) return false;
+  var mes=parseInt(p[1],10), ano=parseInt(p[2],10);
+  if(!mes||!ano || ano!==_periodo.ano) return false;
+  if(!_periodo.semestre) return true;               // Anual
+  return (mes<=6?1:2)===_periodo.semestre;
+}
+// data ISO "YYYY-MM-DD" (ex.: data_declinio do Supabase) dentro do período?
+function _emPeriodoISO(iso){
+  if(!iso) return false;
+  var s=String(iso).split('T')[0].split('-');
+  var ano=parseInt(s[0],10), mes=parseInt(s[1],10);
+  if(!ano||!mes || ano!==_periodo.ano) return false;
+  if(!_periodo.semestre) return true;
+  return (mes<=6?1:2)===_periodo.semestre;
+}
+function _periodoLabel(){
+  return _periodo.semestre ? (_periodo.semestre+'S'+_periodo.ano) : ('Anual '+_periodo.ano);
+}
+function setPeriodo(sem, btn){
+  _periodo.semestre = sem;
+  var pills=document.querySelectorAll('#periodo-bar .per-pill');
+  for(var i=0;i<pills.length;i++) pills[i].classList.remove('on');
+  if(btn) btn.classList.add('on');
+  _repaintPeriodo();
+}
+function setAno(ano){ _periodo.ano=parseInt(ano,10)||2026; _repaintPeriodo(); }
+function _repaintPeriodo(){
+  var sub=document.getElementById('hunters-subtitle');
+  if(sub) sub.textContent='Período: '+_periodoLabel()+' · clique em um hunter para detalhes';
+  if(window.Blue3Data && window.Blue3Data.candidatos){
+    _recomputeHunters();
+    H=buildH(window.Blue3Data.hunters, window.Blue3Data.candidatos);
+    renderOv();
+  }
+}
 var _PALETA = ['#6366F1','#EC4899','#B8962E','#16A34A','#0891B2','#DC2626','#7C3AED','#EA580C'];
 
 function diag(m){var e=document.getElementById('diag');if(!e)return;e.style.display='block';e.textContent=m;clearTimeout(diag._t);diag._t=setTimeout(function(){e.style.display='none';},7000);}
@@ -596,69 +667,105 @@ NexusConfig.getHunters(function(err,hunters){
     // Resetar e preencher variáveis
     HUNTER_PHOTOS={}; HUNTER_METAS={}; HUNTER_COLORS={}; HUNTER_ORDER=[];
     var cores=['#6366F1','#EC4899','#B8962E','#16A34A','#0891B2','#DC2626','#7C3AED','#EA580C'];
+    var idToNome={};
     hunters.forEach(function(h,i){
       var key=(h.nome||'').trim().toLowerCase();
       if(h.foto_url) HUNTER_PHOTOS[key]=h.foto_url;
       if(h.meta!=null&&h.meta!==false) HUNTER_METAS[key]=Number(h.meta);
       HUNTER_COLORS[key]=cores[i%cores.length];
       HUNTER_ORDER.push(h.nome);
+      if(h.id!=null) idToNome[String(h.id)]=key;
     });
-    // Rerodar huntersPerformance agora que HUNTER_DB está populado
-    // para incluir hunters ativos sem candidatos ainda (ex: recém cadastrados)
-    if(window.Blue3Data && window.Blue3Data.candidatos) {
-      var hs={};
-      var C=window.Blue3Data.candidatos;
-      var raw=window.Blue3Data._rawRows||[];
-      C.forEach(function(r){if(r.h)hs[r.h]=true;});
-      // Incluir desistentes dos _rawRows
-      raw.forEach(function(r){var h=r['Hunter']||'';if(h)hs[h]=true;});
-      hunters.forEach(function(h){ if(h.status==='Ativo') hs[h.nome]=true; });
-      window.Blue3Data.hunters=Object.keys(hs).map(function(h){
-        var ativos=C.filter(function(r){return norm(r.h)===norm(h);});
-        // Desistentes via _rawRows
-        var desist=raw.filter(function(r){
-          var rh=norm(r['Hunter']||'');
-          var s=norm(r['Status']||'');
-          return rh===norm(h)&&(s==='desistência'||s==='desistencia');
-        });
-        var totalFunil=ativos.length+desist.length;
-        var txDesist=totalFunil>0?Math.round(desist.length/totalFunil*100):0;
-        // Tempo médio usando data_entrada dos _rawRows
-        var tempos=[];
-        ativos.forEach(function(r){
-          var rawRow=raw.find(function(rr){return norm(rr['Candidato']||'')===norm(r.n);});
-          var dataE=rawRow?(rawRow['data_entrada']||null):null;
-          var dataCont=r.dt; // Data de Contratação no formato DD/MM/YYYY
-          // Usar a mais antiga entre data_entrada e data_contratacao como início
-          var inicioE=dataE?new Date(dataE):null;
-          var inicioC=dataCont?new Date(dataCont.split('/').reverse().join('-')):null;
-          var inicio=null;
-          if(inicioE&&inicioC){
-            inicio=inicioE<inicioC?inicioE:inicioC;
-          } else {
-            inicio=inicioE||inicioC;
-          }
-          if(!inicio||isNaN(inicio.getTime()))return;
-          var fim=inicioC&&inicioC>inicio?inicioC:new Date();
-          var dias=Math.round((fim-inicio)/(1000*60*60*24));
-          if(dias>0&&dias<500)tempos.push(dias);
-        });
-        var tempoMedio=tempos.length?Math.round(tempos.reduce(function(s,v){return s+v;},0)/tempos.length):null;
-        return{nome:h,total:ativos.length,
-          senior:ativos.filter(function(r){return norm(r.sen)==='sênior';}).length,
-          pleno:ativos.filter(function(r){return norm(r.sen)==='pleno';}).length,
-          junior:ativos.filter(function(r){var s=norm(r.sen);return s==='junior'||s==='júnior';}).length,
-          auc:ativos.reduce(function(s,r){return s+(r.cap||0);},0),
-          comp:ativos.reduce(function(s,r){return s+(r.comp||0);},0),
-          mouOk:ativos.filter(function(r){return norm(r.mou)==='assinado';}).length,
-          trab:ativos.filter(function(r){return norm(r.st)==='trabalhando';}).length,
-          xp:ativos.reduce(function(s,r){return s+(r.xp||0);},0),
-          txDesist:txDesist,
-          tempoMedio:tempoMedio,
-          totalFunil:totalFunil};
+    // Indexar metas por canal: nomeKey -> ano -> semestre -> canal -> meta
+    function _buildCanalIndex(rows){
+      HUNTER_METAS_CANAL={};
+      (rows||[]).forEach(function(m){
+        var nomeKey=idToNome[String(m.hunter_id)];
+        if(!nomeKey) return;
+        var ano=Number(m.ano), sem=Number(m.semestre);
+        var a=HUNTER_METAS_CANAL[nomeKey]||(HUNTER_METAS_CANAL[nomeKey]={});
+        var y=a[ano]||(a[ano]={});
+        var s=y[sem]||(y[sem]={});
+        s[m.canal]=Number(m.meta_contratacoes)||0;
       });
     }
-    if(cb) cb(hunters);
+    function _done(){ _recomputeHunters(); if(cb) cb(hunters); }
+    if(NexusConfig.getMetasHunter){
+      NexusConfig.getMetasHunter(function(e2,rows){ _buildCanalIndex(e2?[]:rows); _done(); });
+    } else { _buildCanalIndex([]); _done(); }
+  });
+}
+
+// Reconstrói window.Blue3Data.hunters para o período atual (_periodo),
+// com contagem por canal. Chamado no load e a cada troca de período.
+function _recomputeHunters(){
+  if(!(window.Blue3Data && window.Blue3Data.candidatos)) return;
+  var hs={};
+  var C=window.Blue3Data.candidatos;
+  var raw=window.Blue3Data._rawRows||[];
+  C.forEach(function(r){if(r.h)hs[r.h]=true;});
+  raw.forEach(function(r){var h=r['Hunter']||'';if(h)hs[h]=true;});
+  (HUNTER_DB||[]).forEach(function(h){ if(h.status==='Ativo') hs[h.nome]=true; });
+
+  window.Blue3Data.hunters=Object.keys(hs).map(function(h){
+    var nomeKey=(h||'').trim().toLowerCase();
+    var todos=C.filter(function(r){return norm(r.h)===norm(h);});
+    var ativos=todos.filter(function(r){return _emPeriodo(r.dt);});    // contratações no período
+    var semData=todos.filter(function(r){return !r.dt;}).length;        // gaps de data_contratacao
+
+    // metas do período (soma dos semestres se Anual)
+    var metasPer={};
+    var idx=HUNTER_METAS_CANAL[nomeKey];
+    if(idx && idx[_periodo.ano]){
+      var sems=_periodo.semestre?[_periodo.semestre]:[1,2];
+      sems.forEach(function(sm){
+        var cm=idx[_periodo.ano][sm]; if(!cm) return;
+        Object.keys(cm).forEach(function(cn){ metasPer[cn]=(metasPer[cn]||0)+cm[cn]; });
+      });
+    }
+    // contratações por canal
+    var feitasPer={};
+    ativos.forEach(function(r){ var cn=_canalDe(r.area); feitasPer[cn]=(feitasPer[cn]||0)+1; });
+
+    var porCanal=_canaisRep().filter(function(cn){ return (metasPer[cn]||0)>0 || (feitasPer[cn]||0)>0; })
+      .map(function(cn){ return {canal:cn, feitas:feitasPer[cn]||0, meta:metasPer[cn]||0}; });
+    var metaTotal=Object.keys(metasPer).reduce(function(s,k){return s+metasPer[k];},0);
+
+    // desistentes no período (por data_declinio, ISO)
+    var desist=raw.filter(function(r){
+      var rh=norm(r['Hunter']||''), st=norm(r['Status']||'');
+      if(rh!==norm(h) || !(st==='desistência'||st==='desistencia')) return false;
+      return _emPeriodoISO(r['data_declinio']);
+    });
+    var totalFunil=ativos.length+desist.length;
+    var txDesist=totalFunil>0?Math.round(desist.length/totalFunil*100):0;
+
+    // tempo médio (contratações do período)
+    var tempos=[];
+    ativos.forEach(function(r){
+      var rawRow=raw.find(function(rr){return norm(rr['Candidato']||'')===norm(r.n);});
+      var dataE=rawRow?(rawRow['data_entrada']||null):null;
+      var dataCont=r.dt;
+      var inicioE=dataE?new Date(dataE):null;
+      var inicioC=dataCont?new Date(dataCont.split('/').reverse().join('-')):null;
+      var inicio=(inicioE&&inicioC)?(inicioE<inicioC?inicioE:inicioC):(inicioE||inicioC);
+      if(!inicio||isNaN(inicio.getTime()))return;
+      var fim=inicioC&&inicioC>inicio?inicioC:new Date();
+      var dias=Math.round((fim-inicio)/(1000*60*60*24));
+      if(dias>0&&dias<500)tempos.push(dias);
+    });
+    var tempoMedio=tempos.length?Math.round(tempos.reduce(function(s,v){return s+v;},0)/tempos.length):null;
+
+    return{nome:h,total:ativos.length,metaTotal:metaTotal,porCanal:porCanal,semData:semData,
+      senior:ativos.filter(function(r){return norm(r.sen)==='sênior';}).length,
+      pleno:ativos.filter(function(r){return norm(r.sen)==='pleno';}).length,
+      junior:ativos.filter(function(r){var s=norm(r.sen);return s==='junior'||s==='júnior';}).length,
+      auc:ativos.reduce(function(s,r){return s+(r.cap||0);},0),
+      comp:ativos.reduce(function(s,r){return s+(r.comp||0);},0),
+      mouOk:ativos.filter(function(r){return norm(r.mou)==='assinado';}).length,
+      trab:ativos.filter(function(r){return norm(r.st)==='trabalhando';}).length,
+      xp:ativos.reduce(function(s,r){return s+(r.xp||0);},0),
+      txDesist:txDesist,tempoMedio:tempoMedio,totalFunil:totalFunil};
   });
 }
 
@@ -669,12 +776,13 @@ function buildH(hunters,cands){
     hunters.forEach(function(h){ ord.push(h); });
   return ord.map(function(h){
       var nomKey=(h.nome||'').trim().toLowerCase();
-    var meta=HUNTER_METAS[nomKey]||0,color=HUNTER_COLORS[nomKey]||'#64748B';
+    var color=HUNTER_COLORS[nomKey]||'#64748B';
+    var meta=h.metaTotal||0;
     var pace=meta>0?Math.round(h.total/meta*100):0,hn=ns(h.nome);
     var cs=cands.filter(function(c){return ns(c.h)===hn;}).map(function(c){
       return{nome:c.n,filial:c.p,status:c.st,mou:c.mou,inicio:c.inicio||null,auc:c.cap,piso:c.piso,periodo:c.periodo,comp:c.comp,sen:c.sen};
     });
-    return{nome:h.nome,total:h.total,meta:meta,pace_pct:pace,trabalhando:h.trab,auc:h.auc*1e6,comp:h.comp,mou_ok:h.mouOk,mou_pend:h.total-h.mouOk,senior:h.senior,pleno:h.pleno,junior:h.junior,candidatos:cs,color:color,txDesist:h.txDesist||0,tempoMedio:h.tempoMedio||null,totalFunil:h.totalFunil||0};
+    return{nome:h.nome,total:h.total,meta:meta,porCanal:h.porCanal||[],semData:h.semData||0,pace_pct:pace,trabalhando:h.trab,auc:h.auc*1e6,comp:h.comp,mou_ok:h.mouOk,mou_pend:h.total-h.mouOk,senior:h.senior,pleno:h.pleno,junior:h.junior,candidatos:cs,color:color,txDesist:h.txDesist||0,tempoMedio:h.tempoMedio||null,totalFunil:h.totalFunil||0};
   });
 }
 
@@ -787,6 +895,7 @@ function renderOv(){
     var metaOk=!semMeta&&hun.total>=hun.meta&&hun.meta>0;
     var dbHun=HUNTER_DB.find(function(d){return d.nome===hun.nome;});
     var isGestor=dbHun&&dbHun.is_gestor===true;
+    var subLabel=isGestor?'Gestor':('Hunter · '+_periodoLabel());
     var hunFoto=HUNTER_PHOTOS[(hun.nome||'').trim().toLowerCase()]||'';
     var nomeEsc=hun.nome.replace(/'/g,"&#39;");
     var sp=hun.senior/Math.max(hun.total,1);
@@ -810,11 +919,11 @@ function renderOv(){
         +'<div style="position:absolute;top:10px;right:10px;background:'+tier.color+';color:#fff;font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.04em;">'+tier.lbl+'</div>'
         +'<div style="position:absolute;bottom:12px;left:14px;">'
           +'<div style="font-family:Playfair Display,serif;font-size:18px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4);">'+hun.nome+'</div>'
-          +'<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-top:2px;">'+(isGestor?'Gestor':'Hunter · Expansão 1S2026')+'</div>'
+          +'<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-top:2px;">'+subLabel+'</div>'
         +'</div></div>'
       :'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">'
         +'<div><div class="hcard-name">'+hun.nome+'</div>'
-        +'<div class="hcard-sub">'+(isGestor?'Gestor':'Hunter · Expansão 1S2026')+'</div></div>'
+        +'<div class="hcard-sub">'+subLabel+'</div></div>'
         +'<span style="background:'+tier.color+';color:#fff;font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px;">'+tier.lbl+'</span></div>';
     // KPIs
     var contratStr=semMeta?hun.total+'/—':hun.total+'/'+hun.meta;
@@ -843,6 +952,23 @@ function renderOv(){
       +'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:#FEF3C7;color:#92400E;">'+hun.pleno+' Pleno</span>'
       +'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:#FCE7F3;color:#9D174D;">'+hun.junior+' Júnior</span>'
       +'</div>';
+    // Breakdown por canal (objetivos do período)
+    var canalRows=(hun.porCanal||[]).map(function(cc){
+      var pcc=cc.meta>0?Math.round(cc.feitas/cc.meta*100):(cc.feitas>0?100:0);
+      var cor=cc.meta===0?'#94A3B8':(pcc>=100?'#16A34A':pcc>=70?'#B8962E':'#DC2626');
+      return '<div style="display:flex;align-items:center;gap:6px;margin-top:5px;">'
+        +'<span style="flex:1;font-size:10px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+cc.canal+'</span>'
+        +'<span style="font-size:10px;font-weight:700;color:'+cor+';min-width:34px;text-align:right;">'+cc.feitas+'/'+(cc.meta||'—')+'</span>'
+        +'<div style="width:44px;height:5px;border-radius:3px;background:#EEF2F7;overflow:hidden;flex-shrink:0;"><div style="height:100%;width:'+Math.min(pcc,100)+'%;background:'+cor+';"></div></div>'
+        +'</div>';
+    }).join('');
+    var semDataStr=hun.semData>0
+      ?'<div style="font-size:9px;color:#B45309;margin-top:6px;">'+hun.semData+' contratação(ões) sem data — fora do recorte</div>':'';
+    var breakdownHtml=canalRows
+      ?'<div style="margin-top:11px;padding-top:9px;border-top:1px dashed var(--rule);">'
+        +'<div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t4);margin-bottom:1px;">Objetivos por canal</div>'
+        +canalRows+semDataStr+'</div>'
+      :(semDataStr?'<div style="margin-top:11px;padding-top:9px;border-top:1px dashed var(--rule);">'+semDataStr+'</div>':'');
     // Pace
     var paceHtml=semMeta
       ?'<div class="pace-bar"><div class="pace-fill" style="width:0%;background:#E2E8F0;"></div></div>'
@@ -854,7 +980,7 @@ function renderOv(){
       ?'<div style="font-size:11px;color:var(--t3);margin-top:8px;">Faltam <b style="color:var(--t1);">'+tier.falta+'</b> para <b style="color:'+tier.color+';">'+tier.next+'</b></div>'
       :'';
     return'<div class="'+cardCls+'" onclick="showDet(&#39;'+nomeEsc+'&#39;)">'
-      +crown+particles+fotoHtml+kpis+senRow+paceHtml+proxTier+badge+'</div>';
+      +crown+particles+fotoHtml+kpis+senRow+breakdownHtml+paceHtml+proxTier+badge+'</div>';
   }).join('');
   rank('r-auc',function(h){return h.auc;},fmt);
   // Disparar confetes para hunters que bateram a meta
