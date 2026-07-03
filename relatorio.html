@@ -1880,6 +1880,8 @@ function populateFilters(){
     if(r.p&&pracas.indexOf(r.p)<0)pracas.push(r.p);
     if(r.area&&areas.indexOf(r.area)<0)areas.push(r.area);
   });
+  // Áreas canônicas sempre disponíveis no filtro, mesmo sem contratado no período (ex.: Future)
+  ['Advisor','Assessor','Broker','Corporate','Future','Líder','Offshore','Planejador/Consultor','Seguros','Vem ser Blue','M&A','Assistente','Outros'].forEach(function(a){ if(areas.indexOf(a)<0)areas.push(a); });
   hunters.sort();pracas.sort();areas.sort();
   var fh=document.getElementById('flt-hunter');
   var fp=document.getElementById('flt-praca');
@@ -1887,13 +1889,15 @@ function populateFilters(){
   if(fh){fh.innerHTML='<option value="">Todos os hunters</option>'+hunters.map(function(h){return'<option value="'+h+'">'+h+'</option>';}).join('');}
   if(fp){fp.innerHTML='<option value="">Todas as praças</option>'+pracas.map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join('');}
   if(fa){fa.innerHTML='<option value="">Todas as áreas</option>'+areas.map(function(a){return'<option value="'+a+'">'+a+'</option>';}).join('');}
-  // Renderizar breakdown por área
-  renderAreaBreakdown(C);
-  renderPracasTooltip(C);
-  renderAssessoresMensal(C);
-  renderOutrasAreas(C);
-  renderConsolidadorPracas(C);
-  renderRegionais(C);
+  // Seções abaixo respeitam o período selecionado já no load (igual ao setPeriodo).
+  // O dropdown de áreas acima continua com TODAS as áreas; só a contagem é recortada.
+  var _Cp = C.filter(_inPeriodo);
+  renderAreaBreakdown(_Cp);
+  renderPracasTooltip(_Cp);
+  renderAssessoresMensal(_Cp);
+  renderOutrasAreas(_Cp);
+  renderConsolidadorPracas(_Cp);
+  renderRegionais(_Cp);
 }
 
 function getFilteredCandidatos(){
