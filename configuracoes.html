@@ -1016,7 +1016,7 @@ function salvarPraca() {
   var _antigo = _editSnap.praca;
   NexusConfig.savePraca(dados, function(err) {
     document.getElementById('btn-p-txt').textContent = 'Salvar praça';
-    if (err) { toast('Erro ao salvar praça.','err'); return; }
+    if (err) { toast('Falha ao salvar praça: '+((err&&err.message)||err),'err'); return; }
     _logCad('praca', _ehEdicao?'editar':'criar', dados, _antigo);
     _editSnap.praca = null;
     toast('Praça salva com sucesso!','ok');
