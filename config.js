@@ -29,7 +29,22 @@ var NexusConfig = (function() {
 
   function supa(path, opts) {
     return fetch(SUPA_URL + '/rest/v1/' + path, Object.assign({ headers: headers() }, opts || {}))
-      .then(function(r) { return r.json(); });
+      .then(function(r) {
+        return r.text().then(function(t) {
+          var data = null;
+          try { data = t ? JSON.parse(t) : null; } catch(e) { data = t; }
+          if (!r.ok) {
+            // Antes o erro era engolido (.json direto) e a tela mostrava "salvo".
+            // Agora falha de verdade, com a mensagem real do Postgres/PostgREST.
+            var msg = (data && data.message) ? data.message : ('HTTP ' + r.status);
+            if (data && data.details) msg += ' — ' + data.details;
+            if (data && data.hint)    msg += ' (' + data.hint + ')';
+            console.error('[Supabase] ' + ((opts && opts.method) || 'GET') + ' /' + path + ' → ' + msg, data);
+            throw new Error(msg);
+          }
+          return data;
+        });
+      });
   }
 
   // ── Parâmetros ──────────────────────────────────────────────────
