@@ -238,6 +238,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         <button class="tab-btn active" onclick="switchTab('aba1',this)">Candidato</button>
         <button class="tab-btn" onclick="switchTab('aba2',this)">Remuneração</button>
         <button class="tab-btn" onclick="switchTab('aba3',this)">Proposta Comercial</button>
+        <button class="tab-btn" onclick="switchTab('aba4',this)">Onboarding</button>
       </div>
 
       <!-- ══ ABA 1 — Candidato ══ -->
@@ -566,6 +567,44 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
       </div>
 
+      <!-- ══ ABA 4 — Onboarding ══ -->
+      <div class="tab-pane" id="aba4">
+
+        <div class="sec-lbl" style="margin-top:0">Checklist · Onboarding Comercial</div>
+        <div class="fgrid">
+          <div class="f-row"><label>Data Onboarding Comercial</label><input id="m-onb-com-data" type="date"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;margin:12px 0 4px;">
+          <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.35;color:var(--t1);cursor:pointer;"><input type="checkbox" id="m-onb-com-alinhar" style="width:16px;height:16px;flex:none;margin-top:1px;">Alinhar com o líder a participação do assessor no onboarding</label>
+          <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.35;color:var(--t1);cursor:pointer;"><input type="checkbox" id="m-onb-com-confirmar" style="width:16px;height:16px;flex:none;margin-top:1px;">Confirmar com o assessor a disponibilidade</label>
+          <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.35;color:var(--t1);cursor:pointer;"><input type="checkbox" id="m-onb-com-cotacao" style="width:16px;height:16px;flex:none;margin-top:1px;">Solicitar cotação de passagem e hospedagem à agência de viagens</label>
+          <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.35;color:var(--t1);cursor:pointer;"><input type="checkbox" id="m-onb-com-compra" style="width:16px;height:16px;flex:none;margin-top:1px;">Validar a cotação e realizar a compra da passagem e da hospedagem</label>
+          <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.35;color:var(--t1);cursor:pointer;"><input type="checkbox" id="m-onb-com-tickets" style="width:16px;height:16px;flex:none;margin-top:1px;">Enviar os tickets e informações para os participantes</label>
+        </div>
+
+        <div class="sec-lbl">Checklist · Onboarding B2B XP</div>
+        <div class="fgrid">
+          <div class="f-row"><label>Data Onboarding XP</label><input id="m-onb-xp-data" type="date"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;margin:12px 0 4px;">
+          <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.35;color:var(--t1);cursor:pointer;"><input type="checkbox" id="m-onb-xp-turma" style="width:16px;height:16px;flex:none;margin-top:1px;">Confirmar com XP a data da próxima turma do Onboarding B2B</label>
+          <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.35;color:var(--t1);cursor:pointer;"><input type="checkbox" id="m-onb-xp-link" style="width:16px;height:16px;flex:none;margin-top:1px;">Solicitar o link de acesso da turma</label>
+          <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.35;color:var(--t1);cursor:pointer;"><input type="checkbox" id="m-onb-xp-orientar" style="width:16px;height:16px;flex:none;margin-top:1px;">Orientar o assessor sobre a importância e o funcionamento do Onboarding B2B</label>
+          <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.35;color:var(--t1);cursor:pointer;"><input type="checkbox" id="m-onb-xp-encaminhar" style="width:16px;height:16px;flex:none;margin-top:1px;">Encaminhar ao assessor o link de acesso e as orientações para participação</label>
+        </div>
+
+        <!-- Botões de ação -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--rule);gap:8px;">
+          <div style="display:flex;gap:8px;margin-left:auto;">
+            <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+            <button class="btn-salvar" onclick="salvarCandidato()">
+              <span>Salvar onboarding</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
   </div>
 </div>
 
@@ -877,6 +916,22 @@ function abrirEdicao(id) {
   var dd = document.getElementById('m-data-declinio'); if (dd) dd.value = r.data_declinio||'';
   toggleEtapaDatas(r.etapa||'Prospecção');
   carregarHistorico(r.comentarios||'');
+  // Onboarding
+  (function(){
+    var sv=function(id,v){ var e=document.getElementById(id); if(e) e.value=v||''; };
+    var sc=function(id,v){ var e=document.getElementById(id); if(e) e.checked=!!v; };
+    sv('m-onb-com-data', r.onb_com_data);
+    sc('m-onb-com-alinhar',  r.onb_com_alinhar_lider);
+    sc('m-onb-com-confirmar', r.onb_com_confirmar_disp);
+    sc('m-onb-com-cotacao',  r.onb_com_cotacao);
+    sc('m-onb-com-compra',   r.onb_com_compra);
+    sc('m-onb-com-tickets',  r.onb_com_envio_tickets);
+    sv('m-onb-xp-data', r.onb_xp_data);
+    sc('m-onb-xp-turma',     r.onb_xp_confirmar_turma);
+    sc('m-onb-xp-link',      r.onb_xp_link_acesso);
+    sc('m-onb-xp-orientar',  r.onb_xp_orientar);
+    sc('m-onb-xp-encaminhar', r.onb_xp_encaminhar);
+  })();
   // campos financeiros
   document.getElementById('m-auc-cust').value    = r.auc_custodia_mm ? formatBRL(r.auc_custodia_mm) : '';
   document.getElementById('m-clientes').value    = r.num_clientes||'';
@@ -966,9 +1021,15 @@ function limparModal() {
    'm-copart','m-copart-det','m-codigo-a','m-cs','m-prev-inicio',
    'm-data-ent','m-data-contratacao','m-data-ini','m-obs',
    'm-auc-cust','m-clientes','m-rem-bruta','m-bonus-bruto','m-saude','m-vavr',
-   'm-saude-anual','m-vavr-anual','m-obs-nova'
+   'm-saude-anual','m-vavr-anual','m-obs-nova',
+   'm-onb-com-data','m-onb-xp-data'
   ].forEach(function(id){
     var el = document.getElementById(id); if (el) el.value = '';
+  });
+  ['m-onb-com-alinhar','m-onb-com-confirmar','m-onb-com-cotacao','m-onb-com-compra','m-onb-com-tickets',
+   'm-onb-xp-turma','m-onb-xp-link','m-onb-xp-orientar','m-onb-xp-encaminhar'
+  ].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.checked = false;
   });
   document.getElementById('m-hunter').value  = '';
   document.getElementById('m-nivel').value   = '';
@@ -1006,6 +1067,7 @@ function limparModal() {
 function g(id){ return (document.getElementById(id)||{}).value||''; }
 function gn(id){ return parseFloat(g(id))||0; }
 function gi(id){ return parseInt(g(id))||0; }
+function gc(id){ var e=document.getElementById(id); return e ? !!e.checked : false; }
 
 function salvarCandidato() {
   if (window._CRM_READONLY) { alert('Seu perfil tem acesso somente leitura ao CRM.'); return; }
@@ -1045,6 +1107,18 @@ function salvarCandidato() {
     tipo_bonus:        g('m-tipo-bonus') || 'Semestral',
     plano_saude:       parseBRL(g('m-saude')),
     vavr:              parseBRL(g('m-vavr')),
+    // Onboarding — datas + checklists (bool)
+    onb_com_data:           g('m-onb-com-data')||null,
+    onb_com_alinhar_lider:  gc('m-onb-com-alinhar'),
+    onb_com_confirmar_disp: gc('m-onb-com-confirmar'),
+    onb_com_cotacao:        gc('m-onb-com-cotacao'),
+    onb_com_compra:         gc('m-onb-com-compra'),
+    onb_com_envio_tickets:  gc('m-onb-com-tickets'),
+    onb_xp_data:            g('m-onb-xp-data')||null,
+    onb_xp_confirmar_turma: gc('m-onb-xp-turma'),
+    onb_xp_link_acesso:     gc('m-onb-xp-link'),
+    onb_xp_orientar:        gc('m-onb-xp-orientar'),
+    onb_xp_encaminhar:      gc('m-onb-xp-encaminhar'),
     atualizado_em: new Date().toISOString()
   };
   var id = g('m-id');
