@@ -332,6 +332,35 @@ var NexusConfig = (function() {
       .catch(function(e) { cb(e, null); });
   }
 
+  // ── Reatribuição de cards do CRM entre hunters ──────────────────
+  // Move o campo "hunter" de uma lista de candidatos para um novo hunter.
+  // Uso: quando um hunter sai da operação e a carteira precisa ser redistribuída.
+  // idsCandidatos: array de ids de crm_candidatos. novoHunter: nome do hunter destino.
+  function reatribuirCardsHunter(idsCandidatos, novoHunter, cb) {
+    if (!idsCandidatos || !idsCandidatos.length || !novoHunter) {
+      cb(new Error('Selecione ao menos um card e um hunter de destino.'), null);
+      return;
+    }
+    var payload = { hunter: novoHunter, atualizado_em: new Date().toISOString() };
+    var pendentes = idsCandidatos.length;
+    var falhas = [];
+    var sucesso = 0;
+    idsCandidatos.forEach(function(id) {
+      supa('crm_candidatos?id=eq.' + id, { method: 'PATCH', body: JSON.stringify(payload) })
+        .then(function() { sucesso++; checarFim(); })
+        .catch(function(e) { falhas.push({ id: id, erro: (e && e.message) || String(e) }); checarFim(); });
+    });
+    function checarFim() {
+      pendentes--;
+      if (pendentes === 0) {
+        log('Reatribuição de cards entre hunters', {
+          novo_hunter: novoHunter, total: idsCandidatos.length, sucesso: sucesso, falhas: falhas.length
+        });
+        cb(falhas.length ? falhas : null, { sucesso: sucesso, falhas: falhas.length });
+      }
+    }
+  }
+
   // ── Histórico de etapas CRM ─────────────────────────────────────
   // Registra automaticamente a mudança de etapa
   // Chamar sempre que etapa mudar (drag ou select)
@@ -489,6 +518,7 @@ var NexusConfig = (function() {
     deletePraca:            deletePraca,
     exportarTabela:         exportarTabela,
     TABELAS_EXPORTAVEIS:    TABELAS_EXPORTAVEIS,
+    reatribuirCardsHunter:  reatribuirCardsHunter,
     registrarMudancaEtapa:  registrarMudancaEtapa,
     calcularTempoEtapas:    calcularTempoEtapas,
     clearCache:             clearCache,
