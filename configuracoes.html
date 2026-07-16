@@ -132,6 +132,7 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
   <button class="main-tab" onclick="showTab('tab-pracas',this);carregarPracas()">Praças</button>
   <button class="main-tab" onclick="showTab('tab-params',this)">Parâmetros</button>
   <button class="main-tab" onclick="showTab('tab-usuarios',this);carregarUsuarios()">Usuários</button>
+  <button class="main-tab" onclick="showTab('tab-ferramentas',this)">Ferramentas</button>
 </div>
 
 <!-- Toast de feedback -->
@@ -462,6 +463,16 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
     </table>
   </div>
 
+</div>
+
+<div class="tab-content page" id="tab-ferramentas">
+  <div class="card">
+    <div class="card-title">Exportar dados (.csv)</div>
+    <div class="card-sub">Cópia de segurança manual — gera um arquivo local com todos os registros da tabela escolhida. Não substitui backup de verdade, mas evita ficar sem nada em mãos se algo der errado.</div>
+    <div class="btn-row" id="ferramentas-export-btns" style="flex-wrap:wrap;">
+      <div style="padding:12px;color:var(--t3);font-size:12px;">Carregando lista de tabelas...</div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1236,11 +1247,60 @@ function atualizarInicialFoto() {
   }
 }
 
+// ════════════ FERRAMENTAS · EXPORTAÇÃO DE DADOS ═══════════════════
+// Só leitura — não altera nenhum registro do sistema.
+
+function renderBotoesExportacao() {
+  var wrap = document.getElementById('ferramentas-export-btns');
+  if (!wrap) return;
+  var tabelas = (typeof NexusConfig !== 'undefined' && NexusConfig.TABELAS_EXPORTAVEIS) || [];
+  if (!tabelas.length) { wrap.innerHTML = '<div style="padding:12px;color:var(--t3);font-size:12px;">Nenhuma tabela configurada para exportação.</div>'; return; }
+  wrap.innerHTML = tabelas.map(function(t) {
+    return '<button class="btn-secondary" onclick="exportarTabelaCSV(\''+t.tabela+'\',\''+t.tabela+'\')">⬇ Exportar '+t.label+'</button>';
+  }).join('');
+}
+
+function _linhasParaCSV(rows) {
+  if (!rows || !rows.length) return '';
+  var todasCols = {};
+  rows.forEach(function(r){ Object.keys(r).forEach(function(k){ todasCols[k]=true; }); });
+  var cols = Object.keys(todasCols);
+  var linhas = [cols.join(',')];
+  rows.forEach(function(r){
+    linhas.push(cols.map(function(c){
+      var v = r[c];
+      if (v===null || v===undefined) return '';
+      if (typeof v==='object') v = JSON.stringify(v);
+      v = String(v).replace(/"/g,'""');
+      if (/[",\n]/.test(v)) v = '"'+v+'"';
+      return v;
+    }).join(','));
+  });
+  return linhas.join('\n');
+}
+
+function exportarTabelaCSV(tabela, nomeArquivo) {
+  toast('Gerando exportação...', 'ok');
+  NexusConfig.exportarTabela(tabela, function(err, rows) {
+    if (err) { toast('Erro ao exportar '+tabela+': '+(err.message||err), 'err'); return; }
+    if (!rows.length) { toast('Nenhum registro em '+tabela+' pra exportar.', 'err'); return; }
+    var csv = _linhasParaCSV(rows);
+    var blob = new Blob(['\ufeff'+csv], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = nomeArquivo + '_' + new Date().toISOString().slice(0,10) + '.csv';
+    link.click();
+    if (NexusConfig.log) NexusConfig.log('Exportação de dados', { tabela: tabela, linhas: rows.length });
+    toast(rows.length + ' registro(s) exportado(s)!', 'ok');
+  });
+}
+
 // ── Init ──────────────────────────────────────────────────────────
 carregarHunters();
 carregarParametros();
 carregarWL();
 renderMetasCanaisInputs();
+renderBotoesExportacao();
 _recarregarMetasCache(function(){ carregarHunters(); });
 
 // ── Gestão de Usuários ─────────────────────────────────────────
