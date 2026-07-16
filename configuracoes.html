@@ -466,11 +466,31 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
 </div>
 
 <div class="tab-content page" id="tab-ferramentas">
-  <div class="card">
+  <div class="card" style="margin-bottom:16px;">
     <div class="card-title">Exportar dados (.csv)</div>
     <div class="card-sub">Cópia de segurança manual — gera um arquivo local com todos os registros da tabela escolhida. Não substitui backup de verdade, mas evita ficar sem nada em mãos se algo der errado.</div>
     <div class="btn-row" id="ferramentas-export-btns" style="flex-wrap:wrap;">
       <div style="padding:12px;color:var(--t3);font-size:12px;">Carregando lista de tabelas...</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Reatribuir cards de Hunter</div>
+    <div class="card-sub">Quando um hunter sai da operação, selecione os cards do CRM que devem ser transferidos e escolha o novo responsável. Só os cards marcados são movidos — o resto da carteira do hunter de origem permanece intacto. Ação registrada no log de auditoria.</div>
+    <div class="fgrid">
+      <div class="f-row">
+        <label>De (hunter atual)</label>
+        <select id="reat-hunter-de" onchange="carregarCardsDoHunter()"><option value="">— selecione —</option></select>
+      </div>
+      <div class="f-row">
+        <label>Para (novo hunter)</label>
+        <select id="reat-hunter-para"><option value="">— selecione —</option></select>
+      </div>
+    </div>
+    <div id="reat-hunter-cards" style="margin:12px 0;max-height:340px;overflow:auto;border:1px solid var(--rule);border-radius:8px;display:none;"></div>
+    <div class="btn-row">
+      <button class="btn-secondary" id="btn-reat-toggle-all" style="display:none;" onclick="toggleTodosCardsHunter()">Marcar/desmarcar todos</button>
+      <button class="btn-primary" onclick="reatribuirCardsSelecionados()">Transferir selecionados</button>
     </div>
   </div>
 </div>
@@ -1295,12 +1315,88 @@ function exportarTabelaCSV(tabela, nomeArquivo) {
   });
 }
 
+// ════════════ FERRAMENTAS · REATRIBUIÇÃO DE CARDS ENTRE HUNTERS ═══
+// Move só os cards marcados — não mexe no resto da carteira do hunter de origem.
+
+var _reatCardsAtual = []; // cards do hunter "de" atualmente carregados na tela
+
+function popularSelectsReatribuicaoHunter() {
+  NexusConfig.getHunters(function(err, hunters) {
+    if (err || !hunters) return;
+    var selDe  = document.getElementById('reat-hunter-de');
+    var selPara = document.getElementById('reat-hunter-para');
+    if (!selDe || !selPara) return;
+    // "De": todos os hunters, incluindo inativos (o hunter que saiu normalmente já está Inativo)
+    selDe.innerHTML = '<option value="">— selecione —</option>' + hunters.map(function(h) {
+      return '<option value="'+esc(h.nome)+'">'+esc(h.nome)+(h.status==='Inativo' ? ' (inativo)' : '')+'</option>';
+    }).join('');
+    // "Para": só hunters ativos, já que é quem vai receber os cards
+    var ativos = hunters.filter(function(h){ return (h.status||'Ativo') !== 'Inativo'; });
+    selPara.innerHTML = '<option value="">— selecione —</option>' + ativos.map(function(h) {
+      return '<option value="'+esc(h.nome)+'">'+esc(h.nome)+'</option>';
+    }).join('');
+  });
+}
+
+function carregarCardsDoHunter() {
+  var hunter = document.getElementById('reat-hunter-de').value;
+  var wrap = document.getElementById('reat-hunter-cards');
+  var btnAll = document.getElementById('btn-reat-toggle-all');
+  if (!hunter) { wrap.style.display = 'none'; wrap.innerHTML = ''; btnAll.style.display = 'none'; _reatCardsAtual = []; return; }
+  wrap.style.display = 'block';
+  wrap.innerHTML = '<div style="padding:12px;color:var(--t3);font-size:12px;">Carregando cards de '+esc(hunter)+'...</div>';
+  NexusConfig.exportarTabela('crm_candidatos', function(err, rows) {
+    if (err) { wrap.innerHTML = '<div style="padding:12px;color:var(--red);font-size:12px;">Erro ao carregar cards.</div>'; return; }
+    _reatCardsAtual = (rows||[]).filter(function(c){ return (c.hunter||'') === hunter; });
+    if (!_reatCardsAtual.length) {
+      wrap.innerHTML = '<div style="padding:12px;color:var(--t3);font-size:12px;">Nenhum card encontrado para este hunter.</div>';
+      btnAll.style.display = 'none';
+      return;
+    }
+    btnAll.style.display = '';
+    wrap.innerHTML = _reatCardsAtual.map(function(c) {
+      return '<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--rule);font-size:12px;cursor:pointer;">'
+        + '<input type="checkbox" class="reat-card-chk" value="'+c.id+'">'
+        + '<span style="flex:1;">'+esc(c.nome||'—')+'</span>'
+        + '<span style="color:var(--t3);">'+esc(c.vaga||'—')+' · '+esc(c.etapa||'—')+' · '+esc(c.praca||'—')+'</span>'
+        + '</label>';
+    }).join('');
+  });
+}
+
+function toggleTodosCardsHunter() {
+  var chks = document.querySelectorAll('.reat-card-chk');
+  if (!chks.length) return;
+  var algumDesmarcado = Array.prototype.some.call(chks, function(c){ return !c.checked; });
+  chks.forEach(function(c){ c.checked = algumDesmarcado; });
+}
+
+function reatribuirCardsSelecionados() {
+  var de = document.getElementById('reat-hunter-de').value;
+  var para = document.getElementById('reat-hunter-para').value;
+  if (!de || !para) { toast('Selecione o hunter de origem e o de destino.', 'err'); return; }
+  if (de === para) { toast('Selecione hunters diferentes.', 'err'); return; }
+  var chks = document.querySelectorAll('.reat-card-chk:checked');
+  if (!chks.length) { toast('Marque ao menos um card para transferir.', 'err'); return; }
+  var ids = Array.prototype.map.call(chks, function(c){ return c.value; });
+  if (!confirm('Transferir '+ids.length+' card(s) de "'+de+'" para "'+para+'"?\n\nOs demais cards de "'+de+'" não são afetados.')) return;
+  NexusConfig.reatribuirCardsHunter(ids, para, function(err, resultado) {
+    if (err) {
+      toast('Concluído com falhas: '+resultado.sucesso+' ok, '+resultado.falhas+' erro(s).', 'err');
+    } else {
+      toast(resultado.sucesso+' card(s) transferido(s) para "'+para+'"!', 'ok');
+    }
+    carregarCardsDoHunter(); // recarrega a lista do hunter de origem (já sem os que saíram)
+  });
+}
+
 // ── Init ──────────────────────────────────────────────────────────
 carregarHunters();
 carregarParametros();
 carregarWL();
 renderMetasCanaisInputs();
 renderBotoesExportacao();
+popularSelectsReatribuicaoHunter();
 _recarregarMetasCache(function(){ carregarHunters(); });
 
 // ── Gestão de Usuários ─────────────────────────────────────────
