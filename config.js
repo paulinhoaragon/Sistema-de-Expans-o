@@ -307,6 +307,31 @@ var NexusConfig = (function() {
       .then(function() { cb(null); }).catch(function(e) { cb(e); });
   }
 
+  // ── Exportação de tabelas (Ferramentas) ─────────────────────────
+  // Lista canônica das tabelas exportáveis. Só leitura — usada na aba
+  // Ferramentas de Configurações para gerar backups manuais em CSV.
+  var TABELAS_EXPORTAVEIS = [
+    { tabela: 'crm_candidatos', label: 'Candidatos (CRM)' },
+    { tabela: 'hunters',        label: 'Hunters' },
+    { tabela: 'hunter_metas',   label: 'Metas de Hunters' },
+    { tabela: 'lideres',        label: 'Líderes' },
+    { tabela: 'regionais',      label: 'Regionais' },
+    { tabela: 'pracas',         label: 'Praças' },
+    { tabela: 'propostas',      label: 'Propostas' },
+    { tabela: 'ma_pipeline',    label: 'Pipeline M&A' },
+    { tabela: 'vagas',          label: 'Vagas' },
+    { tabela: 'parametros',     label: 'Parâmetros' },
+    { tabela: 'white_label',    label: 'White Label' },
+    { tabela: 'logs_auditoria', label: 'Logs de Auditoria' },
+  ];
+
+  // Busca todas as linhas de uma tabela (até 10.000). Só leitura.
+  function exportarTabela(tabela, cb) {
+    supa(tabela + '?limit=10000')
+      .then(function(rows) { cb(null, rows || []); })
+      .catch(function(e) { cb(e, null); });
+  }
+
   // ── Histórico de etapas CRM ─────────────────────────────────────
   // Registra automaticamente a mudança de etapa
   // Chamar sempre que etapa mudar (drag ou select)
@@ -462,6 +487,8 @@ var NexusConfig = (function() {
     getPracas:              getPracas,
     savePraca:              savePraca,
     deletePraca:            deletePraca,
+    exportarTabela:         exportarTabela,
+    TABELAS_EXPORTAVEIS:    TABELAS_EXPORTAVEIS,
     registrarMudancaEtapa:  registrarMudancaEtapa,
     calcularTempoEtapas:    calcularTempoEtapas,
     clearCache:             clearCache,
