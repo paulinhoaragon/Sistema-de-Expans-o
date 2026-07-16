@@ -658,6 +658,21 @@ var _PRACAS_CAD = [];   // praças do cadastro central (NexusConfig.getPracas)
 var _LIDERES_CAD = [];  // líderes do cadastro central (NexusConfig.getLideres)
 var _csvRows = [], _csvHeaders = [];
 
+// ── Regra: telefone não pode ser duplicado (telefone é o ID principal do CRM) ──
+// Compara apenas dígitos, pra não deixar passar duplicidade por formatação diferente
+// (ex: "(11) 99999-9999" vs "11999999999", como pode acontecer em cadastros importados).
+function telefoneJaCadastrado(telNovo, idAtual) {
+  var digitsNovo = (telNovo || '').replace(/\D/g, '');
+  if (!digitsNovo) return null; // sem telefone informado — nada a validar
+  for (var i = 0; i < _todos.length; i++) {
+    var c = _todos[i];
+    if (idAtual && c.id === idAtual) continue; // ignora o próprio registro em edição
+    var digitsExistente = (c.telefone || '').replace(/\D/g, '');
+    if (digitsExistente && digitsExistente === digitsNovo) return c;
+  }
+  return null;
+}
+
 // ── Supabase ──────────────────────────────────────────────────────
 function supa(path, opts) {
   var h = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
@@ -1075,6 +1090,12 @@ function salvarCandidato() {
   if (!nome) { alert('Informe o nome do candidato.'); return; }
   var vaga = g('m-vaga');
   if (!vaga) { alert('Selecione a vaga do candidato.'); return; }
+  var _idAtual = g('m-id');
+  var _dup = telefoneJaCadastrado(g('m-tel'), _idAtual);
+  if (_dup) {
+    alert('Este telefone já está cadastrado para "' + (_dup.nome || 'outro candidato') + '". Não é possível duplicar o cadastro pelo mesmo telefone.');
+    return;
+  }
   var payload = {
     nome: nome, telefone: g('m-tel'), email: g('m-email'), instituicao: g('m-inst'), praca: g('m-praca'),
     hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), vaga: vaga, estrategico: g('m-estrategico')||'Não', etapa: g('m-etapa'),
