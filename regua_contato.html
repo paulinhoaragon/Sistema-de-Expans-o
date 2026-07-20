@@ -154,23 +154,23 @@ var REGUAS = [
   { key:'r1', num:1, campoBase:'data_contratacao', campoDone:'data_contrato_assinado', prazo:15,
     titulo:'Documentos & Contrato', desc:'15 dias corridos após a contratação',
     lblBase:'Contratado em', lblAcao:'Marcar contrato assinado',
-    extraCol:null },
+    proximosMarcos:['data_mou','data_inicio'], extraCol:null },
   { key:'r2', num:2, campoBase:'data_mou', campoDone:'data_desligamento_solicitado', prazo:30,
     titulo:'Solicitação de Desligamento', desc:'30 dias corridos após a assinatura do MOU',
     lblBase:'MOU assinado em', lblAcao:'Marcar desligamento solicitado',
-    extraCol:{ key:'instituicao', label:'Instituição de Origem' } },
+    proximosMarcos:['data_inicio'], extraCol:{ key:'instituicao', label:'Instituição de Origem' } },
   { key:'r3', num:3, campoBase:'data_inicio', campoDone:'data_contato_30', prazo:30,
     titulo:'Check-in de Performance — 30 dias', desc:'30 dias corridos após o início do trabalho',
     lblBase:'Início em', lblAcao:'Marcar contato realizado',
-    extraCol:{ key:'lider', label:'Líder' } },
+    proximosMarcos:null, extraCol:{ key:'lider', label:'Líder' } },
   { key:'r4', num:4, campoBase:'data_inicio', campoDone:'data_contato_60', prazo:60,
     titulo:'Check-in de Performance — 60 dias', desc:'60 dias corridos após o início do trabalho',
     lblBase:'Início em', lblAcao:'Marcar contato realizado',
-    extraCol:{ key:'lider', label:'Líder' } },
+    proximosMarcos:null, extraCol:{ key:'lider', label:'Líder' } },
   { key:'r5', num:5, campoBase:'data_inicio', campoDone:'data_contato_180', prazo:180,
     titulo:'Check-in de Performance — 180 dias', desc:'180 dias corridos após o início do trabalho',
     lblBase:'Início em', lblAcao:'Marcar contato realizado',
-    extraCol:{ key:'lider', label:'Líder' } }
+    proximosMarcos:null, extraCol:{ key:'lider', label:'Líder' } }
 ];
 
 var CANDIDATOS = [];
@@ -180,6 +180,14 @@ function calcularItem(c, regra) {
   var base = c[regra.campoBase];
   if (!base) return null; // marco não se aplica ainda a este candidato
   var done = c[regra.campoDone];
+
+  if (!done && regra.proximosMarcos) {
+    // Prova por data real: se um marco posterior do funil já aconteceu, esta etapa
+    // necessariamente já foi resolvida na vida real, mesmo sem registro exato — não precisa mais tratar.
+    var jaAvancou = regra.proximosMarcos.some(function(campo){ return !!c[campo]; });
+    if (jaAvancou) return null;
+  }
+
   var item = { candidato:c, regra:regra, base:base, done:done||null };
   if (done) {
     var diasConclusao = diasEntre(base, done);
@@ -221,7 +229,7 @@ function carregar() {
     var extraMap = {};
     if (extra) extra.forEach(function(e){ extraMap[e.id] = e; });
     CANDIDATOS = base
-      .filter(function(c){ return ['Contratação','Trabalhando'].indexOf(c.etapa) > -1; })
+      .filter(function(c){ return !!c.data_contratacao && c.etapa !== 'Declinou'; })
       .map(function(c){ return Object.assign({}, c, extraMap[c.id]||{}); });
     popularFiltros();
     render();
