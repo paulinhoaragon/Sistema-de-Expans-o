@@ -285,50 +285,55 @@ function renderDash(G, H, crm, propostas, _ma, crmFull) {
     }
   });
 
-  // ── 🕐 Régua de Contato — marcos vencidos ou próximos do vencimento ──
+  // ── 🕐 Régua de Contato — bloco de alertas PRÓPRIO, separado dos demais ──
+  var reguaCrit = [];
+  var reguaWarn = [];
   var REGUA_DEFS = [
-    { campoBase:'data_contratacao', campoDone:'data_contrato_assinado', prazo:15, titulo:'Documentos & Contrato' },
-    { campoBase:'data_mou',         campoDone:'data_desligamento_solicitado', prazo:30, titulo:'Solicitação de Desligamento' },
-    { campoBase:'data_inicio',      campoDone:'data_contato_30',  prazo:30,  titulo:'Check-in 30 dias' },
-    { campoBase:'data_inicio',      campoDone:'data_contato_60',  prazo:60,  titulo:'Check-in 60 dias' },
-    { campoBase:'data_inicio',      campoDone:'data_contato_180', prazo:180, titulo:'Check-in 180 dias' }
+    { campoBase:'data_contratacao', campoDone:'data_contrato_assinado', prazo:15, titulo:'Documentos & Contrato', proximosMarcos:['data_mou','data_inicio'] },
+    { campoBase:'data_mou',         campoDone:'data_desligamento_solicitado', prazo:30, titulo:'Solicitação de Desligamento', proximosMarcos:['data_inicio'] },
+    { campoBase:'data_inicio',      campoDone:'data_contato_30',  prazo:30,  titulo:'Check-in 30 dias', proximosMarcos:null },
+    { campoBase:'data_inicio',      campoDone:'data_contato_60',  prazo:60,  titulo:'Check-in 60 dias', proximosMarcos:null },
+    { campoBase:'data_inicio',      campoDone:'data_contato_180', prazo:180, titulo:'Check-in 180 dias', proximosMarcos:null }
   ];
-  (crmFull||[]).forEach(function(c){
-    if (['Contratação','Trabalhando'].indexOf(c.etapa) === -1) return;
-    REGUA_DEFS.forEach(function(rg){
-      var base = c[rg.campoBase];
-      if (!base || c[rg.campoDone]) return; // marco não aplicável ainda, ou já concluído
-      var dias = diasDesde(base);
-      if (dias === null) return;
-      var restam = rg.prazo - dias;
-      if (restam < 0) {
-        alertasCrit.push({
-          emoji: '⏱️',
-          nome: c.nome || '—',
-          desc: (c.praca||'—') + ' · ' + rg.titulo + ' — ' + Math.abs(restam) + ' dias em atraso',
-          badge: Math.abs(restam) + 'd atraso',
-          tipo: 'crit',
-          nav: 'regua_contato.html'
-        });
-      } else if (restam <= 3) {
-        alertasWarn.push({
-          emoji: '⏱️',
-          nome: c.nome || '—',
-          desc: (c.praca||'—') + ' · ' + rg.titulo + ' — vence em ' + restam + (restam===1?' dia':' dias'),
-          badge: 'Vence em ' + restam + 'd',
-          tipo: 'warn',
-          nav: 'regua_contato.html'
-        });
-      }
+  (crmFull||[])
+    .filter(function(c){ return !!c.data_contratacao && c.etapa !== 'Declinou'; })
+    .forEach(function(c){
+      REGUA_DEFS.forEach(function(rg){
+        var base = c[rg.campoBase];
+        if (!base) return; // marco ainda não se aplica a este candidato
+        if (c[rg.campoDone]) return; // já concluído e registrado — não é alerta
+        if (rg.proximosMarcos && rg.proximosMarcos.some(function(campo){ return !!c[campo]; })) return; // marco posterior real já prova que isso foi resolvido
+        var dias = diasDesde(base);
+        if (dias === null) return;
+        var restam = rg.prazo - dias;
+        if (restam < 0) {
+          reguaCrit.push({
+            emoji: '⏱️',
+            nome: c.nome || '—',
+            desc: (c.praca||'—') + ' · ' + rg.titulo + ' — ' + Math.abs(restam) + ' dias em atraso',
+            badge: Math.abs(restam) + 'd atraso',
+            tipo: 'crit',
+            nav: 'regua_contato.html'
+          });
+        } else if (restam <= 3) {
+          reguaWarn.push({
+            emoji: '⏱️',
+            nome: c.nome || '—',
+            desc: (c.praca||'—') + ' · ' + rg.titulo + ' — vence em ' + restam + (restam===1?' dia':' dias'),
+            badge: 'Vence em ' + restam + 'd',
+            tipo: 'warn',
+            nav: 'regua_contato.html'
+          });
+        }
+      });
     });
-  });
 
   function renderAlertas(lista, tipo) {
     if (!lista.length) return '';
     var label = tipo === 'crit'
       ? '🔴 ' + lista.length + ' alerta' + (lista.length>1?'s':'') + ' crítico' + (lista.length>1?'s':'')
       : '🟡 ' + lista.length + ' ponto' + (lista.length>1?'s':'') + ' de atenção';
-    var id = 'alerta-body-' + tipo;
+    var id = 'alerta-body-' + tipo + '-' + Math.random().toString(36).slice(2,7);
     var html = '<div class="alerta-bloco">'
       + '<div class="alerta-header ' + tipo + '" onclick="(function(el){'
         + 'var b=document.getElementById(\'' + id + '\');'
@@ -360,7 +365,14 @@ function renderDash(G, H, crm, propostas, _ma, crmFull) {
       + renderAlertas(alertasWarn, 'warn');
   }
 
-  root.innerHTML = [alertasHtml,
+  var reguaHtml = '';
+  if (reguaCrit.length || reguaWarn.length) {
+    reguaHtml = '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t4);margin-bottom:10px;margin-top:'+(alertasHtml?'24px':'0')+';">Régua de Contato</div>'
+      + renderAlertas(reguaCrit, 'crit')
+      + renderAlertas(reguaWarn, 'warn');
+  }
+
+  root.innerHTML = [alertasHtml, reguaHtml,
 
     // ── BLOCO 1: Expansão ──
     '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t4);margin-bottom:10px;">Expansão</div>',
