@@ -125,7 +125,7 @@ function pct(a,b){ return b>0?Math.round(a/b*100)+'%':'—'; }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ── Renderizar dashboard ──
-function renderDash(G, H, crm, propostas, _ma) {
+function renderDash(G, H, crm, propostas, _ma, crmFull) {
   var root = document.getElementById('dash-root');
   var C = window.Blue3Data.candidatos || [];
 
@@ -283,6 +283,44 @@ function renderDash(G, H, crm, propostas, _ma) {
         nav: 'vagas.html'
       });
     }
+  });
+
+  // ── 🕐 Régua de Contato — marcos vencidos ou próximos do vencimento ──
+  var REGUA_DEFS = [
+    { campoBase:'data_contratacao', campoDone:'data_contrato_assinado', prazo:15, titulo:'Documentos & Contrato' },
+    { campoBase:'data_mou',         campoDone:'data_desligamento_solicitado', prazo:30, titulo:'Solicitação de Desligamento' },
+    { campoBase:'data_inicio',      campoDone:'data_contato_30',  prazo:30,  titulo:'Check-in 30 dias' },
+    { campoBase:'data_inicio',      campoDone:'data_contato_60',  prazo:60,  titulo:'Check-in 60 dias' },
+    { campoBase:'data_inicio',      campoDone:'data_contato_180', prazo:180, titulo:'Check-in 180 dias' }
+  ];
+  (crmFull||[]).forEach(function(c){
+    if (['Contratação','Trabalhando'].indexOf(c.etapa) === -1) return;
+    REGUA_DEFS.forEach(function(rg){
+      var base = c[rg.campoBase];
+      if (!base || c[rg.campoDone]) return; // marco não aplicável ainda, ou já concluído
+      var dias = diasDesde(base);
+      if (dias === null) return;
+      var restam = rg.prazo - dias;
+      if (restam < 0) {
+        alertasCrit.push({
+          emoji: '⏱️',
+          nome: c.nome || '—',
+          desc: (c.praca||'—') + ' · ' + rg.titulo + ' — ' + Math.abs(restam) + ' dias em atraso',
+          badge: Math.abs(restam) + 'd atraso',
+          tipo: 'crit',
+          nav: 'regua_contato.html'
+        });
+      } else if (restam <= 3) {
+        alertasWarn.push({
+          emoji: '⏱️',
+          nome: c.nome || '—',
+          desc: (c.praca||'—') + ' · ' + rg.titulo + ' — vence em ' + restam + (restam===1?' dia':' dias'),
+          badge: 'Vence em ' + restam + 'd',
+          tipo: 'warn',
+          nav: 'regua_contato.html'
+        });
+      }
+    });
   });
 
   function renderAlertas(lista, tipo) {
@@ -593,10 +631,11 @@ function showEmpty() {
           supa('crm_candidatos?select=etapa&limit=500').catch(function(){ return []; }),
           supa('propostas?select=status&limit=500').catch(function(){ return []; }),
           supa('ma_pipeline?select=id,nome,praca,auc_b,status&limit=200').catch(function(){ return []; }),
-          supa('vagas?select=id,cargo,unidade,status,prioridade,created_at&status=eq.aberta&limit=100').catch(function(){ return []; })
+          supa('vagas?select=id,cargo,unidade,status,prioridade,created_at&status=eq.aberta&limit=100').catch(function(){ return []; }),
+          supa('crm_candidatos?select=id,nome,praca,etapa,data_contratacao,data_mou,data_inicio,data_contrato_assinado,data_desligamento_solicitado,data_contato_30,data_contato_60,data_contato_180&limit=1000').catch(function(){ return []; })
         ]).then(function(results){
           if (window.Blue3Data) window.Blue3Data._vagas = results[3] || [];
-          renderDash(G, H, results[0], results[1], results[2]);
+          renderDash(G, H, results[0], results[1], results[2], results[4]);
         });
       } else {
         showEmpty();
