@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nexus · Régua de Contato</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0A0F1E;--cobalt:#1A3BAD;--cobalt-br:#2952E3;--cobalt-gl:#4A70F5;
+  --gold:#B8962E;--g:#16A34A;--am:#B45309;--red:#DC2626;
+  --canvas:#F0F2FA;--surface:#fff;--rule:#E2E5F0;
+  --t1:#0A0F1E;--t2:#3A4268;--t3:#7A82A8;--t4:#A8B0CC;
+  --r8:8px;--r12:12px;--sh:0 1px 4px rgba(10,15,30,.07),0 4px 16px rgba(10,15,30,.06);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:13px;min-height:100vh}
+
+/* ── COVER ── */
+.cover{background:var(--ink);min-height:104px;position:relative;overflow:hidden;padding:26px 32px 20px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px}
+.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+.cgl{position:absolute;top:-80px;right:-40px;width:360px;height:360px;background:radial-gradient(ellipse,rgba(41,82,227,.18) 0%,transparent 65%);pointer-events:none}
+.cv-t{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:#fff;letter-spacing:-.02em;position:relative}
+.cv-s{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.14em;margin-top:3px;position:relative}
+
+/* ── KPIs ── */
+.kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px 24px 4px}
+.kpi{background:var(--surface);border-radius:var(--r12);padding:14px 16px;box-shadow:var(--sh);border-top:3px solid var(--rule);cursor:pointer;transition:transform .15s}
+.kpi:hover{transform:translateY(-2px)}
+.kpi.red{border-top-color:var(--red)}
+.kpi.amber{border-top-color:var(--am)}
+.kpi.blue{border-top-color:var(--cobalt)}
+.kpi.green{border-top-color:var(--g)}
+.kpi-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.kpi-value{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:var(--t1);line-height:1}
+.kpi-sub{font-size:9px;color:var(--t4);margin-top:4px}
+
+/* ── FILTROS ── */
+.filters{background:var(--surface);border-bottom:1px solid var(--rule);padding:10px 24px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:50;margin-top:12px}
+.f-sel{padding:6px 10px;border:1px solid var(--rule);border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--t1);background:#fafbfd;outline:none;cursor:pointer}
+.f-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em}
+.f-count{font-size:11px;color:var(--t4);margin-left:auto}
+.f-check{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2);cursor:pointer}
+
+/* ── BANNER (colunas ausentes) ── */
+.banner-warn{margin:14px 24px 0;background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;border-radius:8px;padding:10px 14px;font-size:11px;line-height:1.5}
+.banner-warn code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-size:10px}
+
+/* ── CONTEÚDO ── */
+.content{padding:16px 24px 40px}
+.rc-section{background:var(--surface);border-radius:var(--r12);box-shadow:var(--sh);margin-bottom:18px;overflow:hidden}
+.rc-sec-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--rule);cursor:pointer;user-select:none}
+.rc-sec-left{display:flex;align-items:center;gap:10px}
+.rc-sec-num{width:24px;height:24px;border-radius:50%;background:var(--cobalt);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rc-sec-title{font-size:13px;font-weight:700;color:var(--t1)}
+.rc-sec-desc{font-size:10px;color:var(--t3);margin-top:2px;font-weight:400}
+.rc-sec-count{font-size:10px;font-weight:700;color:var(--t3);background:var(--canvas);padding:3px 10px;border-radius:20px}
+.rc-sec-toggle{font-size:11px;color:var(--t4);margin-left:10px}
+
+.rc-table{width:100%;border-collapse:collapse}
+.rc-table th{text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);padding:8px 14px;border-bottom:1px solid var(--rule);background:#FAFBFF}
+.rc-table td{padding:9px 14px;border-bottom:1px solid var(--rule);font-size:12px;color:var(--t2);vertical-align:middle}
+.rc-table tr:last-child td{border-bottom:none}
+.rc-table tr:hover td{background:#F8FAFF}
+.rc-nome{font-weight:700;color:var(--t1)}
+.rc-sub{font-size:10px;color:var(--t4)}
+
+.rc-badge{font-size:9px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;display:inline-block}
+.rc-badge.atrasado{background:#FEE2E2;color:#991B1B}
+.rc-badge.atencao{background:#FEF3C7;color:#92400E}
+.rc-badge.noprazo{background:#EEF2FD;color:var(--cobalt)}
+.rc-badge.concluido{background:#DCFCE7;color:#166534}
+.rc-badge.concluido.atraso{background:#FEF3C7;color:#92400E}
+
+.btn-ok{background:var(--cobalt);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.btn-ok:hover{background:var(--cobalt-br)}
+.btn-undo{background:none;border:none;color:var(--t4);font-size:10px;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif;margin-left:8px}
+.btn-undo:hover{color:var(--red)}
+
+.rc-empty{padding:24px;text-align:center;color:var(--t4);font-size:12px}
+
+.empty{text-align:center;padding:60px 20px;color:var(--t4)}
+.empty-icon{font-size:36px;margin-bottom:10px}
+.empty-t{font-size:14px;font-weight:600;color:var(--t2);margin-bottom:6px}
+.empty-s{font-size:12px}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cg"></div><div class="cgl"></div>
+  <div>
+    <div class="cv-t">Régua de Contato</div>
+    <div class="cv-s">Marcos de acompanhamento pós-contratação</div>
+  </div>
+</div>
+
+<div id="banner-root"></div>
+<div class="kpi-strip" id="kpi-root"></div>
+
+<div class="filters">
+  <span class="f-lbl">Hunter</span>
+  <select class="f-sel" id="f-hunter" onchange="aplicarFiltros()"><option value="">Todos</option></select>
+  <span class="f-lbl">Praça</span>
+  <select class="f-sel" id="f-praca" onchange="aplicarFiltros()"><option value="">Todas</option></select>
+  <span class="f-lbl">Status</span>
+  <select class="f-sel" id="f-status" onchange="aplicarFiltros()">
+    <option value="">Todos</option>
+    <option value="atrasado">Atrasado</option>
+    <option value="atencao">Atenção</option>
+    <option value="noprazo">No prazo</option>
+    <option value="concluido">Concluído</option>
+  </select>
+  <label class="f-check"><input type="checkbox" id="f-ocultar-concluidos" onchange="aplicarFiltros()"> Ocultar concluídos</label>
+  <span class="f-count" id="f-count">—</span>
+</div>
+
+<div class="content" id="content-root">
+  <div class="empty"><div class="empty-icon">⏳</div><div class="empty-t">Carregando candidatos...</div></div>
+</div>
+
+<script>
+var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+
+function supaGet(path) {
+  return fetch(SUPA_URL+'/rest/v1/'+path, { headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY } })
+    .then(function(r){ if(!r.ok) return r.json().then(function(e){ throw e; }).catch(function(){ throw new Error(r.status); }); return r.json(); });
+}
+function supaPatch(id, body) {
+  return fetch(SUPA_URL+'/rest/v1/crm_candidatos?id=eq.'+id, {
+    method:'PATCH',
+    headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY, 'Content-Type':'application/json', 'Prefer':'return=minimal' },
+    body: JSON.stringify(body)
+  });
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDate(s){ if(!s) return ''; var d = new Date(s+'T12:00:00'); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'}); }
+function hojeISO(){ return new Date().toISOString().slice(0,10); }
+function diasEntre(de, ate){
+  if (!de) return null;
+  var d1 = new Date(de+'T12:00:00');
+  var d2 = ate ? new Date(ate+'T12:00:00') : new Date();
+  if (isNaN(d1)) return null;
+  d2.setHours(12,0,0,0);
+  return Math.floor((d2-d1)/86400000);
+}
+
+// ════════ RÉGUAS ════════
+var WARN_JANELA = 3; // dias de antecedência para virar "Atenção"
+
+var REGUAS = [
+  { key:'r1', num:1, campoBase:'data_contratacao', campoDone:'data_contrato_assinado', prazo:15,
+    titulo:'Documentos & Contrato', desc:'15 dias corridos após a contratação',
+    lblBase:'Contratado em', lblAcao:'Marcar contrato assinado',
+    extraCol:null },
+  { key:'r2', num:2, campoBase:'data_mou', campoDone:'data_desligamento_solicitado', prazo:30,
+    titulo:'Solicitação de Desligamento', desc:'30 dias corridos após a assinatura do MOU',
+    lblBase:'MOU assinado em', lblAcao:'Marcar desligamento solicitado',
+    extraCol:{ key:'instituicao', label:'Instituição de Origem' } },
+  { key:'r3', num:3, campoBase:'data_inicio', campoDone:'data_contato_30', prazo:30,
+    titulo:'Check-in de Performance — 30 dias', desc:'30 dias corridos após o início do trabalho',
+    lblBase:'Início em', lblAcao:'Marcar contato realizado',
+    extraCol:{ key:'lider', label:'Líder' } },
+  { key:'r4', num:4, campoBase:'data_inicio', campoDone:'data_contato_60', prazo:60,
+    titulo:'Check-in de Performance — 60 dias', desc:'60 dias corridos após o início do trabalho',
+    lblBase:'Início em', lblAcao:'Marcar contato realizado',
+    extraCol:{ key:'lider', label:'Líder' } },
+  { key:'r5', num:5, campoBase:'data_inicio', campoDone:'data_contato_180', prazo:180,
+    titulo:'Check-in de Performance — 180 dias', desc:'180 dias corridos após o início do trabalho',
+    lblBase:'Início em', lblAcao:'Marcar contato realizado',
+    extraCol:{ key:'lider', label:'Líder' } }
+];
+
+var CANDIDATOS = [];
+var COLUNAS_OK = true;
+
+function calcularItem(c, regra) {
+  var base = c[regra.campoBase];
+  if (!base) return null; // marco não se aplica ainda a este candidato
+  var done = c[regra.campoDone];
+  var item = { candidato:c, regra:regra, base:base, done:done||null };
+  if (done) {
+    var diasConclusao = diasEntre(base, done);
+    item.status = (diasConclusao !== null && diasConclusao > regra.prazo) ? 'concluido-atraso' : 'concluido';
+    item.diasConclusao = diasConclusao;
+  } else {
+    var decorridos = diasEntre(base);
+    item.diasDecorridos = decorridos;
+    var restam = regra.prazo - decorridos;
+    item.restam = restam;
+    if (restam < 0) item.status = 'atrasado';
+    else if (restam <= WARN_JANELA) item.status = 'atencao';
+    else item.status = 'noprazo';
+  }
+  return item;
+}
+
+function statusClasse(status){ return status.indexOf('concluido')>-1 ? 'concluido'+(status==='concluido-atraso'?' atraso':'') : status; }
+function statusLabel(item){
+  if (item.status === 'concluido') return 'Concluído';
+  if (item.status === 'concluido-atraso') return 'Concluído c/ atraso';
+  if (item.status === 'atrasado') return (Math.abs(item.restam)) + 'd em atraso';
+  if (item.status === 'atencao') return item.restam===0 ? 'Vence hoje' : 'Faltam ' + item.restam + 'd';
+  return item.diasDecorridos + '/' + item.regra.prazo + ' dias';
+}
+
+// ════════ CARREGAR DADOS ════════
+function carregar() {
+  var camposBase = 'id,nome,praca,hunter,lider,instituicao,etapa,data_contratacao,data_mou,data_inicio';
+  var camposExtra = 'id,data_contrato_assinado,data_desligamento_solicitado,data_contato_30,data_contato_60,data_contato_180';
+
+  Promise.all([
+    supaGet('crm_candidatos?select='+camposBase+'&order=nome.asc&limit=1000'),
+    supaGet('crm_candidatos?select='+camposExtra+'&limit=1000').catch(function(){ return null; })
+  ]).then(function(r){
+    var base = r[0] || [];
+    var extra = r[1];
+    COLUNAS_OK = !!extra;
+    var extraMap = {};
+    if (extra) extra.forEach(function(e){ extraMap[e.id] = e; });
+    CANDIDATOS = base
+      .filter(function(c){ return ['Contratação','Trabalhando'].indexOf(c.etapa) > -1; })
+      .map(function(c){ return Object.assign({}, c, extraMap[c.id]||{}); });
+    popularFiltros();
+    render();
+  }).catch(function(err){
+    document.getElementById('content-root').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-t">Erro ao carregar candidatos</div><div class="empty-s">'+esc(JSON.stringify(err))+'</div></div>';
+  });
+}
+
+function popularFiltros() {
+  var hunters = Array.from(new Set(CANDIDATOS.map(function(c){ return c.hunter; }).filter(Boolean))).sort();
+  var pracas  = Array.from(new Set(CANDIDATOS.map(function(c){ return c.praca; }).filter(Boolean))).sort();
+  var selH = document.getElementById('f-hunter');
+  var selP = document.getElementById('f-praca');
+  hunters.forEach(function(h){ selH.innerHTML += '<option value="'+esc(h)+'">'+esc(h)+'</option>'; });
+  pracas.forEach(function(p){ selP.innerHTML += '<option value="'+esc(p)+'">'+esc(p)+'</option>'; });
+}
+
+// ════════ RENDER ════════
+function montarItens() {
+  var itens = [];
+  CANDIDATOS.forEach(function(c){
+    REGUAS.forEach(function(regra){
+      var it = calcularItem(c, regra);
+      if (it) itens.push(it);
+    });
+  });
+  return itens;
+}
+
+function render() {
+  if (!COLUNAS_OK) {
+    document.getElementById('banner-root').innerHTML = '<div class="banner-warn">⚠️ As colunas de controle da Régua de Contato ainda não existem em <code>crm_candidatos</code>. Rode o script <code>regua_contato_schema.sql</code> no SQL Editor do Supabase para habilitar o registro de conclusão de cada marco. Enquanto isso, os prazos são exibidos apenas como referência, sem opção de "marcar concluído".</div>';
+  } else {
+    document.getElementById('banner-root').innerHTML = '';
+  }
+
+  var itens = montarItens();
+  renderKPIs(itens);
+  renderSecoes(itens);
+  aplicarFiltros();
+}
+
+function renderKPIs(itens) {
+  var atrasados = itens.filter(function(i){ return i.status==='atrasado'; }).length;
+  var atencao   = itens.filter(function(i){ return i.status==='atencao'; }).length;
+  var noprazo   = itens.filter(function(i){ return i.status==='noprazo'; }).length;
+  var concluidos= itens.filter(function(i){ return i.status.indexOf('concluido')>-1; }).length;
+
+  document.getElementById('kpi-root').innerHTML = [
+    kpi('red','Atrasados', atrasados, 'ação necessária', 'atrasado'),
+    kpi('amber','Atenção', atencao, 'vencem em até '+WARN_JANELA+' dias', 'atencao'),
+    kpi('blue','No Prazo', noprazo, 'dentro do prazo', 'noprazo'),
+    kpi('green','Concluídos', concluidos, 'marcos já registrados', 'concluido')
+  ].join('');
+}
+function kpi(cor,label,val,sub,statusFiltro){
+  return '<div class="kpi '+cor+'" onclick="filtrarPorStatus(\''+statusFiltro+'\')">'
+    +'<div class="kpi-label">'+label+'</div>'
+    +'<div class="kpi-value">'+val+'</div>'
+    +'<div class="kpi-sub">'+sub+'</div></div>';
+}
+function filtrarPorStatus(s){ document.getElementById('f-status').value = s; aplicarFiltros(); }
+
+function renderSecoes(itens) {
+  var html = REGUAS.map(function(regra){
+    var doRegra = itens.filter(function(i){ return i.regra.key === regra.key; });
+    doRegra.sort(function(a,b){
+      var ord = { atrasado:0, atencao:1, noprazo:2, concluido:3, 'concluido-atraso':3 };
+      return (ord[a.status]-ord[b.status]) || (a.candidato.nome||'').localeCompare(b.candidato.nome||'');
+    });
+
+    var linhas = doRegra.map(function(it){
+      return linhaHtml(it, regra);
+    }).join('');
+
+    return '<div class="rc-section" data-regra="'+regra.key+'">'
+      + '<div class="rc-sec-header" onclick="toggleSecao(this)">'
+        + '<div class="rc-sec-left">'
+          + '<div class="rc-sec-num">'+regra.num+'</div>'
+          + '<div><div class="rc-sec-title">'+esc(regra.titulo)+'</div><div class="rc-sec-desc">'+esc(regra.desc)+'</div></div>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;">'
+          + '<span class="rc-sec-count">'+doRegra.length+' candidato'+(doRegra.length!==1?'s':'')+'</span>'
+          + '<span class="rc-sec-toggle">▲</span>'
+        + '</div>'
+      + '</div>'
+      + '<table class="rc-table"><thead><tr>'
+        + '<th>Candidato</th><th>Praça</th><th>Hunter</th>'
+        + (regra.extraCol ? '<th>'+esc(regra.extraCol.label)+'</th>' : '')
+        + '<th>'+esc(regra.lblBase)+'</th><th>Status</th><th>Ação</th>'
+      + '</tr></thead><tbody>'
+        + (linhas || '<tr><td colspan="7" class="rc-empty">Nenhum candidato neste marco</td></tr>')
+      + '</tbody></table>'
+    + '</div>';
+  }).join('');
+
+  document.getElementById('content-root').innerHTML = html;
+}
+
+function linhaHtml(it, regra) {
+  var c = it.candidato;
+  var statusCls = statusClasse(it.status);
+  var acaoHtml;
+  if (it.status.indexOf('concluido') > -1) {
+    acaoHtml = '<span class="rc-sub">'+fmtDate(it.done)+'</span>'
+      + (COLUNAS_OK ? '<button class="btn-undo" onclick="desfazerMarco(\''+c.id+'\',\''+regra.campoDone+'\',\''+regra.key+'\')">desfazer</button>' : '');
+  } else if (COLUNAS_OK) {
+    acaoHtml = '<button class="btn-ok" onclick="concluirMarco(\''+c.id+'\',\''+regra.campoDone+'\',\''+esc(regra.lblAcao)+'\')">'+esc(regra.lblAcao)+'</button>';
+  } else {
+    acaoHtml = '<span class="rc-sub">—</span>';
+  }
+
+  return '<tr data-hunter="'+esc(c.hunter||'')+'" data-praca="'+esc(c.praca||'')+'" data-status="'+statusCls.split(' ')[0]+'">'
+    + '<td><div class="rc-nome">'+esc(c.nome)+'</div></td>'
+    + '<td>'+esc(c.praca||'—')+'</td>'
+    + '<td>'+esc(c.hunter||'—')+'</td>'
+    + (regra.extraCol ? '<td>'+esc(c[regra.extraCol.key]||'—')+'</td>' : '')
+    + '<td>'+fmtDate(it.base)+'</td>'
+    + '<td><span class="rc-badge '+statusCls+'">'+statusLabel(it)+'</span></td>'
+    + '<td>'+acaoHtml+'</td>'
+  + '</tr>';
+}
+
+function toggleSecao(el) {
+  var tabela = el.nextElementSibling;
+  var t = el.querySelector('.rc-sec-toggle');
+  if (tabela.style.display === 'none') { tabela.style.display=''; t.textContent='▲'; }
+  else { tabela.style.display='none'; t.textContent='▼'; }
+}
+
+// ════════ AÇÕES ════════
+function concluirMarco(id, campo, labelAcao) {
+  if (!confirm('Confirmar: "'+labelAcao+'" — hoje ('+fmtDate(hojeISO())+')?')) return;
+  var body = {}; body[campo] = hojeISO();
+  supaPatch(id, body).then(function(r){
+    if (!r.ok) { alert('Erro ao salvar (status '+r.status+').'); return; }
+    carregar();
+  }).catch(function(e){ alert('Erro ao salvar: '+e); });
+}
+function desfazerMarco(id, campo) {
+  if (!confirm('Desfazer esta conclusão?')) return;
+  var body = {}; body[campo] = null;
+  supaPatch(id, body).then(function(r){
+    if (!r.ok) { alert('Erro ao desfazer (status '+r.status+').'); return; }
+    carregar();
+  }).catch(function(e){ alert('Erro ao desfazer: '+e); });
+}
+
+// ════════ FILTROS ════════
+function aplicarFiltros() {
+  var hunter = document.getElementById('f-hunter').value;
+  var praca  = document.getElementById('f-praca').value;
+  var status = document.getElementById('f-status').value;
+  var ocultarConcl = document.getElementById('f-ocultar-concluidos').checked;
+
+  var visiveis = 0;
+  document.querySelectorAll('.rc-table tbody tr[data-hunter]').forEach(function(tr){
+    var okH = !hunter || tr.getAttribute('data-hunter') === hunter;
+    var okP = !praca  || tr.getAttribute('data-praca')  === praca;
+    var st  = tr.getAttribute('data-status');
+    var okS = !status || st === status;
+    var okC = !ocultarConcl || st !== 'concluido';
+    var show = okH && okP && okS && okC;
+    tr.style.display = show ? '' : 'none';
+    if (show) visiveis++;
+  });
+
+  document.querySelectorAll('.rc-section').forEach(function(sec){
+    var visRows = sec.querySelectorAll('tbody tr[data-hunter]:not([style*="display: none"])').length;
+    var countEl = sec.querySelector('.rc-sec-count');
+    if (countEl) countEl.textContent = visRows + ' candidato' + (visRows!==1?'s':'');
+  });
+
+  document.getElementById('f-count').textContent = visiveis + ' marco' + (visiveis!==1?'s':'') + ' exibido' + (visiveis!==1?'s':'');
+}
+
+carregar();
+</script>
+</body>
+</html>
