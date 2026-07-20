@@ -430,7 +430,7 @@ function linhaHtml(it, regra) {
   var baseCellExtra = (regra.renovavel && it.renovacoes > 0)
     ? '<div class="rc-sub">renovado ' + it.renovacoes + 'x (prazo: ' + it.prazoEfetivo + 'd)</div>' : '';
 
-  return '<tr data-hunter="'+esc(c.hunter||'')+'" data-lider="'+esc(c.lider||'')+'" data-praca="'+esc(c.praca||'')+'" data-regional="'+esc(pracaParaRegional(c.praca)||'_sem')+'" data-status="'+statusCls.split(' ')[0]+'"'
+  return '<tr data-hunter="'+esc(c.hunter||'')+'" data-lider="'+esc(c.lider||'')+'" data-praca="'+esc(c.praca||'')+'" data-regional="'+esc(pracaParaRegional(c.praca)||'_sem')+'" data-etapa="'+esc(c.etapa||'')+'" data-status="'+statusCls.split(' ')[0]+'"'
     + ' data-limite="'+esc(fmtDate(it.dataLimite))+'" data-restam="'+(it.restam!==undefined?it.restam:'')+'">'
     + '<td><div class="rc-nome">'+esc(c.nome)+'</div></td>'
     + '<td>'+esc(c.praca||'—')+'</td>'
@@ -522,7 +522,13 @@ function copiarResumo() {
 
   document.querySelectorAll('.rc-section').forEach(function(sec){
     if (sec.style.display === 'none') return;
-    // Só entram no resumo do líder marcos que JÁ venceram ou vencem em breve —
+    var regraKey = sec.getAttribute('data-regra');
+    // Este resumo é especificamente de PERFORMANCE — Regra 1 (documentos) e Regra 2 (desligamento)
+    // são assuntos administrativos entre Hunter/RH e o candidato; o líder/regional não atua nisso
+    // e não devem entrar num pedido de "retorno de performance".
+    if (regraKey === 'r1' || regraKey === 'r2') return;
+
+    // Só entram no resumo marcos que JÁ venceram ou vencem em breve —
     // pedir retorno de alguém que ainda tem semanas de prazo não faz sentido.
     var linhas = Array.from(sec.querySelectorAll('tbody tr[data-hunter]')).filter(function(tr){
       return tr.style.display !== 'none' && (tr.getAttribute('data-status') === 'atrasado' || tr.getAttribute('data-status') === 'atencao');
@@ -533,14 +539,18 @@ function copiarResumo() {
     partes.push(tituloSec + ':');
     linhas.forEach(function(tr){
       var nome = tr.querySelector('.rc-nome') ? tr.querySelector('.rc-nome').textContent.trim() : '—';
+      var lider = tr.getAttribute('data-lider') || '—';
+      var praca = tr.getAttribute('data-praca') || '—';
+      var etapa = tr.getAttribute('data-etapa') || '—';
       var status = tr.getAttribute('data-status');
       var limite = tr.getAttribute('data-limite');
       var restam = tr.getAttribute('data-restam');
+      var ident = '(Líder: ' + lider + ' · ' + praca + ' · ' + etapa + ')';
       var frase;
       if (status === 'atrasado') {
-        frase = '• ' + nome + ' — venceu em ' + limite + ' (há ' + Math.abs(restam) + 'd) — poderia nos passar um retorno da performance dele(a)?';
+        frase = '• ' + nome + ' ' + ident + ' — venceu em ' + limite + ' (há ' + Math.abs(restam) + 'd) — poderia nos passar um retorno da performance dele(a)?';
       } else {
-        frase = '• ' + nome + ' — vence em ' + limite + ' (em ' + restam + 'd) — já pode ir preparando o retorno';
+        frase = '• ' + nome + ' ' + ident + ' — vence em ' + limite + ' (em ' + restam + 'd) — já pode ir preparando o retorno';
       }
       partes.push(frase);
       totalItens++;
