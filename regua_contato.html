@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Nexus · Régua de Contato</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="config.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -105,6 +106,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   <select class="f-sel" id="f-hunter" onchange="aplicarFiltros()"><option value="">Todos</option></select>
   <span class="f-lbl">Líder</span>
   <select class="f-sel" id="f-lider" onchange="aplicarFiltros()"><option value="">Todos</option></select>
+  <span class="f-lbl">Regional</span>
+  <select class="f-sel" id="f-regional" onchange="aplicarFiltros()">
+    <option value="">Todas</option>
+    <option value="Tamires">Tamires</option>
+    <option value="Yokoy">Yokoy</option>
+    <option value="Bruno">Bruno</option>
+    <option value="MariaLaura">Maria Laura</option>
+    <option value="_sem">Sem regional mapeada</option>
+  </select>
   <span class="f-lbl">Praça</span>
   <select class="f-sel" id="f-praca" onchange="aplicarFiltros()"><option value="">Todas</option></select>
   <span class="f-lbl">Status</span>
@@ -150,6 +160,60 @@ function diasEntre(de, ate){
   if (isNaN(d1)) return null;
   d2.setHours(12,0,0,0);
   return Math.floor((d2-d1)/86400000);
+}
+
+// ════════ REGIONAL (mesma fonte/lógica do relatório regional.html) ════════
+// Fallback usado só se o cadastro do banco falhar — a fonte de verdade é
+// NexusConfig.getRegionais() (editável em "Hunters & Parâmetros").
+var _REGS_DEFAULT = {
+  'Tamires':    ['Blue3 - Bauru','Blue3 - Campinas','Blue3 - Curitiba','Blue3 - Franca','Blue3 - Poços de Caldas','Blue3 - Ribeirão Preto','Blue3 - Rio de Janeiro','Blue3 - São José do Rio Preto','Blue3 - Noventena','Blue3 - Itajaí'],
+  'Yokoy':      ['Blue3 - Anywhere','Blue3 - Marília','Blue3 - São José dos Campos','Blue3 - São Paulo'],
+  'Bruno':      ['Blue3 - Goiânia','Blue3 - Uberlândia','Blue3 - Brasília','Blue3 - Belo Horizonte','Blue3 - Belém'],
+  'MariaLaura': [] // sem praças — filtra por área/vaga no relatório Regional; aqui entra como "sem regional mapeada"
+};
+var _REGS = JSON.parse(JSON.stringify(_REGS_DEFAULT));
+
+function _regKeyFromNome(nome){
+  var n=(nome||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(n.indexOf('tamires')>-1) return 'Tamires';
+  if(n.indexOf('yokoy')>-1)   return 'Yokoy';
+  if(n.indexOf('bruno')>-1)   return 'Bruno';
+  if(n.indexOf('maria')>-1 && n.indexOf('laura')>-1) return 'MariaLaura';
+  return null;
+}
+
+function carregarRegionaisRC(cb) {
+  var fin = false;
+  function done(){ if (fin) return; fin = true; cb && cb(); }
+  var to = setTimeout(done, 3000);
+  if (typeof NexusConfig === 'undefined' || typeof NexusConfig.getRegionais !== 'function') {
+    clearTimeout(to); done(); return;
+  }
+  try {
+    NexusConfig.getRegionais(function(err, list){
+      clearTimeout(to);
+      if (err || !list || !list.length) { done(); return; }
+      var novo = {};
+      list.forEach(function(rg){
+        if ((rg.status||'Ativo') === 'Inativo') return;
+        var key = _regKeyFromNome(rg.nome);
+        if (!key) return;
+        var pr = rg.pracas;
+        if (typeof pr === 'string') { try { pr = JSON.parse(pr); } catch(e){ pr = []; } }
+        novo[key] = Array.isArray(pr) ? pr : [];
+      });
+      if (!('MariaLaura' in novo)) novo['MariaLaura'] = [];
+      if (Object.keys(novo).length) _REGS = novo;
+      done();
+    });
+  } catch(e) { clearTimeout(to); done(); }
+}
+
+function pracaParaRegional(praca) {
+  for (var key in _REGS) {
+    if (_REGS[key] && _REGS[key].indexOf(praca) > -1) return key;
+  }
+  return null; // praça não mapeada em nenhuma regional (ou pertence a alguém que filtra por área, como Maria Laura)
 }
 
 // ════════ RÉGUAS ════════
@@ -366,7 +430,7 @@ function linhaHtml(it, regra) {
   var baseCellExtra = (regra.renovavel && it.renovacoes > 0)
     ? '<div class="rc-sub">renovado ' + it.renovacoes + 'x (prazo: ' + it.prazoEfetivo + 'd)</div>' : '';
 
-  return '<tr data-hunter="'+esc(c.hunter||'')+'" data-lider="'+esc(c.lider||'')+'" data-praca="'+esc(c.praca||'')+'" data-status="'+statusCls.split(' ')[0]+'"'
+  return '<tr data-hunter="'+esc(c.hunter||'')+'" data-lider="'+esc(c.lider||'')+'" data-praca="'+esc(c.praca||'')+'" data-regional="'+esc(pracaParaRegional(c.praca)||'_sem')+'" data-status="'+statusCls.split(' ')[0]+'"'
     + ' data-limite="'+esc(fmtDate(it.dataLimite))+'" data-restam="'+(it.restam!==undefined?it.restam:'')+'">'
     + '<td><div class="rc-nome">'+esc(c.nome)+'</div></td>'
     + '<td>'+esc(c.praca||'—')+'</td>'
@@ -415,6 +479,7 @@ function renovarPrazo(id, campoRenovacoes, valorAtual, labelAcao) {
 function aplicarFiltros() {
   var hunter = document.getElementById('f-hunter').value;
   var lider  = document.getElementById('f-lider').value;
+  var regional = document.getElementById('f-regional').value;
   var praca  = document.getElementById('f-praca').value;
   var status = document.getElementById('f-status').value;
   var ocultarConcl = document.getElementById('f-ocultar-concluidos').checked;
@@ -423,11 +488,12 @@ function aplicarFiltros() {
   document.querySelectorAll('.rc-table tbody tr[data-hunter]').forEach(function(tr){
     var okH = !hunter || tr.getAttribute('data-hunter') === hunter;
     var okL = !lider  || tr.getAttribute('data-lider')  === lider;
+    var okR = !regional || tr.getAttribute('data-regional') === regional;
     var okP = !praca  || tr.getAttribute('data-praca')  === praca;
     var st  = tr.getAttribute('data-status');
     var okS = !status || st === status;
     var okC = !ocultarConcl || st !== 'concluido';
-    var show = okH && okL && okP && okS && okC;
+    var show = okH && okL && okR && okP && okS && okC;
     tr.style.display = show ? '' : 'none';
     if (show) visiveis++;
   });
@@ -444,9 +510,11 @@ function aplicarFiltros() {
 
 function copiarResumo() {
   var lider = document.getElementById('f-lider').value;
-  var hunter = document.getElementById('f-hunter').value;
+  var regional = document.getElementById('f-regional').value;
+  var REGIONAL_LABEL = { Tamires:'Tamires', Yokoy:'Yokoy', Bruno:'Bruno', MariaLaura:'Maria Laura', _sem:'Sem regional mapeada' };
   var titulo = 'Retorno de performance';
   if (lider) titulo += ' — ' + lider;
+  if (regional) titulo += ' — Regional: ' + (REGIONAL_LABEL[regional] || regional);
   titulo += ' (' + fmtDate(hojeISO()) + ')';
 
   var partes = [titulo, ''];
@@ -496,8 +564,7 @@ function copiarResumo() {
     prompt('Copie o texto abaixo:', texto);
   }
 }
-
-carregar();
+carregarRegionaisRC(function(){ carregar(); });
 </script>
 </body>
 </html>
