@@ -103,6 +103,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 <div class="filters">
   <span class="f-lbl">Hunter</span>
   <select class="f-sel" id="f-hunter" onchange="aplicarFiltros()"><option value="">Todos</option></select>
+  <span class="f-lbl">Líder</span>
+  <select class="f-sel" id="f-lider" onchange="aplicarFiltros()"><option value="">Todos</option></select>
   <span class="f-lbl">Praça</span>
   <select class="f-sel" id="f-praca" onchange="aplicarFiltros()"><option value="">Todas</option></select>
   <span class="f-lbl">Status</span>
@@ -114,6 +116,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <option value="concluido">Concluído</option>
   </select>
   <label class="f-check"><input type="checkbox" id="f-ocultar-concluidos" onchange="aplicarFiltros()"> Ocultar concluídos</label>
+  <button class="btn-outline" onclick="copiarResumo()" style="margin-left:auto">📋 Copiar resumo</button>
   <span class="f-count" id="f-count">—</span>
 </div>
 
@@ -245,10 +248,13 @@ function carregar() {
 
 function popularFiltros() {
   var hunters = Array.from(new Set(CANDIDATOS.map(function(c){ return c.hunter; }).filter(Boolean))).sort();
+  var lideres = Array.from(new Set(CANDIDATOS.map(function(c){ return c.lider; }).filter(Boolean))).sort();
   var pracas  = Array.from(new Set(CANDIDATOS.map(function(c){ return c.praca; }).filter(Boolean))).sort();
   var selH = document.getElementById('f-hunter');
+  var selL = document.getElementById('f-lider');
   var selP = document.getElementById('f-praca');
   hunters.forEach(function(h){ selH.innerHTML += '<option value="'+esc(h)+'">'+esc(h)+'</option>'; });
+  lideres.forEach(function(l){ selL.innerHTML += '<option value="'+esc(l)+'">'+esc(l)+'</option>'; });
   pracas.forEach(function(p){ selP.innerHTML += '<option value="'+esc(p)+'">'+esc(p)+'</option>'; });
 }
 
@@ -353,7 +359,7 @@ function linhaHtml(it, regra) {
   var baseCellExtra = (regra.renovavel && it.renovacoes > 0)
     ? '<div class="rc-sub">renovado ' + it.renovacoes + 'x (prazo: ' + it.prazoEfetivo + 'd)</div>' : '';
 
-  return '<tr data-hunter="'+esc(c.hunter||'')+'" data-praca="'+esc(c.praca||'')+'" data-status="'+statusCls.split(' ')[0]+'">'
+  return '<tr data-hunter="'+esc(c.hunter||'')+'" data-lider="'+esc(c.lider||'')+'" data-praca="'+esc(c.praca||'')+'" data-status="'+statusCls.split(' ')[0]+'">'
     + '<td><div class="rc-nome">'+esc(c.nome)+'</div></td>'
     + '<td>'+esc(c.praca||'—')+'</td>'
     + '<td>'+esc(c.hunter||'—')+'</td>'
@@ -400,6 +406,7 @@ function renovarPrazo(id, campoRenovacoes, valorAtual, labelAcao) {
 // ════════ FILTROS ════════
 function aplicarFiltros() {
   var hunter = document.getElementById('f-hunter').value;
+  var lider  = document.getElementById('f-lider').value;
   var praca  = document.getElementById('f-praca').value;
   var status = document.getElementById('f-status').value;
   var ocultarConcl = document.getElementById('f-ocultar-concluidos').checked;
@@ -407,11 +414,12 @@ function aplicarFiltros() {
   var visiveis = 0;
   document.querySelectorAll('.rc-table tbody tr[data-hunter]').forEach(function(tr){
     var okH = !hunter || tr.getAttribute('data-hunter') === hunter;
+    var okL = !lider  || tr.getAttribute('data-lider')  === lider;
     var okP = !praca  || tr.getAttribute('data-praca')  === praca;
     var st  = tr.getAttribute('data-status');
     var okS = !status || st === status;
     var okC = !ocultarConcl || st !== 'concluido';
-    var show = okH && okP && okS && okC;
+    var show = okH && okL && okP && okS && okC;
     tr.style.display = show ? '' : 'none';
     if (show) visiveis++;
   });
@@ -420,9 +428,45 @@ function aplicarFiltros() {
     var visRows = sec.querySelectorAll('tbody tr[data-hunter]:not([style*="display: none"])').length;
     var countEl = sec.querySelector('.rc-sec-count');
     if (countEl) countEl.textContent = visRows + ' candidato' + (visRows!==1?'s':'');
+    sec.style.display = visRows === 0 ? 'none' : '';
   });
 
   document.getElementById('f-count').textContent = visiveis + ' marco' + (visiveis!==1?'s':'') + ' exibido' + (visiveis!==1?'s':'');
+}
+
+function copiarResumo() {
+  var lider = document.getElementById('f-lider').value;
+  var hunter = document.getElementById('f-hunter').value;
+  var titulo = 'RÉGUA DE CONTATO';
+  if (lider) titulo += ' — Líder: ' + lider;
+  if (hunter) titulo += ' — Hunter: ' + hunter;
+  titulo += ' (' + fmtDate(hojeISO()) + ')';
+
+  var partes = [titulo];
+  document.querySelectorAll('.rc-section').forEach(function(sec){
+    if (sec.style.display === 'none') return;
+    var linhas = Array.from(sec.querySelectorAll('tbody tr[data-hunter]')).filter(function(tr){ return tr.style.display !== 'none'; });
+    if (!linhas.length) return;
+    var tituloSec = sec.querySelector('.rc-sec-title').textContent.trim();
+    partes.push('\n' + tituloSec.toUpperCase() + ':');
+    linhas.forEach(function(tr){
+      var nome = tr.querySelector('.rc-nome') ? tr.querySelector('.rc-nome').textContent.trim() : '—';
+      var statusEl = tr.querySelector('.rc-badge');
+      var status = statusEl ? statusEl.textContent.trim() : '';
+      partes.push('• ' + nome + ' — ' + status);
+    });
+  });
+
+  if (partes.length === 1) { alert('Nenhum candidato visível com os filtros atuais.'); return; }
+
+  var texto = partes.join('\n');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(function(){
+      alert('Resumo copiado! Já pode colar no WhatsApp ou e-mail.');
+    }).catch(function(){ prompt('Copie o texto abaixo:', texto); });
+  } else {
+    prompt('Copie o texto abaixo:', texto);
+  }
 }
 
 carregar();
