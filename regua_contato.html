@@ -182,6 +182,12 @@ var REGUAS = [
 var CANDIDATOS = [];
 var COLUNAS_OK = true;
 
+function somarDias(iso, dias) {
+  var d = new Date(iso+'T12:00:00');
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0,10);
+}
+
 function calcularItem(c, regra) {
   var base = c[regra.campoBase];
   if (!base) return null; // marco não se aplica ainda a este candidato
@@ -197,6 +203,7 @@ function calcularItem(c, regra) {
   var renovacoes = regra.renovavel ? (c[regra.campoRenovacoes] || 0) : 0;
   var prazoEfetivo = regra.prazo + (renovacoes * (regra.renovarDias || 0));
   var item = { candidato:c, regra:regra, base:base, done:done||null, renovacoes:renovacoes, prazoEfetivo:prazoEfetivo };
+  item.dataLimite = somarDias(base, prazoEfetivo);
   if (done) {
     var diasConclusao = diasEntre(base, done);
     item.status = (diasConclusao !== null && diasConclusao > prazoEfetivo) ? 'concluido-atraso' : 'concluido';
@@ -217,9 +224,9 @@ function statusClasse(status){ return status.indexOf('concluido')>-1 ? 'concluid
 function statusLabel(item){
   if (item.status === 'concluido') return 'Concluído';
   if (item.status === 'concluido-atraso') return 'Concluído c/ atraso';
-  if (item.status === 'atrasado') return (Math.abs(item.restam)) + 'd em atraso';
-  if (item.status === 'atencao') return item.restam===0 ? 'Vence hoje' : 'Faltam ' + item.restam + 'd';
-  return item.diasDecorridos + '/' + item.prazoEfetivo + ' dias';
+  if (item.status === 'atrasado') return 'Venceu em ' + fmtDate(item.dataLimite) + ' (' + Math.abs(item.restam) + 'd atrás)';
+  if (item.status === 'atencao') return item.restam===0 ? 'Vence hoje (' + fmtDate(item.dataLimite) + ')' : 'Vence em ' + fmtDate(item.dataLimite) + ' (' + item.restam + 'd)';
+  return 'Vence em ' + fmtDate(item.dataLimite) + ' (faltam ' + item.restam + 'd)';
 }
 
 // ════════ CARREGAR DADOS ════════
@@ -359,7 +366,8 @@ function linhaHtml(it, regra) {
   var baseCellExtra = (regra.renovavel && it.renovacoes > 0)
     ? '<div class="rc-sub">renovado ' + it.renovacoes + 'x (prazo: ' + it.prazoEfetivo + 'd)</div>' : '';
 
-  return '<tr data-hunter="'+esc(c.hunter||'')+'" data-lider="'+esc(c.lider||'')+'" data-praca="'+esc(c.praca||'')+'" data-status="'+statusCls.split(' ')[0]+'">'
+  return '<tr data-hunter="'+esc(c.hunter||'')+'" data-lider="'+esc(c.lider||'')+'" data-praca="'+esc(c.praca||'')+'" data-status="'+statusCls.split(' ')[0]+'"'
+    + ' data-limite="'+esc(fmtDate(it.dataLimite))+'" data-restam="'+(it.restam!==undefined?it.restam:'')+'">'
     + '<td><div class="rc-nome">'+esc(c.nome)+'</div></td>'
     + '<td>'+esc(c.praca||'—')+'</td>'
     + '<td>'+esc(c.hunter||'—')+'</td>'
@@ -437,29 +445,49 @@ function aplicarFiltros() {
 function copiarResumo() {
   var lider = document.getElementById('f-lider').value;
   var hunter = document.getElementById('f-hunter').value;
-  var titulo = 'RÉGUA DE CONTATO';
-  if (lider) titulo += ' — Líder: ' + lider;
-  if (hunter) titulo += ' — Hunter: ' + hunter;
+  var titulo = 'Retorno de performance';
+  if (lider) titulo += ' — ' + lider;
   titulo += ' (' + fmtDate(hojeISO()) + ')';
 
-  var partes = [titulo];
+  var partes = [titulo, ''];
+  var totalItens = 0;
+
   document.querySelectorAll('.rc-section').forEach(function(sec){
     if (sec.style.display === 'none') return;
-    var linhas = Array.from(sec.querySelectorAll('tbody tr[data-hunter]')).filter(function(tr){ return tr.style.display !== 'none'; });
+    // Só entram no resumo do líder marcos que JÁ venceram ou vencem em breve —
+    // pedir retorno de alguém que ainda tem semanas de prazo não faz sentido.
+    var linhas = Array.from(sec.querySelectorAll('tbody tr[data-hunter]')).filter(function(tr){
+      return tr.style.display !== 'none' && (tr.getAttribute('data-status') === 'atrasado' || tr.getAttribute('data-status') === 'atencao');
+    });
     if (!linhas.length) return;
+
     var tituloSec = sec.querySelector('.rc-sec-title').textContent.trim();
-    partes.push('\n' + tituloSec.toUpperCase() + ':');
+    partes.push(tituloSec + ':');
     linhas.forEach(function(tr){
       var nome = tr.querySelector('.rc-nome') ? tr.querySelector('.rc-nome').textContent.trim() : '—';
-      var statusEl = tr.querySelector('.rc-badge');
-      var status = statusEl ? statusEl.textContent.trim() : '';
-      partes.push('• ' + nome + ' — ' + status);
+      var status = tr.getAttribute('data-status');
+      var limite = tr.getAttribute('data-limite');
+      var restam = tr.getAttribute('data-restam');
+      var frase;
+      if (status === 'atrasado') {
+        frase = '• ' + nome + ' — venceu em ' + limite + ' (há ' + Math.abs(restam) + 'd) — poderia nos passar um retorno da performance dele(a)?';
+      } else {
+        frase = '• ' + nome + ' — vence em ' + limite + ' (em ' + restam + 'd) — já pode ir preparando o retorno';
+      }
+      partes.push(frase);
+      totalItens++;
     });
+    partes.push('');
   });
 
-  if (partes.length === 1) { alert('Nenhum candidato visível com os filtros atuais.'); return; }
+  if (totalItens === 0) {
+    alert('Com os filtros atuais, ninguém está com retorno vencido ou próximo do vencimento agora — nada a enviar.');
+    return;
+  }
 
+  partes.push('Por favor, respondam com um breve parecer de performance para cada nome acima. Obrigado!');
   var texto = partes.join('\n');
+
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(texto).then(function(){
       alert('Resumo copiado! Já pode colar no WhatsApp ou e-mail.');
