@@ -74,6 +74,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
 .btn-ok{background:var(--cobalt);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
 .btn-ok:hover{background:var(--cobalt-br)}
+.btn-outline{background:#fff;color:var(--cobalt);border:1px solid var(--cobalt);border-radius:6px;padding:6px 12px;font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;margin-left:6px}
+.btn-outline:hover{background:#EEF2FD}
 .btn-undo{background:none;border:none;color:var(--t4);font-size:10px;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif;margin-left:8px}
 .btn-undo:hover{color:var(--red)}
 
@@ -158,7 +160,8 @@ var REGUAS = [
   { key:'r2', num:2, campoBase:'data_mou', campoDone:'data_desligamento_solicitado', prazo:30,
     titulo:'Solicitação de Desligamento', desc:'30 dias corridos após a assinatura do MOU',
     lblBase:'MOU assinado em', lblAcao:'Marcar desligamento solicitado',
-    proximosMarcos:['data_inicio'], extraCol:{ key:'instituicao', label:'Instituição de Origem' } },
+    proximosMarcos:['data_inicio'], extraCol:{ key:'instituicao', label:'Instituição de Origem' },
+    renovavel:true, campoRenovacoes:'desligamento_renovacoes', renovarDias:30, lblRenovar:'Manter no Processo (+30d)' },
   { key:'r3', num:3, campoBase:'data_inicio', campoDone:'data_contato_30', prazo:30,
     titulo:'Check-in de Performance — 30 dias', desc:'30 dias corridos após o início do trabalho',
     lblBase:'Início em', lblAcao:'Marcar contato realizado',
@@ -188,15 +191,17 @@ function calcularItem(c, regra) {
     if (jaAvancou) return null;
   }
 
-  var item = { candidato:c, regra:regra, base:base, done:done||null };
+  var renovacoes = regra.renovavel ? (c[regra.campoRenovacoes] || 0) : 0;
+  var prazoEfetivo = regra.prazo + (renovacoes * (regra.renovarDias || 0));
+  var item = { candidato:c, regra:regra, base:base, done:done||null, renovacoes:renovacoes, prazoEfetivo:prazoEfetivo };
   if (done) {
     var diasConclusao = diasEntre(base, done);
-    item.status = (diasConclusao !== null && diasConclusao > regra.prazo) ? 'concluido-atraso' : 'concluido';
+    item.status = (diasConclusao !== null && diasConclusao > prazoEfetivo) ? 'concluido-atraso' : 'concluido';
     item.diasConclusao = diasConclusao;
   } else {
     var decorridos = diasEntre(base);
     item.diasDecorridos = decorridos;
-    var restam = regra.prazo - decorridos;
+    var restam = prazoEfetivo - decorridos;
     item.restam = restam;
     if (restam < 0) item.status = 'atrasado';
     else if (restam <= WARN_JANELA) item.status = 'atencao';
@@ -211,13 +216,13 @@ function statusLabel(item){
   if (item.status === 'concluido-atraso') return 'Concluído c/ atraso';
   if (item.status === 'atrasado') return (Math.abs(item.restam)) + 'd em atraso';
   if (item.status === 'atencao') return item.restam===0 ? 'Vence hoje' : 'Faltam ' + item.restam + 'd';
-  return item.diasDecorridos + '/' + item.regra.prazo + ' dias';
+  return item.diasDecorridos + '/' + item.prazoEfetivo + ' dias';
 }
 
 // ════════ CARREGAR DADOS ════════
 function carregar() {
   var camposBase = 'id,nome,praca,hunter,lider,instituicao,etapa,data_contratacao,data_mou,data_inicio';
-  var camposExtra = 'id,data_contrato_assinado,data_desligamento_solicitado,data_contato_30,data_contato_60,data_contato_180';
+  var camposExtra = 'id,data_contrato_assinado,data_desligamento_solicitado,desligamento_renovacoes,data_contato_30,data_contato_60,data_contato_180';
 
   Promise.all([
     supaGet('crm_candidatos?select='+camposBase+'&order=nome.asc&limit=1000'),
@@ -338,16 +343,22 @@ function linhaHtml(it, regra) {
       + (COLUNAS_OK ? '<button class="btn-undo" onclick="desfazerMarco(\''+c.id+'\',\''+regra.campoDone+'\',\''+regra.key+'\')">desfazer</button>' : '');
   } else if (COLUNAS_OK) {
     acaoHtml = '<button class="btn-ok" onclick="concluirMarco(\''+c.id+'\',\''+regra.campoDone+'\',\''+esc(regra.lblAcao)+'\')">'+esc(regra.lblAcao)+'</button>';
+    if (regra.renovavel) {
+      acaoHtml += '<button class="btn-outline" onclick="renovarPrazo(\''+c.id+'\',\''+regra.campoRenovacoes+'\','+it.renovacoes+',\''+esc(regra.lblRenovar)+'\')">'+esc(regra.lblRenovar)+'</button>';
+    }
   } else {
     acaoHtml = '<span class="rc-sub">—</span>';
   }
+
+  var baseCellExtra = (regra.renovavel && it.renovacoes > 0)
+    ? '<div class="rc-sub">renovado ' + it.renovacoes + 'x (prazo: ' + it.prazoEfetivo + 'd)</div>' : '';
 
   return '<tr data-hunter="'+esc(c.hunter||'')+'" data-praca="'+esc(c.praca||'')+'" data-status="'+statusCls.split(' ')[0]+'">'
     + '<td><div class="rc-nome">'+esc(c.nome)+'</div></td>'
     + '<td>'+esc(c.praca||'—')+'</td>'
     + '<td>'+esc(c.hunter||'—')+'</td>'
     + (regra.extraCol ? '<td>'+esc(c[regra.extraCol.key]||'—')+'</td>' : '')
-    + '<td>'+fmtDate(it.base)+'</td>'
+    + '<td>'+fmtDate(it.base)+baseCellExtra+'</td>'
     + '<td><span class="rc-badge '+statusCls+'">'+statusLabel(it)+'</span></td>'
     + '<td>'+acaoHtml+'</td>'
   + '</tr>';
@@ -376,6 +387,14 @@ function desfazerMarco(id, campo) {
     if (!r.ok) { alert('Erro ao desfazer (status '+r.status+').'); return; }
     carregar();
   }).catch(function(e){ alert('Erro ao desfazer: '+e); });
+}
+function renovarPrazo(id, campoRenovacoes, valorAtual, labelAcao) {
+  if (!confirm('Confirmar: "'+labelAcao+'"? Isso soma mais 30 dias ao prazo deste candidato (renovação nº '+(valorAtual+1)+').')) return;
+  var body = {}; body[campoRenovacoes] = valorAtual + 1;
+  supaPatch(id, body).then(function(r){
+    if (!r.ok) { alert('Erro ao salvar (status '+r.status+').'); return; }
+    carregar();
+  }).catch(function(e){ alert('Erro ao salvar: '+e); });
 }
 
 // ════════ FILTROS ════════
