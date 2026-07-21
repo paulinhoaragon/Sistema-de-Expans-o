@@ -698,6 +698,51 @@ function supaUsers(path, opts) {
 }
 
 // ── Login ──
+// ── Badge de pendências em "Meus Retornos" ──────────────────────────
+function _normNome(s){ return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function _diasDesde(iso){
+  if (!iso) return null;
+  var d1 = new Date(iso+'T12:00:00');
+  var d2 = new Date(); d2.setHours(12,0,0,0);
+  if (isNaN(d1)) return null;
+  return Math.floor((d2-d1)/86400000);
+}
+function atualizarBadgeMeusRetornos() {
+  var item = document.querySelector('[onclick*="meus_retornos.html"]');
+  if (!item) return;
+  var campos = 'id,lider,etapa,data_inicio,data_contato_30,data_contato_60,data_contato_180';
+  fetch(SUPA_URL+'/rest/v1/crm_candidatos?select='+campos+'&limit=1000', { headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY } })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows){
+      var perfil = (B3CU.r||'').toLowerCase();
+      var verTudo = perfil === 'master' || perfil === 'gerente';
+      var nomeUser = _normNome(B3CU.n);
+      var REGRAS = [['data_contato_30',30],['data_contato_60',60],['data_contato_180',180]];
+      var pendentes = 0;
+      (rows||[]).forEach(function(c){
+        if (c.etapa !== 'Trabalhando' || !c.data_inicio) return;
+        if (!verTudo && _normNome(c.lider) !== nomeUser) return;
+        var dias = _diasDesde(c.data_inicio);
+        if (dias === null) return;
+        REGRAS.forEach(function(rg){
+          if (c[rg[0]]) return;
+          var restam = rg[1] - dias;
+          if (restam <= 3) pendentes++;
+        });
+      });
+      var existente = item.querySelector('.sb-badge-retorno');
+      if (existente) existente.remove();
+      if (pendentes > 0) {
+        var b = document.createElement('span');
+        b.className = 'sb-badge-retorno';
+        b.textContent = pendentes;
+        b.style.cssText = 'margin-left:auto;background:#DC2626;color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;line-height:1.5;';
+        item.appendChild(b);
+      }
+    })
+    .catch(function(){ /* silencioso — badge é cosmético, não deve travar o login */ });
+}
+
 function b3Login() {
   var l = document.getElementById('b3u').value.trim().toLowerCase();
   var p = document.getElementById('b3p').value;
@@ -738,6 +783,7 @@ function b3Start() {
   var r = B3CU.r;
   document.getElementById('nexus-shell').classList.add('active');
   document.getElementById('b3lo').style.display = 'none';
+  atualizarBadgeMeusRetornos();
   var name = B3CU.n || B3CU.l || '?';
   var av = document.getElementById('sb-avatar');
   var un = document.getElementById('sb-user-name');
