@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nexus · Meus Retornos</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0A0F1E;--cobalt:#1A3BAD;--cobalt-br:#2952E3;
+  --gold:#B8962E;--g:#16A34A;--am:#B45309;--red:#DC2626;
+  --canvas:#F0F2FA;--surface:#fff;--rule:#E2E5F0;
+  --t1:#0A0F1E;--t2:#3A4268;--t3:#7A82A8;--t4:#A8B0CC;
+  --r12:12px;--sh:0 1px 4px rgba(10,15,30,.07),0 4px 16px rgba(10,15,30,.06);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:13px;min-height:100vh}
+
+.cover{background:var(--ink);min-height:104px;position:relative;overflow:hidden;padding:26px 32px 20px;display:flex;flex-direction:column;justify-content:flex-end}
+.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+.cv-t{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:#fff;letter-spacing:-.02em;position:relative}
+.cv-s{font-size:11px;color:rgba(255,255,255,.55);margin-top:3px;position:relative}
+
+.content{padding:24px;max-width:760px;margin:0 auto}
+
+.card{background:var(--surface);border-radius:var(--r12);box-shadow:var(--sh);padding:18px 20px;margin-bottom:14px}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:10px}
+.card-nome{font-size:15px;font-weight:700;color:var(--t1)}
+.card-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.card-badge{font-size:9px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap}
+.card-badge.atrasado{background:#FEE2E2;color:#991B1B}
+.card-badge.atencao{background:#FEF3C7;color:#92400E}
+
+.card textarea{width:100%;min-height:70px;border:1px solid var(--rule);border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--t1);resize:vertical;outline:none;margin-bottom:10px}
+.card textarea:focus{border-color:var(--cobalt)}
+.card-actions{display:flex;justify-content:flex-end}
+.btn-send{background:var(--cobalt);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-send:hover{background:var(--cobalt-br)}
+.btn-send:disabled{opacity:.5;cursor:default}
+
+.empty{text-align:center;padding:80px 20px;color:var(--t4)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-t{font-size:15px;font-weight:600;color:var(--t2);margin-bottom:6px}
+.empty-s{font-size:12px;line-height:1.5;max-width:420px;margin:0 auto}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:8px;font-size:12px;box-shadow:var(--sh);opacity:0;pointer-events:none;transition:opacity .25s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cg"></div>
+  <div class="cv-t">Meus Retornos</div>
+  <div class="cv-s" id="cv-sub">Carregando...</div>
+</div>
+
+<div class="content" id="content-root">
+  <div class="empty"><div class="empty-icon">⏳</div><div class="empty-t">Carregando...</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+
+function supaGet(path) {
+  return fetch(SUPA_URL+'/rest/v1/'+path, { headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY } })
+    .then(function(r){ if(!r.ok) return r.json().then(function(e){ throw e; }).catch(function(){ throw new Error(r.status); }); return r.json(); });
+}
+function supaPatch(id, body) {
+  return fetch(SUPA_URL+'/rest/v1/crm_candidatos?id=eq.'+id, {
+    method:'PATCH',
+    headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY, 'Content-Type':'application/json', 'Prefer':'return=minimal' },
+    body: JSON.stringify(body)
+  });
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDate(s){ if(!s) return ''; var d = new Date(s+'T12:00:00'); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'}); }
+function hojeISO(){ return new Date().toISOString().slice(0,10); }
+function diasDesde(iso){
+  if (!iso) return null;
+  var d1 = new Date(iso+'T12:00:00');
+  var d2 = new Date(); d2.setHours(12,0,0,0);
+  if (isNaN(d1)) return null;
+  return Math.floor((d2-d1)/86400000);
+}
+function normalizarNome(s){
+  return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2600);
+}
+
+var REGUAS = [
+  { key:'r3', campoDone:'data_contato_30',  campoParecer:'parecer_30',  prazo:30,  label:'30 dias' },
+  { key:'r4', campoDone:'data_contato_60',  campoParecer:'parecer_60',  prazo:60,  label:'60 dias' },
+  { key:'r5', campoDone:'data_contato_180', campoParecer:'parecer_180', prazo:180, label:'180 dias' }
+];
+var WARN_JANELA = 3;
+
+function usuarioLogado() {
+  try {
+    var raw = sessionStorage.getItem('b3s');
+    if (!raw) return null;
+    var u = JSON.parse(raw);
+    return u && u.n ? u : null;
+  } catch(e) { return null; }
+}
+
+function iniciar() {
+  var user = usuarioLogado();
+  if (!user) {
+    document.getElementById('cv-sub').textContent = 'Sessão não identificada';
+    document.getElementById('content-root').innerHTML = '<div class="empty"><div class="empty-icon">🔒</div><div class="empty-t">Não identificamos seu usuário</div><div class="empty-s">Acesse pelo menu do Nexus, logado com seu usuário, para ver seus retornos pendentes.</div></div>';
+    return;
+  }
+  document.getElementById('cv-sub').textContent = 'Bem-vindo(a), ' + user.n;
+
+  var campos = 'id,nome,praca,lider,etapa,data_inicio,data_contato_30,data_contato_60,data_contato_180';
+  supaGet('crm_candidatos?select='+campos+'&limit=1000').then(function(rows){
+    var nomeUser = normalizarNome(user.n);
+    var meus = (rows||[]).filter(function(c){
+      return c.etapa === 'Trabalhando' && c.data_inicio && normalizarNome(c.lider) === nomeUser;
+    });
+    renderCards(meus);
+  }).catch(function(err){
+    document.getElementById('content-root').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-t">Erro ao carregar</div><div class="empty-s">'+esc(JSON.stringify(err))+'</div></div>';
+  });
+}
+
+function montarPendencias(candidatos) {
+  var itens = [];
+  candidatos.forEach(function(c){
+    REGUAS.forEach(function(rg){
+      if (c[rg.campoDone]) return; // já respondido
+      var dias = diasDesde(c.data_inicio);
+      if (dias === null) return;
+      var restam = rg.prazo - dias;
+      if (restam > WARN_JANELA) return; // ainda não chegou a hora de perguntar
+      itens.push({ candidato:c, regra:rg, dias:dias, restam:restam, status: restam < 0 ? 'atrasado' : 'atencao' });
+    });
+  });
+  itens.sort(function(a,b){ return a.restam - b.restam; });
+  return itens;
+}
+
+function renderCards(candidatos) {
+  var itens = montarPendencias(candidatos);
+  if (!itens.length) {
+    document.getElementById('content-root').innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-t">Nenhum retorno pendente agora</div><div class="empty-s">Assim que algum dos seus assessores completar 30, 60 ou 180 dias de casa, ele aparece aqui automaticamente.</div></div>';
+    return;
+  }
+  var html = itens.map(function(it, idx){
+    var c = it.candidato;
+    var badgeTxt = it.status === 'atrasado' ? 'Venceu há ' + Math.abs(it.restam) + 'd' : (it.restam===0 ? 'Vence hoje' : 'Vence em ' + it.restam + 'd');
+    return '<div class="card" id="card-'+idx+'">'
+      + '<div class="card-top">'
+        + '<div><div class="card-nome">'+esc(c.nome)+'</div>'
+        + '<div class="card-sub">'+esc(c.praca||'—')+' · Check-in de '+it.regra.label+' · '+it.dias+' dias de casa</div></div>'
+        + '<span class="card-badge '+it.status+'">'+badgeTxt+'</span>'
+      + '</div>'
+      + '<textarea id="txt-'+idx+'" placeholder="Como está a performance de '+esc(c.nome.split(' ')[0])+'? Escreva um breve parecer..."></textarea>'
+      + '<div class="card-actions"><button class="btn-send" id="btn-'+idx+'" onclick="enviarParecer('+idx+')">Enviar retorno</button></div>'
+    + '</div>';
+  }).join('');
+  document.getElementById('content-root').innerHTML = html;
+  window._ITENS = itens;
+}
+
+function enviarParecer(idx) {
+  var it = window._ITENS[idx];
+  var txt = document.getElementById('txt-'+idx).value.trim();
+  if (!txt) { alert('Escreva um breve parecer antes de enviar.'); return; }
+  var btn = document.getElementById('btn-'+idx);
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  var body = {};
+  body[it.regra.campoDone] = hojeISO();
+  body[it.regra.campoParecer] = txt;
+  supaPatch(it.candidato.id, body).then(function(r){
+    if (!r.ok) { alert('Erro ao enviar (status '+r.status+').'); btn.disabled=false; btn.textContent='Enviar retorno'; return; }
+    toast('Retorno enviado! Obrigado.');
+    var card = document.getElementById('card-'+idx);
+    if (card) card.remove();
+    if (!document.querySelector('.card')) {
+      document.getElementById('content-root').innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-t">Tudo em dia!</div><div class="empty-s">Você respondeu a todos os retornos pendentes.</div></div>';
+    }
+  }).catch(function(e){ alert('Erro ao enviar: '+e); btn.disabled=false; btn.textContent='Enviar retorno'; });
+}
+
+iniciar();
+</script>
+</body>
+</html>
