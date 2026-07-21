@@ -705,6 +705,7 @@ function _montarLinhaXP(cand, prop, incluirContratacao) {
     'Praça': cand.praca || '',
     'Hunter': cand.hunter || '',
     'Líder': cand.lider || '',
+    'Instituição de Origem': cand.instituicao || '',
     'Status Proposta': prop ? (prop.status||'') : 'Sem proposta salva',
     'Data da Proposta': prop ? _fmtDataBR(prop.criado_em) : '',
     'Versão': prop ? prop.versao : '',
@@ -746,7 +747,7 @@ function exportarPropostasXP() {
   status.textContent = 'Buscando candidatos e propostas...';
 
   Promise.all([
-    _supaMetasReq('crm_candidatos?select=id,nome,praca,hunter,lider,telefone,etapa,data_contratacao,coparticipacao,detalhe_coparticipacao&limit=5000'),
+    _supaMetasReq('crm_candidatos?select=id,nome,praca,hunter,lider,instituicao,telefone,etapa,data_contratacao,coparticipacao,detalhe_coparticipacao&limit=5000'),
     _supaMetasReq('propostas?select=telefone,versao,status,dados,criado_em&order=telefone.asc,versao.desc&limit=10000')
   ]).then(function(results){
     var candidatos = results[0] || [];
