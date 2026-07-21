@@ -542,6 +542,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           </div>
         </div>
 
+        <!-- Resumo textual para copiar e abrir a contratação em outro sistema —
+             só aparece quando existe uma proposta com status "Aceita" vinculada pelo telefone -->
+        <div id="m-resumo-contrat-box" style="background:#F4F6FB;border:1px solid #E2E6F2;border-radius:var(--r8);padding:16px 18px;margin-top:16px;display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--cobalt);">Resumo para Contratação (proposta aceita)</div>
+            <button type="button" onclick="copiarResumoContratacao()" style="background:var(--cobalt);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">📋 Copiar</button>
+          </div>
+          <textarea id="m-resumo-contrat-txt" readonly style="width:100%;min-height:220px;border:1px solid var(--rule);border-radius:6px;padding:10px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--t1);resize:vertical;background:#fff;"></textarea>
+        </div>
+
         <!-- Botão Gerar Proposta no Simulador -->
         <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--rule);">
           <button onclick="gerarProposta()" style="background:var(--cobalt);color:#fff;border:none;border-radius:var(--r8);padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:7px;transition:all .15s;width:100%;justify-content:center;" onmouseover="this.style.background='var(--cobalt-br)'" onmouseout="this.style.background='var(--cobalt)'">
@@ -968,6 +978,12 @@ function abrirEdicao(id) {
   calcProposta();
   // Carregar mini histórico de propostas
   carregarPropostasCRM(r.telefone || '');
+  if (r.etapa === 'Contratação' || r.etapa === 'Trabalhando') {
+    carregarResumoContratacao(r.telefone || '', r.coparticipacao, r.detalhe_coparticipacao);
+  } else {
+    var rcBox = document.getElementById('m-resumo-contrat-box');
+    if (rcBox) rcBox.style.display = 'none';
+  }
   // Carregar condições de renovação salvas
   try {
     var renSalvas = r.condicoes_renovacao ? JSON.parse(r.condicoes_renovacao) : [];
@@ -1693,6 +1709,109 @@ function switchTab(id, btn) {
 
 // ── Gerar Proposta no Simulador ────────────────────────────────────
 // ── Mini histórico de propostas no card ──────────────────────────
+function fmtBRLResumo(n) {
+  return 'R$ ' + Number(n||0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+function fmtAuCResumo(n) {
+  n = Number(n||0);
+  return (n === Math.floor(n)) ? String(n) : n.toFixed(1).replace(/\.0$/, '');
+}
+
+// Reproduz EXATAMENTE a mesma lógica textual usada no exportPDF() do simulador —
+// isso garante que o texto copiado aqui bate com o PDF gerado lá.
+function montarResumoContratacao(dados, copart, copartDet) {
+  if (!dados) return '';
+  var linhas = ['Proposta Comercial:'];
+  var piso = dados.piso || 0, pisoDur = dados.pisoMeses || 12, luva = dados.luva || 0;
+
+  linhas.push('Piso: ' + fmtBRLResumo(piso) + ' por ' + pisoDur + ' meses');
+
+  var renewMap = {3:'mês 1', 6:'mês 3', 12:'mês 6', 18:'meses 6 e 12', 24:'meses 6, 12 e 18'};
+  if (dados.checkpoints && dados.checkpoints.length) {
+    linhas.push('Renovação automática do piso em ' + (renewMap[pisoDur]||'—') + ' = ' + fmtAuCResumo(dados.checkpoints[0].custodia) + ' MM');
+    linhas.push('Abaixo deste montante, caberá ao time de Performance Comercial analisar e aprovar a renovação do piso');
+  }
+
+  if (luva > 0) linhas.push('Luva / Sign-in: ' + fmtBRLResumo(luva) + ' pago no ingresso');
+
+  var tranches = (dados.tranches || []).slice().sort(function(a,b){ return a.mes - b.mes; });
+  var totalTranches = 0, acum = 0;
+  if (tranches.length) {
+    tranches.forEach(function(t, i){
+      acum += (t.aucAlvo || 0);
+      totalTranches += (t.valor || 0);
+      var suffix = i > 0 ? ' (' + fmtAuCResumo(acum) + ' MM acumulado)' : '';
+      linhas.push('Tranche ' + (i+1) + ': ' + t.mes + ' meses = captação ' + fmtAuCResumo(t.aucAlvo) + ' MM = ' + fmtBRLResumo(t.valor) + suffix);
+    });
+    linhas.push('Total AuC (' + tranches[tranches.length-1].mes + ' meses) = ' + fmtAuCResumo(acum) + ' MM');
+  }
+
+  var neg = [];
+  if (dados.chkSeguros) neg.push('Seguros: a comissão gerada será paga a parte do Piso negociado.');
+  if (dados.chkCons)    neg.push('Consórcios: a comissão gerada será paga a parte do Piso negociado.');
+  if (dados.chkB3w)     neg.push('Blue3Wealth — captação de instituições terceiras: 35% para o B.I e 20% para tranches contratuais negociadas.');
+  if (neg.length) {
+    linhas.push('* Negociação:');
+    neg.forEach(function(n){ linhas.push(n); });
+  }
+
+  if (dados.obs) {
+    linhas.push('Comentários Adicionais:');
+    dados.obs.split('\n').forEach(function(l){ if (l.trim()) linhas.push(l.trim()); });
+  }
+
+  linhas.push('');
+  var totalProposta = (piso * pisoDur) + luva + totalTranches;
+  linhas.push('Total Proposta: ' + fmtBRLResumo(totalProposta));
+
+  var copartNum = parseFloat(copart) || 0;
+  if (copartNum > 0) {
+    linhas.push('Coparticipação XP: ' + fmtBRLResumo(copartNum));
+    if (copartDet) linhas.push('Detalhe / Condição: ' + copartDet);
+    linhas.push('Total Líquido Contratação: ' + fmtBRLResumo(totalProposta - copartNum));
+  }
+
+  if (dados.payback_meses) linhas.push('Payback: ' + dados.payback_meses + 'm');
+
+  return linhas.join('\n');
+}
+
+function carregarResumoContratacao(telefone, copart, copartDet) {
+  var box = document.getElementById('m-resumo-contrat-box');
+  var txt = document.getElementById('m-resumo-contrat-txt');
+  if (!box || !txt) return;
+  box.style.display = 'none';
+  var tel = (telefone||'').replace(/\D/g,'');
+  if (!tel) return;
+
+  fetch(SUPA_URL+'/rest/v1/propostas?telefone=eq.'+tel+'&status=eq.Aceita&order=versao.desc&limit=1', {
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY }
+  })
+  .then(function(r){ return r.ok ? r.json() : []; })
+  .then(function(rows){
+    if (!rows || !rows.length || !rows[0].dados) return; // sem proposta aceita — bloco continua oculto
+    var texto = montarResumoContratacao(rows[0].dados, copart, copartDet);
+    if (!texto) return;
+    txt.value = texto;
+    box.style.display = 'block';
+  })
+  .catch(function(){ /* silencioso — bloco é auxiliar, não deve travar a abertura do candidato */ });
+}
+
+function copiarResumoContratacao() {
+  var txt = document.getElementById('m-resumo-contrat-txt');
+  if (!txt || !txt.value) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt.value).then(function(){
+      alert('Resumo copiado! Já pode colar no sistema de contratação.');
+    }).catch(function(){ txt.select(); document.execCommand('copy'); alert('Resumo copiado!'); });
+  } else {
+    txt.select();
+    document.execCommand('copy');
+    alert('Resumo copiado!');
+  }
+}
+
 function carregarPropostasCRM(telefone) {
   var wrap  = document.getElementById('crm-prop-hist');
   var lista = document.getElementById('crm-prop-hist-lista');
