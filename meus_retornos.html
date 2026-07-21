@@ -123,11 +123,17 @@ function iniciar() {
 
   var campos = 'id,nome,praca,lider,etapa,data_inicio,data_contato_30,data_contato_60,data_contato_180';
   supaGet('crm_candidatos?select='+campos+'&limit=1000').then(function(rows){
+    var perfil = (user.r||'').toLowerCase();
+    var verTudo = perfil === 'master' || perfil === 'gerente';
     var nomeUser = normalizarNome(user.n);
     var meus = (rows||[]).filter(function(c){
-      return c.etapa === 'Trabalhando' && c.data_inicio && normalizarNome(c.lider) === nomeUser;
+      if (c.etapa !== 'Trabalhando' || !c.data_inicio) return false;
+      return verTudo || normalizarNome(c.lider) === nomeUser;
     });
-    renderCards(meus);
+    if (verTudo) {
+      document.getElementById('cv-sub').textContent = 'Visão de supervisão (' + user.n + ') — todos os líderes';
+    }
+    renderCards(meus, verTudo);
   }).catch(function(err){
     document.getElementById('content-root').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-t">Erro ao carregar</div><div class="empty-s">'+esc(JSON.stringify(err))+'</div></div>';
   });
@@ -149,19 +155,24 @@ function montarPendencias(candidatos) {
   return itens;
 }
 
-function renderCards(candidatos) {
+function renderCards(candidatos, verTudo) {
   var itens = montarPendencias(candidatos);
   if (!itens.length) {
-    document.getElementById('content-root').innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-t">Nenhum retorno pendente agora</div><div class="empty-s">Assim que algum dos seus assessores completar 30, 60 ou 180 dias de casa, ele aparece aqui automaticamente.</div></div>';
+    var msg = verTudo
+      ? 'Nenhum assessor, de nenhum líder, está com retorno vencido ou vencendo agora.'
+      : 'Assim que algum dos seus assessores completar 30, 60 ou 180 dias de casa, ele aparece aqui automaticamente.';
+    document.getElementById('content-root').innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-t">Nenhum retorno pendente agora</div><div class="empty-s">'+msg+'</div></div>';
     return;
   }
   var html = itens.map(function(it, idx){
     var c = it.candidato;
     var badgeTxt = it.status === 'atrasado' ? 'Venceu há ' + Math.abs(it.restam) + 'd' : (it.restam===0 ? 'Vence hoje' : 'Vence em ' + it.restam + 'd');
+    var subLinha = esc(c.praca||'—')+' · Check-in de '+it.regra.label+' · '+it.dias+' dias de casa'
+      + (verTudo ? ' · Líder: '+esc(c.lider||'—') : '');
     return '<div class="card" id="card-'+idx+'">'
       + '<div class="card-top">'
         + '<div><div class="card-nome">'+esc(c.nome)+'</div>'
-        + '<div class="card-sub">'+esc(c.praca||'—')+' · Check-in de '+it.regra.label+' · '+it.dias+' dias de casa</div></div>'
+        + '<div class="card-sub">'+subLinha+'</div></div>'
         + '<span class="card-badge '+it.status+'">'+badgeTxt+'</span>'
       + '</div>'
       + '<textarea id="txt-'+idx+'" placeholder="Como está a performance de '+esc(c.nome.split(' ')[0])+'? Escreva um breve parecer..."></textarea>'
