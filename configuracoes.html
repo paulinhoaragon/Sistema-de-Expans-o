@@ -6,6 +6,7 @@
 <title>Nexus · Configurações</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -467,6 +468,15 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
 
 <div class="tab-content page" id="tab-ferramentas">
   <div class="card" style="margin-bottom:16px;">
+    <div class="card-title">Exportar Propostas para a XP (.xlsx)</div>
+    <div class="card-sub">Gera uma planilha com 2 abas: <strong>Negociação</strong> (candidatos no funil de negociação do CRM) e <strong>Contratados</strong> (candidatos em Contratação/Trabalhando) — cada um com piso, luva, condição de renovação, gatilhos de captação, consórcio/seguros, observações e data da proposta. A aba de Contratados também traz coparticipação XP e data de contratação. Os dados da proposta vêm da versão mais recente salva no Simulador para cada candidato.</div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-export-xp" onclick="exportarPropostasXP()">📊 Gerar Excel</button>
+    </div>
+    <div id="export-xp-status" style="margin-top:10px;font-size:11px;color:var(--t3);"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
     <div class="card-title">Exportar dados (.csv)</div>
     <div class="card-sub">Cópia de segurança manual — gera um arquivo local com todos os registros da tabela escolhida. Não substitui backup de verdade, mas evita ficar sem nada em mãos se algo der errado.</div>
     <div class="btn-row" id="ferramentas-export-btns" style="flex-wrap:wrap;">
@@ -654,6 +664,134 @@ function _supaMetasReq(path, opts) {
       }
       return data;
     });
+  });
+}
+
+// ── Exportar Propostas para a XP (.xlsx) ───────────────────────────
+var _RENEW_MAP_XP = {3:'mês 1', 6:'mês 3', 12:'mês 6', 18:'meses 6 e 12', 24:'meses 6, 12 e 18'};
+
+function _fmtDataBR(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('pt-BR');
+}
+
+function _mapTranchesXP(dados) {
+  var out = { t3_mm:'', t3_val:'', t6_mm:'', t6_val:'', t12_mm:'', t12_val:'', t18_mm:'', t18_val:'', t24_mm:'', t24_val:'', totalAuc:'' };
+  if (!dados || !dados.tranches || !dados.tranches.length) return out;
+  var tranches = dados.tranches.slice().sort(function(a,b){ return a.mes - b.mes; });
+  var acum = 0;
+  tranches.forEach(function(t){
+    acum += (t.aucAlvo || 0);
+    var key = 't' + t.mes;
+    if (out.hasOwnProperty(key+'_mm')) {
+      out[key+'_mm'] = t.aucAlvo || '';
+      out[key+'_val'] = t.valor || '';
+    }
+  });
+  out.totalAuc = acum || '';
+  return out;
+}
+
+function _montarLinhaXP(cand, prop, incluirContratacao) {
+  var dados = (prop && prop.dados) ? prop.dados : {};
+  var tr = _mapTranchesXP(dados);
+  var totalTranches = (dados.tranches||[]).reduce(function(s,t){ return s + (t.valor||0); }, 0);
+  var totalProposta = (dados.piso||0) * (dados.pisoMeses||0) + (dados.luva||0) + totalTranches;
+
+  var linha = {
+    'Nome': cand.nome || '',
+    'Praça': cand.praca || '',
+    'Hunter': cand.hunter || '',
+    'Líder': cand.lider || '',
+    'Status Proposta': prop ? (prop.status||'') : 'Sem proposta salva',
+    'Data da Proposta': prop ? _fmtDataBR(prop.criado_em) : '',
+    'Versão': prop ? prop.versao : '',
+    'Piso (R$/mês)': dados.piso || '',
+    'Duração Piso (meses)': dados.pisoMeses || '',
+    'Renovação - Mês': dados.checkpoints && dados.checkpoints.length ? (_RENEW_MAP_XP[dados.pisoMeses]||'') : '',
+    'Renovação - AuC mínimo (MM)': dados.checkpoints && dados.checkpoints.length ? (dados.checkpoints[0].custodia||'') : '',
+    'Luva / Sign-in (R$)': dados.luva || '',
+    'Tranche 3m - Meta (MM)': tr.t3_mm, 'Tranche 3m - Valor (R$)': tr.t3_val,
+    'Tranche 6m - Meta (MM)': tr.t6_mm, 'Tranche 6m - Valor (R$)': tr.t6_val,
+    'Tranche 12m - Meta (MM)': tr.t12_mm, 'Tranche 12m - Valor (R$)': tr.t12_val,
+    'Tranche 18m - Meta (MM)': tr.t18_mm, 'Tranche 18m - Valor (R$)': tr.t18_val,
+    'Tranche 24m - Meta (MM)': tr.t24_mm, 'Tranche 24m - Valor (R$)': tr.t24_val,
+    'Total AuC Meta (MM)': tr.totalAuc,
+    'Total Proposta (R$)': totalProposta || '',
+    'Seguros': dados.chkSeguros ? 'Sim' : 'Não',
+    'Consórcios': dados.chkCons ? 'Sim' : 'Não',
+    'Blue3Wealth': dados.chkB3w ? 'Sim' : 'Não',
+    'Observações': dados.obs || ''
+  };
+
+  if (incluirContratacao) {
+    var copart = parseFloat(cand.coparticipacao) || 0;
+    linha['Data de Contratação'] = _fmtDataBR(cand.data_contratacao);
+    linha['Coparticipação XP (R$)'] = copart || '';
+    linha['Detalhe / Condição Coparticipação'] = cand.detalhe_coparticipacao || '';
+    linha['Total Líquido Contratação (R$)'] = copart > 0 ? (totalProposta - copart) : '';
+    linha['Payback (meses)'] = dados.payback_meses || '';
+  }
+
+  return linha;
+}
+
+function exportarPropostasXP() {
+  var btn = document.getElementById('btn-export-xp');
+  var status = document.getElementById('export-xp-status');
+  if (typeof XLSX === 'undefined') { alert('Biblioteca de Excel não carregou. Recarregue a página e tente novamente.'); return; }
+  btn.disabled = true; btn.textContent = 'Gerando...';
+  status.textContent = 'Buscando candidatos e propostas...';
+
+  Promise.all([
+    _supaMetasReq('crm_candidatos?select=id,nome,praca,hunter,lider,telefone,etapa,data_contratacao,coparticipacao,detalhe_coparticipacao&limit=5000'),
+    _supaMetasReq('propostas?select=telefone,versao,status,dados,criado_em&order=telefone.asc,versao.desc&limit=10000')
+  ]).then(function(results){
+    var candidatos = results[0] || [];
+    var propostas  = results[1] || [];
+
+    // Para cada telefone, guarda só a versão mais recente (a lista já vem ordenada por versao desc)
+    var propostaAtualPorTel = {};
+    propostas.forEach(function(p){
+      var tel = (p.telefone||'').replace(/\D/g,'');
+      if (tel && !propostaAtualPorTel[tel]) propostaAtualPorTel[tel] = p;
+    });
+
+    function propostaDe(cand) {
+      var tel = (cand.telefone||'').replace(/\D/g,'');
+      return tel ? propostaAtualPorTel[tel] : null;
+    }
+
+    var linhasNegociacao = candidatos
+      .filter(function(c){ return c.etapa === 'Negociação'; })
+      .map(function(c){ return _montarLinhaXP(c, propostaDe(c), false); });
+
+    var linhasContratados = candidatos
+      .filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; })
+      .map(function(c){ return _montarLinhaXP(c, propostaDe(c), true); });
+
+    if (!linhasNegociacao.length && !linhasContratados.length) {
+      status.textContent = 'Nenhum candidato encontrado em Negociação ou Contratação/Trabalhando.';
+      btn.disabled = false; btn.textContent = '📊 Gerar Excel';
+      return;
+    }
+
+    var wb = XLSX.utils.book_new();
+    var wsNeg = XLSX.utils.json_to_sheet(linhasNegociacao.length ? linhasNegociacao : [{'Nome':'(nenhum candidato em Negociação)'}]);
+    var wsCon = XLSX.utils.json_to_sheet(linhasContratados.length ? linhasContratados : [{'Nome':'(nenhum candidato contratado)'}]);
+    XLSX.utils.book_append_sheet(wb, wsNeg, 'Negociação');
+    XLSX.utils.book_append_sheet(wb, wsCon, 'Contratados');
+
+    var hoje = new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb, 'Blue3_Propostas_XP_'+hoje+'.xlsx');
+
+    status.textContent = 'Pronto — ' + linhasNegociacao.length + ' em negociação, ' + linhasContratados.length + ' contratados.';
+    btn.disabled = false; btn.textContent = '📊 Gerar Excel';
+  }).catch(function(e){
+    status.textContent = 'Erro ao gerar: ' + e;
+    btn.disabled = false; btn.textContent = '📊 Gerar Excel';
   });
 }
 function _getMetasAll(cb) {
