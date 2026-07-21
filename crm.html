@@ -1143,6 +1143,7 @@ function salvarCandidato() {
     atualizado_em: new Date().toISOString()
   };
   var id = g('m-id');
+  console.log('[CRM] Salvando candidato — id:', id || '(novo)', 'nome:', nome);
   document.getElementById('btn-salvar-txt').textContent = 'Salvando...';
   var req;
   if (id) {
@@ -1153,6 +1154,12 @@ function salvarCandidato() {
   }
   req.then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
     .then(function(rows) {
+      // Salvaguarda: a Supabase pode responder 200 OK com lista vazia se o
+      // filtro id=eq.<id> não encontrar nenhum registro — isso seria uma
+      // falha silenciosa (parece que salvou, mas nada foi alterado no banco).
+      if (id && (!rows || !rows.length)) {
+        throw new Error('Nenhum registro foi atualizado no banco (id "'+id+'" não encontrado). As alterações NÃO foram salvas — recarregue a página e tente novamente.');
+      }
       // LOG: salvar candidato
       if (id) {
         nexusLog('Edição de Candidato', { candidato: nome, id: id });
