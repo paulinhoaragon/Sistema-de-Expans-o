@@ -497,20 +497,29 @@ function _csvBuild() {
     var t = String(v == null ? '' : v).replace(/"/g, '""');
     return (t.indexOf(',') > -1 || t.indexOf(';') > -1 || t.indexOf('"') > -1) ? '"' + t + '"' : t;
   };
-  var hdr = ['Assessor','Filial','Instituicao de Origem','AuC Custodia (MM)','Senioridade','Situacao','Inicio','Piso Mes (R$)','Periodo','Piso Total (R$)','Sign-in (R$)','Triggers (R$)','Total (R$)','Coparticipacao XP','Estrategico','Area'];
+  var hdr = ['Assessor','Filial','Instituicao de Origem','AuC Custodia (MM)','Senioridade','Situacao','Inicio','Piso Mes (R$)','Periodo','Piso Total (R$)','Sign-in (R$)','Triggers (R$)','Total (R$)','Coparticipacao XP','Estrategico','Area','Total Comp. (R$)','Coparticipacao XP (R$)','% s/ Comp.','Payback (meses)','Condicao'];
   var _base = _aplicaFiltros(_tbData);
   var rows = _base.map(function(a){
+    var temXP = (a.xp || 0) > 0;
+    var pct = (temXP && a.comp > 0) ? Math.round(a.xp / a.comp * 100) : '';
     return [a.n||'',a.p||'',a.org||'',fmtNum(a.aucCust),a.sen||'',(a.ativo?'Ativo':(a.assinadoSemInicio?'Assinado, sem inicio':'A confirmar')),_fmtDataBR(a.inicio),
       fmtNum(a.piso),fmtPer(a.periodo),fmtNum(a.pisoTotal),fmtNum(a.si),fmtNum(a.trigTotal),
       fmtNum(a.custoTotal),(a.xp&&a.xp>0)?'Sim':'Nao',
-      (a.estrategico||'').toLowerCase()==='sim'?'Sim':'Nao',a.area||'Assessor'
+      (a.estrategico||'').toLowerCase()==='sim'?'Sim':'Nao',a.area||'Assessor',
+      temXP ? fmtNum(a.comp) : '',
+      temXP ? fmtNum(a.xp) : '',
+      temXP ? pct : '',
+      temXP ? (a.payback_meses||'') : '',
+      temXP ? (a.xpCond||'') : ''
     ].map(esc).join(';');
   });
   var tp=_tbData.reduce(function(s,a){return s+(a.pisoTotal||0);},0);
   var ts=_tbData.reduce(function(s,a){return s+(a.si||0);},0);
   var tt=_tbData.reduce(function(s,a){return s+(a.trigTotal||0);},0);
   var tg=_tbData.reduce(function(s,a){return s+(a.custoTotal||0);},0);
-  var totRow=['TOTAL GERAL','','','','','','','','',fmtNum(tp),fmtNum(ts),fmtNum(tt),fmtNum(tg),'','',''].join(';');
+  var txp=_tbData.reduce(function(s,a){return s+(a.xp||0);},0);
+  var tcomp=_tbData.reduce(function(s,a){return s+((a.xp>0)?(a.comp||0):0);},0);
+  var totRow=['TOTAL GERAL','','','','','','','','',fmtNum(tp),fmtNum(ts),fmtNum(tt),fmtNum(tg),'','','',fmtNum(tcomp),fmtNum(txp),'','',''].join(';');
   return '\uFEFF' + hdr.join(';') + '\n' + rows.join('\n') + '\n' + totRow;
 }
 
