@@ -205,6 +205,7 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
     </div>
 
     <!-- Lista de hunters -->
+    <input type="text" id="busca-hunters" placeholder="🔎 Buscar hunter por nome..." oninput="carregarHunters()" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;margin-bottom:12px;outline:none;">
     <div id="hunters-lista">
       <div class="empty-hunters">Carregando hunters...</div>
     </div>
@@ -244,6 +245,7 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
       </div>
     </div>
 
+    <input type="text" id="busca-regionais" placeholder="🔎 Buscar regional por nome..." oninput="carregarRegionais()" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;margin-bottom:12px;outline:none;">
     <div id="regionais-lista">
       <div class="empty-hunters">Carregando regionais...</div>
     </div>
@@ -282,6 +284,7 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
       </div>
     </div>
 
+    <input type="text" id="busca-lideres" placeholder="🔎 Buscar líder por nome..." oninput="carregarLideres()" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;margin-bottom:12px;outline:none;">
     <div id="lideres-lista">
       <div class="empty-hunters">Carregando líderes...</div>
     </div>
@@ -324,6 +327,7 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
       </div>
     </div>
 
+    <input type="text" id="busca-pracas" placeholder="🔎 Buscar praça por nome..." oninput="carregarPracas()" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;margin-bottom:12px;outline:none;">
     <div id="pracas-lista">
       <div class="empty-hunters">Carregando praças...</div>
     </div>
@@ -409,6 +413,33 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
 ══════════════════════════════════════════════════ -->
 <div class="tab-content page" id="tab-usuarios">
 
+  <!-- Criação de acessos em lote para líderes -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title">Criar Acessos em Lote (Líderes)</div>
+    <div class="card-sub">Puxa a lista de líderes já cadastrados (aba Líderes) e cria o login de cada um de uma vez. Quem já tem login (nome batendo com um usuário existente) aparece marcado e não é duplicado. O nome do login usa exatamente o nome cadastrado no líder — precisa bater com o campo "Líder" dos candidatos no CRM para a Régua de Contato funcionar.</div>
+    <div class="btn-row" style="margin-bottom:12px;">
+      <button class="btn-secondary" onclick="carregarLideresParaLote()">🔄 Carregar líderes</button>
+      <button class="btn-primary" onclick="criarAcessosEmLote()">Criar acessos selecionados</button>
+    </div>
+    <div id="lote-lideres-tbody-wrap" style="max-height:400px;overflow:auto;border:1px solid var(--rule);border-radius:8px;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--rule);position:sticky;top:0;background:#fff;">
+            <th style="padding:8px 10px;width:30px;"><input type="checkbox" onclick="toggleTodosLote(this)"></th>
+            <th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Líder</th>
+            <th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">E-mail</th>
+            <th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Senha provisória</th>
+            <th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Status</th>
+          </tr>
+        </thead>
+        <tbody id="lote-lideres-tbody">
+          <tr><td colspan="5" style="padding:16px;text-align:center;color:var(--t3);">Clique em "Carregar líderes" para começar.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="lote-status" style="margin-top:10px;font-size:11px;color:var(--t3);"></div>
+  </div>
+
   <!-- Formulário adicionar/editar -->
   <div class="card" style="margin-bottom:16px;">
     <div class="card-title">Adicionar / Editar Usuário</div>
@@ -448,6 +479,7 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
   <!-- Lista de usuários -->
   <div class="card">
     <div class="card-title">Usuários Cadastrados</div>
+    <input type="text" id="busca-usuarios" placeholder="🔎 Buscar usuário por nome ou e-mail..." oninput="carregarUsuarios()" style="width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;margin-bottom:12px;outline:none;">
     <table style="width:100%;border-collapse:collapse;font-size:12px;">
       <thead>
         <tr style="border-bottom:2px solid var(--rule);">
@@ -529,8 +561,10 @@ function toast(msg, tipo) {
 function carregarHunters() {
   NexusConfig.getHunters(function(err, hunters) {
     var el = document.getElementById('hunters-lista');
+    var termo = _normBusca(document.getElementById('busca-hunters') ? document.getElementById('busca-hunters').value : '');
+    if (termo) hunters = (hunters||[]).filter(function(h){ return _normBusca(h.nome).indexOf(termo) > -1; });
     if (err || !hunters.length) {
-      el.innerHTML = '<div class="empty-hunters">Nenhum hunter cadastrado ainda.<br>Use o formulário acima para adicionar.</div>';
+      el.innerHTML = '<div class="empty-hunters">'+(termo ? 'Nenhum hunter encontrado para "'+esc(document.getElementById('busca-hunters').value)+'".' : 'Nenhum hunter cadastrado ainda.<br>Use o formulário acima para adicionar.')+'</div>';
       return;
     }
     el.innerHTML = '<div class="hunters-grid">' +
@@ -960,8 +994,10 @@ function _pracasComparavel(p){
 function carregarRegionais() {
   NexusConfig.getRegionais(function(err, regs) {
     var el = document.getElementById('regionais-lista');
+    var termo = _normBusca(document.getElementById('busca-regionais') ? document.getElementById('busca-regionais').value : '');
+    if (termo) regs = (regs||[]).filter(function(r){ return _normBusca(r.nome).indexOf(termo) > -1; });
     if (err || !regs.length) {
-      el.innerHTML = '<div class="empty-hunters">Nenhum regional cadastrado ainda.<br>Use o formulário acima para adicionar.</div>';
+      el.innerHTML = '<div class="empty-hunters">'+(termo ? 'Nenhum regional encontrado.' : 'Nenhum regional cadastrado ainda.<br>Use o formulário acima para adicionar.')+'</div>';
       return;
     }
     el.innerHTML = '<div class="hunters-grid">' +
@@ -1048,8 +1084,10 @@ function limparFormRegional() {
 function carregarLideres() {
   NexusConfig.getLideres(function(err, lids) {
     var el = document.getElementById('lideres-lista');
+    var termo = _normBusca(document.getElementById('busca-lideres') ? document.getElementById('busca-lideres').value : '');
+    if (termo) lids = (lids||[]).filter(function(l){ return _normBusca(l.nome).indexOf(termo) > -1; });
     if (err || !lids.length) {
-      el.innerHTML = '<div class="empty-hunters">Nenhum líder cadastrado ainda.<br>Use o formulário acima para adicionar.</div>';
+      el.innerHTML = '<div class="empty-hunters">'+(termo ? 'Nenhum líder encontrado.' : 'Nenhum líder cadastrado ainda.<br>Use o formulário acima para adicionar.')+'</div>';
       return;
     }
     el.innerHTML = '<div class="hunters-grid">' +
@@ -1136,8 +1174,10 @@ function limparFormLider() {
 function carregarPracas() {
   NexusConfig.getPracas(function(err, pracas) {
     var el = document.getElementById('pracas-lista');
+    var termo = _normBusca(document.getElementById('busca-pracas') ? document.getElementById('busca-pracas').value : '');
+    if (termo) pracas = (pracas||[]).filter(function(p){ return _normBusca(p.label||p.nome).indexOf(termo) > -1 || _normBusca(p.nome).indexOf(termo) > -1; });
     if (err || !pracas.length) {
-      el.innerHTML = '<div class="empty-hunters">Nenhuma praça cadastrada ainda.<br>Use o formulário acima para adicionar.</div>';
+      el.innerHTML = '<div class="empty-hunters">'+(termo ? 'Nenhuma praça encontrada.' : 'Nenhuma praça cadastrada ainda.<br>Use o formulário acima para adicionar.')+'</div>';
       return;
     }
     // Agrupa por grupo
@@ -1362,6 +1402,7 @@ function setColor(pickerId, prevId, hexId, val) {
 }
 
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function _normBusca(s){ return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 
 
 // ── Upload de foto (Base64) ────────────────────────────────────────
@@ -1532,7 +1573,10 @@ function reatribuirCardsSelecionados() {
 // ── Init ──────────────────────────────────────────────────────────
 carregarHunters();
 carregarParametros();
-carregarWL();
+// carregarWL() removida — este arquivo não tem a aba "White Label" (os elementos
+// wl-nome/wl-sub/etc. não existem aqui), então essa chamada só gerava um erro
+// silencioso no console a cada carregamento da página. A função em si (mais abaixo)
+// foi mantida intacta, só a chamada automática foi removida.
 renderMetasCanaisInputs();
 renderBotoesExportacao();
 popularSelectsReatribuicaoHunter();
@@ -1546,6 +1590,104 @@ function supaUsrCfg(path, opts) {
   return fetch(url+'/rest/v1/'+path, Object.assign({ headers: h }, opts||{}));
 }
 
+// ── Criação de acessos em lote para líderes ─────────────────────────
+function _gerarSenhaProvisoria() {
+  return 'Blue3@' + Math.floor(1000 + Math.random()*9000);
+}
+
+function carregarLideresParaLote() {
+  var tb = document.getElementById('lote-lideres-tbody');
+  tb.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--t3);">Carregando...</td></tr>';
+  document.getElementById('lote-status').textContent = '';
+
+  Promise.all([
+    new Promise(function(resolve){ NexusConfig.getLideres(function(err, lids){ resolve(lids||[]); }); }),
+    supaUsrCfg('usuarios?select=nome,email,perfil').then(function(r){ return r.json(); }).catch(function(){ return []; })
+  ]).then(function(res){
+    var lideres = res[0].filter(function(l){ return (l.status||'Ativo') !== 'Inativo'; });
+    var usuarios = res[1] || [];
+
+    if (!lideres.length) {
+      tb.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--t3);">Nenhum líder ativo cadastrado na aba Líderes.</td></tr>';
+      return;
+    }
+
+    tb.innerHTML = lideres.map(function(l, idx){
+      var existente = usuarios.find(function(u){ return _normBusca(u.nome) === _normBusca(l.nome); });
+      var jaTemLogin = !!existente;
+      var senhaSugerida = _gerarSenhaProvisoria();
+      return '<tr data-nome="'+esc(l.nome)+'" style="border-bottom:1px solid var(--rule);'+(jaTemLogin?'opacity:.55;':'')+'">'
+        + '<td style="padding:8px 10px;"><input type="checkbox" id="lote-chk-'+idx+'" '+(jaTemLogin?'disabled':'checked')+'></td>'
+        + '<td style="padding:8px 10px;font-weight:600;">'+esc(l.nome)+'</td>'
+        + '<td style="padding:8px 10px;">'+(jaTemLogin
+            ? '<span style="color:var(--t3);font-size:11px;">'+esc(existente.email)+'</span>'
+            : '<input type="email" id="lote-email-'+idx+'" placeholder="email@blue3.com.br" style="width:100%;padding:6px 8px;border:1px solid var(--rule);border-radius:6px;font-size:11px;">')
+          + '</td>'
+        + '<td style="padding:8px 10px;">'+(jaTemLogin
+            ? '—'
+            : '<input type="text" id="lote-senha-'+idx+'" value="'+esc(senhaSugerida)+'" style="width:100%;padding:6px 8px;border:1px solid var(--rule);border-radius:6px;font-size:11px;">')
+          + '</td>'
+        + '<td style="padding:8px 10px;">'+(jaTemLogin
+            ? '<span style="font-size:10px;font-weight:700;color:#16A34A;">● Já tem login</span>'
+            : '<span style="font-size:10px;font-weight:700;color:#B45309;">○ Sem login</span>')
+          + '</td>'
+        + '</tr>';
+    }).join('');
+
+    window._LOTE_LIDERES = lideres;
+  }).catch(function(e){
+    tb.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:#DC2626;">Erro: '+e+'</td></tr>';
+  });
+}
+
+function toggleTodosLote(masterChk) {
+  document.querySelectorAll('#lote-lideres-tbody input[type=checkbox]:not(:disabled)').forEach(function(c){
+    c.checked = masterChk.checked;
+  });
+}
+
+function criarAcessosEmLote() {
+  var lideres = window._LOTE_LIDERES;
+  if (!lideres || !lideres.length) { toast('Clique em "Carregar líderes" primeiro.', 'err'); return; }
+
+  var aCriar = [];
+  var erros = [];
+  lideres.forEach(function(l, idx){
+    var chk = document.getElementById('lote-chk-'+idx);
+    if (!chk || chk.disabled || !chk.checked) return;
+    var email = (document.getElementById('lote-email-'+idx).value || '').trim().toLowerCase();
+    var senha = (document.getElementById('lote-senha-'+idx).value || '').trim();
+    if (!email || !senha) { erros.push(l.nome + ' (faltou e-mail ou senha)'); return; }
+    aCriar.push({ nome: l.nome, email: email, senha: senha, perfil: 'lider', ativo: true });
+  });
+
+  if (erros.length) {
+    toast('Corrija antes de continuar: ' + erros.join(', '), 'err');
+    return;
+  }
+  if (!aCriar.length) { toast('Nenhum líder selecionado para criar acesso.', 'err'); return; }
+  if (!confirm('Confirma a criação de ' + aCriar.length + ' novo(s) login(s) de líder?')) return;
+
+  var status = document.getElementById('lote-status');
+  status.textContent = 'Criando 0/' + aCriar.length + '...';
+  var feitos = 0, falhas = [];
+
+  function proximo(i) {
+    if (i >= aCriar.length) {
+      status.textContent = 'Concluído: ' + feitos + ' criado(s)' + (falhas.length ? ', ' + falhas.length + ' falharam (' + falhas.join(', ') + ')' : '.');
+      toast(feitos + ' acesso(s) de líder criado(s)!', 'ok');
+      carregarLideresParaLote();
+      carregarUsuarios();
+      return;
+    }
+    supaUsrCfg('usuarios', { method: 'POST', body: JSON.stringify(aCriar[i]) })
+      .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function(){ feitos++; status.textContent = 'Criando ' + (i+1) + '/' + aCriar.length + '...'; proximo(i+1); })
+      .catch(function(){ falhas.push(aCriar[i].nome); proximo(i+1); });
+  }
+  proximo(0);
+}
+
 function carregarUsuarios() {
   var tb = document.getElementById('usr-tbody');
   if (!tb) return;
@@ -1553,8 +1695,10 @@ function carregarUsuarios() {
   supaUsrCfg('usuarios?order=id.asc&select=id,nome,email,perfil,ativo')
     .then(function(r){ return r.json(); })
     .then(function(users){
+      var termo = _normBusca(document.getElementById('busca-usuarios') ? document.getElementById('busca-usuarios').value : '');
+      if (termo) users = (users||[]).filter(function(u){ return _normBusca(u.nome).indexOf(termo)>-1 || _normBusca(u.email).indexOf(termo)>-1; });
       if (!users || !users.length) {
-        tb.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--t3);">Nenhum usuário cadastrado.</td></tr>';
+        tb.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--t3);">'+(termo?'Nenhum usuário encontrado.':'Nenhum usuário cadastrado.')+'</td></tr>';
         return;
       }
       var rm = { master:'Master', gerente:'Gerente', regional:'Regional', hunter:'Hunter', lider:'Líder', viewer:'Viewer' };
