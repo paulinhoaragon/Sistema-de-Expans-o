@@ -65,6 +65,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .rc-table tr:hover td{background:#F8FAFF}
 .rc-nome{font-weight:700;color:var(--t1)}
 .rc-sub{font-size:10px;color:var(--t4)}
+.rc-parecer{font-size:10px;color:var(--t3);margin-top:3px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:help;}
 
 .rc-badge{font-size:9px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;display:inline-block}
 .rc-badge.atrasado{background:#FEE2E2;color:#991B1B}
@@ -229,15 +230,15 @@ var REGUAS = [
     lblBase:'MOU assinado em', lblAcao:'Marcar desligamento solicitado',
     proximosMarcos:['data_inicio'], extraCol:{ key:'instituicao', label:'Instituição de Origem' },
     renovavel:true, campoRenovacoes:'desligamento_renovacoes', renovarDias:30, lblRenovar:'Manter no Processo (+30d)' },
-  { key:'r3', num:3, campoBase:'data_inicio', campoDone:'data_contato_30', prazo:30,
+  { key:'r3', num:3, campoBase:'data_inicio', campoDone:'data_contato_30', campoParecer:'parecer_30', prazo:30,
     titulo:'Check-in de Performance — 30 dias', desc:'30 dias corridos após o início do trabalho',
     lblBase:'Início em', lblAcao:'Marcar contato realizado',
     proximosMarcos:null, extraCol:{ key:'lider', label:'Líder' } },
-  { key:'r4', num:4, campoBase:'data_inicio', campoDone:'data_contato_60', prazo:60,
+  { key:'r4', num:4, campoBase:'data_inicio', campoDone:'data_contato_60', campoParecer:'parecer_60', prazo:60,
     titulo:'Check-in de Performance — 60 dias', desc:'60 dias corridos após o início do trabalho',
     lblBase:'Início em', lblAcao:'Marcar contato realizado',
     proximosMarcos:null, extraCol:{ key:'lider', label:'Líder' } },
-  { key:'r5', num:5, campoBase:'data_inicio', campoDone:'data_contato_180', prazo:180,
+  { key:'r5', num:5, campoBase:'data_inicio', campoDone:'data_contato_180', campoParecer:'parecer_180', prazo:180,
     titulo:'Check-in de Performance — 180 dias', desc:'180 dias corridos após o início do trabalho',
     lblBase:'Início em', lblAcao:'Marcar contato realizado',
     proximosMarcos:null, extraCol:{ key:'lider', label:'Líder' } }
@@ -296,7 +297,7 @@ function statusLabel(item){
 // ════════ CARREGAR DADOS ════════
 function carregar() {
   var camposBase = 'id,nome,praca,hunter,lider,instituicao,etapa,data_contratacao,data_mou,data_inicio';
-  var camposExtra = 'id,data_contrato_assinado,data_desligamento_solicitado,desligamento_renovacoes,data_contato_30,data_contato_60,data_contato_180';
+  var camposExtra = 'id,data_contrato_assinado,data_desligamento_solicitado,desligamento_renovacoes,data_contato_30,data_contato_60,data_contato_180,parecer_30,parecer_60,parecer_180';
 
   Promise.all([
     supaGet('crm_candidatos?select='+camposBase+'&order=nome.asc&limit=1000'),
@@ -416,8 +417,10 @@ function linhaHtml(it, regra) {
   var statusCls = statusClasse(it.status);
   var acaoHtml;
   if (it.status.indexOf('concluido') > -1) {
+    var parecerTxt = regra.campoParecer ? (c[regra.campoParecer]||'') : '';
     acaoHtml = '<span class="rc-sub">'+fmtDate(it.done)+'</span>'
-      + (COLUNAS_OK ? '<button class="btn-undo" onclick="desfazerMarco(\''+c.id+'\',\''+regra.campoDone+'\',\''+regra.key+'\')">desfazer</button>' : '');
+      + (COLUNAS_OK ? '<button class="btn-undo" onclick="desfazerMarco(\''+c.id+'\',\''+regra.campoDone+'\',\''+regra.key+'\')">desfazer</button>' : '')
+      + (parecerTxt ? '<div class="rc-parecer" title="'+esc(parecerTxt)+'">💬 '+esc(parecerTxt)+'</div>' : '');
   } else if (COLUNAS_OK) {
     acaoHtml = '<button class="btn-ok" onclick="concluirMarco(\''+c.id+'\',\''+regra.campoDone+'\',\''+esc(regra.lblAcao)+'\')">'+esc(regra.lblAcao)+'</button>';
     if (regra.renovavel) {
