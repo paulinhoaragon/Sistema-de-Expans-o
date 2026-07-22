@@ -373,6 +373,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         </div>
         <input type="hidden" id="m-obs">
 
+        <!-- Pareceres de performance dados pelo líder na Régua de Contato (30/60/180 dias) —
+             somente leitura aqui; quem escreve é o líder, em "Meus Retornos" -->
+        <div id="m-pareceres-box" style="display:none;margin-top:16px;">
+          <div class="sec-lbl">Pareceres de Performance (Régua de Contato)</div>
+          <div id="m-pareceres-lista" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+
         <!-- Botões de ação -->
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--rule);gap:8px;">
           <button class="btn-excluir" id="btn-excluir" style="display:none;" onclick="excluirCandidato()">Excluir</button>
@@ -978,6 +985,7 @@ function abrirEdicao(id) {
   calcProposta();
   // Carregar mini histórico de propostas
   carregarPropostasCRM(r.telefone || '');
+  renderPareceresPerformance(r);
   if (r.etapa === 'Contratação' || r.etapa === 'Trabalhando') {
     carregarResumoContratacao(r.telefone || '', r.coparticipacao, r.detalhe_coparticipacao);
   } else {
@@ -1046,6 +1054,8 @@ function toggleEtapaDatas(etapa, autoData) {
 }
 
 function limparModal() {
+  var pBox = document.getElementById('m-pareceres-box');
+  if (pBox) pBox.style.display = 'none';
   ['m-id','m-nome','m-tel','m-email','m-inst',
    'm-auc','m-piso','m-periodo','m-upfront',
    'm-t1tri-m','m-t1tri-v','m-t1m','m-t1v','m-t2m','m-t2v','m-t3m','m-t3v','m-t4m','m-t4v',
@@ -1810,6 +1820,29 @@ function copiarResumoContratacao() {
     document.execCommand('copy');
     alert('Resumo copiado!');
   }
+}
+
+function renderPareceresPerformance(r) {
+  var box = document.getElementById('m-pareceres-box');
+  var lista = document.getElementById('m-pareceres-lista');
+  if (!box || !lista) return;
+
+  var itens = [
+    { label: '30 dias', data: r.data_contato_30, texto: r.parecer_30 },
+    { label: '60 dias', data: r.data_contato_60, texto: r.parecer_60 },
+    { label: '180 dias', data: r.data_contato_180, texto: r.parecer_180 }
+  ].filter(function(it){ return it.texto; });
+
+  if (!itens.length) { box.style.display = 'none'; lista.innerHTML = ''; return; }
+
+  lista.innerHTML = itens.map(function(it){
+    var dataFmt = it.data ? new Date(it.data+'T12:00:00').toLocaleDateString('pt-BR') : '';
+    return '<div style="background:#F4F6FB;border:1px solid #E2E6F2;border-radius:8px;padding:10px 12px;">'
+      + '<div style="font-size:9px;font-weight:700;color:var(--cobalt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Check-in ' + it.label + (dataFmt ? ' · ' + dataFmt : '') + '</div>'
+      + '<div style="font-size:12px;color:var(--t1);line-height:1.4;white-space:pre-wrap;">' + esc(it.texto) + '</div>'
+    + '</div>';
+  }).join('');
+  box.style.display = 'block';
 }
 
 function carregarPropostasCRM(telefone) {
