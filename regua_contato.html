@@ -125,9 +125,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <option value="atencao">Atenção</option>
     <option value="noprazo">No prazo</option>
     <option value="concluido">Concluído</option>
+    <option value="com_parecer">Concluído com parecer do líder</option>
   </select>
   <label class="f-check"><input type="checkbox" id="f-ocultar-concluidos" onchange="aplicarFiltros()"> Ocultar concluídos</label>
-  <button class="btn-outline" onclick="copiarResumo()" style="margin-left:auto">📋 Copiar resumo</button>
+  <button class="btn-outline" onclick="copiarRelatorioPareceres()" style="margin-left:auto">📄 Relatório de Pareceres</button>
+  <button class="btn-outline" onclick="copiarResumo()">📋 Copiar resumo</button>
   <span class="f-count" id="f-count">—</span>
 </div>
 
@@ -416,8 +418,8 @@ function linhaHtml(it, regra) {
   var c = it.candidato;
   var statusCls = statusClasse(it.status);
   var acaoHtml;
+  var parecerTxt = regra.campoParecer ? (c[regra.campoParecer]||'') : '';
   if (it.status.indexOf('concluido') > -1) {
-    var parecerTxt = regra.campoParecer ? (c[regra.campoParecer]||'') : '';
     acaoHtml = '<span class="rc-sub">'+fmtDate(it.done)+'</span>'
       + (COLUNAS_OK ? '<button class="btn-undo" onclick="desfazerMarco(\''+c.id+'\',\''+regra.campoDone+'\',\''+regra.key+'\')">desfazer</button>' : '')
       + (parecerTxt ? '<div class="rc-parecer" title="'+esc(parecerTxt)+'">💬 '+esc(parecerTxt)+'</div>' : '');
@@ -434,7 +436,8 @@ function linhaHtml(it, regra) {
     ? '<div class="rc-sub">renovado ' + it.renovacoes + 'x (prazo: ' + it.prazoEfetivo + 'd)</div>' : '';
 
   return '<tr data-hunter="'+esc(c.hunter||'')+'" data-lider="'+esc(c.lider||'')+'" data-praca="'+esc(c.praca||'')+'" data-regional="'+esc(pracaParaRegional(c.praca)||'_sem')+'" data-etapa="'+esc(c.etapa||'')+'" data-status="'+statusCls.split(' ')[0]+'"'
-    + ' data-limite="'+esc(fmtDate(it.dataLimite))+'" data-restam="'+(it.restam!==undefined?it.restam:'')+'">'
+    + ' data-limite="'+esc(fmtDate(it.dataLimite))+'" data-restam="'+(it.restam!==undefined?it.restam:'')+'"'
+    + ' data-tem-parecer="'+(parecerTxt ? '1' : '0')+'" data-regua="'+regra.key+'" data-regua-label="'+esc(regra.titulo||regra.label||'')+'" data-parecer="'+esc(parecerTxt)+'" data-data-parecer="'+esc(fmtDate(it.done))+'">'
     + '<td><div class="rc-nome">'+esc(c.nome)+'</div></td>'
     + '<td>'+esc(c.praca||'—')+'</td>'
     + '<td>'+esc(c.hunter||'—')+'</td>'
@@ -494,7 +497,12 @@ function aplicarFiltros() {
     var okR = !regional || tr.getAttribute('data-regional') === regional;
     var okP = !praca  || tr.getAttribute('data-praca')  === praca;
     var st  = tr.getAttribute('data-status');
-    var okS = !status || st === status;
+    var okS;
+    if (status === 'com_parecer') {
+      okS = st.indexOf('concluido') > -1 && tr.getAttribute('data-tem-parecer') === '1';
+    } else {
+      okS = !status || st === status;
+    }
     var okC = !ocultarConcl || st !== 'concluido';
     var show = okH && okL && okR && okP && okS && okC;
     tr.style.display = show ? '' : 'none';
@@ -509,6 +517,57 @@ function aplicarFiltros() {
   });
 
   document.getElementById('f-count').textContent = visiveis + ' marco' + (visiveis!==1?'s':'') + ' exibido' + (visiveis!==1?'s':'');
+}
+
+function copiarRelatorioPareceres() {
+  var linhas = Array.from(document.querySelectorAll('.rc-table tbody tr[data-hunter]')).filter(function(tr){
+    return tr.style.display !== 'none' && tr.getAttribute('data-tem-parecer') === '1';
+  });
+
+  if (!linhas.length) {
+    alert('Nenhum parecer de líder encontrado com os filtros atuais. Use o filtro "Concluído com parecer do líder" (ou ajuste Hunter/Líder/Regional/Praça) para ver quem já respondeu.');
+    return;
+  }
+
+  var lider = document.getElementById('f-lider').value;
+  var regional = document.getElementById('f-regional').value;
+  var REGIONAL_LABEL = { Tamires:'Tamires', Yokoy:'Yokoy', Bruno:'Bruno', MariaLaura:'Maria Laura', _sem:'Sem regional mapeada' };
+  var titulo = 'Relatório de Pareceres de Performance';
+  if (lider) titulo += ' — Líder: ' + lider;
+  if (regional) titulo += ' — Regional: ' + (REGIONAL_LABEL[regional] || regional);
+  titulo += ' (' + fmtDate(hojeISO()) + ')';
+
+  // Agrupa por régua (30/60/180) pra ficar organizado como o resto do relatório
+  var porRegua = {};
+  linhas.forEach(function(tr){
+    var chave = tr.getAttribute('data-regua-label') || tr.getAttribute('data-regua');
+    if (!porRegua[chave]) porRegua[chave] = [];
+    porRegua[chave].push(tr);
+  });
+
+  var partes = [titulo, ''];
+  Object.keys(porRegua).forEach(function(chave){
+    partes.push(chave.toUpperCase() + ':');
+    porRegua[chave].forEach(function(tr){
+      var nome = tr.querySelector('.rc-nome') ? tr.querySelector('.rc-nome').textContent.trim() : '—';
+      var praca = tr.getAttribute('data-praca') || '—';
+      var liderNome = tr.getAttribute('data-lider') || '—';
+      var dataParecer = tr.getAttribute('data-data-parecer') || '';
+      var parecer = tr.getAttribute('data-parecer') || '';
+      partes.push('• ' + nome + ' (' + praca + ' · Líder: ' + liderNome + (dataParecer ? ' · respondido em ' + dataParecer : '') + ')');
+      partes.push('  "' + parecer + '"');
+    });
+    partes.push('');
+  });
+
+  var texto = partes.join('\n').trim();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(function(){
+      alert('Relatório de pareceres copiado! (' + linhas.length + ' registro(s)) Já pode colar pra apresentar aos gestores.');
+    }).catch(function(){ prompt('Copie o texto abaixo:', texto); });
+  } else {
+    prompt('Copie o texto abaixo:', texto);
+  }
 }
 
 function copiarResumo() {
