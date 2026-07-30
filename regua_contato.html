@@ -247,6 +247,7 @@ var REGUAS = [
 ];
 
 var CANDIDATOS = [];
+var SELECIONADOS = new Set(); // ids dos candidatos escolhidos para o relatório individual
 var COLUNAS_OK = true;
 
 function somarDias(iso, dias) {
@@ -402,16 +403,18 @@ function renderSecoes(itens) {
         + '</div>'
       + '</div>'
       + '<table class="rc-table"><thead><tr>'
+        + (regra.campoParecer ? '<th style="width:26px;"></th>' : '')
         + '<th>Candidato</th><th>Praça</th><th>Hunter</th>'
         + (regra.extraCol ? '<th>'+esc(regra.extraCol.label)+'</th>' : '')
         + '<th>'+esc(regra.lblBase)+'</th><th>Status</th><th>Ação</th>'
       + '</tr></thead><tbody>'
-        + (linhas || '<tr><td colspan="7" class="rc-empty">Nenhum candidato neste marco</td></tr>')
+        + (linhas || '<tr><td colspan="8" class="rc-empty">Nenhum candidato neste marco</td></tr>')
       + '</tbody></table>'
     + '</div>';
   }).join('');
 
   document.getElementById('content-root').innerHTML = html;
+  atualizarBarraSelecao();
 }
 
 function linhaHtml(it, regra) {
@@ -438,6 +441,7 @@ function linhaHtml(it, regra) {
   return '<tr data-hunter="'+esc(c.hunter||'')+'" data-lider="'+esc(c.lider||'')+'" data-praca="'+esc(c.praca||'')+'" data-regional="'+esc(pracaParaRegional(c.praca)||'_sem')+'" data-etapa="'+esc(c.etapa||'')+'" data-status="'+statusCls.split(' ')[0]+'"'
     + ' data-limite="'+esc(fmtDate(it.dataLimite))+'" data-restam="'+(it.restam!==undefined?it.restam:'')+'"'
     + ' data-tem-parecer="'+(parecerTxt ? '1' : '0')+'" data-regua="'+regra.key+'" data-regua-label="'+esc(regra.titulo||regra.label||'')+'" data-parecer="'+esc(parecerTxt)+'" data-data-parecer="'+esc(fmtDate(it.done))+'">'
+    + (regra.campoParecer ? '<td><input type="checkbox" class="rc-sel-chk" data-sel-id="'+esc(c.id)+'" onchange="toggleSelecao(\''+esc(c.id)+'\',this)" '+(SELECIONADOS.has(String(c.id))?'checked':'')+'></td>' : '')
     + '<td><div class="rc-nome">'+esc(c.nome)+'</div></td>'
     + '<td>'+esc(c.praca||'—')+'</td>'
     + '<td>'+esc(c.hunter||'—')+'</td>'
@@ -517,6 +521,116 @@ function aplicarFiltros() {
   });
 
   document.getElementById('f-count').textContent = visiveis + ' marco' + (visiveis!==1?'s':'') + ' exibido' + (visiveis!==1?'s':'');
+}
+
+// ════════ SELEÇÃO DE CANDIDATOS PARA RELATÓRIO INDIVIDUAL ════════
+function toggleSelecao(id, chk) {
+  id = String(id);
+  if (chk.checked) SELECIONADOS.add(id); else SELECIONADOS.delete(id);
+  // Sincroniza os outros checkboxes do mesmo candidato (ele pode aparecer em r3, r4 e r5)
+  document.querySelectorAll('input.rc-sel-chk[data-sel-id="'+id+'"]').forEach(function(cb){ cb.checked = chk.checked; });
+  atualizarBarraSelecao();
+}
+
+function limparSelecao() {
+  SELECIONADOS.clear();
+  document.querySelectorAll('input.rc-sel-chk').forEach(function(cb){ cb.checked = false; });
+  atualizarBarraSelecao();
+}
+
+function atualizarBarraSelecao() {
+  var barra = document.getElementById('barra-selecao');
+  var count = document.getElementById('barra-sel-count');
+  if (!barra) return;
+  if (SELECIONADOS.size > 0) {
+    barra.style.display = 'flex';
+    count.textContent = SELECIONADOS.size + ' candidato' + (SELECIONADOS.size!==1?'s':'') + ' selecionado' + (SELECIONADOS.size!==1?'s':'');
+  } else {
+    barra.style.display = 'none';
+  }
+}
+
+// Monta o quadro completo (30/60/180) de UM candidato, direto dos dados carregados —
+// não depende de filtro nenhum da tela, é o histórico real dele nas 3 réguas de performance.
+function montarQuadroCandidato(id) {
+  var c = CANDIDATOS.find(function(x){ return String(x.id) === String(id); });
+  if (!c) return null;
+  var checkpoints = REGUAS.filter(function(r){ return !!r.campoParecer; }).map(function(regra){
+    var it = calcularItem(c, regra);
+    if (!it) return { regra:regra, situacao:'nao_aplicavel' };
+    if (it.status.indexOf('concluido') > -1) {
+      var parecer = c[regra.campoParecer] || '';
+      return { regra:regra, situacao: parecer ? 'com_parecer' : 'sem_parecer', data: it.done, parecer: parecer };
+    }
+    return { regra:regra, situacao:'aguardando', status: it.status, restam: it.restam, dataLimite: it.dataLimite };
+  });
+  return { candidato:c, checkpoints:checkpoints };
+}
+
+function _linhaCheckpointTexto(cp) {
+  var label = cp.regra.titulo.replace('Check-in de Performance — ', '');
+  if (cp.situacao === 'com_parecer') return label + ' (respondido em ' + fmtDate(cp.data) + '): "' + cp.parecer + '"';
+  if (cp.situacao === 'sem_parecer') return label + ' (marcado concluído em ' + fmtDate(cp.data) + ', sem parecer escrito)';
+  if (cp.situacao === 'aguardando') {
+    if (cp.status === 'atrasado') return label + ' — aguardando retorno (venceu em ' + fmtDate(cp.dataLimite) + ')';
+    return label + ' — aguardando (vence em ' + fmtDate(cp.dataLimite) + ')';
+  }
+  return label + ' — ainda não se aplica';
+}
+
+function gerarRelatorioTextoSelecionados() {
+  if (!SELECIONADOS.size) { alert('Selecione ao menos um candidato (checkbox nas réguas 3, 4 ou 5).'); return; }
+  var partes = ['Relatório Individual de Performance (' + fmtDate(hojeISO()) + ')', ''];
+  Array.from(SELECIONADOS).forEach(function(id){
+    var q = montarQuadroCandidato(id);
+    if (!q) return;
+    partes.push(q.candidato.nome + ' — ' + (q.candidato.praca||'—') + ' · Líder: ' + (q.candidato.lider||'—'));
+    q.checkpoints.forEach(function(cp){
+      if (cp.situacao === 'nao_aplicavel') return;
+      partes.push('  • ' + _linhaCheckpointTexto(cp));
+    });
+    partes.push('');
+  });
+  var texto = partes.join('\n').trim();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(function(){ alert('Relatório copiado! (' + SELECIONADOS.size + ' candidato(s))'); })
+      .catch(function(){ prompt('Copie o texto abaixo:', texto); });
+  } else {
+    prompt('Copie o texto abaixo:', texto);
+  }
+}
+
+function gerarRelatorioPDFSelecionados() {
+  if (!SELECIONADOS.size) { alert('Selecione ao menos um candidato (checkbox nas réguas 3, 4 ou 5).'); return; }
+
+  var blocos = Array.from(SELECIONADOS).map(function(id){
+    var q = montarQuadroCandidato(id);
+    if (!q) return '';
+    var linhasCp = q.checkpoints.filter(function(cp){ return cp.situacao !== 'nao_aplicavel'; }).map(function(cp){
+      var cor = cp.situacao === 'com_parecer' ? '#166534' : (cp.situacao === 'sem_parecer' ? '#92400E' : (cp.status==='atrasado' ? '#991B1B' : '#3A4268'));
+      var texto = esc(_linhaCheckpointTexto(cp));
+      return '<div style="padding:8px 0;border-bottom:1px solid #E2E5F0;color:'+cor+';font-size:12px;">'+texto+'</div>';
+    }).join('');
+    return '<div style="margin-bottom:24px;page-break-inside:avoid;">'
+      + '<div style="font-size:15px;font-weight:700;color:#0A0F1E;border-bottom:2px solid #1A3BAD;padding-bottom:6px;margin-bottom:6px;">'+esc(q.candidato.nome)+'</div>'
+      + '<div style="font-size:11px;color:#7A82A8;margin-bottom:8px;">'+esc(q.candidato.praca||'—')+' · Líder: '+esc(q.candidato.lider||'—')+'</div>'
+      + linhasCp
+    + '</div>';
+  }).join('');
+
+  var win = window.open('', '_blank');
+  if (!win) { alert('Seu navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente novamente.'); return; }
+  win.document.write(
+    '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório Individual de Performance</title>'
+    + '<style>body{font-family:Arial,Helvetica,sans-serif;padding:32px;color:#0A0F1E;} h1{font-size:18px;margin-bottom:4px;} .sub{font-size:11px;color:#7A82A8;margin-bottom:24px;}</style>'
+    + '</head><body>'
+    + '<h1>Relatório Individual de Performance</h1>'
+    + '<div class="sub">Gerado em ' + fmtDate(hojeISO()) + ' · ' + SELECIONADOS.size + ' candidato(s)</div>'
+    + blocos
+    + '<script>window.onload = function(){ window.print(); };<\/script>'
+    + '</body></html>'
+  );
+  win.document.close();
 }
 
 function copiarRelatorioPareceres() {
@@ -638,5 +752,12 @@ function copiarResumo() {
 }
 carregarRegionaisRC(function(){ carregar(); });
 </script>
+<div id="barra-selecao" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--ink);color:#fff;padding:14px 24px;display:none;align-items:center;gap:14px;z-index:200;box-shadow:0 -4px 16px rgba(0,0,0,.2);">
+  <span id="barra-sel-count" style="font-size:12px;font-weight:700;"></span>
+  <button class="btn-outline" style="background:transparent;border-color:rgba(255,255,255,.4);color:#fff;" onclick="limparSelecao()">Limpar seleção</button>
+  <button class="btn-outline" style="background:transparent;border-color:rgba(255,255,255,.4);color:#fff;margin-left:auto" onclick="gerarRelatorioTextoSelecionados()">📋 Copiar Texto</button>
+  <button class="btn-ok" onclick="gerarRelatorioPDFSelecionados()">🖨️ Gerar PDF</button>
+</div>
+
 </body>
 </html>
