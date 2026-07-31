@@ -1741,13 +1741,24 @@ function salvarUsuario() {
   var path   = id ? 'usuarios?id=eq.'+id : 'usuarios';
   if (!id) payload.ativo = true;
   supaUsrCfg(path, { method: method, body: JSON.stringify(payload) })
-    .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function(r){
+      if (!r.ok) {
+        return r.json().catch(function(){ return null; }).then(function(errBody){
+          var msg = errBody && errBody.message ? errBody.message : ('HTTP '+r.status);
+          if (r.status === 409 || /duplicate key|already exists/i.test(msg)) {
+            msg = 'Já existe um usuário cadastrado com o e-mail "'+email+'" (pode estar inativo — confira na lista abaixo, incluindo desativados).';
+          }
+          throw new Error(msg);
+        });
+      }
+      return r.json();
+    })
     .then(function(){
       toast(id ? 'Usuário atualizado.' : 'Usuário criado.', 'ok');
       limparFormUsuario();
       carregarUsuarios();
     })
-    .catch(function(e){ toast('Erro ao salvar: '+e, 'erro'); });
+    .catch(function(e){ toast('Erro ao salvar: '+e.message, 'erro'); });
 }
 
 function editarUsuarioById(id, nomeEnc, emailEnc, perfil) {
