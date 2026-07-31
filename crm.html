@@ -66,6 +66,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .t-jr{background:#FCE7F3;color:#9D174D}
 .t-mou{background:#EEF2FD;color:var(--cobalt)}
 .t-anc{background:#F0FDF4;color:#15803D}
+.t-prework{background:#FEF3C7;color:#92400E}
+.t-prework-ok{background:#DCFCE7;color:#166534}
 .kc-auc{font-size:11px;font-weight:700;color:var(--cobalt-br)}
 .kc-hunter{font-size:9px;color:var(--t4);position:absolute;top:10px;right:11px}
 .kc-ini{font-size:9px;color:var(--t4);margin-top:4px}
@@ -284,7 +286,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
             </select>
           </div>
           <div class="f-row"><label>Vaga</label>
-            <select id="m-vaga">
+            <select id="m-vaga" onchange="toggleCamposPorVaga(this.value)">
               <option value="">— Selecione —</option>
               <option>Assessor</option>
               <option>Planejador/Consultor</option>
@@ -299,6 +301,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
               <option>Assistente</option>
               <option>M&amp;A</option>
               <option>Outros</option>
+            </select>
+          </div>
+          <div class="f-row" id="row-pre-work" style="display:none;"><label>Pré-Work (Future)</label>
+            <select id="m-pre-work">
+              <option value="">— Não iniciado —</option>
+              <option value="em_pre_work">Em Pré-Work (qualificando base)</option>
+              <option value="validado">Validado pelo Líder</option>
             </select>
           </div>
           <div class="f-row"><label>Estratégico</label>
@@ -826,6 +835,8 @@ function cardHTML(r) {
   if (r.nivel)                        tags += '<span class="tag '+senCls+'">'+r.nivel+'</span>';
   if ((r.mou||'').toLowerCase()==='assinado')    tags += '<span class="tag t-mou">MOU</span>';
   if ((r.status_ancord||'').toLowerCase()==='aprovada') tags += '<span class="tag t-anc">Ancord</span>';
+  if (r.pre_work === 'em_pre_work') tags += '<span class="tag t-prework">🔧 Pré-Work</span>';
+  if (r.pre_work === 'validado')    tags += '<span class="tag t-prework-ok">✅ Pré-Work OK</span>';
 
   // AuC Meta = soma de todas as metas de gatilho salvas, com fallback para auc_mm
   var aucMM = (parseFloat(r.trigger1_tri_meta)||0)
@@ -909,6 +920,8 @@ function abrirEdicao(id) {
   document.getElementById('m-nome').value     = r.nome||'';
   document.getElementById('m-tel').value      = r.telefone||'';
   var vagaEl = document.getElementById('m-vaga'); if (vagaEl) vagaEl.value = r.vaga||'';
+  toggleCamposPorVaga(r.vaga||'');
+  var preWorkEl = document.getElementById('m-pre-work'); if (preWorkEl) preWorkEl.value = r.pre_work||'';
   var estEl = document.getElementById('m-estrategico'); if (estEl) estEl.value = r.estrategico||'Não';
   document.getElementById('m-email').value    = r.email||'';
   document.getElementById('m-inst').value     = r.instituicao||'';
@@ -1012,6 +1025,16 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
+// Mostrar/ocultar campo de Pré-Work conforme a Vaga selecionada (só existe pra Future)
+function toggleCamposPorVaga(vaga) {
+  var row = document.getElementById('row-pre-work');
+  var inp = document.getElementById('m-pre-work');
+  if (!row) return;
+  var show = (vaga === 'Future');
+  row.style.display = show ? '' : 'none';
+  if (!show && inp) inp.value = '';
+}
+
 // Mostrar/ocultar datas conforme etapa
 function toggleDeclinio(etapa) { toggleEtapaDatas(etapa); } // compatibilidade
 function toggleEtapaDatas(etapa, autoData) {
@@ -1083,6 +1106,7 @@ function limparModal() {
   document.getElementById('m-lider').value   = '';
   document.getElementById('m-tipo-bonus').value = 'Semestral';
   var vagaEl = document.getElementById('m-vaga'); if (vagaEl) vagaEl.value = '';
+  toggleCamposPorVaga('');
   var estEl = document.getElementById('m-estrategico'); if (estEl) estEl.value = 'Não';
   var setup = document.getElementById('m-setup'); if (setup) setup.value = '';
   // limpar campos calculados (readonly)
@@ -1125,6 +1149,7 @@ function salvarCandidato() {
   var payload = {
     nome: nome, telefone: g('m-tel'), email: g('m-email'), instituicao: g('m-inst'), praca: g('m-praca'),
     hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), vaga: vaga, estrategico: g('m-estrategico')||'Não', etapa: g('m-etapa'),
+    pre_work: (vaga === 'Future') ? (g('m-pre-work')||null) : null,
     // Proposta base
     auc_mm: (gn('m-t1tri-m') + gn('m-t1m') + gn('m-t2m') + gn('m-t3m') + gn('m-t4m')) || 0, piso: parseBRL(g('m-piso')), periodo: gi('m-periodo'), upfront: parseBRL(g('m-upfront')),
     // Gatilhos
