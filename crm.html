@@ -38,6 +38,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .f-inp{padding:6px 10px;border:1px solid var(--rule);border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--t1);background:#fafbfd;outline:none;min-width:160px;transition:border .15s}
 .f-inp:focus{border-color:var(--cobalt)}
 .f-sel{padding:6px 10px;border:1px solid var(--rule);border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--t1);background:#fafbfd;outline:none;cursor:pointer}
+
+/* ── Multi-seleção (Hunter, Senioridade, Praça, MOU, Líder, Vaga) ── */
+.ms{position:relative;display:inline-block;}
+.ms-btn{padding:6px 10px;border:1px solid var(--rule);border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--t1);background:#fafbfd;outline:none;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+.ms-btn::after{content:'▾';font-size:9px;color:var(--t3);}
+.ms-btn.ms-active{border-color:var(--cobalt);background:#EEF2FD;color:var(--cobalt);font-weight:600;}
+.ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid var(--rule);border-radius:8px;box-shadow:0 8px 24px rgba(10,15,30,.14);z-index:500;min-width:220px;max-height:320px;overflow-y:auto;padding:6px 0;}
+.ms-panel.open{display:block;}
+.ms-panel .ms-group-label{padding:7px 12px 4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);}
+.ms-panel label{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:12px;color:var(--t1);cursor:pointer;white-space:nowrap;}
+.ms-panel label:hover{background:#F4F6FB;}
+.ms-panel input[type=checkbox]{cursor:pointer;}
+.ms-actions{display:flex;justify-content:space-between;padding:7px 12px 4px;border-top:1px solid var(--rule);margin-top:4px;}
+.ms-actions button{background:none;border:none;color:var(--cobalt);font-size:11px;font-weight:700;cursor:pointer;padding:0;}
+.ms-actions button:hover{text-decoration:underline;}
 .f-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em}
 .f-count{font-size:11px;color:var(--t4);margin-left:auto}
 
@@ -190,30 +205,30 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 <div class="filters">
   <span class="f-lbl">Filtrar</span>
   <input class="f-inp" id="f-busca" placeholder="Nome ou instituição..." oninput="renderBoard()">
-  <select class="f-sel" id="f-hunter" onchange="renderBoard()">
-    <option value="">Todos os hunters</option>
-    <!-- Populado dinamicamente -->
-  </select>
-  <select class="f-sel" id="f-nivel" onchange="renderBoard()">
-    <option value="">Todas as senioridades</option>
-    <option>Sênior</option><option>Pleno</option><option>Júnior</option>
-  </select>
-  <select class="f-sel" id="f-praca" onchange="renderBoard()">
-    <option value="">Todas as praças</option>
-  </select>
-  <select class="f-sel" id="f-mou" onchange="renderBoard()">
-    <option value="">MOU — Todos</option>
-    <option value="Assinado">MOU Assinado</option>
-    <option value="Pendente">MOU Pendente</option>
-  </select>
-  <select class="f-sel" id="f-lider" onchange="renderBoard()">
-    <option value="">Todos os líderes</option>
-  </select>
-  <select class="f-sel" id="f-vaga" onchange="renderBoard()">
-    <option value="">Todas as vagas</option>
-    <option value="assessor">Assessores</option>
-    <option value="outras">Outras Vagas</option>
-  </select>
+  <div class="ms" id="ms-hunter">
+    <button type="button" class="ms-btn" onclick="msToggleOpen('hunter')">Todos os hunters</button>
+    <div class="ms-panel" id="ms-panel-hunter"></div>
+  </div>
+  <div class="ms" id="ms-nivel">
+    <button type="button" class="ms-btn" onclick="msToggleOpen('nivel')">Todas as senioridades</button>
+    <div class="ms-panel" id="ms-panel-nivel"></div>
+  </div>
+  <div class="ms" id="ms-praca">
+    <button type="button" class="ms-btn" onclick="msToggleOpen('praca')">Todas as praças</button>
+    <div class="ms-panel" id="ms-panel-praca"></div>
+  </div>
+  <div class="ms" id="ms-mou">
+    <button type="button" class="ms-btn" onclick="msToggleOpen('mou')">MOU — Todos</button>
+    <div class="ms-panel" id="ms-panel-mou"></div>
+  </div>
+  <div class="ms" id="ms-lider">
+    <button type="button" class="ms-btn" onclick="msToggleOpen('lider')">Todos os líderes</button>
+    <div class="ms-panel" id="ms-panel-lider"></div>
+  </div>
+  <div class="ms" id="ms-vaga">
+    <button type="button" class="ms-btn" onclick="msToggleOpen('vaga')">Todas as vagas</button>
+    <div class="ms-panel" id="ms-panel-vaga"></div>
+  </div>
   <span class="f-count" id="f-count"></span>
 </div>
 
@@ -716,60 +731,129 @@ function carregar() {
     .catch(function(){ renderErro(); });
 }
 
-function popularFiltrosPraca() {
-  var sel = document.getElementById('f-praca');
-  if (sel) {
-    var cur = sel.value;
-    // Praças que aparecem nos candidatos (p/ garantir histórico mesmo se fora do cadastro)
-    var nosCandidatos = {};
-    _todos.forEach(function(r){ var p=(r.praca||'').trim(); if(p) nosCandidatos[p]=true; });
+// ── Multi-seleção (Hunter, Senioridade, Praça, MOU, Líder, Vaga) ─────
+var MS = { hunter:new Set(), nivel:new Set(), praca:new Set(), mou:new Set(), lider:new Set(), vaga:new Set() };
+var MS_LABEL = { hunter:{}, nivel:{}, praca:{}, mou:{}, lider:{}, vaga:{} };
+var MS_PLACEHOLDER = { hunter:'Todos os hunters', nivel:'Todas as senioridades', praca:'Todas as praças', mou:'MOU — Todos', lider:'Todos os líderes', vaga:'Todas as vagas' };
 
-    if (_PRACAS_CAD && _PRACAS_CAD.length) {
-      // Fonte: cadastro central, agrupado em Cidades/Segmentos/etc.
-      var ativas = _PRACAS_CAD.filter(function(p){ return (p.status||'Ativo') !== 'Inativo'; });
-      var noCad = {};
-      ativas.forEach(function(p){ noCad[p.nome]=true; });
-      var grupos = {};
-      ativas.forEach(function(p){ var g=p.grupo||'Cidades'; (grupos[g]=grupos[g]||[]).push(p); });
-      var ordem = ['Cidades','Segmentos','Parceiros & Outros'];
-      var nomesGrupos = Object.keys(grupos).sort(function(a,b){
-        var ia=ordem.indexOf(a), ib=ordem.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib);
-      });
-      var html = '<option value="">Todas as praças</option>';
-      nomesGrupos.forEach(function(g){
-        html += '<optgroup label="'+esc(g)+'">';
-        grupos[g].forEach(function(p){
-          var lbl = p.label || p.nome.replace(/^Blue3\s*[-–]\s*/i,'');
-          html += '<option value="'+esc(p.nome)+'"'+(p.nome===cur?' selected':'')+'>'+esc(lbl)+'</option>';
-        });
-        html += '</optgroup>';
-      });
-      // Praças órfãs (em candidatos mas fora do cadastro) — preserva histórico
-      var orfas = Object.keys(nosCandidatos).filter(function(p){ return !noCad[p]; }).sort();
-      if (orfas.length) {
-        html += '<optgroup label="Fora do cadastro">';
-        orfas.forEach(function(p){
-          html += '<option value="'+esc(p)+'"'+(p===cur?' selected':'')+'>'+esc(p.replace(/^Blue3\s*[-–]\s*/i,''))+'</option>';
-        });
-        html += '</optgroup>';
-      }
-      sel.innerHTML = html;
-    } else {
-      // Fallback (cadastro indisponível): praças dos candidatos, como antes
-      var pracas = Object.keys(nosCandidatos).sort();
-      sel.innerHTML = '<option value="">Todas as praças</option>' + pracas.map(function(p){ return '<option'+(p===cur?' selected':'')+'>'+p+'</option>'; }).join('');
-    }
+// groups: [{label: 'Nome do grupo' ou null, itens: [{value, label}]}]
+function msSetOptions(key, groups) {
+  var panel = document.getElementById('ms-panel-'+key);
+  if (!panel) return;
+  MS_LABEL[key] = {};
+  var html = '';
+  groups.forEach(function(g){
+    if (g.label) html += '<div class="ms-group-label">'+esc(g.label)+'</div>';
+    g.itens.forEach(function(it){
+      MS_LABEL[key][it.value] = it.label;
+      var checked = MS[key].has(it.value) ? ' checked' : '';
+      html += '<label><input type="checkbox" value="'+esc(it.value)+'"'+checked+' onchange="msToggle(\''+key+'\',this.value,this.checked)"> '+esc(it.label)+'</label>';
+    });
+  });
+  html += '<div class="ms-actions"><button type="button" onclick="msLimpar(\''+key+'\')">Limpar</button><button type="button" onclick="msFecharTodos()">Fechar</button></div>';
+  panel.innerHTML = html || '<div style="padding:10px 12px;font-size:11px;color:var(--t4);">Nenhuma opção disponível</div>';
+  msAtualizarLabel(key);
+}
+
+function msToggle(key, value, checked) {
+  if (checked) MS[key].add(value); else MS[key].delete(value);
+  msAtualizarLabel(key);
+  renderBoard();
+}
+
+function msLimpar(key) {
+  MS[key].clear();
+  var panel = document.getElementById('ms-panel-'+key);
+  if (panel) panel.querySelectorAll('input[type=checkbox]').forEach(function(c){ c.checked = false; });
+  msAtualizarLabel(key);
+  renderBoard();
+}
+
+function msAtualizarLabel(key) {
+  var btn = document.querySelector('#ms-'+key+' .ms-btn');
+  if (!btn) return;
+  var set = MS[key];
+  if (!set.size) { btn.textContent = MS_PLACEHOLDER[key]; btn.classList.remove('ms-active'); return; }
+  if (set.size === 1) {
+    var v = set.values().next().value;
+    btn.textContent = MS_LABEL[key][v] || v;
+  } else {
+    btn.textContent = set.size + ' selecionad' + (key==='praca'||key==='vaga'?'as':'os');
   }
+  btn.classList.add('ms-active');
+}
+
+function msToggleOpen(key) {
+  var painel = document.getElementById('ms-panel-'+key);
+  var estavaAberto = painel.classList.contains('open');
+  msFecharTodos();
+  if (!estavaAberto) painel.classList.add('open');
+}
+function msFecharTodos() {
+  document.querySelectorAll('.ms-panel.open').forEach(function(p){ p.classList.remove('open'); });
+}
+document.addEventListener('click', function(e){
+  if (!e.target.closest('.ms')) msFecharTodos();
+});
+
+// Popula as 3 multi-seleções estáticas (Senioridade, MOU, Vaga) uma única vez
+(function _msInitEstaticos(){
+  msSetOptions('nivel', [{ label:null, itens:[
+    {value:'Sênior', label:'Sênior'}, {value:'Pleno', label:'Pleno'}, {value:'Júnior', label:'Júnior'}
+  ]}]);
+  msSetOptions('mou', [{ label:null, itens:[
+    {value:'Assinado', label:'MOU Assinado'}, {value:'Pendente', label:'MOU Pendente'}
+  ]}]);
+  msSetOptions('vaga', [{ label:null, itens:[
+    {value:'Assessor', label:'Assessor'}, {value:'Planejador/Consultor', label:'Planejador/Consultor'},
+    {value:'Future', label:'Future'}, {value:'Vem ser Blue', label:'Vem ser Blue'}, {value:'Líder', label:'Líder'},
+    {value:'Advisor', label:'Advisor'}, {value:'Broker', label:'Broker'}, {value:'Offshore', label:'Offshore'},
+    {value:'Seguros', label:'Seguros'}, {value:'Corporate', label:'Corporate'}, {value:'Assistente', label:'Assistente'},
+    {value:'M&A', label:'M&A'}, {value:'Outros', label:'Outros'}
+  ]}]);
+})();
+
+function popularFiltrosPraca() {
+  // Praças que aparecem nos candidatos (p/ garantir histórico mesmo se fora do cadastro)
+  var nosCandidatos = {};
+  _todos.forEach(function(r){ var p=(r.praca||'').trim(); if(p) nosCandidatos[p]=true; });
+
+  var groups = [];
+  if (_PRACAS_CAD && _PRACAS_CAD.length) {
+    // Fonte: cadastro central, agrupado em Cidades/Segmentos/etc.
+    var ativas = _PRACAS_CAD.filter(function(p){ return (p.status||'Ativo') !== 'Inativo'; });
+    var noCad = {};
+    ativas.forEach(function(p){ noCad[p.nome]=true; });
+    var grupos = {};
+    ativas.forEach(function(p){ var g=p.grupo||'Cidades'; (grupos[g]=grupos[g]||[]).push(p); });
+    var ordem = ['Cidades','Segmentos','Parceiros & Outros'];
+    var nomesGrupos = Object.keys(grupos).sort(function(a,b){
+      var ia=ordem.indexOf(a), ib=ordem.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib);
+    });
+    nomesGrupos.forEach(function(g){
+      groups.push({ label:g, itens: grupos[g].map(function(p){
+        return { value:p.nome, label: p.label || p.nome.replace(/^Blue3\s*[-–]\s*/i,'') };
+      })});
+    });
+    // Praças órfãs (em candidatos mas fora do cadastro) — preserva histórico
+    var orfas = Object.keys(nosCandidatos).filter(function(p){ return !noCad[p]; }).sort();
+    if (orfas.length) {
+      groups.push({ label:'Fora do cadastro', itens: orfas.map(function(p){
+        return { value:p, label:p.replace(/^Blue3\s*[-–]\s*/i,'') };
+      })});
+    }
+  } else {
+    // Fallback (cadastro indisponível): praças dos candidatos, como antes
+    var pracas = Object.keys(nosCandidatos).sort();
+    groups.push({ label:null, itens: pracas.map(function(p){ return { value:p, label:p }; }) });
+  }
+  msSetOptions('praca', groups);
 
   // Líderes: função própria (usa cadastro + órfãos dos candidatos)
   popularFiltrosLider();
 }
 
 function popularFiltrosLider() {
-  var selLider = document.getElementById('f-lider');
-  if (!selLider) return;
-  var curLider = selLider.value;
-
   // Líderes presentes nos candidatos (preserva histórico, inclusive inativos)
   var nosCandidatos = {};
   _todos.forEach(function(r){ var l=(r.lider||'').trim(); if(l) nosCandidatos[l]=true; });
@@ -789,30 +873,22 @@ function popularFiltrosLider() {
   }
   nomes.sort(function(a,b){ return a.localeCompare(b); });
 
-  selLider.innerHTML = '<option value="">Todos os líderes</option>'
-    + nomes.map(function(l){ return '<option value="'+esc(l)+'"'+(l===curLider?' selected':'')+'>'+esc(l)+'</option>'; }).join('');
+  msSetOptions('lider', [{ label:null, itens: nomes.map(function(l){ return { value:l, label:l }; }) }]);
 }
 
 // ── Board ─────────────────────────────────────────────────────────
 function renderBoard() {
   var _norm = function(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); };
   var q     = _norm(document.getElementById('f-busca').value||'');
-  var hunter  = document.getElementById('f-hunter').value;
-  var nivel   = document.getElementById('f-nivel').value;
-  var praca   = document.getElementById('f-praca').value;
-  var mou     = document.getElementById('f-mou').value;
-  var lider   = document.getElementById('f-lider').value;
-  var fvaga   = document.getElementById('f-vaga').value;
 
   var filtrados = _todos.filter(function(r){
     if (q && !_norm(r.nome||'').includes(q) && !_norm(r.instituicao||'').includes(q)) return false;
-    if (hunter && r.hunter !== hunter) return false;
-    if (nivel  && r.nivel  !== nivel)  return false;
-    if (praca  && r.praca  !== praca)  return false;
-    if (mou    && (r.mou||'') !== mou) return false;
-    if (lider  && (r.lider||'') !== lider) return false;
-    if (fvaga === 'assessor' && (r.vaga||'').toLowerCase() !== 'assessor') return false;
-    if (fvaga === 'outras'   && (r.vaga||'').toLowerCase() === 'assessor') return false;
+    if (MS.hunter.size && !MS.hunter.has(r.hunter||'')) return false;
+    if (MS.nivel.size  && !MS.nivel.has(r.nivel||''))  return false;
+    if (MS.praca.size  && !MS.praca.has(r.praca||''))  return false;
+    if (MS.mou.size    && !MS.mou.has(r.mou||''))      return false;
+    if (MS.lider.size  && !MS.lider.has(r.lider||''))  return false;
+    if (MS.vaga.size   && !MS.vaga.has(r.vaga||''))    return false;
     return true;
   });
 
@@ -2035,13 +2111,8 @@ function popularSelectsHunter(hunters) {
     selModal.innerHTML = '<option value="">— Selecione —</option>'
       + ativos.map(function(h){ return '<option value="'+esc(h.nome)+'"'+(h.nome===valAtual?' selected':'')+'>'+esc(h.nome)+'</option>'; }).join('');
   }
-  // Select do filtro
-  var selFiltro = document.getElementById('f-hunter');
-  if (selFiltro) {
-    var valFiltro = selFiltro.value;
-    selFiltro.innerHTML = '<option value="">Todos os hunters</option>'
-      + ativos.map(function(h){ return '<option value="'+esc(h.nome)+'"'+(h.nome===valFiltro?' selected':'')+'>'+esc(h.nome)+'</option>'; }).join('');
-  }
+  // Select do filtro (multi-seleção)
+  msSetOptions('hunter', [{ label:null, itens: ativos.map(function(h){ return { value:h.nome, label:h.nome }; }) }]);
 }
 
 // Garante que o hunter atual do candidato exista como opção (mesmo inativo),
