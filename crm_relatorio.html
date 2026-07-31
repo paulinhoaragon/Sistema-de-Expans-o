@@ -113,6 +113,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .stat-box{border-radius:8px;padding:10px 14px;text-align:center;flex:1;}
 .stat-box-val{font-size:22px;font-weight:700;line-height:1;}
 .stat-box-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-top:3px;}
+/* ── Barra de filtro por Perfil de Contratação (mesmo padrão do Jornada) ── */
+.fbar{background:var(--surface);border-bottom:1px solid var(--rule);padding:12px 28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.fbar-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);}
+.seg{display:flex;gap:4px;background:var(--canvas);padding:4px;border-radius:10px}
+.seg button{border:none;background:transparent;color:var(--t2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:7px 14px;border-radius:7px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.seg button:hover{color:var(--cobalt)}
+.seg button.on{background:var(--cobalt);color:#fff;box-shadow:0 1px 4px rgba(26,59,173,.3)}
 </style>
 </head>
 <body>
@@ -128,6 +135,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   </div>
 </div>
 <div class="cover-rule"></div>
+
+<div class="fbar">
+  <span class="fbar-lbl">Perfil de Contratação</span>
+  <div class="seg" id="seg-area">
+    <button class="on" data-area="">Todos</button>
+    <button data-area="assessor">Assessores</button>
+    <button data-area="vem ser blue">Vem Ser Blue</button>
+    <button data-area="future">Blue3 Future</button>
+    <button data-area="planejador/consultor">Planejadores</button>
+    <button data-area="__outras">Demais áreas</button>
+  </div>
+</div>
 
 <div class="page" id="crm-root">
   <div class="loading">
@@ -748,10 +767,31 @@ function filtCont(btn, filtro){
   });
 }
 
+// ── Segmentação por Perfil de Contratação (mesmos buckets do Jornada) ──
+var _TODOS_CANDS = [];
+function areaDe(c){ return (c.vaga||'').toLowerCase().trim(); }
+function naArea(c, area){
+  if (!area) return true; // "Todos" — sem filtro
+  var v = areaDe(c);
+  if (area === '__outras') return v!=='assessor' && v!=='vem ser blue' && v!=='future' && v!=='planejador/consultor';
+  return v === area;
+}
+
 // ── Inicialização ─────────────────────────────────────────────
 (function(){
   supa('crm_candidatos?order=criado_em.desc&limit=500&select=id,nome,etapa,nivel,vaga,praca,hunter,lider,mou,data_mou,status_ancord,data_entrada,data_inicio,prev_inicio,data_declinio,auc_mm,piso,periodo,instituicao,estrategico,historico_etapas,comentarios')
-    .then(function(rows){ renderCRM(rows); })
+    .then(function(rows){
+      _TODOS_CANDS = rows || [];
+      renderCRM(_TODOS_CANDS);
+      document.querySelectorAll('#seg-area button').forEach(function(b){
+        b.addEventListener('click', function(){
+          document.querySelectorAll('#seg-area button').forEach(function(x){ x.classList.remove('on'); });
+          b.classList.add('on');
+          var area = b.getAttribute('data-area');
+          renderCRM(_TODOS_CANDS.filter(function(c){ return naArea(c, area); }));
+        });
+      });
+    })
     .catch(function(e){
       document.getElementById('crm-root').innerHTML='<div class="loading"><div class="loading-icon">❌</div><div>Erro ao carregar: '+e+'</div></div>';
     });
