@@ -91,6 +91,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .alerta-badge.crit{background:#FEE2E2;color:#DC2626;}
 .alerta-badge.warn{background:#FEF3C7;color:#B45309;}
 .alerta-toggle{font-size:11px;color:inherit;opacity:.6;}
+.seg{display:inline-flex;gap:4px;background:var(--canvas);padding:3px;border-radius:9px;}
+.seg button{border:none;background:transparent;color:var(--t2);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;padding:5px 10px;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.seg button:hover{color:var(--cobalt)}
+.seg button.on{background:var(--cobalt);color:#fff;}
 </style>
 </head>
 <body>
@@ -123,6 +127,13 @@ function fmt(n) {
 }
 function pct(a,b){ return b>0?Math.round(a/b*100)+'%':'—'; }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function areaDe(c){ return (c.vaga||'').toLowerCase().trim(); }
+function naArea(c, area){
+  if (!area) return true;
+  var v = areaDe(c);
+  if (area === '__outras') return v!=='assessor' && v!=='vem ser blue' && v!=='future' && v!=='planejador/consultor';
+  return v === area;
+}
 
 // ── Renderizar dashboard ──
 function renderDash(G, H, crm, propostas, _ma, crmFull) {
@@ -461,12 +472,24 @@ function renderDash(G, H, crm, propostas, _ma, crmFull) {
       '</div>',
 
       '<div class="card">',
-        '<div class="card-title">CRM · Distribuição por Etapa</div>',
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">',
+          '<div class="card-title" style="margin-bottom:0;">CRM · Distribuição por Etapa</div>',
+          '<div class="seg" id="seg-area-dash">',
+            '<button class="on" data-area="">Todos</button>',
+            '<button data-area="assessor">Assessores</button>',
+            '<button data-area="vem ser blue">V.Ser Blue</button>',
+            '<button data-area="future">Future</button>',
+            '<button data-area="planejador/consultor">Planej.</button>',
+            '<button data-area="__outras">Outras</button>',
+          '</div>',
+        '</div>',
+        '<div id="crm-etapas-wrap">',
         '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">',
-          '<span style="font-size:24px;font-weight:700;font-family:Playfair Display,serif;">'+crmTotal+'</span>',
+          '<span style="font-size:24px;font-weight:700;font-family:Playfair Display,serif;" id="crm-etapas-total">'+crmTotal+'</span>',
           '<span style="font-size:10px;color:var(--t3);">candidatos no funil</span>',
         '</div>',
-        renderCRMEtapas(crmEtapas),
+        '<div id="crm-etapas-body">'+renderCRMEtapas(crmEtapas)+'</div>',
+        '</div>',
       '</div>',
 
       '<div class="card">',
@@ -497,6 +520,20 @@ function renderDash(G, H, crm, propostas, _ma, crmFull) {
     ].join('') : '',
 
   ].join('');
+
+  // ── Filtro de Perfil de Contratação (CRM · Distribuição por Etapa) ──
+  document.querySelectorAll('#seg-area-dash button').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('#seg-area-dash button').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      var area = b.getAttribute('data-area');
+      var filtrados = (crm||[]).filter(function(c){ return naArea(c, area); });
+      var etapasF = {};
+      filtrados.forEach(function(r){ etapasF[r.etapa] = (etapasF[r.etapa]||0)+1; });
+      document.getElementById('crm-etapas-total').textContent = filtrados.length;
+      document.getElementById('crm-etapas-body').innerHTML = renderCRMEtapas(etapasF);
+    });
+  });
 }
 
 function kpiCard(label, cls, value, sub1, sub2) {
@@ -642,7 +679,7 @@ function showEmpty() {
         var G = window.Blue3Data.resumoGeral || {};
         var H = window.Blue3Data.hunters || [];
         Promise.all([
-          supa('crm_candidatos?select=etapa&limit=500').catch(function(){ return []; }),
+          supa('crm_candidatos?select=etapa,vaga&limit=500').catch(function(){ return []; }),
           supa('propostas?select=status&limit=500').catch(function(){ return []; }),
           supa('ma_pipeline?select=id,nome,praca,auc_b,status&limit=200').catch(function(){ return []; }),
           supa('vagas?select=id,cargo,unidade,status,prioridade,created_at&status=eq.aberta&limit=100').catch(function(){ return []; }),
