@@ -120,6 +120,30 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .seg button{border:none;background:transparent;color:var(--t2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:7px 14px;border-radius:7px;cursor:pointer;transition:all .15s;white-space:nowrap}
 .seg button:hover{color:var(--cobalt)}
 .seg button.on{background:var(--cobalt);color:#fff;box-shadow:0 1px 4px rgba(26,59,173,.3)}
+
+/* ── Multi-seleção de Praça ── */
+.ms{position:relative;display:inline-block;}
+.ms-btn{padding:7px 14px;border:none;background:transparent;color:var(--t2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;border-radius:7px;cursor:pointer;white-space:nowrap;}
+.ms-btn.ms-active{background:var(--cobalt);color:#fff;}
+.ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid var(--rule);border-radius:8px;box-shadow:0 8px 24px rgba(10,15,30,.14);z-index:500;min-width:220px;max-height:300px;overflow-y:auto;padding:6px 0;}
+.ms-panel.open{display:block;}
+.ms-panel label{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:12px;color:var(--t1);cursor:pointer;white-space:nowrap;}
+.ms-panel label:hover{background:#F4F6FB;}
+.ms-actions{display:flex;justify-content:space-between;padding:7px 12px 4px;border-top:1px solid var(--rule);margin-top:4px;}
+.ms-actions button{background:none;border:none;color:var(--cobalt);font-size:11px;font-weight:700;cursor:pointer;padding:0;}
+.ms-actions button:hover{text-decoration:underline;}
+
+/* ── Crescimento do Pipeline ── */
+.cresc-row{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule);}
+.cresc-row:last-child{border-bottom:none;}
+.cresc-lbl{font-size:12px;color:var(--t2);white-space:nowrap;min-width:110px;}
+.cresc-track{background:var(--canvas);border-radius:5px;height:18px;position:relative;overflow:hidden;}
+.cresc-fill{background:var(--cobalt);height:100%;border-radius:5px;transition:width .2s;}
+.cresc-val{font-size:13px;font-weight:700;color:var(--t1);min-width:28px;text-align:right;}
+.cresc-delta{font-size:11px;font-weight:700;min-width:70px;text-align:right;white-space:nowrap;}
+.cresc-delta.up{color:#16A34A;}
+.cresc-delta.down{color:#DC2626;}
+.cresc-delta.flat{color:var(--t4);}
 </style>
 </head>
 <body>
@@ -145,6 +169,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <button data-area="future">Blue3 Future</button>
     <button data-area="planejador/consultor">Planejadores</button>
     <button data-area="__outras">Demais áreas</button>
+  </div>
+  <span class="fbar-lbl" style="margin-left:8px;">Praça</span>
+  <div class="ms" id="ms-praca">
+    <button type="button" class="ms-btn" onclick="msPracaToggleOpen()">Todas as praças</button>
+    <div class="ms-panel" id="ms-panel-praca"></div>
   </div>
 </div>
 
@@ -374,6 +403,8 @@ function renderCRM(cands){
       +'</div>',
 
     '</div>',
+
+    renderCrescimentoPipeline(cands),
 
     // Segunda linha de KPIs — AuC Contratado | AuC em Negociação | Top Praça | Top Líderes
     '<div class="row cols-4">',
@@ -769,6 +800,10 @@ function filtCont(btn, filtro){
 
 // ── Segmentação por Perfil de Contratação (mesmos buckets do Jornada) ──
 var _TODOS_CANDS = [];
+var _AREA_ATUAL = '';
+var MS_PRACA = new Set();
+var _MODO_CRESC = 'semana'; // 'semana' | 'mes'
+
 function areaDe(c){ return (c.vaga||'').toLowerCase().trim(); }
 function naArea(c, area){
   if (!area) return true; // "Todos" — sem filtro
@@ -776,19 +811,166 @@ function naArea(c, area){
   if (area === '__outras') return v!=='assessor' && v!=='vem ser blue' && v!=='future' && v!=='planejador/consultor';
   return v === area;
 }
+function naPracaSel(c){
+  if (!MS_PRACA.size) return true;
+  return MS_PRACA.has(c.praca||'');
+}
+
+function aplicarFiltrosCRM() {
+  var filtrados = _TODOS_CANDS.filter(function(c){ return naArea(c, _AREA_ATUAL) && naPracaSel(c); });
+  renderCRM(filtrados);
+}
+
+// ── Multi-seleção de Praça (opções vêm de TODOS os candidatos, não só os filtrados) ──
+function popularFiltroPraca() {
+  var pracas = {};
+  _TODOS_CANDS.forEach(function(c){ var p=(c.praca||'').trim(); if(p) pracas[p]=true; });
+  var lista = Object.keys(pracas).sort(function(a,b){ return a.localeCompare(b); });
+  var panel = document.getElementById('ms-panel-praca');
+  if (!panel) return;
+  var html = lista.map(function(p){
+    var checked = MS_PRACA.has(p) ? ' checked' : '';
+    var label = p.replace(/^Blue3\s*[-–]\s*/i,'');
+    return '<label><input type="checkbox" value="'+esc(p)+'"'+checked+' onchange="msPracaToggle(this.value,this.checked)"> '+esc(label)+'</label>';
+  }).join('');
+  html += '<div class="ms-actions"><button type="button" onclick="msPracaLimpar()">Limpar</button><button type="button" onclick="msPracaFecharTodos()">Fechar</button></div>';
+  panel.innerHTML = html || '<div style="padding:10px 12px;font-size:11px;color:var(--t4);">Nenhuma praça encontrada</div>';
+  msPracaAtualizarLabel();
+}
+function msPracaToggle(value, checked) {
+  if (checked) MS_PRACA.add(value); else MS_PRACA.delete(value);
+  msPracaAtualizarLabel();
+  aplicarFiltrosCRM();
+}
+function msPracaLimpar() {
+  MS_PRACA.clear();
+  var panel = document.getElementById('ms-panel-praca');
+  if (panel) panel.querySelectorAll('input[type=checkbox]').forEach(function(c){ c.checked = false; });
+  msPracaAtualizarLabel();
+  aplicarFiltrosCRM();
+}
+function msPracaAtualizarLabel() {
+  var btn = document.querySelector('#ms-praca .ms-btn');
+  if (!btn) return;
+  if (!MS_PRACA.size) { btn.textContent = 'Todas as praças'; btn.classList.remove('ms-active'); return; }
+  if (MS_PRACA.size === 1) {
+    var v = MS_PRACA.values().next().value;
+    btn.textContent = v.replace(/^Blue3\s*[-–]\s*/i,'');
+  } else {
+    btn.textContent = MS_PRACA.size + ' praças';
+  }
+  btn.classList.add('ms-active');
+}
+function msPracaToggleOpen() {
+  var painel = document.getElementById('ms-panel-praca');
+  var estava = painel.classList.contains('open');
+  msPracaFecharTodos();
+  if (!estava) painel.classList.add('open');
+}
+function msPracaFecharTodos() {
+  document.querySelectorAll('.ms-panel.open').forEach(function(p){ p.classList.remove('open'); });
+}
+document.addEventListener('click', function(e){
+  if (!e.target.closest('.ms')) msPracaFecharTodos();
+});
+
+// ── Crescimento do Pipeline (novos cadastros por semana ou mês) ──
+function _inicioSemana(d) {
+  var dia = (d.getDay()+6)%7; // 0=segunda
+  var seg = new Date(d);
+  seg.setDate(d.getDate()-dia);
+  seg.setHours(0,0,0,0);
+  return seg;
+}
+function _fmtSemanaLbl(iso) {
+  var d = new Date(iso+'T12:00:00');
+  var fim = new Date(d); fim.setDate(d.getDate()+6);
+  var f = function(x){ return String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0'); };
+  return f(d)+'–'+f(fim);
+}
+function _fmtMesLbl(chave) {
+  var partes = chave.split('-');
+  var meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  return meses[parseInt(partes[1],10)-1]+'/'+partes[0].slice(2);
+}
+
+function toggleModoCresc(modo) {
+  _MODO_CRESC = modo;
+  aplicarFiltrosCRM();
+}
+
+function renderCrescimentoPipeline(cands) {
+  var buckets = {};
+  cands.forEach(function(c){
+    if (!c.data_entrada) return;
+    var d = new Date(c.data_entrada+'T12:00:00');
+    if (isNaN(d.getTime())) return;
+    var chave = (_MODO_CRESC === 'semana')
+      ? _inicioSemana(d).toISOString().slice(0,10)
+      : d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    buckets[chave] = (buckets[chave]||0)+1;
+  });
+
+  var chaves = Object.keys(buckets).sort();
+  var JANELA = _MODO_CRESC === 'semana' ? 8 : 6;
+  var visiveis = chaves.slice(-JANELA);
+
+  if (!visiveis.length) {
+    return '<div class="card"><div class="card-title">Crescimento do Pipeline</div><div style="padding:20px;text-align:center;color:var(--t4);font-size:12px;">Sem datas de cadastro suficientes para este filtro.</div></div>';
+  }
+
+  var maxVal = Math.max.apply(null, visiveis.map(function(k){ return buckets[k]; }));
+  var linhas = visiveis.map(function(k, i){
+    var atual = buckets[k];
+    var chaveAnterior = chaves[chaves.indexOf(k)-1]; // período anterior real, mesmo fora da janela visível
+    var anterior = chaveAnterior ? (buckets[chaveAnterior]||0) : null;
+    var largura = maxVal>0 ? Math.round(atual/maxVal*100) : 0;
+    var deltaHtml = '<span class="cresc-delta flat">—</span>';
+    if (anterior !== null) {
+      var delta = atual - anterior;
+      var cls = delta>0 ? 'up' : (delta<0 ? 'down' : 'flat');
+      var seta = delta>0 ? '▲' : (delta<0 ? '▼' : '＝');
+      var pctTxt = anterior>0 ? ' ('+(delta>=0?'+':'')+Math.round(delta/anterior*100)+'%)' : '';
+      deltaHtml = '<span class="cresc-delta '+cls+'">'+seta+' '+(delta>0?'+':'')+delta+pctTxt+'</span>';
+    }
+    var lbl = _MODO_CRESC === 'semana' ? _fmtSemanaLbl(k) : _fmtMesLbl(k);
+    return '<div class="cresc-row">'
+      + '<div class="cresc-lbl">'+esc(lbl)+'</div>'
+      + '<div class="cresc-track"><div class="cresc-fill" style="width:'+largura+'%;"></div></div>'
+      + '<div class="cresc-val">'+atual+'</div>'
+      + deltaHtml
+    + '</div>';
+  }).join('');
+
+  var totalJanela = visiveis.reduce(function(s,k){ return s+buckets[k]; }, 0);
+  var filtroTxt = (_AREA_ATUAL ? (document.querySelector('#seg-area button.on')||{}).textContent : 'Todos') + (MS_PRACA.size ? ' · '+(MS_PRACA.size===1?[...MS_PRACA][0].replace(/^Blue3\s*[-–]\s*/i,''):MS_PRACA.size+' praças') : '');
+
+  return '<div class="card">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+      + '<div class="card-title" style="margin-bottom:0;">Crescimento do Pipeline</div>'
+      + '<div class="seg" style="padding:2px;">'
+        + '<button class="'+(_MODO_CRESC==='semana'?'on':'')+'" onclick="toggleModoCresc(\'semana\')" style="font-size:10px;padding:5px 10px;">Semanal</button>'
+        + '<button class="'+(_MODO_CRESC==='mes'?'on':'')+'" onclick="toggleModoCresc(\'mes\')" style="font-size:10px;padding:5px 10px;">Mensal</button>'
+      + '</div>'
+    + '</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-bottom:10px;">Novos cadastros no funil · filtro atual: '+esc(filtroTxt)+' · '+totalJanela+' no total do período exibido</div>'
+    + linhas
+  + '</div>';
+}
 
 // ── Inicialização ─────────────────────────────────────────────
 (function(){
   supa('crm_candidatos?order=criado_em.desc&limit=500&select=id,nome,etapa,nivel,vaga,praca,hunter,lider,mou,data_mou,status_ancord,data_entrada,data_inicio,prev_inicio,data_declinio,auc_mm,piso,periodo,instituicao,estrategico,historico_etapas,comentarios')
     .then(function(rows){
       _TODOS_CANDS = rows || [];
+      popularFiltroPraca();
       renderCRM(_TODOS_CANDS);
       document.querySelectorAll('#seg-area button').forEach(function(b){
         b.addEventListener('click', function(){
           document.querySelectorAll('#seg-area button').forEach(function(x){ x.classList.remove('on'); });
           b.classList.add('on');
-          var area = b.getAttribute('data-area');
-          renderCRM(_TODOS_CANDS.filter(function(c){ return naArea(c, area); }));
+          _AREA_ATUAL = b.getAttribute('data-area');
+          aplicarFiltrosCRM();
         });
       });
     })
