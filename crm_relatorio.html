@@ -6,6 +6,7 @@
 <title>Nexus · Relatório CRM</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="pipeline.js"></script>
+<script src="config.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -425,9 +426,9 @@ function renderCRM(cands){
 
       '<div class="kpi am">'
         +'<div class="kpi-lbl">Top praça</div>'
-        +'<div class="kpi-val" style="font-size:20px;margin-top:2px;">'+(pracasTop[0]||'—')+'</div>'
+        +'<div class="kpi-val" style="font-size:20px;margin-top:2px;">'+(pracasTop[0]?esc(pracaLabel(pracasTop[0])):'—')+'</div>'
         +'<div class="kpi-sub">'+(pracaMap[pracasTop[0]]||0)+' candidatos</div>'
-        +(pracasTop[1]?'<div class="kpi-sub">2ª '+pracasTop[1]+' ('+pracaMap[pracasTop[1]]+')</div>':'')
+        +(pracasTop[1]?'<div class="kpi-sub">2ª '+esc(pracaLabel(pracasTop[1]))+' ('+pracaMap[pracasTop[1]]+')</div>':'')
       +'</div>',
 
       (function(){
@@ -803,6 +804,18 @@ var _TODOS_CANDS = [];
 var _AREA_ATUAL = '';
 var MS_PRACA = new Set();
 var _MODO_CRESC = 'semana'; // 'semana' | 'mes'
+var _PRACAS_CAD = []; // cadastro central de praças (NexusConfig.getPracas) — usado só pra traduzir nome->rótulo
+
+// Traduz o "nome canônico" salvo no candidato (ex: "Blue3 Future") para o
+// Rótulo Curto cadastrado (ex: "Future – Ribeirão Preto"). Sem isso, praças
+// com nome canônico parecido (ex: "Blue3 Future" vs "Blue3 – Future") ficam
+// visualmente quase idênticas e difíceis de diferenciar no filtro.
+function pracaLabel(nomeCanonico) {
+  if (!nomeCanonico) return '';
+  var achou = _PRACAS_CAD.find(function(p){ return p.nome === nomeCanonico; });
+  if (achou && achou.label) return achou.label;
+  return nomeCanonico.replace(/^Blue3\s*[-–]\s*/i,'');
+}
 
 function areaDe(c){ return (c.vaga||'').toLowerCase().trim(); }
 function naArea(c, area){
@@ -825,13 +838,12 @@ function aplicarFiltrosCRM() {
 function popularFiltroPraca() {
   var pracas = {};
   _TODOS_CANDS.forEach(function(c){ var p=(c.praca||'').trim(); if(p) pracas[p]=true; });
-  var lista = Object.keys(pracas).sort(function(a,b){ return a.localeCompare(b); });
+  var lista = Object.keys(pracas).sort(function(a,b){ return pracaLabel(a).localeCompare(pracaLabel(b)); });
   var panel = document.getElementById('ms-panel-praca');
   if (!panel) return;
   var html = lista.map(function(p){
     var checked = MS_PRACA.has(p) ? ' checked' : '';
-    var label = p.replace(/^Blue3\s*[-–]\s*/i,'');
-    return '<label><input type="checkbox" value="'+esc(p)+'"'+checked+' onchange="msPracaToggle(this.value,this.checked)"> '+esc(label)+'</label>';
+    return '<label><input type="checkbox" value="'+esc(p)+'"'+checked+' onchange="msPracaToggle(this.value,this.checked)"> '+esc(pracaLabel(p))+'</label>';
   }).join('');
   html += '<div class="ms-actions"><button type="button" onclick="msPracaLimpar()">Limpar</button><button type="button" onclick="msPracaFecharTodos()">Fechar</button></div>';
   panel.innerHTML = html || '<div style="padding:10px 12px;font-size:11px;color:var(--t4);">Nenhuma praça encontrada</div>';
@@ -855,7 +867,7 @@ function msPracaAtualizarLabel() {
   if (!MS_PRACA.size) { btn.textContent = 'Todas as praças'; btn.classList.remove('ms-active'); return; }
   if (MS_PRACA.size === 1) {
     var v = MS_PRACA.values().next().value;
-    btn.textContent = v.replace(/^Blue3\s*[-–]\s*/i,'');
+    btn.textContent = pracaLabel(v);
   } else {
     btn.textContent = MS_PRACA.size + ' praças';
   }
@@ -943,7 +955,7 @@ function renderCrescimentoPipeline(cands) {
   }).join('');
 
   var totalJanela = visiveis.reduce(function(s,k){ return s+buckets[k]; }, 0);
-  var filtroTxt = (_AREA_ATUAL ? (document.querySelector('#seg-area button.on')||{}).textContent : 'Todos') + (MS_PRACA.size ? ' · '+(MS_PRACA.size===1?[...MS_PRACA][0].replace(/^Blue3\s*[-–]\s*/i,''):MS_PRACA.size+' praças') : '');
+  var filtroTxt = (_AREA_ATUAL ? (document.querySelector('#seg-area button.on')||{}).textContent : 'Todos') + (MS_PRACA.size ? ' · '+(MS_PRACA.size===1?pracaLabel([...MS_PRACA][0]):MS_PRACA.size+' praças') : '');
 
   return '<div class="card">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
@@ -960,9 +972,16 @@ function renderCrescimentoPipeline(cands) {
 
 // ── Inicialização ─────────────────────────────────────────────
 (function(){
-  supa('crm_candidatos?order=criado_em.desc&limit=500&select=id,nome,etapa,nivel,vaga,praca,hunter,lider,mou,data_mou,status_ancord,data_entrada,data_inicio,prev_inicio,data_declinio,auc_mm,piso,periodo,instituicao,estrategico,historico_etapas,comentarios')
-    .then(function(rows){
-      _TODOS_CANDS = rows || [];
+  Promise.all([
+    supa('crm_candidatos?order=criado_em.desc&limit=500&select=id,nome,etapa,nivel,vaga,praca,hunter,lider,mou,data_mou,status_ancord,data_entrada,data_inicio,prev_inicio,data_declinio,auc_mm,piso,periodo,instituicao,estrategico,historico_etapas,comentarios'),
+    new Promise(function(resolve){
+      if (typeof NexusConfig === 'undefined' || typeof NexusConfig.getPracas !== 'function') { resolve([]); return; }
+      NexusConfig.getPracas(function(err, pracas){ resolve(err ? [] : (pracas||[])); });
+    })
+  ])
+    .then(function(res){
+      _TODOS_CANDS = res[0] || [];
+      _PRACAS_CAD = res[1] || [];
       popularFiltroPraca();
       renderCRM(_TODOS_CANDS);
       document.querySelectorAll('#seg-area button').forEach(function(b){
