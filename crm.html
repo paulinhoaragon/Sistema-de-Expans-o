@@ -696,6 +696,16 @@ var COR_ETAPA = {
 
 var _todos = [];   // cache local
 var _PRACAS_CAD = [];   // praças do cadastro central (NexusConfig.getPracas)
+
+// Traduz o "nome canônico" salvo no candidato (ex: "Blue3 Future") para o
+// Rótulo Curto cadastrado (ex: "Future – Ribeirão Preto"), usado em qualquer
+// exibição de praça na tela (card do Kanban, filtros etc.)
+function pracaLabel(nomeCanonico) {
+  if (!nomeCanonico) return '';
+  var achou = _PRACAS_CAD.find(function(p){ return p.nome === nomeCanonico; });
+  if (achou && achou.label) return achou.label;
+  return nomeCanonico.replace(/^Blue3\s*[-–]\s*/i,'');
+}
 var _LIDERES_CAD = [];  // líderes do cadastro central (NexusConfig.getLideres)
 var _csvRows = [], _csvHeaders = [];
 
@@ -928,7 +938,7 @@ function cardHTML(r) {
   return '<div class="kcard" id="kc-'+r.id+'" draggable="true" ondragstart="dragStart(event,\''+r.id+'\')" onclick="abrirEdicao(\''+r.id+'\')">'
     + '<div class="kc-hunter">'+(r.hunter?r.hunter.charAt(0):'—')+'</div>'
     + '<div class="kc-nome">'+esc(r.nome)+'</div>'
-    + '<div class="kc-sub">'+(r.instituicao||'')+(r.praca?' · '+r.praca:'')+'</div>'
+    + '<div class="kc-sub">'+(r.instituicao||'')+(r.praca?' · '+esc(pracaLabel(r.praca)):'')+'</div>'
     + (tags?'<div class="kc-tags">'+tags+'</div>':'')
     + auc + ini
     + '</div>';
