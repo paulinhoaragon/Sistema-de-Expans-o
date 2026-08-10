@@ -500,6 +500,33 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
 
 <div class="tab-content page" id="tab-ferramentas">
   <div class="card" style="margin-bottom:16px;">
+    <div class="card-title">Reclassificar Praça em Lote</div>
+    <div class="card-sub">Corrige candidatos cadastrados com uma praça que não bate com o cadastro oficial (ex: veio de importação de CSV ou dado antigo). Busca todo mundo que está com um valor específico de praça e permite reatribuir cada um para a praça correta, tudo de uma vez.</div>
+    <div class="btn-row" style="flex-wrap:wrap;gap:8px;">
+      <input type="text" id="reclass-praca-origem" placeholder="Praça a corrigir (ex: Blue3 Future)" style="flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--rule);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;">
+      <button class="btn-primary" onclick="buscarCandidatosPracaErrada()">🔎 Buscar candidatos</button>
+    </div>
+    <div id="reclass-lista-wrap" style="display:none;margin-top:14px;">
+      <div style="max-height:400px;overflow:auto;border:1px solid var(--rule);border-radius:8px;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr style="border-bottom:2px solid var(--rule);position:sticky;top:0;background:#fff;">
+              <th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Candidato</th>
+              <th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Praça atual</th>
+              <th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Nova praça</th>
+            </tr>
+          </thead>
+          <tbody id="reclass-tbody"></tbody>
+        </table>
+      </div>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn-primary" onclick="salvarReclassificacaoPraca()">Salvar reclassificação</button>
+      </div>
+      <div id="reclass-status" style="margin-top:10px;font-size:11px;color:var(--t3);"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
     <div class="card-title">Exportar Propostas para a XP (.xlsx)</div>
     <div class="card-sub">Gera uma planilha com 2 abas: <strong>Negociação</strong> (candidatos no funil de negociação do CRM) e <strong>Contratados</strong> (candidatos em Contratação/Trabalhando) — cada um com piso, luva, condição de renovação, gatilhos de captação, consórcio/seguros, observações e data da proposta. A aba de Contratados também traz coparticipação XP e data de contratação. Os dados da proposta vêm da versão mais recente salva no Simulador para cada candidato.</div>
     <div class="btn-row">
@@ -684,12 +711,85 @@ function _coletarMetasCanais() {
 // Camada de metas self-contained: grava/le direto do Supabase se o config.js
 // em produção estiver desatualizado (sem get/saveMetasHunter). Usa a chave anon
 // já presente neste arquivo (supaUsrCfg).
+// ── Reclassificar Praça em Lote ──────────────────────────────────
+var _RECLASS_CANDIDATOS = [];
+var _RECLASS_PRACAS_VALIDAS = [];
+
+function buscarCandidatosPracaErrada() {
+  var origem = document.getElementById('reclass-praca-origem').value.trim();
+  var wrap = document.getElementById('reclass-lista-wrap');
+  var tbody = document.getElementById('reclass-tbody');
+  var status = document.getElementById('reclass-status');
+  if (!origem) { alert('Digite a praça que você quer corrigir (ex: Blue3 Future).'); return; }
+
+  wrap.style.display = 'block';
+  tbody.innerHTML = '<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--t3);">Buscando...</td></tr>';
+  status.textContent = '';
+
+  Promise.all([
+    _supaMetasReq('crm_candidatos?select=id,nome,praca,instituicao&praca=eq.'+encodeURIComponent(origem)+'&limit=1000'),
+    new Promise(function(resolve){ NexusConfig.getPracas(function(err, pracas){ resolve(pracas||[]); }); })
+  ]).then(function(res){
+    _RECLASS_CANDIDATOS = res[0] || [];
+    _RECLASS_PRACAS_VALIDAS = (res[1] || []).filter(function(p){ return (p.status||'Ativo') !== 'Inativo'; });
+
+    if (!_RECLASS_CANDIDATOS.length) {
+      tbody.innerHTML = '<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--t3);">Nenhum candidato encontrado com a praça "'+esc(origem)+'".</td></tr>';
+      return;
+    }
+
+    var opcoesPraca = '<option value="">— não alterar —</option>' + _RECLASS_PRACAS_VALIDAS.map(function(p){
+      return '<option value="'+esc(p.nome)+'">'+esc(p.label||p.nome)+'</option>';
+    }).join('');
+
+    tbody.innerHTML = _RECLASS_CANDIDATOS.map(function(c, idx){
+      return '<tr style="border-bottom:1px solid var(--rule);">'
+        + '<td style="padding:8px 10px;"><div style="font-weight:600;">'+esc(c.nome)+'</div><div style="font-size:10px;color:var(--t3);">'+esc(c.instituicao||'—')+'</div></td>'
+        + '<td style="padding:8px 10px;color:var(--t3);">'+esc(c.praca||'—')+'</td>'
+        + '<td style="padding:8px 10px;"><select id="reclass-sel-'+idx+'" style="width:100%;padding:6px 8px;border:1px solid var(--rule);border-radius:6px;font-size:11px;">'+opcoesPraca+'</select></td>'
+        + '</tr>';
+    }).join('');
+
+    status.textContent = _RECLASS_CANDIDATOS.length + ' candidato(s) encontrado(s). Escolha a praça correta pra cada um e clique em Salvar.';
+  }).catch(function(e){
+    tbody.innerHTML = '<tr><td colspan="3" style="padding:16px;text-align:center;color:#DC2626;">Erro ao buscar: '+e+'</td></tr>';
+  });
+}
+
+function salvarReclassificacaoPraca() {
+  var status = document.getElementById('reclass-status');
+  var aAplicar = [];
+  _RECLASS_CANDIDATOS.forEach(function(c, idx){
+    var sel = document.getElementById('reclass-sel-'+idx);
+    var novaPraca = sel ? sel.value : '';
+    if (novaPraca) aAplicar.push({ id: c.id, nome: c.nome, praca: novaPraca });
+  });
+
+  if (!aAplicar.length) { alert('Escolha a nova praça de pelo menos um candidato antes de salvar.'); return; }
+  if (!confirm('Confirma a reclassificação de ' + aAplicar.length + ' candidato(s)?')) return;
+
+  status.textContent = 'Salvando 0/' + aAplicar.length + '...';
+  var feitos = 0, falhas = [];
+
+  function proximo(i) {
+    if (i >= aAplicar.length) {
+      status.textContent = 'Concluído: ' + feitos + ' atualizado(s)' + (falhas.length ? ', ' + falhas.length + ' falharam (' + falhas.join(', ') + ')' : '.');
+      if (feitos > 0) buscarCandidatosPracaErrada(); // recarrega a lista — quem foi corrigido some dela
+      return;
+    }
+    _supaMetasReq('crm_candidatos?id=eq.'+aAplicar[i].id, { method:'PATCH', body: JSON.stringify({ praca: aAplicar[i].praca }) })
+      .then(function(){ feitos++; status.textContent = 'Salvando ' + (i+1) + '/' + aAplicar.length + '...'; proximo(i+1); })
+      .catch(function(){ falhas.push(aAplicar[i].nome); proximo(i+1); });
+  }
+  proximo(0);
+}
+
 function _supaMetasReq(path, opts) {
   var url='https://cjimsplgxrwkqgzegnkq.supabase.co';
   var key='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
   return fetch(url+'/rest/v1/'+path, Object.assign({ headers:{
     'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'return=representation','Accept':'application/json'
-  }}, opts||{})).then(function(res){
+  }, cache:'no-store' }, opts||{})).then(function(res){
     return res.text().then(function(t){
       var data=null; try { data=t?JSON.parse(t):null; } catch(e){ data=t; }
       if(!res.ok){ // NÃO tratar erro de permissão/RLS como sucesso
@@ -1587,7 +1687,7 @@ function supaUsrCfg(path, opts) {
   var url = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
   var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
   var h = { 'apikey': key, 'Authorization': 'Bearer '+key, 'Content-Type': 'application/json', 'Prefer': 'return=representation', 'Accept': 'application/json' };
-  return fetch(url+'/rest/v1/'+path, Object.assign({ headers: h }, opts||{}));
+  return fetch(url+'/rest/v1/'+path, Object.assign({ headers: h, cache: 'no-store' }, opts||{}));
 }
 
 // ── Criação de acessos em lote para líderes ─────────────────────────
