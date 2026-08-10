@@ -188,7 +188,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 <script>
 var SUPA_URL='https://cjimsplgxrwkqgzegnkq.supabase.co';
 var SUPA_KEY='sb_publishable_m4pgWOuDEQghiA2w4_axzg_HccJZxDS';
-function supa(p){return fetch(SUPA_URL+'/rest/v1/'+p,{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'}}).then(function(r){return r.json();});}
+function supa(p){return fetch(SUPA_URL+'/rest/v1/'+p,{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},cache:'no-store'}).then(function(r){return r.json();});}
 function norm(s){return String(s||'').trim().toLowerCase();}
 function pct(a,b){return b>0?Math.round(a/b*100)+'%':'—';}
 function esc(s){return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
