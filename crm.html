@@ -727,7 +727,7 @@ function telefoneJaCadastrado(telNovo, idAtual) {
 // ── Supabase ──────────────────────────────────────────────────────
 function supa(path, opts) {
   var h = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
-  return fetch(SUPA_URL+'/rest/v1/'+path, Object.assign({ headers: h }, opts||{}));
+  return fetch(SUPA_URL+'/rest/v1/'+path, Object.assign({ headers: h, cache: 'no-store' }, opts||{}));
 }
 
 function carregar() {
@@ -1906,7 +1906,8 @@ function carregarResumoContratacao(telefone, copart, copartDet) {
   if (!tel) return;
 
   fetch(SUPA_URL+'/rest/v1/propostas?telefone=eq.'+tel+'&status=eq.Aceita&order=versao.desc&limit=1', {
-    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY }
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY },
+    cache: 'no-store'
   })
   .then(function(r){ return r.ok ? r.json() : []; })
   .then(function(rows){
@@ -1970,7 +1971,8 @@ function carregarPropostasCRM(telefone) {
                     'Expirada':'#64748B;background:#F1F5F9' };
 
   fetch(SUPA_URL+'/rest/v1/propostas?telefone=eq.'+tel+'&order=versao.desc', {
-    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json' }
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json' },
+    cache: 'no-store'
   })
   .then(function(r){ return r.json(); })
   .then(function(rows) {
@@ -2001,7 +2003,8 @@ function carregarPropostasCRM(telefone) {
 function abrirPDFproposta(propId) {
   // Busca os dados completos da proposta pelo ID
   fetch(SUPA_URL+'/rest/v1/propostas?id=eq.'+propId, {
-    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json' }
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json' },
+    cache: 'no-store'
   })
   .then(function(r){ return r.json(); })
   .then(function(rows){
