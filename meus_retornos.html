@@ -66,13 +66,14 @@ var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
 var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
 
 function supaGet(path) {
-  return fetch(SUPA_URL+'/rest/v1/'+path, { headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY } })
+  return fetch(SUPA_URL+'/rest/v1/'+path, { headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY }, cache:'no-store' })
     .then(function(r){ if(!r.ok) return r.json().then(function(e){ throw e; }).catch(function(){ throw new Error(r.status); }); return r.json(); });
 }
 function supaPatch(id, body) {
   return fetch(SUPA_URL+'/rest/v1/crm_candidatos?id=eq.'+id, {
     method:'PATCH',
     headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY, 'Content-Type':'application/json', 'Prefer':'return=minimal' },
+    cache:'no-store',
     body: JSON.stringify(body)
   });
 }
