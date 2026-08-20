@@ -861,7 +861,31 @@ function Blue3_charts() {
   var D  = window.Blue3Data;
   var C  = (D.candidatos  || []).filter(_inPeriodo);
   var G  = _resumoPeriodo(C, D.resumoGeral || {});
-  var H  = D.hunters     || [];
+  // H (hunters) é reconstruído a partir de C (já filtrado por período) em vez de usar
+  // D.hunters direto — D.hunters vem pronto do pipeline.js e não respeitava o filtro
+  // de semestre, fazendo o "Caderno de Bônus" mostrar números fora do período selecionado.
+  var H  = (function(){
+    var _h = function(x){ return String(x||'').trim().toLowerCase(); };
+    var porHunter = {};
+    C.forEach(function(r){
+      var nome = (r.h||'').trim();
+      if (!nome) return;
+      var key = _h(nome);
+      if (!porHunter[key]) porHunter[key] = { nome:nome, total:0, senior:0, pleno:0, junior:0, auc:0, comp:0, mouOk:0, trab:0, xp:0 };
+      var hh = porHunter[key];
+      hh.total++;
+      var sen = _h(r.sen);
+      if (sen === 'sênior' || sen === 'senior') hh.senior++;
+      else if (sen === 'pleno') hh.pleno++;
+      else if (sen === 'júnior' || sen === 'junior') hh.junior++;
+      hh.auc += (r.cap||0);
+      hh.comp += (r.comp||0);
+      hh.xp += (r.xp||0);
+      if (_h(r.mou) === 'assinado') hh.mouOk++;
+      if (_h(r.st) === 'trabalhando') hh.trab++;
+    });
+    return Object.keys(porHunter).map(function(k){ return porHunter[k]; });
+  })();
   var AT = G.total || C.length;
   var BM = G.byMonth || {};
 
@@ -1372,16 +1396,29 @@ function fmtM(v) {
   }
 
   // ── Pipeline estratégico ──
+  // D.pipeline vem pronto do pipeline.js e NÃO respeita o filtro de período —
+  // por isso cruzamos com C (que já está filtrado por _inPeriodo) pelo nome,
+  // pra manter os dados originais do card (instituição/parceria) mas só
+  // mostrar quem realmente pertence ao período selecionado.
+  var _nrm = function(x){ return String(x||'').trim().toLowerCase(); };
+  var _nomesEstratNoPeriodo = {};
+  C.forEach(function(r){
+    if ((r.cap||0) > 0 && (r.estrategico||'Não').toLowerCase() === 'sim') {
+      _nomesEstratNoPeriodo[_nrm(r.n)] = true;
+    }
+  });
+  var pipelineDoPeriodo = (D.pipeline||[]).filter(function(p){ return _nomesEstratNoPeriodo[_nrm(p.n)]; });
+
   var sEl = document.getElementById('strat-cards');
-  if (sEl && D.pipeline && D.pipeline.length) {
-    var totalEstrat = D.pipeline.reduce(function(s,p){ return s + (parseFloat(p.a)||0); }, 0);
+  if (sEl && pipelineDoPeriodo.length) {
+    var totalEstrat = pipelineDoPeriodo.reduce(function(s,p){ return s + (parseFloat(p.a)||0); }, 0);
     // Config visual por situação de transição
     var SIT = {
       trabalhando: { txt:'Trabalhando',          bg:'#DCFCE7', fg:'#15803D', dot:'#15803D' },
       assinado:    { txt:'Contratado · MOU ok',   bg:'#DBEAFE', fg:'#1E40AF', dot:'#1E40AF' },
       aconf:       { txt:'Contratado · sem MOU',  bg:'#FEF3C7', fg:'#92400E', dot:'#92400E' }
     };
-    sEl.innerHTML = D.pipeline.map(function(p) {
+    sEl.innerHTML = pipelineDoPeriodo.map(function(p) {
       var s = SIT[p.sit] || SIT.aconf;
       return '<div class="hc" style="background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:14px 16px;">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;">'
@@ -1395,7 +1432,7 @@ function fmtM(v) {
 
     // Consolidação por status
     var porSit = { trabalhando:{n:0,auc:0}, assinado:{n:0,auc:0}, aconf:{n:0,auc:0} };
-    D.pipeline.forEach(function(p){
+    pipelineDoPeriodo.forEach(function(p){
       var k = porSit[p.sit] ? p.sit : 'aconf';
       porSit[k].n++; porSit[k].auc += (parseFloat(p.a)||0);
     });
@@ -1422,6 +1459,11 @@ function fmtM(v) {
         + '</div>';
       totalBox.innerHTML = html;
     }
+  } else if (sEl) {
+    // Ninguém no período atual — limpa em vez de deixar o card antigo visível
+    sEl.innerHTML = '';
+    var totalBoxVazio = document.getElementById('strat-total');
+    if (totalBoxVazio) totalBoxVazio.style.display = 'none';
   }
 
   // ── Em Negociação (dinâmico) ──
