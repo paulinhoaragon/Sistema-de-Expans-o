@@ -518,6 +518,7 @@ function _linhaOrigem(label, lista) {
 // "Parado" aqui = tempo desde o cadastro (data_entrada), não tempo na etapa atual específica
 // (isso exigiria o historico_etapas, que não estou usando por segurança — ver nota acima).
 var LIMITE_PARADO = 20;
+var PARADOS_LIMITE_INICIAL = 10;
 function renderParados(C) {
   var candidatosAtivos = C.filter(function(c){ return FUNIL_SEQ.indexOf(c.etapa) > -1 && c.etapa !== 'Trabalhando' && c.data_entrada; });
   var parados = candidatosAtivos.map(function(c){
@@ -529,23 +530,43 @@ function renderParados(C) {
     return '<div class="card"><div class="card-title">Candidatos Parados</div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum candidato há mais de '+LIMITE_PARADO+' dias no funil sem avançar — funil saudável no filtro atual.</div></div>';
   }
 
-  var linhas = parados.slice(0, 20).map(function(x){
+  function _linhaParado(x, oculta){
     var info = ETAPA_INFO[x.c.etapa];
-    return '<tr style="border-bottom:1px solid var(--rule);">'
+    return '<tr class="'+(oculta?'linha-parado-extra':'')+'" style="border-bottom:1px solid var(--rule);'+(oculta?'display:none;':'')+'">'
       + '<td style="padding:7px 4px;font-weight:600;">'+esc(x.c.nome)+'</td>'
       + '<td style="padding:7px 4px;color:var(--t3);">'+esc(pracaLabel(x.c.praca))+'</td>'
       + '<td style="padding:7px 4px;"><span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+info.cor+'22;color:'+info.cor+';">'+esc(info.lbl)+'</span></td>'
       + '<td style="padding:7px 4px;text-align:right;font-weight:700;color:#DC2626;">'+x.dias+'d</td>'
     + '</tr>';
-  }).join('');
+  }
 
-  var maisTexto = parados.length > 20 ? '<div style="font-size:10px;color:var(--t4);margin-top:8px;">+ '+(parados.length-20)+' outro(s) candidato(s) parado(s), não exibido(s) aqui.</div>' : '';
+  var linhasVisiveis = parados.slice(0, PARADOS_LIMITE_INICIAL).map(function(x){ return _linhaParado(x, false); }).join('');
+  var linhasOcultas  = parados.slice(PARADOS_LIMITE_INICIAL).map(function(x){ return _linhaParado(x, true); }).join('');
+  var restantes = parados.length - PARADOS_LIMITE_INICIAL;
+
+  var botaoExpandir = restantes > 0
+    ? '<button id="btn-parados-expandir" onclick="toggleParadosExpandir()" style="margin-top:10px;background:none;border:1px solid var(--rule);border-radius:7px;padding:6px 14px;font-size:11px;font-weight:700;color:var(--cobalt);cursor:pointer;font-family:\'DM Sans\',sans-serif;">Ver todos ('+restantes+' a mais) ▾</button>'
+    : '';
 
   return '<div class="card"><div class="card-title">Candidatos Parados</div><div class="card-sub">'+parados.length+' candidato(s) há '+LIMITE_PARADO+'+ dias cadastrados sem chegar em Trabalhando ou Declinou</div>'
     + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Candidato</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Praça</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Etapa Atual</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Dias parado</th></tr></thead>'
-    + '<tbody>'+linhas+'</tbody></table>'+maisTexto
+    + '<tbody>'+linhasVisiveis+linhasOcultas+'</tbody></table>'
+    + botaoExpandir
   + '</div>';
+}
+function toggleParadosExpandir() {
+  var btn = document.getElementById('btn-parados-expandir');
+  var linhas = document.querySelectorAll('.linha-parado-extra');
+  var expandido = btn.getAttribute('data-expandido') === '1';
+  linhas.forEach(function(tr){ tr.style.display = expandido ? 'none' : 'table-row'; });
+  btn.setAttribute('data-expandido', expandido ? '0' : '1');
+  btn.textContent = expandido ? btn.textContent.replace('Ver menos ▴', '') : '';
+  if (expandido) {
+    btn.textContent = 'Ver todos (' + linhas.length + ' a mais) ▾';
+  } else {
+    btn.textContent = 'Ver menos ▴';
+  }
 }
 
 function renderPreWork(C) {
