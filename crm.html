@@ -83,6 +83,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .t-anc{background:#F0FDF4;color:#15803D}
 .t-prework{background:#FEF3C7;color:#92400E}
 .t-prework-ok{background:#DCFCE7;color:#166534}
+.t-origem-hunting{background:#EEF2FD;color:#1A3BAD}
+.t-origem-indicacao{background:#F3E8FF;color:#7C3AED}
+.t-origem-inscricao{background:#FFF7ED;color:#C2410C}
+.t-origem-xp{background:#ECFDF5;color:#047857}
 .kc-auc{font-size:11px;font-weight:700;color:var(--cobalt-br)}
 .kc-hunter{font-size:9px;color:var(--t4);position:absolute;top:10px;right:11px}
 .kc-ini{font-size:9px;color:var(--t4);margin-top:4px}
@@ -939,6 +943,16 @@ function cardHTML(r) {
   if ((r.status_ancord||'').toLowerCase()==='aprovada') tags += '<span class="tag t-anc">Ancord</span>';
   if (r.pre_work === 'em_pre_work') tags += '<span class="tag t-prework">🔧 Pré-Work</span>';
   if (r.pre_work === 'validado')    tags += '<span class="tag t-prework-ok">✅ Pré-Work OK</span>';
+  if (r.vaga === 'Future' && r.origem_lead) {
+    var ORIGEM_TAG = {
+      'Hunting':    { cls:'t-origem-hunting',   ic:'🎯' },
+      'Indicação':  { cls:'t-origem-indicacao', ic:'🤝' },
+      'Inscrição':  { cls:'t-origem-inscricao', ic:'📝' },
+      'XP':         { cls:'t-origem-xp',        ic:'🔷' }
+    };
+    var og = ORIGEM_TAG[r.origem_lead];
+    if (og) tags += '<span class="tag '+og.cls+'">'+og.ic+' '+esc(r.origem_lead)+'</span>';
+  }
 
   // AuC Meta = soma de todas as metas de gatilho salvas, com fallback para auc_mm
   var aucMM = (parseFloat(r.trigger1_tri_meta)||0)
