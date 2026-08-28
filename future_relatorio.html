@@ -265,8 +265,11 @@ function render(C) {
   html += renderKPIs(C);
   html += renderNovosPorPraca(C);
   html += renderFunil(C);
+  html += renderConversaoEtapas(C);
+  html += renderVelocidade(C);
   html += renderOrigemLeads(C);
   html += renderPreWork(C);
+  html += renderParados(C);
   html += renderCrescimento(C);
   html += renderPracas(C);
 
@@ -355,6 +358,73 @@ function renderNovosPorPraca(C) {
   return '<div class="card"><div class="card-title">Novos Leads da Semana — por Praça</div><div class="card-sub">'+total+' cadastrados nos últimos 7 dias, segmentado por unidade</div>'+linhas+'</div>';
 }
 
+// ── Taxa de conversão entre etapas ──
+// Metodologia: "alcançou a etapa N" = está atualmente na etapa N ou em qualquer etapa posterior
+// (quem chegou em Negociação necessariamente passou por Qualificação). Candidatos "Declinou" ficam
+// de fora dessa conta específica, porque não temos registro de em qual etapa eles estavam quando
+// declinaram — incluí-los aqui inflaria artificialmente a taxa de perda de uma etapa aleatória.
+var FUNIL_SEQ = ['Prospecção','Qualificação','Negociação','Contratação','Trabalhando'];
+function renderConversaoEtapas(C) {
+  var ativos = C.filter(function(c){ return FUNIL_SEQ.indexOf(c.etapa) > -1; });
+  var idxDe = function(c){ return FUNIL_SEQ.indexOf(c.etapa); };
+
+  var linhas = '';
+  for (var i = 0; i < FUNIL_SEQ.length - 1; i++) {
+    var alcancou = ativos.filter(function(c){ return idxDe(c) >= i; }).length;
+    var avancou  = ativos.filter(function(c){ return idxDe(c) >= i+1; }).length;
+    var taxa = alcancou ? Math.round(avancou/alcancou*100) : 0;
+    var cor = taxa >= 60 ? '#16A34A' : (taxa >= 30 ? '#B45309' : '#DC2626');
+    linhas += '<div class="funil-row" style="grid-template-columns:190px 1fr auto;">'
+      + '<div class="funil-lbl">'+esc(FUNIL_SEQ[i])+' → '+esc(FUNIL_SEQ[i+1])+'<small>'+alcancou+' alcançaram · '+avancou+' avançaram</small></div>'
+      + '<div class="funil-track"><div class="funil-fill" style="width:'+taxa+'%;background:'+cor+';"></div></div>'
+      + '<div class="funil-val" style="color:'+cor+';">'+taxa+'%</div>'
+    + '</div>';
+  }
+
+  return '<div class="card"><div class="card-title">Taxa de Conversão entre Etapas</div><div class="card-sub">% de quem alcançou a etapa e avançou pra próxima · não inclui "Declinou" (não sabemos de qual etapa vieram)</div>'+linhas+'</div>';
+}
+
+// ── Velocidade do funil ──
+// Uso só as datas que confio 100% (data_entrada, data_contratacao, data_inicio, data_declinio).
+// Não tentei decifrar o campo historico_etapas — sem ver um exemplo real populado, o risco de
+// mostrar um número errado é maior que o ganho de ter o detalhe por etapa individual.
+function _mediaDias(pares) {
+  var validos = pares.filter(function(d){ return d !== null && d >= 0; });
+  if (!validos.length) return null;
+  var soma = validos.reduce(function(s,d){ return s+d; }, 0);
+  return Math.round(soma / validos.length);
+}
+function renderVelocidade(C) {
+  var entradaAteContratacao = C.filter(function(c){ return c.data_contratacao; })
+    .map(function(c){ return diasEntre(c.data_entrada, c.data_contratacao); });
+  var contratacaoAteInicio = C.filter(function(c){ return c.data_contratacao && c.data_inicio; })
+    .map(function(c){ return diasEntre(c.data_contratacao, c.data_inicio); });
+  var entradaAteDeclinio = C.filter(function(c){ return c.etapa === 'Declinou' && c.data_declinio; })
+    .map(function(c){ return diasEntre(c.data_entrada, c.data_declinio); });
+  var entradaHoje = C.filter(function(c){ return FUNIL_SEQ.indexOf(c.etapa) > -1 && c.etapa !== 'Trabalhando' && c.data_entrada; })
+    .map(function(c){ return diasEntre(c.data_entrada, null); });
+
+  var m1 = _mediaDias(entradaAteContratacao);
+  var m2 = _mediaDias(contratacaoAteInicio);
+  var m3 = _mediaDias(entradaAteDeclinio);
+  var m4 = _mediaDias(entradaHoje);
+
+  return '<div class="card"><div class="card-title">Velocidade do Funil</div><div class="card-sub">Tempo médio, em dias corridos, entre marcos confiáveis do processo</div>'
+    + '<div class="row cols-4" style="margin-bottom:0;">'
+      + _velCard('Entrada → Contratação', m1, entradaAteContratacao.length, '#1A3BAD')
+      + _velCard('Contratação → Início', m2, contratacaoAteInicio.length, '#16A34A')
+      + _velCard('Entrada → Declínio', m3, entradaAteDeclinio.length, '#DC2626')
+      + _velCard('No funil hoje (em aberto)', m4, entradaHoje.length, '#B45309')
+    + '</div></div>';
+}
+function _velCard(label, media, n, cor) {
+  return '<div class="kpi" style="border-top-color:'+cor+';box-shadow:none;border:1px solid var(--rule);border-top-width:3px;">'
+    + '<div class="kpi-label">'+esc(label)+'</div>'
+    + '<div class="kpi-value" style="font-size:20px;">'+(media!==null?media+'d':'—')+'</div>'
+    + '<div class="kpi-sub">'+(n?'baseado em '+n+' candidato'+(n!==1?'s':''):'sem dados suficientes')+'</div>'
+  + '</div>';
+}
+
 function renderOrigemLeads(C) {
   var ORIGENS = ['Hunting','Indicação','Inscrição','XP'];
   var porOrigem = {};
@@ -393,6 +463,40 @@ function _linhaOrigem(label, lista) {
     + '<td style="padding:7px 4px;text-align:right;color:var(--t3);">'+andamento+'</td>'
     + '<td style="padding:7px 4px;text-align:right;font-weight:700;color:'+corTaxa+';">'+(total?taxa+'%':'—')+'</td>'
   + '</tr>';
+}
+
+// ── Candidatos parados ──
+// "Parado" aqui = tempo desde o cadastro (data_entrada), não tempo na etapa atual específica
+// (isso exigiria o historico_etapas, que não estou usando por segurança — ver nota acima).
+var LIMITE_PARADO = 20;
+function renderParados(C) {
+  var candidatosAtivos = C.filter(function(c){ return FUNIL_SEQ.indexOf(c.etapa) > -1 && c.etapa !== 'Trabalhando' && c.data_entrada; });
+  var parados = candidatosAtivos.map(function(c){
+    return { c:c, dias: diasEntre(c.data_entrada, null) };
+  }).filter(function(x){ return x.dias !== null && x.dias >= LIMITE_PARADO; })
+    .sort(function(a,b){ return b.dias - a.dias; });
+
+  if (!parados.length) {
+    return '<div class="card"><div class="card-title">Candidatos Parados</div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum candidato há mais de '+LIMITE_PARADO+' dias no funil sem avançar — funil saudável no filtro atual.</div></div>';
+  }
+
+  var linhas = parados.slice(0, 20).map(function(x){
+    var info = ETAPA_INFO[x.c.etapa];
+    return '<tr style="border-bottom:1px solid var(--rule);">'
+      + '<td style="padding:7px 4px;font-weight:600;">'+esc(x.c.nome)+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(pracaLabel(x.c.praca))+'</td>'
+      + '<td style="padding:7px 4px;"><span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+info.cor+'22;color:'+info.cor+';">'+esc(info.lbl)+'</span></td>'
+      + '<td style="padding:7px 4px;text-align:right;font-weight:700;color:#DC2626;">'+x.dias+'d</td>'
+    + '</tr>';
+  }).join('');
+
+  var maisTexto = parados.length > 20 ? '<div style="font-size:10px;color:var(--t4);margin-top:8px;">+ '+(parados.length-20)+' outro(s) candidato(s) parado(s), não exibido(s) aqui.</div>' : '';
+
+  return '<div class="card"><div class="card-title">Candidatos Parados</div><div class="card-sub">'+parados.length+' candidato(s) há '+LIMITE_PARADO+'+ dias cadastrados sem chegar em Trabalhando ou Declinou</div>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Candidato</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Praça</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Etapa Atual</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Dias parado</th></tr></thead>'
+    + '<tbody>'+linhas+'</tbody></table>'+maisTexto
+  + '</div>';
 }
 
 function renderPreWork(C) {
