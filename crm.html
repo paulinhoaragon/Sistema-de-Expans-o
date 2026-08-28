@@ -325,6 +325,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
               <option value="validado">Validado pelo Líder</option>
             </select>
           </div>
+          <div class="f-row" id="row-origem-lead" style="display:none;"><label>Origem do Lead (Future)</label>
+            <select id="m-origem-lead">
+              <option value="">— Selecione —</option>
+              <option value="Hunting">Hunting</option>
+              <option value="Indicação">Indicação</option>
+              <option value="Inscrição">Inscrição</option>
+              <option value="XP">XP</option>
+            </select>
+          </div>
+          <div class="f-row" id="row-motivo-declinio" style="display:none;"><label>Motivo do Declínio (Future)</label>
+            <select id="m-motivo-declinio">
+              <option value="">— Selecione —</option>
+              <option value="Blue3 Reprovou">Blue3 Reprovou</option>
+              <option value="Desistência">Desistência</option>
+            </select>
+          </div>
           <div class="f-row"><label>Estratégico</label>
             <select id="m-estrategico">
               <option value="Não" selected>Não</option>
@@ -352,7 +368,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         <div class="sec-lbl">Etapa</div>
         <div class="fgrid">
           <div class="f-row"><label>Etapa</label>
-            <select id="m-etapa" onchange="toggleEtapaDatas(this.value, true)">
+            <select id="m-etapa" onchange="toggleEtapaDatas(this.value, true); toggleMotivoDeclinio(this.value);">
               <option>Prospecção</option><option>Qualificação</option>
               <option>Negociação</option><option>Contratação</option>
               <option>Trabalhando</option><option>Declinou</option>
@@ -1016,6 +1032,9 @@ function abrirEdicao(id) {
   _setLiderSelect(r.lider||'');
   document.getElementById('m-nivel').value    = r.nivel||'';
   document.getElementById('m-etapa').value    = r.etapa||'Prospecção';
+  toggleMotivoDeclinio(r.etapa||'Prospecção');
+  var origemEl = document.getElementById('m-origem-lead'); if (origemEl) origemEl.value = r.origem_lead||'';
+  var motivoEl = document.getElementById('m-motivo-declinio'); if (motivoEl) motivoEl.value = r.motivo_declinio||'';
   document.getElementById('m-auc').value      = r.auc_mm > 0 ? r.auc_mm + ' MM' : '';
   document.getElementById('m-piso').value     = r.piso    ? formatBRL(r.piso)    : '';
   document.getElementById('m-periodo').value  = r.periodo || '';
@@ -1111,12 +1130,34 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-// Mostrar/ocultar campo de Pré-Work conforme a Vaga selecionada (só existe pra Future)
+// Mostrar/ocultar campos exclusivos de Future (Pré-Work, Origem do Lead) conforme a Vaga
 function toggleCamposPorVaga(vaga) {
   var row = document.getElementById('row-pre-work');
   var inp = document.getElementById('m-pre-work');
+  if (row) {
+    var show = (vaga === 'Future');
+    row.style.display = show ? '' : 'none';
+    if (!show && inp) inp.value = '';
+  }
+  var rowOrig = document.getElementById('row-origem-lead');
+  var inpOrig = document.getElementById('m-origem-lead');
+  if (rowOrig) {
+    var showOrig = (vaga === 'Future');
+    rowOrig.style.display = showOrig ? '' : 'none';
+    if (!showOrig && inpOrig) inpOrig.value = '';
+  }
+  // Motivo do declínio depende de vaga E etapa juntos — reavalia sempre que a vaga mudar
+  var etapaAtual = document.getElementById('m-etapa');
+  toggleMotivoDeclinio(etapaAtual ? etapaAtual.value : '');
+}
+
+// Mostrar/ocultar campo de Motivo do Declínio — só faz sentido pra Future + etapa Declinou
+function toggleMotivoDeclinio(etapa) {
+  var row = document.getElementById('row-motivo-declinio');
+  var inp = document.getElementById('m-motivo-declinio');
   if (!row) return;
-  var show = (vaga === 'Future');
+  var vagaAtual = document.getElementById('m-vaga');
+  var show = (etapa === 'Declinou') && vagaAtual && vagaAtual.value === 'Future';
   row.style.display = show ? '' : 'none';
   if (!show && inp) inp.value = '';
 }
@@ -1236,6 +1277,8 @@ function salvarCandidato() {
     nome: nome, telefone: g('m-tel'), email: g('m-email'), instituicao: g('m-inst'), praca: g('m-praca'),
     hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), vaga: vaga, estrategico: g('m-estrategico')||'Não', etapa: g('m-etapa'),
     pre_work: (vaga === 'Future') ? (g('m-pre-work')||null) : null,
+    origem_lead: (vaga === 'Future') ? (g('m-origem-lead')||null) : null,
+    motivo_declinio: (vaga === 'Future' && g('m-etapa') === 'Declinou') ? (g('m-motivo-declinio')||null) : null,
     // Proposta base
     auc_mm: (gn('m-t1tri-m') + gn('m-t1m') + gn('m-t2m') + gn('m-t3m') + gn('m-t4m')) || 0, piso: parseBRL(g('m-piso')), periodo: gi('m-periodo'), upfront: parseBRL(g('m-upfront')),
     // Gatilhos
