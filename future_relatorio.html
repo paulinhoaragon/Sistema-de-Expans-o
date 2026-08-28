@@ -101,6 +101,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .praca-row{display:grid;grid-template-columns:130px 1fr auto;align-items:center;gap:10px;padding:6px 0;}
 .praca-track{background:var(--canvas);border-radius:5px;height:14px;overflow:hidden;}
 .praca-fill{background:var(--gold);height:100%;border-radius:5px;}
+.sel-aud{padding:6px 10px;border:1px solid var(--rule);border-radius:7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--t1);background:#fafbfd;outline:none;cursor:pointer;}
 
 .empty{text-align:center;padding:60px 20px;color:var(--t4)}
 .empty-icon{font-size:36px;margin-bottom:10px}
@@ -263,18 +264,20 @@ function render(C) {
 
   var html = '';
   html += renderKPIs(C);
-  html += renderNovosPorPraca(C);
   html += renderFunil(C);
   html += renderConversaoEtapas(C);
   html += renderVelocidade(C);
+  html += renderParados(C);
+  html += renderAuditoria(C);
   html += renderOrigemLeads(C);
   html += renderPreWork(C);
-  html += renderParados(C);
   html += renderCrescimento(C);
+  html += renderNovosPorPraca(C);
   html += renderPracas(C);
 
   document.getElementById('content-root').innerHTML = html;
-  window._C_ATUAL = C; // pra reagir ao toggle Diário/Semanal/Mensal sem reprocessar tudo
+  window._C_ATUAL = C; // pra reagir ao toggle Diário/Semanal/Mensal e à auditoria sem reprocessar tudo
+  atualizarAuditoria();
 }
 
 function renderKPIs(C) {
@@ -423,6 +426,52 @@ function _velCard(label, media, n, cor) {
     + '<div class="kpi-value" style="font-size:20px;">'+(media!==null?media+'d':'—')+'</div>'
     + '<div class="kpi-sub">'+(n?'baseado em '+n+' candidato'+(n!==1?'s':''):'sem dados suficientes')+'</div>'
   + '</div>';
+}
+
+// ── Auditoria de Cadastro — quem falta qualificar ──
+function renderAuditoria(C) {
+  return '<div class="card">'
+    + '<div class="card-head">'
+      + '<div><div class="card-title" style="margin-bottom:0;">Auditoria de Cadastro — Pendências</div>'
+        + '<div class="card-sub" style="margin-bottom:0;">Candidatos com informação faltando pra qualificar corretamente</div></div>'
+      + '<select id="sel-auditoria" class="sel-aud" onchange="atualizarAuditoria()">'
+        + '<option value="motivo">🔎 Declinou sem motivo registrado</option>'
+        + '<option value="origem">🔎 Sem origem do lead</option>'
+      + '</select>'
+    + '</div>'
+    + '<div id="auditoria-tabela" style="margin-top:10px;"></div>'
+  + '</div>';
+}
+function atualizarAuditoria() {
+  var sel = document.getElementById('sel-auditoria');
+  var tbody = document.getElementById('auditoria-tabela');
+  if (!sel || !tbody) return;
+  var C = window._C_ATUAL || [];
+  var tipo = sel.value;
+  var lista = (tipo === 'motivo')
+    ? C.filter(function(c){ return c.etapa === 'Declinou' && !c.motivo_declinio; })
+    : C.filter(function(c){ return !c.origem_lead; });
+
+  if (!lista.length) {
+    tbody.innerHTML = '<div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhuma pendência encontrada com o filtro atual — tudo qualificado. 🎉</div>';
+    return;
+  }
+
+  var linhas = lista.map(function(c){
+    var info = ETAPA_INFO[c.etapa] || { lbl:c.etapa, cor:'#7A82A8' };
+    return '<tr style="border-bottom:1px solid var(--rule);">'
+      + '<td style="padding:7px 4px;font-weight:600;">'+esc(c.nome)+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(pracaLabel(c.praca))+'</td>'
+      + '<td style="padding:7px 4px;"><span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+info.cor+'22;color:'+info.cor+';">'+esc(info.lbl)+'</span></td>'
+      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.hunter||'—')+'</td>'
+      + '<td style="padding:7px 4px;text-align:right;color:var(--t3);">'+fmtDate(c.data_entrada)+'</td>'
+    + '</tr>';
+  }).join('');
+
+  tbody.innerHTML = '<div style="font-size:11px;color:var(--t3);margin-bottom:8px;">'+lista.length+' candidato(s) precisam ser qualificados — abra o card no CRM e preencha o campo faltando.</div>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Candidato</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Praça</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Etapa</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Hunter</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Data de Entrada</th></tr></thead>'
+    + '<tbody>'+linhas+'</tbody></table>';
 }
 
 function renderOrigemLeads(C) {
