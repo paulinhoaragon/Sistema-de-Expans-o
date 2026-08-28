@@ -263,7 +263,9 @@ function render(C) {
 
   var html = '';
   html += renderKPIs(C);
+  html += renderNovosPorPraca(C);
   html += renderFunil(C);
+  html += renderOrigemLeads(C);
   html += renderPreWork(C);
   html += renderCrescimento(C);
   html += renderPracas(C);
@@ -290,7 +292,6 @@ function renderKPIs(C) {
 function kpi(cls,label,val,sub){
   return '<div class="kpi '+cls+'"><div class="kpi-label">'+esc(label)+'</div><div class="kpi-value">'+val+'</div><div class="kpi-sub">'+esc(sub)+'</div></div>';
 }
-function hojeMenosDias(n){ var d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
 
 function renderFunil(C) {
   var porEtapa = {};
@@ -314,7 +315,9 @@ function renderFunil(C) {
       var reprovou = lista.filter(function(c){ return c.motivo_declinio === 'Blue3 Reprovou'; }).length;
       var desistiu = lista.filter(function(c){ return c.motivo_declinio === 'Desistência'; }).length;
       var semMotivo = lista.length - reprovou - desistiu;
-      sub = reprovou + ' Blue3 reprovou · ' + desistiu + ' desistência' + (semMotivo?' · '+semMotivo+' sem motivo registrado':'');
+      var base = lista.length || 1;
+      var pR = Math.round(reprovou/base*100), pD = Math.round(desistiu/base*100), pS = Math.round(semMotivo/base*100);
+      sub = reprovou + ' Blue3 reprovou ('+pR+'%) · ' + desistiu + ' desistência ('+pD+'%)' + (semMotivo?' · '+semMotivo+' sem motivo registrado ('+pS+'%)':'');
     }
 
     return '<div class="funil-row">'
@@ -326,6 +329,70 @@ function renderFunil(C) {
   }).join('');
 
   return '<div class="card"><div class="card-title">Funil por Etapa</div><div class="card-sub">Prospecção (R1) → Qualificação (R2) → Negociação (R3) → Aprovado e Contratado → Trabalhando</div>'+linhas+'</div>';
+}
+
+function hojeMenosDias(n){ var d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+
+function renderNovosPorPraca(C) {
+  var seteDiasAtras = hojeMenosDias(7);
+  var novos = C.filter(function(c){ return c.data_entrada && c.data_entrada >= seteDiasAtras; });
+  if (!novos.length) {
+    return '<div class="card"><div class="card-title">Novos Leads da Semana — por Praça</div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum lead novo nos últimos 7 dias com o filtro atual.</div></div>';
+  }
+  var porPraca = {};
+  novos.forEach(function(c){ var p=c.praca||'Sem praça'; porPraca[p]=(porPraca[p]||0)+1; });
+  var lista = Object.keys(porPraca).sort(function(a,b){ return porPraca[b]-porPraca[a]; });
+  var max = Math.max.apply(null, lista.map(function(p){ return porPraca[p]; }).concat([1]));
+  var total = novos.length;
+
+  var linhas = lista.map(function(p){
+    var v = porPraca[p];
+    var largura = Math.round(v/max*100);
+    var pct = Math.round(v/total*100);
+    return '<div class="praca-row"><div>'+esc(p==='Sem praça'?p:pracaLabel(p))+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;background:var(--am);"></div></div><div style="font-weight:700;">'+v+' <span style="font-weight:400;color:var(--t4);font-size:10px;">('+pct+'%)</span></div></div>';
+  }).join('');
+
+  return '<div class="card"><div class="card-title">Novos Leads da Semana — por Praça</div><div class="card-sub">'+total+' cadastrados nos últimos 7 dias, segmentado por unidade</div>'+linhas+'</div>';
+}
+
+function renderOrigemLeads(C) {
+  var ORIGENS = ['Hunting','Indicação','Inscrição','XP'];
+  var porOrigem = {};
+  ORIGENS.forEach(function(o){ porOrigem[o] = []; });
+  var semOrigem = [];
+  C.forEach(function(c){
+    var o = c.origem_lead;
+    if (o && porOrigem[o]) porOrigem[o].push(c);
+    else semOrigem.push(c);
+  });
+
+  var linhas = ORIGENS.map(function(o){
+    var lista = porOrigem[o];
+    return _linhaOrigem(o, lista);
+  }).join('');
+  var linhaSemOrigem = semOrigem.length ? _linhaOrigem('Não informado', semOrigem) : '';
+
+  return '<div class="card"><div class="card-title">Origem dos Leads</div><div class="card-sub">De onde vêm os candidatos e taxa de sucesso de cada canal (aprovados+contratados ÷ total)</div>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Origem</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Total</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Aprovados/Contrat.</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Declinou</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Em andamento</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Taxa de sucesso</th></tr></thead>'
+    + '<tbody>' + linhas + linhaSemOrigem + '</tbody></table>'
+  + '</div>';
+}
+function _linhaOrigem(label, lista) {
+  var total = lista.length;
+  var aprovados = lista.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; }).length;
+  var declinados = lista.filter(function(c){ return c.etapa === 'Declinou'; }).length;
+  var andamento = total - aprovados - declinados;
+  var taxa = total ? Math.round(aprovados/total*100) : 0;
+  var corTaxa = taxa >= 30 ? '#16A34A' : (taxa >= 10 ? '#B45309' : '#7A82A8');
+  return '<tr style="border-bottom:1px solid var(--rule);">'
+    + '<td style="padding:7px 4px;font-weight:600;">'+esc(label)+'</td>'
+    + '<td style="padding:7px 4px;text-align:right;">'+total+'</td>'
+    + '<td style="padding:7px 4px;text-align:right;color:#16A34A;">'+aprovados+'</td>'
+    + '<td style="padding:7px 4px;text-align:right;color:#DC2626;">'+declinados+'</td>'
+    + '<td style="padding:7px 4px;text-align:right;color:var(--t3);">'+andamento+'</td>'
+    + '<td style="padding:7px 4px;text-align:right;font-weight:700;color:'+corTaxa+';">'+(total?taxa+'%':'—')+'</td>'
+  + '</tr>';
 }
 
 function renderPreWork(C) {
