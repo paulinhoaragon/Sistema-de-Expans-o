@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nexus · Blue3 Future</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0A0F1E;--cobalt:#1A3BAD;--cobalt-br:#2952E3;
+  --gold:#B8962E;--g:#16A34A;--am:#B45309;--red:#DC2626;
+  --canvas:#F0F2FA;--surface:#fff;--rule:#E2E5F0;
+  --t1:#0A0F1E;--t2:#3A4268;--t3:#7A82A8;--t4:#A8B0CC;
+  --r8:8px;--r12:12px;--sh:0 1px 4px rgba(10,15,30,.07),0 4px 16px rgba(10,15,30,.06);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:13px;min-height:100vh}
+
+/* ── COVER ── */
+.cover{background:var(--ink);min-height:96px;position:relative;overflow:hidden;padding:24px 28px 18px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px}
+.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+.cgl{position:absolute;top:-80px;right:-40px;width:340px;height:340px;background:radial-gradient(ellipse,rgba(41,82,227,.18) 0%,transparent 65%);pointer-events:none}
+.cv-t{font-family:'Playfair Display',serif;font-size:21px;font-weight:600;color:#fff;letter-spacing:-.02em;position:relative}
+.cv-s{font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.12em;margin-top:3px;position:relative}
+.cv-actions{display:flex;gap:8px;position:relative}
+.cv-btn{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:8px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:inline-flex;align-items:center;gap:6px;}
+.cv-btn:hover{background:rgba(255,255,255,.18)}
+
+/* ── FILTROS ── */
+.fbar{background:var(--surface);border-bottom:1px solid var(--rule);padding:10px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:60;}
+.fbar-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);}
+.ms{position:relative;display:inline-block;}
+.ms-btn{padding:6px 12px;border:1px solid var(--rule);border-radius:7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--t1);background:#fafbfd;outline:none;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+.ms-btn::after{content:'▾';font-size:9px;color:var(--t3);}
+.ms-btn.ms-active{border-color:var(--cobalt);background:#EEF2FD;color:var(--cobalt);font-weight:700;}
+.ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid var(--rule);border-radius:8px;box-shadow:0 8px 24px rgba(10,15,30,.14);z-index:500;min-width:220px;max-height:320px;overflow-y:auto;padding:6px 0;}
+.ms-panel.open{display:block;}
+.ms-panel label{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:12px;color:var(--t1);cursor:pointer;white-space:nowrap;}
+.ms-panel label:hover{background:#F4F6FB;}
+.ms-actions{display:flex;justify-content:space-between;padding:7px 12px 4px;border-top:1px solid var(--rule);margin-top:4px;}
+.ms-actions button{background:none;border:none;color:var(--cobalt);font-size:11px;font-weight:700;cursor:pointer;padding:0;}
+.f-count{font-size:11px;color:var(--t4);margin-left:auto}
+
+/* ── CONTEÚDO ── */
+.content{padding:20px 24px 48px;max-width:1320px;margin:0 auto}
+.row{display:grid;gap:14px;margin-bottom:16px;}
+.cols-4{grid-template-columns:repeat(4,1fr)}
+.cols-2{grid-template-columns:repeat(2,1fr)}
+@media (max-width:900px){.cols-4{grid-template-columns:repeat(2,1fr)}}
+
+.kpi{background:var(--surface);border-radius:var(--r12);padding:14px 16px;box-shadow:var(--sh);border-top:3px solid var(--rule);}
+.kpi.c1{border-top-color:var(--cobalt)}
+.kpi.c2{border-top-color:var(--g)}
+.kpi.c3{border-top-color:var(--am)}
+.kpi.c4{border-top-color:var(--red)}
+.kpi-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.kpi-value{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:var(--t1);line-height:1}
+.kpi-sub{font-size:9px;color:var(--t4);margin-top:4px}
+
+.card{background:var(--surface);border-radius:var(--r12);box-shadow:var(--sh);padding:18px 20px;margin-bottom:16px;}
+.card-title{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:2px;}
+.card-sub{font-size:10px;color:var(--t3);margin-bottom:14px;}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;flex-wrap:wrap;gap:8px;}
+
+/* Funil */
+.funil-row{display:grid;grid-template-columns:150px 1fr auto auto;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--rule);}
+.funil-row:last-child{border-bottom:none;}
+.funil-lbl{font-size:12px;font-weight:600;color:var(--t2);}
+.funil-lbl small{display:block;font-size:9px;font-weight:400;color:var(--t4);margin-top:1px;}
+.funil-track{background:var(--canvas);border-radius:5px;height:20px;position:relative;overflow:hidden;}
+.funil-fill{height:100%;border-radius:5px;transition:width .2s;}
+.funil-val{font-size:14px;font-weight:700;color:var(--t1);min-width:30px;text-align:right;}
+.funil-pct{font-size:10px;color:var(--t4);min-width:40px;text-align:right;}
+
+.seg{display:inline-flex;gap:4px;background:var(--canvas);padding:3px;border-radius:9px;}
+.seg button{border:none;background:transparent;color:var(--t2);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer;white-space:nowrap;}
+.seg button.on{background:var(--cobalt);color:#fff;}
+
+.cresc-row{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--rule);}
+.cresc-row:last-child{border-bottom:none;}
+.cresc-lbl{font-size:11px;color:var(--t2);white-space:nowrap;min-width:96px;}
+.cresc-track{background:var(--canvas);border-radius:5px;height:16px;position:relative;overflow:hidden;}
+.cresc-fill{background:var(--cobalt);height:100%;border-radius:5px;}
+.cresc-val{font-size:12px;font-weight:700;color:var(--t1);min-width:24px;text-align:right;}
+.cresc-delta{font-size:10px;font-weight:700;min-width:64px;text-align:right;white-space:nowrap;}
+.cresc-delta.up{color:#16A34A;}
+.cresc-delta.down{color:#DC2626;}
+.cresc-delta.flat{color:var(--t4);}
+
+.declin-box{display:flex;gap:14px;flex-wrap:wrap;}
+.declin-item{flex:1;min-width:160px;background:var(--canvas);border-radius:8px;padding:12px 14px;}
+.declin-item .n{font-size:20px;font-weight:700;color:var(--t1);}
+.declin-item .l{font-size:10px;color:var(--t3);margin-top:2px;}
+
+.prework-bar{display:flex;height:22px;border-radius:6px;overflow:hidden;margin-bottom:8px;}
+.prework-bar span{display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:var(--t3);}
+.legend .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;}
+
+.praca-row{display:grid;grid-template-columns:130px 1fr auto;align-items:center;gap:10px;padding:6px 0;}
+.praca-track{background:var(--canvas);border-radius:5px;height:14px;overflow:hidden;}
+.praca-fill{background:var(--gold);height:100%;border-radius:5px;}
+
+.empty{text-align:center;padding:60px 20px;color:var(--t4)}
+.empty-icon{font-size:36px;margin-bottom:10px}
+
+@media print{
+  .fbar,.cv-actions{display:none !important;}
+  body{background:#fff;}
+  .card,.kpi{box-shadow:none;border:1px solid #E2E5F0;}
+}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cg"></div><div class="cgl"></div>
+  <div>
+    <div class="cv-t">Blue3 Future — Funil de Candidatos</div>
+    <div class="cv-s">Blue3 Expansão · acompanhamento pra apresentação à XP</div>
+  </div>
+  <div class="cv-actions">
+    <button class="cv-btn" onclick="exportarCSV()">⬇ Exportar CSV</button>
+    <button class="cv-btn" onclick="window.print()">🖨 Exportar PDF</button>
+  </div>
+</div>
+
+<div class="fbar">
+  <span class="fbar-lbl">Praça</span>
+  <div class="ms" id="ms-praca">
+    <button type="button" class="ms-btn" onclick="msToggleOpen()">Todas as praças Future</button>
+    <div class="ms-panel" id="ms-panel-praca"></div>
+  </div>
+  <span class="f-count" id="f-count">—</span>
+</div>
+
+<div class="content" id="content-root">
+  <div class="empty"><div class="empty-icon">⏳</div>Carregando candidatos do Blue3 Future...</div>
+</div>
+
+<script>
+var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+
+function supaGet(path) {
+  return fetch(SUPA_URL+'/rest/v1/'+path, { headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY }, cache:'no-store' })
+    .then(function(r){ return r.ok ? r.json() : []; });
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDate(s){ if(!s) return ''; var d = new Date(s+'T12:00:00'); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'}); }
+function hojeISO(){ return new Date().toISOString().slice(0,10); }
+function diasEntre(de, ate){
+  if (!de) return null;
+  var d1 = new Date(de+'T12:00:00');
+  var d2 = ate ? new Date(ate+'T12:00:00') : new Date();
+  if (isNaN(d1)) return null;
+  d2.setHours(12,0,0,0);
+  return Math.floor((d2-d1)/86400000);
+}
+
+var TODOS = [];       // todos os candidatos Future (sem filtro de praça)
+var _PRACAS_CAD = [];
+var TELEFONES_COM_PROPOSTA = {};
+var MS_PRACA = new Set();
+var _MODO_CRESC = 'semana'; // 'dia' | 'semana' | 'mes'
+
+function pracaLabel(nomeCanonico) {
+  if (!nomeCanonico) return '';
+  var achou = _PRACAS_CAD.find(function(p){ return p.nome === nomeCanonico; });
+  if (achou && achou.label) return achou.label;
+  return nomeCanonico.replace(/^Blue3\s*[-–]\s*/i,'');
+}
+
+// ── ETAPAS: rótulo + cor + numeração R1/R2/R3 ──
+var ETAPA_INFO = {
+  'Prospecção':   { lbl:'R1 · Prospecção',  cor:'#7A82A8' },
+  'Qualificação': { lbl:'R2 · Qualificação', cor:'#1A3BAD' },
+  'Negociação':   { lbl:'R3 · Negociação',   cor:'#4A70F5' },
+  'Contratação':  { lbl:'Aprovado e Contratado', cor:'#B8962E' },
+  'Trabalhando':  { lbl:'Trabalhando',       cor:'#16A34A' },
+  'Declinou':     { lbl:'Declinou',          cor:'#DC2626' },
+  'Contato Futuro': { lbl:'Contato Futuro',  cor:'#A8B0CC' }
+};
+var ETAPAS_ORDEM = ['Prospecção','Qualificação','Negociação','Contratação','Trabalhando','Declinou','Contato Futuro'];
+
+function carregar() {
+  Promise.all([
+    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,data_entrada,data_contratacao,data_inicio,data_declinio,pre_work,origem_lead,motivo_declinio&limit=3000'),
+    new Promise(function(resolve){
+      if (typeof NexusConfig === 'undefined' || typeof NexusConfig.getPracas !== 'function') { resolve([]); return; }
+      NexusConfig.getPracas(function(err, pracas){ resolve(err ? [] : (pracas||[])); });
+    }),
+    supaGet('propostas?select=telefone&limit=5000')
+  ]).then(function(res){
+    var candidatos = res[0] || [];
+    _PRACAS_CAD = res[1] || [];
+    var propostas = res[2] || [];
+
+    TELEFONES_COM_PROPOSTA = {};
+    propostas.forEach(function(p){
+      var tel = (p.telefone||'').replace(/\D/g,'');
+      if (tel) TELEFONES_COM_PROPOSTA[tel] = true;
+    });
+
+    TODOS = candidatos.filter(function(c){ return (c.vaga||'').trim() === 'Future'; });
+
+    popularFiltroPraca();
+    aplicarFiltro();
+  }).catch(function(err){
+    document.getElementById('content-root').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Erro ao carregar: '+esc(JSON.stringify(err))+'</div>';
+  });
+}
+
+// ── Filtro de Praça (dinâmico — puxa do cadastro central, grupo Segmentos + "future" no nome) ──
+function popularFiltroPraca() {
+  var doCadastro = _PRACAS_CAD.filter(function(p){
+    var grupoOk = (p.grupo||'') === 'Segmentos';
+    var nomeOk = /future/i.test(p.nome||'') || /future/i.test(p.label||'');
+    return grupoOk && nomeOk && (p.status||'Ativo') !== 'Inativo';
+  }).map(function(p){ return p.nome; });
+
+  // Inclui também praças que aparecem nos candidatos mas não estão (ainda) no cadastro — não perde histórico
+  var doDados = {};
+  TODOS.forEach(function(c){ if (c.praca) doDados[c.praca] = true; });
+  var todasPracas = Array.from(new Set(doCadastro.concat(Object.keys(doDados))));
+  todasPracas.sort(function(a,b){ return pracaLabel(a).localeCompare(pracaLabel(b)); });
+
+  var panel = document.getElementById('ms-panel-praca');
+  var html = todasPracas.map(function(p){
+    var checked = MS_PRACA.has(p) ? ' checked' : '';
+    return '<label><input type="checkbox" value="'+esc(p)+'"'+checked+' onchange="msToggle(this.value,this.checked)"> '+esc(pracaLabel(p))+'</label>';
+  }).join('');
+  html += '<div class="ms-actions"><button type="button" onclick="msLimpar()">Limpar</button><button type="button" onclick="msFechar()">Fechar</button></div>';
+  panel.innerHTML = html || '<div style="padding:10px 12px;font-size:11px;color:var(--t4);">Nenhuma praça Future encontrada</div>';
+  msAtualizarLabel();
+}
+function msToggle(v, checked){ if(checked) MS_PRACA.add(v); else MS_PRACA.delete(v); msAtualizarLabel(); aplicarFiltro(); }
+function msLimpar(){ MS_PRACA.clear(); document.querySelectorAll('#ms-panel-praca input').forEach(function(c){c.checked=false;}); msAtualizarLabel(); aplicarFiltro(); }
+function msAtualizarLabel(){
+  var btn = document.querySelector('#ms-praca .ms-btn');
+  if (!MS_PRACA.size) { btn.textContent = 'Todas as praças Future'; btn.classList.remove('ms-active'); return; }
+  if (MS_PRACA.size === 1) { btn.textContent = pracaLabel([...MS_PRACA][0]); }
+  else { btn.textContent = MS_PRACA.size + ' praças'; }
+  btn.classList.add('ms-active');
+}
+function msToggleOpen(){ var p=document.getElementById('ms-panel-praca'); var e=p.classList.contains('open'); msFechar(); if(!e) p.classList.add('open'); }
+function msFechar(){ document.querySelectorAll('.ms-panel.open').forEach(function(p){p.classList.remove('open');}); }
+document.addEventListener('click', function(e){ if(!e.target.closest('.ms')) msFechar(); });
+
+function aplicarFiltro() {
+  var filtrados = TODOS.filter(function(c){ return !MS_PRACA.size || MS_PRACA.has(c.praca||''); });
+  document.getElementById('f-count').textContent = filtrados.length + ' candidato' + (filtrados.length!==1?'s':'') + ' Future';
+  render(filtrados);
+}
+
+// ════════ RENDER ════════
+function render(C) {
+  if (!C.length) {
+    document.getElementById('content-root').innerHTML = '<div class="empty"><div class="empty-icon">📭</div>Nenhum candidato Future encontrado com os filtros atuais.</div>';
+    return;
+  }
+
+  var html = '';
+  html += renderKPIs(C);
+  html += renderFunil(C);
+  html += renderPreWork(C);
+  html += renderCrescimento(C);
+  html += renderPracas(C);
+
+  document.getElementById('content-root').innerHTML = html;
+  window._C_ATUAL = C; // pra reagir ao toggle Diário/Semanal/Mensal sem reprocessar tudo
+}
+
+function renderKPIs(C) {
+  var ativos = C.filter(function(c){ return c.etapa !== 'Declinou'; }).length;
+  var declinados = C.filter(function(c){ return c.etapa === 'Declinou'; }).length;
+  var contratados = C.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; }).length;
+  var pctConv = C.length ? Math.round(contratados / C.length * 100) : 0;
+  var seteDiasAtras = hojeMenosDias(7);
+  var novosSemana = C.filter(function(c){ return c.data_entrada && c.data_entrada >= seteDiasAtras; }).length;
+
+  return '<div class="row cols-4">'
+    + kpi('c1','No Funil (ativo)', ativos, 'exclui declinados')
+    + kpi('c4','Declinou', declinados, (C.length? Math.round(declinados/C.length*100):0)+'% do total')
+    + kpi('c2','Conversão', pctConv+'%', contratados+' aprovados/contratados de '+C.length)
+    + kpi('c3','Novos (7 dias)', novosSemana, 'cadastrados na última semana')
+  + '</div>';
+}
+function kpi(cls,label,val,sub){
+  return '<div class="kpi '+cls+'"><div class="kpi-label">'+esc(label)+'</div><div class="kpi-value">'+val+'</div><div class="kpi-sub">'+esc(sub)+'</div></div>';
+}
+function hojeMenosDias(n){ var d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+
+function renderFunil(C) {
+  var porEtapa = {};
+  ETAPAS_ORDEM.forEach(function(e){ porEtapa[e] = []; });
+  C.forEach(function(c){ if (porEtapa[c.etapa]) porEtapa[c.etapa].push(c); });
+
+  var max = Math.max.apply(null, ETAPAS_ORDEM.map(function(e){ return porEtapa[e].length; }).concat([1]));
+
+  var linhas = ETAPAS_ORDEM.map(function(etapa){
+    var lista = porEtapa[etapa];
+    var info = ETAPA_INFO[etapa];
+    var largura = Math.round(lista.length / max * 100);
+    var pct = C.length ? Math.round(lista.length / C.length * 100) : 0;
+    var sub = '';
+
+    if (etapa === 'Negociação') {
+      var comProposta = lista.filter(function(c){ return TELEFONES_COM_PROPOSTA[(c.telefone||'').replace(/\D/g,'')]; }).length;
+      sub = comProposta + ' com proposta no sistema · ' + (lista.length-comProposta) + ' sem proposta ainda';
+    }
+    if (etapa === 'Declinou') {
+      var reprovou = lista.filter(function(c){ return c.motivo_declinio === 'Blue3 Reprovou'; }).length;
+      var desistiu = lista.filter(function(c){ return c.motivo_declinio === 'Desistência'; }).length;
+      var semMotivo = lista.length - reprovou - desistiu;
+      sub = reprovou + ' Blue3 reprovou · ' + desistiu + ' desistência' + (semMotivo?' · '+semMotivo+' sem motivo registrado':'');
+    }
+
+    return '<div class="funil-row">'
+      + '<div class="funil-lbl">'+info.lbl+(sub?'<small>'+esc(sub)+'</small>':'')+'</div>'
+      + '<div class="funil-track"><div class="funil-fill" style="width:'+largura+'%;background:'+info.cor+';"></div></div>'
+      + '<div class="funil-val">'+lista.length+'</div>'
+      + '<div class="funil-pct">'+pct+'%</div>'
+    + '</div>';
+  }).join('');
+
+  return '<div class="card"><div class="card-title">Funil por Etapa</div><div class="card-sub">Prospecção (R1) → Qualificação (R2) → Negociação (R3) → Aprovado e Contratado → Trabalhando</div>'+linhas+'</div>';
+}
+
+function renderPreWork(C) {
+  // Só faz sentido pra quem já passou da Prospecção e ainda não está Trabalhando/Declinou
+  var elegiveis = C.filter(function(c){ return ['Qualificação','Negociação','Contratação'].indexOf(c.etapa) > -1; });
+  var emPreWork = elegiveis.filter(function(c){ return c.pre_work === 'em_pre_work'; }).length;
+  var validado  = elegiveis.filter(function(c){ return c.pre_work === 'validado'; }).length;
+  var naoIniciado = elegiveis.length - emPreWork - validado;
+  var total = elegiveis.length || 1;
+
+  var pEm = Math.round(emPreWork/total*100), pVal = Math.round(validado/total*100), pNao = 100-pEm-pVal;
+
+  return '<div class="card"><div class="card-title">Status de Pré-Work</div><div class="card-sub">'+elegiveis.length+' candidato(s) elegível(is) (Qualificação, Negociação ou Contratação)</div>'
+    + '<div class="prework-bar">'
+      + (pNao>0?'<span style="width:'+pNao+'%;background:#A8B0CC;">'+(pNao>=8?naoIniciado:'')+'</span>':'')
+      + (pEm>0?'<span style="width:'+pEm+'%;background:#B45309;">'+(pEm>=8?emPreWork:'')+'</span>':'')
+      + (pVal>0?'<span style="width:'+pVal+'%;background:#16A34A;">'+(pVal>=8?validado:'')+'</span>':'')
+    + '</div>'
+    + '<div class="legend">'
+      + '<span><span class="dot" style="background:#A8B0CC;"></span>Não iniciado · '+naoIniciado+'</span>'
+      + '<span><span class="dot" style="background:#B45309;"></span>Em Pré-Work · '+emPreWork+'</span>'
+      + '<span><span class="dot" style="background:#16A34A;"></span>Validado pelo Líder · '+validado+'</span>'
+    + '</div>'
+  + '</div>';
+}
+
+function _inicioSemana(d){ var dia=(d.getDay()+6)%7; var s=new Date(d); s.setDate(d.getDate()-dia); s.setHours(0,0,0,0); return s; }
+function _fmtDiaLbl(iso){ var d=new Date(iso+'T12:00:00'); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'); }
+function _fmtSemanaLbl(iso){ var d=new Date(iso+'T12:00:00'); var f=new Date(d); f.setDate(d.getDate()+6); var ff=function(x){return String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0');}; return ff(d)+'–'+ff(f); }
+function _fmtMesLbl(chave){ var partes=chave.split('-'); var meses=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']; return meses[parseInt(partes[1],10)-1]+'/'+partes[0].slice(2); }
+
+function toggleModoCresc(modo){ _MODO_CRESC = modo; aplicarFiltro(); }
+
+function renderCrescimento(C) {
+  var buckets = {};
+  C.forEach(function(c){
+    if (!c.data_entrada) return;
+    var d = new Date(c.data_entrada+'T12:00:00');
+    if (isNaN(d.getTime())) return;
+    var chave;
+    if (_MODO_CRESC === 'dia') chave = c.data_entrada;
+    else if (_MODO_CRESC === 'semana') chave = _inicioSemana(d).toISOString().slice(0,10);
+    else chave = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    buckets[chave] = (buckets[chave]||0)+1;
+  });
+
+  var chaves = Object.keys(buckets).sort();
+  var JANELA = _MODO_CRESC === 'dia' ? 14 : (_MODO_CRESC === 'semana' ? 8 : 6);
+  var visiveis = chaves.slice(-JANELA);
+
+  if (!visiveis.length) {
+    return '<div class="card"><div class="card-title">Crescimento da Base</div><div style="padding:16px;text-align:center;color:var(--t4);font-size:12px;">Sem datas de cadastro suficientes.</div></div>';
+  }
+
+  var maxVal = Math.max.apply(null, visiveis.map(function(k){ return buckets[k]; }));
+  var linhas = visiveis.map(function(k){
+    var atual = buckets[k];
+    var idxReal = chaves.indexOf(k);
+    var anteriorKey = chaves[idxReal-1];
+    var anterior = anteriorKey!=null ? buckets[anteriorKey] : null;
+    var largura = maxVal>0 ? Math.round(atual/maxVal*100) : 0;
+    var deltaHtml = '<span class="cresc-delta flat">—</span>';
+    if (anterior !== null) {
+      var delta = atual - anterior;
+      var cls = delta>0?'up':(delta<0?'down':'flat');
+      var seta = delta>0?'▲':(delta<0?'▼':'＝');
+      var pctTxt = anterior>0 ? ' ('+(delta>=0?'+':'')+Math.round(delta/anterior*100)+'%)' : '';
+      deltaHtml = '<span class="cresc-delta '+cls+'">'+seta+' '+(delta>0?'+':'')+delta+pctTxt+'</span>';
+    }
+    var lbl = _MODO_CRESC==='dia' ? _fmtDiaLbl(k) : (_MODO_CRESC==='semana' ? _fmtSemanaLbl(k) : _fmtMesLbl(k));
+    return '<div class="cresc-row"><div class="cresc-lbl">'+esc(lbl)+'</div><div class="cresc-track"><div class="cresc-fill" style="width:'+largura+'%;"></div></div><div class="cresc-val">'+atual+'</div>'+deltaHtml+'</div>';
+  }).join('');
+
+  var totalJanela = visiveis.reduce(function(s,k){ return s+buckets[k]; },0);
+
+  return '<div class="card">'
+    + '<div class="card-head"><div><div class="card-title" style="margin-bottom:0;">Crescimento da Base</div>'
+      + '<div class="card-sub" style="margin-bottom:0;">Novos cadastros · '+totalJanela+' no período exibido</div></div>'
+      + '<div class="seg">'
+        + '<button class="'+(_MODO_CRESC==='dia'?'on':'')+'" onclick="toggleModoCresc(\'dia\')">Diário</button>'
+        + '<button class="'+(_MODO_CRESC==='semana'?'on':'')+'" onclick="toggleModoCresc(\'semana\')">Semanal</button>'
+        + '<button class="'+(_MODO_CRESC==='mes'?'on':'')+'" onclick="toggleModoCresc(\'mes\')">Mensal</button>'
+      + '</div></div>'
+    + '<div style="margin-top:10px;">'+linhas+'</div>'
+  + '</div>';
+}
+
+function renderPracas(C) {
+  var porPraca = {};
+  C.forEach(function(c){ var p=c.praca||'Sem praça'; porPraca[p]=(porPraca[p]||0)+1; });
+  var lista = Object.keys(porPraca).sort(function(a,b){ return porPraca[b]-porPraca[a]; });
+  var max = Math.max.apply(null, lista.map(function(p){ return porPraca[p]; }).concat([1]));
+
+  var linhas = lista.map(function(p){
+    var v = porPraca[p];
+    var largura = Math.round(v/max*100);
+    return '<div class="praca-row"><div>'+esc(p==='Sem praça'?p:pracaLabel(p))+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;"></div></div><div style="font-weight:700;">'+v+'</div></div>';
+  }).join('');
+
+  return '<div class="card"><div class="card-title">Distribuição por Praça</div>'+linhas+'</div>';
+}
+
+// ════════ EXPORT CSV ════════
+function exportarCSV() {
+  var C = window._C_ATUAL || [];
+  if (!C.length) { alert('Nada para exportar com os filtros atuais.'); return; }
+
+  var hdr = ['Nome','Praça','Etapa','Hunter','Líder','Status Proposta','Pré-Work','Origem do Lead','Motivo Declínio','Data Entrada','Data Contratação','Data Início','Data Declínio'];
+  var linhas = C.map(function(c){
+    var temProposta = TELEFONES_COM_PROPOSTA[(c.telefone||'').replace(/\D/g,'')] ? 'Sim' : 'Não';
+    var preWorkLbl = c.pre_work === 'validado' ? 'Validado pelo Líder' : (c.pre_work === 'em_pre_work' ? 'Em Pré-Work' : '');
+    return [
+      c.nome||'', pracaLabel(c.praca)||'', (ETAPA_INFO[c.etapa]||{}).lbl || c.etapa || '',
+      c.hunter||'', c.lider||'', temProposta, preWorkLbl, c.origem_lead||'', c.motivo_declinio||'',
+      fmtDate(c.data_entrada), fmtDate(c.data_contratacao), fmtDate(c.data_inicio), fmtDate(c.data_declinio)
+    ].map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(';');
+  });
+
+  var csv = '\uFEFF' + hdr.join(';') + '\n' + linhas.join('\n');
+  var blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var hoje = new Date();
+  a.href = url;
+  a.download = 'blue3_future_' + hoje.getFullYear() + String(hoje.getMonth()+1).padStart(2,'0') + String(hoje.getDate()).padStart(2,'0') + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+carregar();
+</script>
+</body>
+</html>
