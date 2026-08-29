@@ -187,7 +187,7 @@ var ETAPAS_ORDEM = ['Prospecção','Qualificação','Negociação','Contrataçã
 
 function carregar() {
   Promise.all([
-    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,data_entrada,data_contratacao,data_inicio,data_declinio,pre_work,origem_lead,motivo_declinio&limit=3000'),
+    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,email,mou,data_mou,data_entrada,data_contratacao,data_inicio,data_declinio,pre_work,origem_lead,motivo_declinio&limit=3000'),
     new Promise(function(resolve){
       if (typeof NexusConfig === 'undefined' || typeof NexusConfig.getPracas !== 'function') { resolve([]); return; }
       NexusConfig.getPracas(function(err, pracas){ resolve(err ? [] : (pracas||[])); });
@@ -270,9 +270,11 @@ function render(C) {
   html += renderParados(C);
   html += renderAuditoria(C);
   html += renderOrigemLeads(C);
+  html += renderHunters(C);
   html += renderPreWork(C);
   html += renderCrescimento(C);
   html += renderNovosPorPraca(C);
+  html += renderContratados(C);
   html += renderPracas(C);
 
   document.getElementById('content-root').innerHTML = html;
@@ -569,6 +571,57 @@ function toggleParadosExpandir() {
   }
 }
 
+// ── Performance por Hunter ──
+function renderHunters(C) {
+  var comHunter = C.filter(function(c){ return c.hunter; });
+  var porHunter = {};
+  comHunter.forEach(function(c){
+    var h = c.hunter;
+    if (!porHunter[h]) porHunter[h] = { total:0, pracas:{}, etapas:{}, aprovados:0, declinados:0 };
+    var reg = porHunter[h];
+    reg.total++;
+    var p = c.praca || 'Sem praça';
+    reg.pracas[p] = (reg.pracas[p]||0)+1;
+    reg.etapas[c.etapa] = (reg.etapas[c.etapa]||0)+1;
+    if (c.etapa === 'Contratação' || c.etapa === 'Trabalhando') reg.aprovados++;
+    if (c.etapa === 'Declinou') reg.declinados++;
+  });
+
+  var nomes = Object.keys(porHunter).sort(function(a,b){ return porHunter[b].total - porHunter[a].total; });
+  if (!nomes.length) {
+    return '<div class="card"><div class="card-title">Performance por Hunter</div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum lead com hunter atribuído no filtro atual.</div></div>';
+  }
+
+  var linhas = nomes.map(function(h){
+    var reg = porHunter[h];
+    var taxa = reg.total ? Math.round(reg.aprovados/reg.total*100) : 0;
+    var corTaxa = taxa >= 30 ? '#16A34A' : (taxa >= 10 ? '#B45309' : '#7A82A8');
+
+    var pracasTxt = Object.keys(reg.pracas).sort(function(a,b){ return reg.pracas[b]-reg.pracas[a]; })
+      .map(function(p){ return pracaLabel(p==='Sem praça'?'':p)||p; })
+      .join(', ');
+
+    var etapasTags = ETAPAS_ORDEM.filter(function(e){ return reg.etapas[e]; }).map(function(e){
+      var info = ETAPA_INFO[e];
+      return '<span style="display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:'+info.cor+'22;color:'+info.cor+';margin:1px 3px 1px 0;white-space:nowrap;">'+esc(info.lbl.replace(/^R\d · /,''))+' '+reg.etapas[e]+'</span>';
+    }).join('');
+
+    return '<tr style="border-bottom:1px solid var(--rule);vertical-align:top;">'
+      + '<td style="padding:8px 4px;font-weight:600;">'+esc(h)+'</td>'
+      + '<td style="padding:8px 4px;text-align:center;font-weight:700;">'+reg.total+'</td>'
+      + '<td style="padding:8px 4px;color:var(--t3);font-size:11px;">'+esc(pracasTxt)+'</td>'
+      + '<td style="padding:8px 4px;">'+etapasTags+'</td>'
+      + '<td style="padding:8px 4px;text-align:right;font-weight:700;color:'+corTaxa+';">'+taxa+'%</td>'
+    + '</tr>';
+  }).join('');
+
+  return '<div class="card"><div class="card-title">Performance por Hunter</div><div class="card-sub">Volume, praças de atuação, distribuição por etapa e taxa de conversão (aprovados+contratados ÷ total)</div>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Hunter</th><th style="text-align:center;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Total</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Praças</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Distribuição por Etapa</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Conversão</th></tr></thead>'
+    + '<tbody>'+linhas+'</tbody></table>'
+  + '</div>';
+}
+
 function renderPreWork(C) {
   // Só faz sentido pra quem já passou da Prospecção e ainda não está Trabalhando/Declinou
   var elegiveis = C.filter(function(c){ return ['Qualificação','Negociação','Contratação'].indexOf(c.etapa) > -1; });
@@ -654,6 +707,37 @@ function renderCrescimento(C) {
   + '</div>';
 }
 
+// ── Candidatos Contratados (dados espelhados pra conferência/exportação) ──
+function renderContratados(C) {
+  var contratados = C.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; })
+    .sort(function(a,b){ return (b.data_contratacao||'').localeCompare(a.data_contratacao||''); });
+
+  if (!contratados.length) {
+    return '<div class="card"><div class="card-title">Candidatos Contratados</div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum candidato aprovado/contratado no filtro atual.</div></div>';
+  }
+
+  var linhas = contratados.map(function(c){
+    var mouOk = (c.mou||'').toLowerCase() === 'assinado';
+    var statusHtml = mouOk
+      ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#DCFCE7;color:#166534;">MOU Assinado · '+fmtDate(c.data_mou)+'</span>'
+      : '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF3C7;color:#92400E;">MOU Pendente</span>';
+    return '<tr style="border-bottom:1px solid var(--rule);">'
+      + '<td style="padding:7px 4px;white-space:nowrap;">'+fmtDate(c.data_contratacao)+'</td>'
+      + '<td style="padding:7px 4px;">'+statusHtml+'</td>'
+      + '<td style="padding:7px 4px;font-weight:600;">'+esc(c.nome)+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.telefone||'—')+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.email||'—')+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(pracaLabel(c.praca))+'</td>'
+    + '</tr>';
+  }).join('');
+
+  return '<div class="card"><div class="card-title">Candidatos Contratados</div><div class="card-sub">'+contratados.length+' candidato(s) aprovado(s)/contratado(s) — dados pra conferência e exportação</div>'
+    + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Data Contratação</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Status</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Nome Completo</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Telefone</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">E-mail</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Praça</th></tr></thead>'
+    + '<tbody>'+linhas+'</tbody></table></div>'
+  + '</div>';
+}
+
 function renderPracas(C) {
   var porPraca = {};
   C.forEach(function(c){ var p=c.praca||'Sem praça'; porPraca[p]=(porPraca[p]||0)+1; });
@@ -674,13 +758,14 @@ function exportarCSV() {
   var C = window._C_ATUAL || [];
   if (!C.length) { alert('Nada para exportar com os filtros atuais.'); return; }
 
-  var hdr = ['Nome','Praça','Etapa','Hunter','Líder','Status Proposta','Pré-Work','Origem do Lead','Motivo Declínio','Data Entrada','Data Contratação','Data Início','Data Declínio'];
+  var hdr = ['Nome','Telefone','E-mail','Praça','Etapa','Hunter','Líder','Status Proposta','Status MOU','Pré-Work','Origem do Lead','Motivo Declínio','Data Entrada','Data Contratação','Data Início','Data Declínio'];
   var linhas = C.map(function(c){
     var temProposta = TELEFONES_COM_PROPOSTA[(c.telefone||'').replace(/\D/g,'')] ? 'Sim' : 'Não';
     var preWorkLbl = c.pre_work === 'validado' ? 'Validado pelo Líder' : (c.pre_work === 'em_pre_work' ? 'Em Pré-Work' : '');
+    var statusMou = (c.mou||'').toLowerCase() === 'assinado' ? 'Assinado ('+fmtDate(c.data_mou)+')' : 'Pendente';
     return [
-      c.nome||'', pracaLabel(c.praca)||'', (ETAPA_INFO[c.etapa]||{}).lbl || c.etapa || '',
-      c.hunter||'', c.lider||'', temProposta, preWorkLbl, c.origem_lead||'', c.motivo_declinio||'',
+      c.nome||'', c.telefone||'', c.email||'', pracaLabel(c.praca)||'', (ETAPA_INFO[c.etapa]||{}).lbl || c.etapa || '',
+      c.hunter||'', c.lider||'', temProposta, statusMou, preWorkLbl, c.origem_lead||'', c.motivo_declinio||'',
       fmtDate(c.data_entrada), fmtDate(c.data_contratacao), fmtDate(c.data_inicio), fmtDate(c.data_declinio)
     ].map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(';');
   });
