@@ -267,15 +267,15 @@ function render(C) {
   html += renderFunil(C);
   html += renderConversaoEtapas(C);
   html += renderVelocidade(C);
-  html += renderParados(C);
-  html += renderAuditoria(C);
   html += renderOrigemLeads(C);
   html += renderHunters(C);
+  html += renderParados(C);
   html += renderPreWork(C);
   html += renderCrescimento(C);
   html += renderNovosPorPraca(C);
   html += renderContratados(C);
   html += renderPracas(C);
+  html += renderAuditoria(C);
 
   document.getElementById('content-root').innerHTML = html;
   window._C_ATUAL = C; // pra reagir ao toggle Diário/Semanal/Mensal e à auditoria sem reprocessar tudo
@@ -287,18 +287,35 @@ function renderKPIs(C) {
   var declinados = C.filter(function(c){ return c.etapa === 'Declinou'; }).length;
   var contratados = C.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; }).length;
   var pctConv = C.length ? Math.round(contratados / C.length * 100) : 0;
+
   var seteDiasAtras = hojeMenosDias(7);
+  var catorzeDiasAtras = hojeMenosDias(14);
   var novosSemana = C.filter(function(c){ return c.data_entrada && c.data_entrada >= seteDiasAtras; }).length;
+  var novosSemanaAnterior = C.filter(function(c){ return c.data_entrada && c.data_entrada >= catorzeDiasAtras && c.data_entrada < seteDiasAtras; }).length;
+  var declinadosSemana = C.filter(function(c){ return c.data_declinio && c.data_declinio >= seteDiasAtras; }).length;
+  var declinadosSemanaAnterior = C.filter(function(c){ return c.data_declinio && c.data_declinio >= catorzeDiasAtras && c.data_declinio < seteDiasAtras; }).length;
 
   return '<div class="row cols-4">'
     + kpi('c1','No Funil (ativo)', ativos, 'exclui declinados')
-    + kpi('c4','Declinou', declinados, (C.length? Math.round(declinados/C.length*100):0)+'% do total')
+    + kpi('c4','Declinou', declinados, (C.length? Math.round(declinados/C.length*100):0)+'% do total', _tendencia(declinadosSemana, declinadosSemanaAnterior, true))
     + kpi('c2','Conversão', pctConv+'%', contratados+' aprovados/contratados de '+C.length)
-    + kpi('c3','Novos (7 dias)', novosSemana, 'cadastrados na última semana')
+    + kpi('c3','Novos (7 dias)', novosSemana, 'cadastrados na última semana', _tendencia(novosSemana, novosSemanaAnterior, false))
   + '</div>';
 }
-function kpi(cls,label,val,sub){
-  return '<div class="kpi '+cls+'"><div class="kpi-label">'+esc(label)+'</div><div class="kpi-value">'+val+'</div><div class="kpi-sub">'+esc(sub)+'</div></div>';
+// Compara a semana atual com a anterior. "inverteCor"=true significa que SUBIR é ruim (ex: Declinou) — inverte verde/vermelho.
+function _tendencia(atual, anterior, inverteCor) {
+  if (anterior === 0 && atual === 0) return '';
+  var delta = atual - anterior;
+  var bom = inverteCor ? delta <= 0 : delta >= 0;
+  var cor = delta === 0 ? '#7A82A8' : (bom ? '#16A34A' : '#DC2626');
+  var seta = delta > 0 ? '▲' : (delta < 0 ? '▼' : '＝');
+  var pctTxt = anterior > 0 ? ' ('+(delta>=0?'+':'')+Math.round(delta/anterior*100)+'%)' : '';
+  return '<span style="color:'+cor+';font-weight:700;">'+seta+' '+(delta>0?'+':'')+delta+pctTxt+'</span> vs semana anterior';
+}
+function kpi(cls,label,val,sub,tendencia){
+  return '<div class="kpi '+cls+'"><div class="kpi-label">'+esc(label)+'</div><div class="kpi-value">'+val+'</div><div class="kpi-sub">'+esc(sub)+'</div>'
+    + (tendencia ? '<div class="kpi-sub" style="margin-top:3px;">'+tendencia+'</div>' : '')
+  + '</div>';
 }
 
 function renderFunil(C) {
@@ -625,12 +642,21 @@ function renderHunters(C) {
 function renderPreWork(C) {
   // Só faz sentido pra quem já passou da Prospecção e ainda não está Trabalhando/Declinou
   var elegiveis = C.filter(function(c){ return ['Qualificação','Negociação','Contratação'].indexOf(c.etapa) > -1; });
-  var emPreWork = elegiveis.filter(function(c){ return c.pre_work === 'em_pre_work'; }).length;
+  var emPreWorkLista = elegiveis.filter(function(c){ return c.pre_work === 'em_pre_work'; });
+  var emPreWork = emPreWorkLista.length;
   var validado  = elegiveis.filter(function(c){ return c.pre_work === 'validado'; }).length;
   var naoIniciado = elegiveis.length - emPreWork - validado;
   var total = elegiveis.length || 1;
 
   var pEm = Math.round(emPreWork/total*100), pVal = Math.round(validado/total*100), pNao = 100-pEm-pVal;
+
+  // Não temos a data de quando o Pré-Work começou — só o status atual. Por isso, uso tempo desde
+  // o CADASTRO como proxy (mesma lógica de "Candidatos Parados"), deixando isso explícito no rótulo.
+  var diasEmPreWork = emPreWorkLista.map(function(c){ return diasEntre(c.data_entrada, null); }).filter(function(d){ return d !== null; });
+  var mediaPreWork = _mediaDias(diasEmPreWork);
+  var avisoTempo = mediaPreWork !== null
+    ? '<div style="font-size:11px;color:var(--t3);margin-top:10px;">⏱ Quem está "Em Pré-Work" hoje está cadastrado, em média, há <b style="color:var(--t1);">'+mediaPreWork+' dias</b> — não é o tempo exato em Pré-Work (não temos essa data específica), é o tempo desde o cadastro.</div>'
+    : '';
 
   return '<div class="card"><div class="card-title">Status de Pré-Work</div><div class="card-sub">'+elegiveis.length+' candidato(s) elegível(is) (Qualificação, Negociação ou Contratação)</div>'
     + '<div class="prework-bar">'
@@ -643,6 +669,7 @@ function renderPreWork(C) {
       + '<span><span class="dot" style="background:#B45309;"></span>Em Pré-Work · '+emPreWork+'</span>'
       + '<span><span class="dot" style="background:#16A34A;"></span>Validado pelo Líder · '+validado+'</span>'
     + '</div>'
+    + avisoTempo
   + '</div>';
 }
 
