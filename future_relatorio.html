@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Nexus · Blue3 Future</title>
+<title>Nexus · Relatório Blue3 Future · Blue3</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="config.js"></script>
 <style>
@@ -18,16 +18,23 @@
 body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:13px;min-height:100vh}
 
 /* ── COVER ── */
-.cover{background:var(--ink);min-height:112px;position:relative;overflow:hidden;padding:20px 28px 18px;display:flex;flex-direction:column;gap:14px}
-.cover-top{display:flex;align-items:center;gap:10px;position:relative;}
-.cover-row{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;position:relative;}
-.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
-.cgl{position:absolute;top:-80px;right:-40px;width:340px;height:340px;background:radial-gradient(ellipse,rgba(41,82,227,.18) 0%,transparent 65%);pointer-events:none}
-.cv-t{font-family:'Playfair Display',serif;font-size:21px;font-weight:600;color:#fff;letter-spacing:-.02em;position:relative}
-.cv-s{font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.12em;margin-top:3px;position:relative}
-.cv-actions{display:flex;gap:8px;position:relative}
-.cv-btn{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:8px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:inline-flex;align-items:center;gap:6px;}
-.cv-btn:hover{background:rgba(255,255,255,.18)}
+.cover{background:var(--ink);min-height:170px;position:relative;overflow:hidden;}
+.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:56px 56px;pointer-events:none;}
+.cgl{position:absolute;top:-100px;right:-60px;width:400px;height:400px;background:radial-gradient(ellipse,rgba(41,82,227,.2) 0%,transparent 65%);pointer-events:none;}
+.cgl2{position:absolute;bottom:-60px;left:180px;width:240px;height:240px;background:radial-gradient(ellipse,rgba(184,150,46,.07) 0%,transparent 65%);pointer-events:none;}
+.cover-in{position:relative;max-width:1320px;margin:0 auto;padding:28px 28px 24px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;}
+.bl{display:flex;flex-direction:column;gap:14px;}
+.cr{text-align:right;flex-shrink:0;}
+.rt{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:#fff;line-height:1.18;}
+.rp{font-size:11px;color:rgba(255,255,255,.45);margin-top:6px;letter-spacing:.02em;}
+.rc{display:inline-block;margin-top:10px;font-size:10px;font-weight:500;color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:4px 14px;letter-spacing:.05em;}
+.cover-rule{height:1px;background:linear-gradient(90deg,transparent,rgba(74,112,245,.4),rgba(184,150,46,.25),transparent);}
+
+/* ── Cabeçalho de seção numerado (mesmo padrão do Relatório Executivo) ── */
+.sh{display:flex;align-items:baseline;gap:11px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--rule);flex-wrap:wrap;}
+.sn{font-family:'Playfair Display',serif;font-size:11px;color:var(--t4);letter-spacing:.06em;}
+.st{font-size:14px;font-weight:600;color:var(--t1);letter-spacing:-.01em;}
+.ss{font-size:11px;color:var(--t3);margin-left:auto;letter-spacing:.02em;}
 
 /* ── FILTROS ── */
 .fbar{background:var(--surface);border-bottom:1px solid var(--rule);padding:10px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:60;}
@@ -130,53 +137,71 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   .linha-parado-extra{display:table-row !important;}
   #btn-parados-expandir{display:none !important;}
 
+  /* Cabeçalho de seção (número + título) nunca fica sozinho no fim de uma página, separado do conteúdo */
+  .sh{page-break-after:avoid;break-after:avoid;}
+
+  /* Cards com tabelas longas (Hunters, Parados, Contratados, Auditoria) podem atravessar
+     páginas normalmente — só a linha inteira é protegida (via "tr" acima), não o card inteiro */
+  .card.card-flow{page-break-inside:auto;break-inside:auto;}
+
   .content{padding-top:12px;}
+
+  body::after{
+    content:"CONFIDENCIAL \00B7 BLUE3 EXPANSÃO";
+    position:fixed;bottom:5mm;right:8mm;
+    font-size:7px;font-weight:700;letter-spacing:.12em;
+    color:rgba(0,0,0,.18);text-transform:uppercase;
+    font-family:'DM Sans',sans-serif;
+  }
 }
 </style>
 </head>
 <body>
 
 <div class="cover">
-  <div class="cg"></div><div class="cgl"></div>
-  <div class="cover-top">
-    <svg width="26" height="26" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-      <radialGradient id="ncg" cx="40%" cy="30%" r="70%"><stop offset="0%" stop-color="#7AA3FF"/><stop offset="100%" stop-color="#1A3BAD"/></radialGradient>
-      <line x1="30" y1="8" x2="46" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
-      <line x1="46" y1="17" x2="46" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
-      <line x1="46" y1="35" x2="30" y2="44" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
-      <line x1="30" y1="44" x2="14" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
-      <line x1="14" y1="35" x2="14" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
-      <line x1="14" y1="17" x2="30" y2="8" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
-      <line x1="30" y1="8" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
-      <line x1="46" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
-      <line x1="46" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
-      <line x1="30" y1="44" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
-      <line x1="14" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
-      <line x1="14" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
-      <circle cx="30" cy="8"  r="3" fill="#4A70F5"/>
-      <circle cx="46" cy="17" r="3" fill="#4A70F5"/>
-      <circle cx="46" cy="35" r="3" fill="#4A70F5"/>
-      <circle cx="30" cy="44" r="3" fill="#4A70F5"/>
-      <circle cx="14" cy="35" r="3" fill="#4A70F5"/>
-      <circle cx="14" cy="17" r="3" fill="#4A70F5"/>
-      <circle cx="30" cy="26" r="5.5" fill="url(#ncg)" stroke="#4A70F5" stroke-width="1.5"/>
-      <circle cx="28.5" cy="24.5" r="1.8" fill="white" fill-opacity=".45"/>
-    </svg>
-    <div>
-      <div style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.06em;font-family:'Playfair Display',serif;">NEXUS</div>
-      <div style="font-size:7px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#4A70F5;margin-top:1px;">Blue3 Expansão Suite</div>
+  <div class="cg"></div><div class="cgl"></div><div class="cgl2"></div>
+  <div class="cover-in">
+
+    <div class="bl">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <svg width="30" height="30" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+          <radialGradient id="ncg" cx="40%" cy="30%" r="70%"><stop offset="0%" stop-color="#7AA3FF"/><stop offset="100%" stop-color="#1A3BAD"/></radialGradient>
+          <line x1="30" y1="8" x2="46" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="46" y1="17" x2="46" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="46" y1="35" x2="30" y2="44" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="30" y1="44" x2="14" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="14" y1="35" x2="14" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="14" y1="17" x2="30" y2="8" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="30" y1="8" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="46" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="46" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="30" y1="44" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="14" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="14" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <circle cx="30" cy="8"  r="3" fill="#4A70F5"/>
+          <circle cx="46" cy="17" r="3" fill="#4A70F5"/>
+          <circle cx="46" cy="35" r="3" fill="#4A70F5"/>
+          <circle cx="30" cy="44" r="3" fill="#4A70F5"/>
+          <circle cx="14" cy="35" r="3" fill="#4A70F5"/>
+          <circle cx="14" cy="17" r="3" fill="#4A70F5"/>
+          <circle cx="30" cy="26" r="5.5" fill="url(#ncg)" stroke="#4A70F5" stroke-width="1.5"/>
+          <circle cx="28.5" cy="24.5" r="1.8" fill="white" fill-opacity=".45"/>
+        </svg>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:#fff;letter-spacing:.06em;font-family:'Playfair Display',serif;">NEXUS</div>
+          <div style="font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#4A70F5;margin-top:1px;">Blue3 Expansão Suite</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cr">
+      <div class="rt">Blue3 Future<br><span style="font-size:18px;">Funil de Candidatos</span></div>
+      <div class="rp">Acompanhamento pra apresentação à XP</div>
+      <div class="rc">Atualizado <span id="rt-atualizado">—</span> · Confidencial</div>
     </div>
   </div>
-  <div class="cover-row">
-    <div>
-      <div class="cv-t">Blue3 Future — Funil de Candidatos</div>
-      <div class="cv-s">Blue3 Expansão · acompanhamento pra apresentação à XP</div>
-    </div>
-    <div class="cv-actions">
-      <button class="cv-btn" onclick="exportarCSV()">⬇ Exportar CSV</button>
-      <button class="cv-btn" onclick="exportarPDF()">🖨 Exportar PDF</button>
-    </div>
-  </div>
+
+  <div class="cover-rule"></div>
 </div>
 
 <div class="fbar">
@@ -186,6 +211,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <div class="ms-panel" id="ms-panel-praca"></div>
   </div>
   <span class="f-count" id="f-count">—</span>
+  <div style="margin-left:auto;display:flex;gap:8px;">
+    <button onclick="exportarCSV()" style="background:#fff;border:1px solid var(--rule);color:var(--t2);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.02em;padding:8px 16px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:7px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar CSV
+    </button>
+    <button onclick="exportarPDF()" id="btn-export-pdf" style="background:var(--cobalt);border:none;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.04em;padding:8px 16px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:7px;" onmouseover="this.style.background='#162FA0'" onmouseout="this.style.background='var(--cobalt)'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar PDF
+    </button>
+  </div>
 </div>
 
 <div class="content" id="content-root">
@@ -238,6 +273,10 @@ var ETAPA_INFO = {
 var ETAPAS_ORDEM = ['Prospecção','Qualificação','Negociação','Contratação','Trabalhando','Declinou','Contato Futuro'];
 
 function carregar() {
+  var elAtualizado = document.getElementById('rt-atualizado');
+  if (elAtualizado) {
+    elAtualizado.textContent = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' }).replace('.', '');
+  }
   Promise.all([
     supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,email,mou,data_mou,data_entrada,data_contratacao,data_inicio,data_declinio,pre_work,origem_lead,motivo_declinio&limit=3000'),
     new Promise(function(resolve){
@@ -347,7 +386,8 @@ function renderKPIs(C) {
   var declinadosSemana = C.filter(function(c){ return c.data_declinio && c.data_declinio >= seteDiasAtras; }).length;
   var declinadosSemanaAnterior = C.filter(function(c){ return c.data_declinio && c.data_declinio >= catorzeDiasAtras && c.data_declinio < seteDiasAtras; }).length;
 
-  return '<div class="row cols-4">'
+  return '<div class="sh"><span class="sn">01</span><span class="st">Visão Geral do Funil</span></div>'
+    + '<div class="row cols-4">'
     + kpi('c1','No Funil (ativo)', ativos, 'exclui declinados')
     + kpi('c4','Declinou', declinados, (C.length? Math.round(declinados/C.length*100):0)+'% do total', _tendencia(declinadosSemana, declinadosSemanaAnterior, true))
     + kpi('c2','Conversão', pctConv+'%', contratados+' aprovados/contratados de '+C.length)
@@ -405,7 +445,7 @@ function renderFunil(C) {
     + '</div>';
   }).join('');
 
-  return '<div class="card"><div class="card-title">Funil por Etapa</div><div class="card-sub">Prospecção (R1) → Qualificação (R2) → Negociação (R3) → Aprovado e Contratado → Trabalhando</div>'+linhas+'</div>';
+  return '<div class="card"><div class="sh"><span class="sn">02</span><span class="st">Funil por Etapa</span><span class="ss">Prospecção (R1) → Qualificação (R2) → Negociação (R3) → Aprovado e Contratado → Trabalhando</span></div>'+linhas+'</div>';
 }
 
 function hojeMenosDias(n){ var d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
@@ -414,7 +454,7 @@ function renderNovosPorPraca(C) {
   var seteDiasAtras = hojeMenosDias(7);
   var novos = C.filter(function(c){ return c.data_entrada && c.data_entrada >= seteDiasAtras; });
   if (!novos.length) {
-    return '<div class="card"><div class="card-title">Novos Leads da Semana — por Praça</div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum lead novo nos últimos 7 dias com o filtro atual.</div></div>';
+    return '<div class="card"><div class="sh"><span class="sn">10</span><span class="st">Novos Leads da Semana — por Praça</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum lead novo nos últimos 7 dias com o filtro atual.</div></div>';
   }
   var porPraca = {};
   novos.forEach(function(c){ var p=c.praca||'Sem praça'; porPraca[p]=(porPraca[p]||0)+1; });
@@ -429,7 +469,7 @@ function renderNovosPorPraca(C) {
     return '<div class="praca-row"><div>'+esc(p==='Sem praça'?p:pracaLabel(p))+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;background:var(--am);"></div></div><div style="font-weight:700;">'+v+' <span style="font-weight:400;color:var(--t4);font-size:10px;">('+pct+'%)</span></div></div>';
   }).join('');
 
-  return '<div class="card"><div class="card-title">Novos Leads da Semana — por Praça</div><div class="card-sub">'+total+' cadastrados nos últimos 7 dias, segmentado por unidade</div>'+linhas+'</div>';
+  return '<div class="card"><div class="sh"><span class="sn">10</span><span class="st">Novos Leads da Semana — por Praça</span><span class="ss">'+total+' cadastrados nos últimos 7 dias, segmentado por unidade</span></div>'+linhas+'</div>';
 }
 
 // ── Taxa de conversão entre etapas ──
@@ -455,7 +495,7 @@ function renderConversaoEtapas(C) {
     + '</div>';
   }
 
-  return '<div class="card"><div class="card-title">Taxa de Conversão entre Etapas</div><div class="card-sub">% de quem alcançou a etapa e avançou pra próxima · não inclui "Declinou" (não sabemos de qual etapa vieram)</div>'+linhas+'</div>';
+  return '<div class="card"><div class="sh"><span class="sn">03</span><span class="st">Taxa de Conversão entre Etapas</span><span class="ss">% de quem alcançou a etapa e avançou pra próxima · não inclui "Declinou" (não sabemos de qual etapa vieram)</span></div>'+linhas+'</div>';
 }
 
 // ── Velocidade do funil ──
@@ -483,7 +523,7 @@ function renderVelocidade(C) {
   var m3 = _mediaDias(entradaAteDeclinio);
   var m4 = _mediaDias(entradaHoje);
 
-  return '<div class="card"><div class="card-title">Velocidade do Funil</div><div class="card-sub">Tempo médio, em dias corridos, entre marcos confiáveis do processo</div>'
+  return '<div class="card"><div class="sh"><span class="sn">04</span><span class="st">Velocidade do Funil</span><span class="ss">Tempo médio, em dias corridos, entre marcos confiáveis do processo</span></div>'
     + '<div class="row cols-4" style="margin-bottom:0;">'
       + _velCard('Entrada → Contratação', m1, entradaAteContratacao.length, '#1A3BAD')
       + _velCard('Contratação → Início', m2, contratacaoAteInicio.length, '#16A34A')
@@ -501,10 +541,9 @@ function _velCard(label, media, n, cor) {
 
 // ── Auditoria de Cadastro — quem falta qualificar ──
 function renderAuditoria(C) {
-  return '<div class="card">'
+  return '<div class="card card-flow">'
     + '<div class="card-head">'
-      + '<div><div class="card-title" style="margin-bottom:0;">Auditoria de Cadastro — Pendências</div>'
-        + '<div class="card-sub" style="margin-bottom:0;">Candidatos com informação faltando pra qualificar corretamente</div></div>'
+      + '<div class="sh" style="border-bottom:none;margin-bottom:0;padding-bottom:0;flex:1;"><span class="sn">13</span><span class="st">Auditoria de Cadastro — Pendências</span><span class="ss">Informação faltando pra qualificar</span></div>'
       + '<select id="sel-auditoria" class="sel-aud" onchange="atualizarAuditoria()">'
         + '<option value="motivo">🔎 Declinou sem motivo registrado</option>'
         + '<option value="origem">🔎 Sem origem do lead</option>'
@@ -562,7 +601,7 @@ function renderOrigemLeads(C) {
   }).join('');
   var linhaSemOrigem = semOrigem.length ? _linhaOrigem('Não informado', semOrigem) : '';
 
-  return '<div class="card"><div class="card-title">Origem dos Leads</div><div class="card-sub">De onde vêm os candidatos e taxa de sucesso de cada canal (aprovados+contratados ÷ total)</div>'
+  return '<div class="card"><div class="sh"><span class="sn">05</span><span class="st">Origem dos Leads</span><span class="ss">De onde vêm os candidatos e taxa de sucesso de cada canal (aprovados+contratados ÷ total)</span></div>'
     + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Origem</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Total</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Aprovados/Contrat.</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Declinou</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Em andamento</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Taxa de sucesso</th></tr></thead>'
     + '<tbody>' + linhas + linhaSemOrigem + '</tbody></table>'
@@ -598,7 +637,7 @@ function renderParados(C) {
     .sort(function(a,b){ return b.dias - a.dias; });
 
   if (!parados.length) {
-    return '<div class="card"><div class="card-title">Candidatos Parados</div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum candidato há mais de '+LIMITE_PARADO+' dias no funil sem avançar — funil saudável no filtro atual.</div></div>';
+    return '<div class="card"><div class="sh"><span class="sn">07</span><span class="st">Candidatos Parados</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum candidato há mais de '+LIMITE_PARADO+' dias no funil sem avançar — funil saudável no filtro atual.</div></div>';
   }
 
   function _linhaParado(x, oculta){
@@ -619,7 +658,7 @@ function renderParados(C) {
     ? '<button id="btn-parados-expandir" onclick="toggleParadosExpandir()" style="margin-top:10px;background:none;border:1px solid var(--rule);border-radius:7px;padding:6px 14px;font-size:11px;font-weight:700;color:var(--cobalt);cursor:pointer;font-family:\'DM Sans\',sans-serif;">Ver todos ('+restantes+' a mais) ▾</button>'
     : '';
 
-  return '<div class="card"><div class="card-title">Candidatos Parados</div><div class="card-sub">'+parados.length+' candidato(s) há '+LIMITE_PARADO+'+ dias cadastrados sem chegar em Trabalhando ou Declinou</div>'
+  return '<div class="card card-flow"><div class="sh"><span class="sn">07</span><span class="st">Candidatos Parados</span><span class="ss">'+parados.length+' candidato(s) há '+LIMITE_PARADO+'+ dias sem chegar em Trabalhando ou Declinou</span></div>'
     + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Candidato</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Praça</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Etapa Atual</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Dias parado</th></tr></thead>'
     + '<tbody>'+linhasVisiveis+linhasOcultas+'</tbody></table>'
@@ -658,7 +697,7 @@ function renderHunters(C) {
 
   var nomes = Object.keys(porHunter).sort(function(a,b){ return porHunter[b].total - porHunter[a].total; });
   if (!nomes.length) {
-    return '<div class="card"><div class="card-title">Performance por Hunter</div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum lead com hunter atribuído no filtro atual.</div></div>';
+    return '<div class="card"><div class="sh"><span class="sn">06</span><span class="st">Performance por Hunter</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum lead com hunter atribuído no filtro atual.</div></div>';
   }
 
   var linhas = nomes.map(function(h){
@@ -684,7 +723,7 @@ function renderHunters(C) {
     + '</tr>';
   }).join('');
 
-  return '<div class="card"><div class="card-title">Performance por Hunter</div><div class="card-sub">Volume, praças de atuação, distribuição por etapa e taxa de conversão (aprovados+contratados ÷ total)</div>'
+  return '<div class="card card-flow"><div class="sh"><span class="sn">06</span><span class="st">Performance por Hunter</span><span class="ss">Volume, praças, etapas e conversão (aprovados+contratados ÷ total)</span></div>'
     + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Hunter</th><th style="text-align:center;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Total</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Praças</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Distribuição por Etapa</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Conversão</th></tr></thead>'
     + '<tbody>'+linhas+'</tbody></table>'
@@ -710,7 +749,7 @@ function renderPreWork(C) {
     ? '<div style="font-size:11px;color:var(--t3);margin-top:10px;">⏱ Quem está "Em Pré-Work" hoje está cadastrado, em média, há <b style="color:var(--t1);">'+mediaPreWork+' dias</b> — não é o tempo exato em Pré-Work (não temos essa data específica), é o tempo desde o cadastro.</div>'
     : '';
 
-  return '<div class="card"><div class="card-title">Status de Pré-Work</div><div class="card-sub">'+elegiveis.length+' candidato(s) elegível(is) (Qualificação, Negociação ou Contratação)</div>'
+  return '<div class="card"><div class="sh"><span class="sn">08</span><span class="st">Status de Pré-Work</span><span class="ss">'+elegiveis.length+' candidato(s) elegível(is) (Qualificação, Negociação ou Contratação)</span></div>'
     + '<div class="prework-bar">'
       + (pNao>0?'<span style="width:'+pNao+'%;background:#A8B0CC;">'+(pNao>=8?naoIniciado:'')+'</span>':'')
       + (pEm>0?'<span style="width:'+pEm+'%;background:#B45309;">'+(pEm>=8?emPreWork:'')+'</span>':'')
@@ -750,7 +789,7 @@ function renderCrescimento(C) {
   var visiveis = chaves.slice(-JANELA);
 
   if (!visiveis.length) {
-    return '<div class="card"><div class="card-title">Crescimento da Base</div><div style="padding:16px;text-align:center;color:var(--t4);font-size:12px;">Sem datas de cadastro suficientes.</div></div>';
+    return '<div class="card"><div class="sh"><span class="sn">09</span><span class="st">Crescimento da Base</span></div><div style="padding:16px;text-align:center;color:var(--t4);font-size:12px;">Sem datas de cadastro suficientes.</div></div>';
   }
 
   var maxVal = Math.max.apply(null, visiveis.map(function(k){ return buckets[k]; }));
@@ -775,8 +814,7 @@ function renderCrescimento(C) {
   var totalJanela = visiveis.reduce(function(s,k){ return s+buckets[k]; },0);
 
   return '<div class="card">'
-    + '<div class="card-head"><div><div class="card-title" style="margin-bottom:0;">Crescimento da Base</div>'
-      + '<div class="card-sub" style="margin-bottom:0;">Novos cadastros · '+totalJanela+' no período exibido</div></div>'
+    + '<div class="card-head"><div class="sh" style="border-bottom:none;margin-bottom:0;padding-bottom:0;flex:1;"><span class="sn">09</span><span class="st">Crescimento da Base</span><span class="ss">Novos cadastros · '+totalJanela+' no período exibido</span></div>'
       + '<div class="seg">'
         + '<button class="'+(_MODO_CRESC==='dia'?'on':'')+'" onclick="toggleModoCresc(\'dia\')">Diário</button>'
         + '<button class="'+(_MODO_CRESC==='semana'?'on':'')+'" onclick="toggleModoCresc(\'semana\')">Semanal</button>'
@@ -792,7 +830,7 @@ function renderContratados(C) {
     .sort(function(a,b){ return (b.data_contratacao||'').localeCompare(a.data_contratacao||''); });
 
   if (!contratados.length) {
-    return '<div class="card"><div class="card-title">Candidatos Contratados</div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum candidato aprovado/contratado no filtro atual.</div></div>';
+    return '<div class="card"><div class="sh"><span class="sn">11</span><span class="st">Candidatos Contratados</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum candidato aprovado/contratado no filtro atual.</div></div>';
   }
 
   var linhas = contratados.map(function(c){
@@ -810,7 +848,7 @@ function renderContratados(C) {
     + '</tr>';
   }).join('');
 
-  return '<div class="card"><div class="card-title">Candidatos Contratados</div><div class="card-sub">'+contratados.length+' candidato(s) aprovado(s)/contratado(s) — dados pra conferência e exportação</div>'
+  return '<div class="card card-flow"><div class="sh"><span class="sn">11</span><span class="st">Candidatos Contratados</span><span class="ss">'+contratados.length+' candidato(s) — dados pra conferência e exportação</span></div>'
     + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Data Contratação</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Status</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Nome Completo</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Telefone</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">E-mail</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Praça</th></tr></thead>'
     + '<tbody>'+linhas+'</tbody></table></div>'
@@ -829,7 +867,7 @@ function renderPracas(C) {
     return '<div class="praca-row"><div>'+esc(p==='Sem praça'?p:pracaLabel(p))+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;"></div></div><div style="font-weight:700;">'+v+'</div></div>';
   }).join('');
 
-  return '<div class="card"><div class="card-title">Distribuição por Praça</div>'+linhas+'</div>';
+  return '<div class="card"><div class="sh"><span class="sn">12</span><span class="st">Distribuição por Praça</span></div>'+linhas+'</div>';
 }
 
 // ════════ EXPORT PDF ════════
