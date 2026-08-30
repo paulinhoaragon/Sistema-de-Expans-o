@@ -18,7 +18,9 @@
 body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:13px;min-height:100vh}
 
 /* ── COVER ── */
-.cover{background:var(--ink);min-height:96px;position:relative;overflow:hidden;padding:24px 28px 18px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px}
+.cover{background:var(--ink);min-height:112px;position:relative;overflow:hidden;padding:20px 28px 18px;display:flex;flex-direction:column;gap:14px}
+.cover-top{display:flex;align-items:center;gap:10px;position:relative;}
+.cover-row{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;position:relative;}
 .cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
 .cgl{position:absolute;top:-80px;right:-40px;width:340px;height:340px;background:radial-gradient(ellipse,rgba(41,82,227,.18) 0%,transparent 65%);pointer-events:none}
 .cv-t{font-family:'Playfair Display',serif;font-size:21px;font-weight:600;color:#fff;letter-spacing:-.02em;position:relative}
@@ -107,9 +109,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .empty-icon{font-size:36px;margin-bottom:10px}
 
 @media print{
+  @page { size: A4 portrait; margin: 10mm 8mm; }
   .fbar,.cv-actions{display:none !important;}
   body{background:#fff;}
   .card,.kpi{box-shadow:none;border:1px solid #E2E5F0;}
+
+  /* Evita cortar cards, KPIs e linhas de gráfico no meio, entre uma página e outra */
+  .cover{page-break-after:avoid;break-after:avoid;}
+  .card{page-break-inside:avoid;break-inside:avoid;}
+  .row{page-break-inside:avoid;break-inside:avoid;}
+  .kpi{page-break-inside:avoid;break-inside:avoid;}
+  .funil-row,.cresc-row,.praca-row{page-break-inside:avoid;break-inside:avoid;}
+
+  /* Tabelas: cabeçalho repete em cada página, mas cada linha continua inteira */
+  table{page-break-inside:auto;}
+  thead{display:table-header-group;}
+  tr{page-break-inside:avoid;break-inside:avoid;}
+
+  /* No PDF, sempre mostra a lista completa de "Candidatos Parados" (ignora o "Ver 10 primeiros" da tela) */
+  .linha-parado-extra{display:table-row !important;}
+  #btn-parados-expandir{display:none !important;}
+
+  .content{padding-top:12px;}
 }
 </style>
 </head>
@@ -117,13 +138,44 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
 <div class="cover">
   <div class="cg"></div><div class="cgl"></div>
-  <div>
-    <div class="cv-t">Blue3 Future — Funil de Candidatos</div>
-    <div class="cv-s">Blue3 Expansão · acompanhamento pra apresentação à XP</div>
+  <div class="cover-top">
+    <svg width="26" height="26" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+      <radialGradient id="ncg" cx="40%" cy="30%" r="70%"><stop offset="0%" stop-color="#7AA3FF"/><stop offset="100%" stop-color="#1A3BAD"/></radialGradient>
+      <line x1="30" y1="8" x2="46" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+      <line x1="46" y1="17" x2="46" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+      <line x1="46" y1="35" x2="30" y2="44" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+      <line x1="30" y1="44" x2="14" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+      <line x1="14" y1="35" x2="14" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+      <line x1="14" y1="17" x2="30" y2="8" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+      <line x1="30" y1="8" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+      <line x1="46" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+      <line x1="46" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+      <line x1="30" y1="44" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+      <line x1="14" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+      <line x1="14" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+      <circle cx="30" cy="8"  r="3" fill="#4A70F5"/>
+      <circle cx="46" cy="17" r="3" fill="#4A70F5"/>
+      <circle cx="46" cy="35" r="3" fill="#4A70F5"/>
+      <circle cx="30" cy="44" r="3" fill="#4A70F5"/>
+      <circle cx="14" cy="35" r="3" fill="#4A70F5"/>
+      <circle cx="14" cy="17" r="3" fill="#4A70F5"/>
+      <circle cx="30" cy="26" r="5.5" fill="url(#ncg)" stroke="#4A70F5" stroke-width="1.5"/>
+      <circle cx="28.5" cy="24.5" r="1.8" fill="white" fill-opacity=".45"/>
+    </svg>
+    <div>
+      <div style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.06em;font-family:'Playfair Display',serif;">NEXUS</div>
+      <div style="font-size:7px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#4A70F5;margin-top:1px;">Blue3 Expansão Suite</div>
+    </div>
   </div>
-  <div class="cv-actions">
-    <button class="cv-btn" onclick="exportarCSV()">⬇ Exportar CSV</button>
-    <button class="cv-btn" onclick="window.print()">🖨 Exportar PDF</button>
+  <div class="cover-row">
+    <div>
+      <div class="cv-t">Blue3 Future — Funil de Candidatos</div>
+      <div class="cv-s">Blue3 Expansão · acompanhamento pra apresentação à XP</div>
+    </div>
+    <div class="cv-actions">
+      <button class="cv-btn" onclick="exportarCSV()">⬇ Exportar CSV</button>
+      <button class="cv-btn" onclick="exportarPDF()">🖨 Exportar PDF</button>
+    </div>
   </div>
 </div>
 
@@ -778,6 +830,14 @@ function renderPracas(C) {
   }).join('');
 
   return '<div class="card"><div class="card-title">Distribuição por Praça</div>'+linhas+'</div>';
+}
+
+// ════════ EXPORT PDF ════════
+// Como o relatório é montado inteiramente em HTML/CSS (sem <canvas>), a impressão
+// nativa do navegador já é suficiente — o CSS de @media print cuida das quebras
+// de página. Essa função existe pra manter o mesmo padrão dos outros relatórios.
+function exportarPDF() {
+  window.print();
 }
 
 // ════════ EXPORT CSV ════════
