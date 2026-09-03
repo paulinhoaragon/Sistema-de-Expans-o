@@ -302,6 +302,18 @@ body{
 }
 .sb-item:hover{background:rgba(74,112,245,.12);color:rgba(255,255,255,.85);}
 .sb-item.active{background:rgba(26,59,173,.35);color:#fff;}
+.sb-item-guerra{
+  background:
+    linear-gradient(90deg,rgba(20,22,15,.75),rgba(20,22,15,.55)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='60' viewBox='0 0 140 60'%3E%3Crect width='140' height='60' fill='%23181a10'/%3E%3Cg fill='%233a3f26'%3E%3Cellipse cx='20' cy='12' rx='26' ry='16' transform='rotate(-18 20 12)'/%3E%3Cellipse cx='95' cy='30' rx='30' ry='18' transform='rotate(14 95 30)'/%3E%3Cellipse cx='50' cy='48' rx='28' ry='16' transform='rotate(24 50 48)'/%3E%3C/g%3E%3Cg fill='%235a5738'%3E%3Cellipse cx='120' cy='10' rx='18' ry='11' transform='rotate(9 120 10)'/%3E%3Cellipse cx='10' cy='42' rx='20' ry='12' transform='rotate(-20 10 42)'/%3E%3C/g%3E%3C/svg%3E") !important;
+  background-size:cover, 140px 60px !important;
+  border:1px solid rgba(201,162,39,.5) !important;
+  color:#E0BC42 !important;
+  font-weight:700 !important;
+  letter-spacing:.02em;
+}
+.sb-item-guerra:hover{border-color:#E0BC42 !important;color:#F2DA80 !important;}
+.sb-item-guerra.active{background:linear-gradient(90deg,rgba(201,162,39,.3),rgba(201,162,39,.15)) !important;border-color:#E0BC42 !important;color:#fff !important;}
 .sb-item.active::before{
   content:'';position:absolute;left:0;top:20%;bottom:20%;
   width:3px;border-radius:0 3px 3px 0;background:#4A70F5;
@@ -575,6 +587,14 @@ body{
       <a class="sb-item" onclick="navTo('future_relatorio.html','Blue3 Future')" href="#">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>
         <span class="sb-label">Blue3 Future</span>
+      </a>
+      <a class="sb-item" onclick="navTo('plano_expansao.html','Plano de Expansão')" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-3-3L4 16.5"/></svg>
+        <span class="sb-label">Plano de Expansão</span>
+      </a>
+      <a class="sb-item sb-item-guerra" onclick="navTo('sala_de_guerra.html','Sala de Guerra')" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg>
+        <span class="sb-label">Sala de Guerra</span>
       </a>
       <a class="sb-item" onclick="navTo('hunters.html','Performance Hunters')" href="#">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="2.5" stroke-dasharray="2 1"/><path d="M3 20c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke-linecap="round"/><path d="M17 14c1.657 0 3 1.343 3 3v1" stroke-linecap="round" stroke-dasharray="2 1"/></svg>
