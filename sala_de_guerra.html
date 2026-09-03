@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nexus · Sala de Guerra · Blue3</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --wbg:#14160F;--wpanel:#1B1E14;--wpanel2:#20241A;--wrule:#343A26;
+  --wgold:#C9A227;--wgold-br:#E0BC42;--wgreen:#8A9A5B;--wred:#B33A3A;--wgreen-ok:#6E9A5C;--wblue:#6E8A9A;
+  --wt1:#EDEAD9;--wt2:#B7B49E;--wt3:#82806E;--wt4:#565446;
+  --r10:10px;--r14:14px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--wbg);color:var(--wt1);font-size:13px;min-height:100vh;
+  background-image:radial-gradient(circle at 15% 8%, rgba(201,162,39,.05) 0%, transparent 40%), radial-gradient(circle at 85% 92%, rgba(138,154,91,.06) 0%, transparent 45%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='480' viewBox='0 0 480 480'%3E%3Crect width='480' height='480' fill='%23181a10'/%3E%3Cg fill='%233a3f26'%3E%3Cellipse cx='75' cy='55' rx='72' ry='46' transform='rotate(-18 75 55)'/%3E%3Cellipse cx='340' cy='115' rx='92' ry='56' transform='rotate(14 340 115)'/%3E%3Cellipse cx='175' cy='270' rx='100' ry='62' transform='rotate(28 175 270)'/%3E%3Cellipse cx='410' cy='370' rx='76' ry='50' transform='rotate(-9 410 370)'/%3E%3Cellipse cx='20' cy='450' rx='60' ry='40' transform='rotate(22 20 450)'/%3E%3C/g%3E%3Cg fill='%235a5738'%3E%3Cellipse cx='245' cy='35' rx='56' ry='36' transform='rotate(9 245 35)'/%3E%3Cellipse cx='55' cy='210' rx='66' ry='42' transform='rotate(-24 55 210)'/%3E%3Cellipse cx='395' cy='245' rx='60' ry='38' transform='rotate(19 395 245)'/%3E%3Cellipse cx='150' cy='410' rx='70' ry='46' transform='rotate(-14 150 410)'/%3E%3Cellipse cx='460' cy='40' rx='40' ry='26' transform='rotate(30 460 40)'/%3E%3C/g%3E%3Cg fill='%23272a18'%3E%3Cellipse cx='25' cy='370' rx='48' ry='30' transform='rotate(33 25 370)'/%3E%3Cellipse cx='295' cy='325' rx='54' ry='34' transform='rotate(-28 295 325)'/%3E%3Cellipse cx='450' cy='170' rx='46' ry='30' transform='rotate(16 450 170)'/%3E%3Cellipse cx='210' cy='150' rx='50' ry='32' transform='rotate(-20 210 150)'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat:no-repeat,no-repeat,repeat;
+  background-size:auto,auto,480px 480px;
+  background-attachment:fixed,fixed,fixed;
+}
+
+/* ── COVER ── */
+.cover{position:relative;overflow:hidden;border-bottom:2px solid var(--wgold);background:
+  linear-gradient(180deg,rgba(15,17,9,.88),rgba(23,26,16,.9)),
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='480' viewBox='0 0 480 480'%3E%3Crect width='480' height='480' fill='%23181a10'/%3E%3Cg fill='%233a3f26'%3E%3Cellipse cx='75' cy='55' rx='72' ry='46' transform='rotate(-18 75 55)'/%3E%3Cellipse cx='340' cy='115' rx='92' ry='56' transform='rotate(14 340 115)'/%3E%3Cellipse cx='175' cy='270' rx='100' ry='62' transform='rotate(28 175 270)'/%3E%3Cellipse cx='410' cy='370' rx='76' ry='50' transform='rotate(-9 410 370)'/%3E%3Cellipse cx='20' cy='450' rx='60' ry='40' transform='rotate(22 20 450)'/%3E%3C/g%3E%3Cg fill='%235a5738'%3E%3Cellipse cx='245' cy='35' rx='56' ry='36' transform='rotate(9 245 35)'/%3E%3Cellipse cx='55' cy='210' rx='66' ry='42' transform='rotate(-24 55 210)'/%3E%3Cellipse cx='395' cy='245' rx='60' ry='38' transform='rotate(19 395 245)'/%3E%3Cellipse cx='150' cy='410' rx='70' ry='46' transform='rotate(-14 150 410)'/%3E%3Cellipse cx='460' cy='40' rx='40' ry='26' transform='rotate(30 460 40)'/%3E%3C/g%3E%3Cg fill='%23272a18'%3E%3Cellipse cx='25' cy='370' rx='48' ry='30' transform='rotate(33 25 370)'/%3E%3Cellipse cx='295' cy='325' rx='54' ry='34' transform='rotate(-28 295 325)'/%3E%3Cellipse cx='450' cy='170' rx='46' ry='30' transform='rotate(16 450 170)'/%3E%3Cellipse cx='210' cy='150' rx='50' ry='32' transform='rotate(-20 210 150)'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat:no-repeat,repeat;
+  background-size:100% 100%,340px 340px;
+}
+.cover-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(201,162,39,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(201,162,39,.035) 1px,transparent 1px);background-size:34px 34px;pointer-events:none;}
+.cover-in{position:relative;max-width:1320px;margin:0 auto;padding:28px 28px 0;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;}
+.badge-op{display:inline-flex;align-items:center;gap:7px;font-family:'Oswald',sans-serif;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--wgold);border:1px solid var(--wgold);border-radius:3px;padding:5px 12px;margin-bottom:12px;}
+.badge-op .dot{width:6px;height:6px;border-radius:50%;background:var(--wgold);box-shadow:0 0 6px var(--wgold);animation:pulse 1.8s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.cv-t{font-family:'Oswald',sans-serif;font-size:32px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--wt1);line-height:1;}
+.cv-t span{color:var(--wgold);}
+.cv-s{font-size:11px;color:var(--wt3);margin-top:8px;letter-spacing:.03em;}
+.countdown{text-align:right;}
+.countdown-n{font-family:'Oswald',sans-serif;font-size:34px;font-weight:700;color:var(--wgold);line-height:1;}
+.countdown-l{font-size:9px;color:var(--wt3);text-transform:uppercase;letter-spacing:.12em;margin-top:4px;}
+
+/* ── ABAS ── */
+.tabbar{position:relative;max-width:1320px;margin:0 auto;padding:16px 28px 0;display:flex;gap:6px;}
+.tab-btn{background:transparent;border:none;border-bottom:3px solid transparent;color:var(--wt3);font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:10px 18px;cursor:pointer;transition:all .15s;}
+.tab-btn:hover{color:var(--wt1);}
+.tab-btn.on{color:var(--wgold);border-bottom-color:var(--wgold);}
+
+/* ── FILTROS ── */
+.fbar{background:var(--wpanel);border-bottom:1px solid var(--wrule);padding:10px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:60;}
+.fbar-lbl{font-family:'Oswald',sans-serif;font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--wt3);}
+.btn-w{background:var(--wgold);border:none;color:#14160F;font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 16px;border-radius:5px;cursor:pointer;}
+.btn-w:hover{background:var(--wgold-br);}
+.btn-w2{background:transparent;border:1px solid var(--wrule);color:var(--wt2);font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 16px;border-radius:5px;cursor:pointer;}
+
+/* ── CONTEÚDO ── */
+.content{padding:22px 24px 60px;max-width:1320px;margin:0 auto}
+.sh{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--wrule);flex-wrap:wrap;}
+.sn{font-family:'Oswald',sans-serif;font-size:11px;color:var(--wgold);letter-spacing:.1em;}
+.st{font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;color:var(--wt1);letter-spacing:.04em;text-transform:uppercase;}
+.ss{font-size:11px;color:var(--wt3);margin-left:auto;letter-spacing:.02em;}
+
+.row{display:grid;gap:14px;margin-bottom:16px;}
+.cols-5{grid-template-columns:repeat(5,1fr)}
+.cols-4{grid-template-columns:repeat(4,1fr)}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+@media (max-width:1100px){.cols-5{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:900px){.cols-4,.cols-3{grid-template-columns:repeat(2,1fr)}}
+
+.kpi{background:var(--wpanel);border-radius:var(--r10);padding:14px 15px;border:1px solid var(--wrule);border-top:3px solid var(--wrule);}
+.kpi.ok{border-top-color:var(--wgreen-ok)}
+.kpi.warn{border-top-color:var(--wgold)}
+.kpi.bad{border-top-color:var(--wred)}
+.kpi.info{border-top-color:var(--wblue)}
+.kpi-label{font-family:'Oswald',sans-serif;font-size:9px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--wt3);margin-bottom:6px}
+.kpi-value{font-family:'Oswald',sans-serif;font-size:25px;font-weight:700;color:var(--wt1);line-height:1}
+.kpi-sub{font-size:9px;color:var(--wt4);margin-top:5px}
+
+.card{background:var(--wpanel);border:1px solid var(--wrule);border-radius:var(--r14);padding:20px 22px;margin-bottom:16px;}
+.nota{font-size:10px;color:var(--wt3);background:var(--wpanel2);border-left:2px solid var(--wgold);border-radius:4px;padding:9px 13px;margin-top:12px;line-height:1.6;}
+.nota.blue{border-left-color:var(--wblue);}
+.nota b{color:var(--wt2);}
+
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;padding:7px 8px;font-family:'Oswald',sans-serif;font-size:9px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--wt3);border-bottom:1px solid var(--wrule);white-space:nowrap;}
+td{padding:9px 8px;border-bottom:1px solid var(--wrule);color:var(--wt2);}
+tr:last-child td{border-bottom:none;}
+td b, td strong{color:var(--wt1);}
+
+.bar-track{background:var(--wbg);border-radius:5px;height:16px;position:relative;overflow:hidden;border:1px solid var(--wrule);}
+.bar-fill{height:100%;border-radius:4px;}
+.bar-fill.gold{background:linear-gradient(90deg,var(--wgold),var(--wgold-br));}
+.bar-fill.green{background:var(--wgreen-ok);}
+.bar-fill.blue{background:var(--wblue);}
+.bar-fill.red{background:var(--wred);}
+
+.tag-ok{font-family:'Oswald',sans-serif;font-size:8px;font-weight:600;padding:2px 8px;border-radius:3px;background:rgba(110,154,92,.18);color:var(--wgreen-ok);text-transform:uppercase;letter-spacing:.06em;border:1px solid rgba(110,154,92,.3);}
+.tag-manual{font-family:'Oswald',sans-serif;font-size:8px;font-weight:600;padding:2px 8px;border-radius:3px;background:rgba(201,162,39,.15);color:var(--wgold);text-transform:uppercase;letter-spacing:.06em;border:1px solid rgba(201,162,39,.3);}
+
+.empty{text-align:center;padding:60px 20px;color:var(--wt3)}
+
+@media print{
+  @page { size: A4 portrait; margin: 10mm 8mm; }
+  .fbar,.tabbar{display:none !important;}
+  body{background:#14160F;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .cover{page-break-after:avoid;break-after:avoid;}
+  .sh{page-break-after:avoid;break-after:avoid;}
+  .kpi,.row,.card{page-break-inside:avoid;break-inside:avoid;}
+  table{page-break-inside:auto;} thead{display:table-header-group;} tr{page-break-inside:avoid;break-inside:avoid;}
+}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-grid"></div>
+  <div class="cover-in">
+    <div>
+      <div class="badge-op"><span class="dot"></span>Operação em Curso</div>
+      <div class="cv-t">Sala de <span>Guerra</span></div>
+      <div class="cv-s">Blue3 Expansão · Plano de Batalha 2026 — 2028 · Comando de Contratações</div>
+    </div>
+    <div class="countdown">
+      <div class="countdown-n" id="cd-dias">—</div>
+      <div class="countdown-l" id="cd-label">Dias até 31/12/2026</div>
+    </div>
+  </div>
+  <div class="tabbar" id="tabbar">
+    <button class="tab-btn on" data-tab="2026" onclick="mudarAba('2026')">2026 · 2º Semestre</button>
+    <button class="tab-btn" data-tab="2027" onclick="mudarAba('2027')">2027</button>
+    <button class="tab-btn" data-tab="2028" onclick="mudarAba('2028')">2028</button>
+  </div>
+</div>
+
+<div class="fbar">
+  <span class="fbar-lbl" id="fbar-periodo">2º Semestre 2026 · 01/07 a 31/12</span>
+  <button class="btn-w2" onclick="abrirEdicaoPremissas()">⚙ Editar Premissas</button>
+  <span style="font-size:10px;color:var(--wt4);margin-left:auto;">🔎 dados ao vivo, direto do CRM</span>
+  <button class="btn-w" onclick="window.print()">🖨 Exportar PDF</button>
+</div>
+
+<div class="content" id="content-root">
+  <div class="empty">⏳ Carregando inteligência de campo...</div>
+</div>
+
+<script>
+var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+
+function supaGet(path) {
+  return fetch(SUPA_URL+'/rest/v1/'+path, { headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY }, cache:'no-store' })
+    .then(function(r){ return r.ok ? r.json() : []; });
+}
+function supaPatch(path, body) {
+  return fetch(SUPA_URL+'/rest/v1/'+path, {
+    method:'PATCH', headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY, 'Content-Type':'application/json', 'Prefer':'return=representation' },
+    cache:'no-store', body: JSON.stringify(body)
+  }).then(function(r){ return r.json(); });
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function norm(s){ return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function cidadeDe(praca){ return norm((praca||'').replace(/^Blue3\s*[-–]\s*/i,'')); }
+
+var TODOS = [];
+var PARAMS = null;
+var ABA_ATUAL = '2026';
+
+// ── Definições de canal/frente ──
+function contratadoBruto(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; } // assinou, independente de já ter começado
+function trabalhandoLiquido(c){ return c.etapa === 'Trabalhando'; } // já está de fato atuando — número que impacta o business plan
+function ehGerenteBanco(c){ return c.vaga === 'Assessor' && (c.estrategico||'').toLowerCase() !== 'sim'; }
+function ehAlsXP(c){ return c.vaga === 'Assessor' && (c.estrategico||'').toLowerCase() === 'sim'; }
+function ehFuture(c){ return c.vaga === 'Future'; }
+function ehVSB(c){ return c.vaga === 'Vem ser Blue'; }
+function ehMA(c){ return c.vaga === 'M&A'; }
+
+var PRACAS_ALVO_ASSESSORIA = ['sao paulo','rio de janeiro','goiania','uberlandia','campinas','ribeirao preto'];
+
+function carregar() {
+  Promise.all([
+    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,estrategico,hunter,lider,data_entrada,data_contratacao,data_inicio,data_declinio,piso,periodo,upfront,trigger1_tri_val,trigger1_val,trigger2_val,trigger3_val,trigger4_val,coparticipacao,auc_mm&limit=5000'),
+    supaGet('guerra_parametros?id=eq.1&limit=1')
+  ]).then(function(res){
+    TODOS = res[0] || [];
+    PARAMS = (res[1] && res[1][0]) ? res[1][0] : {
+      meta_h2_assessoria:60, meta_h2_future_vsb:60,
+      meta_36m_gerentes_banco:450, meta_36m_als_xp:80, meta_36m_future:225, meta_36m_als_fusao:146,
+      turnover_pct:20, total_liquido_informado:743, tamanho_time_atual:0, ma_headcount_manual:0,
+      meta_2026_total:121, meta_2027_total:390, meta_2028_total:390, caixa_prevista_total:-142100000
+    };
+    if (!res[1] || !res[1][0]) {
+      document.getElementById('content-root').insertAdjacentHTML('afterbegin',
+        '<div class="nota" style="margin-bottom:16px;">⚠ Tabela <b>guerra_parametros</b> não encontrada ou vazia — rode o <b>guerra_schema.sql</b> no Supabase pra habilitar edição de premissas. Por enquanto, usando valores padrão.</div>');
+    }
+    mudarAba('2026');
+  }).catch(function(err){
+    document.getElementById('content-root').innerHTML = '<div class="empty">⚠️ Erro ao carregar: '+esc(JSON.stringify(err))+'</div>';
+  });
+}
+
+function mudarAba(ano) {
+  ABA_ATUAL = ano;
+  _expandCounter = 0;
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-tab')===ano); });
+  if (!TODOS.length && TODOS.length !== 0) return;
+  atualizarCountdown(ano);
+  if (ano === '2026') {
+    document.getElementById('fbar-periodo').textContent = '2º Semestre 2026 · 01/07 a 31/12';
+    document.getElementById('content-root').innerHTML = renderAba2026(TODOS);
+  } else {
+    document.getElementById('fbar-periodo').textContent = ano + ' — Ano Cheio (1º e 2º Semestre)';
+    document.getElementById('content-root').innerHTML = renderAbaAno(TODOS, parseInt(ano,10));
+  }
+}
+
+function atualizarCountdown(ano) {
+  var fimRef = ano==='2026' ? new Date(2026,11,31) : new Date(parseInt(ano,10),11,31);
+  var hoje = new Date(); hoje.setHours(0,0,0,0);
+  var dias = Math.max(0, Math.ceil((fimRef - hoje) / 86400000));
+  document.getElementById('cd-dias').textContent = dias;
+  document.getElementById('cd-label').textContent = 'Dias até 31/12/'+(ano==='2026'?2026:ano);
+}
+
+// ════════ Cálculo central por período ════════
+// Contratado (bruto) = assinou (etapa Contratação/Trabalhando) com data_contratacao no período.
+// Trabalhando (líquido) = já está atuando (etapa Trabalhando) com data_inicio no período — é o número
+// que realmente pesa no business plan, não o de assinatura.
+function calcularPeriodo(C, ini, fim, filtroExtra) {
+  var f = filtroExtra || function(){ return true; };
+  var contratados = C.filter(function(c){ return f(c) && contratadoBruto(c) && c.data_contratacao && c.data_contratacao>=ini && c.data_contratacao<=fim; });
+  var trabalhando = C.filter(function(c){ return f(c) && trabalhandoLiquido(c) && c.data_inicio && c.data_inicio>=ini && c.data_inicio<=fim; });
+  var declinados = C.filter(function(c){ return f(c) && c.etapa==='Declinou' && c.data_declinio && c.data_declinio>=ini && c.data_declinio<=fim; });
+
+  var pendentesInicio = contratados.filter(function(c){ return !c.data_inicio || c.data_inicio > fim; });
+  var carryIn = trabalhando.filter(function(c){ return c.data_contratacao && c.data_contratacao < ini; });
+  var mesmoPeriodo = trabalhando.filter(function(c){ return c.data_contratacao && c.data_contratacao>=ini && c.data_contratacao<=fim; });
+
+  return {
+    contratados: contratados, trabalhando: trabalhando, declinados: declinados,
+    pendentesInicio: pendentesInicio, carryIn: carryIn, mesmoPeriodo: mesmoPeriodo
+  };
+}
+
+function _pct(atual, meta) {
+  var p = meta ? Math.min(999, Math.round(atual/meta*100)) : 0;
+  return { atingido: p, faltante: Math.max(0, 100-p) };
+}
+function _pctCols(atual, meta) {
+  var p = _pct(atual, meta);
+  return '<td>'+p.atingido+'%</td><td style="color:'+(p.faltante>0?'var(--wgold)':'var(--wt4)')+';">'+p.faltante+'%</td>';
+}
+function _barra(val, meta, cor){ var p = meta?Math.min(100,Math.round(val/meta*100)):0; return '<div class="bar-track"><div class="bar-fill '+cor+'" style="width:'+p+'%;"></div></div>'; }
+function kpi(cls,label,val,sub){ return '<div class="kpi '+cls+'"><div class="kpi-label">'+esc(label)+'</div><div class="kpi-value">'+val+'</div><div class="kpi-sub">'+esc(sub)+'</div></div>'; }
+function fmtR(v){
+  var neg = v<0; v = Math.abs(v);
+  var txt = v>=1e6 ? (v/1e6).toFixed(1).replace('.',',')+'mi' : v>=1e3 ? (v/1e3).toFixed(0)+'k' : v.toFixed(0);
+  return (neg?'-':'')+'R$ '+txt;
+}
+// Total Comp (bruto) = piso×período + upfront + todos os gatilhos (mesma fórmula do CRM/Simulador de Propostas).
+// Total Líquido = Comp − Coparticipação (o que efetivamente sai do caixa da Blue3, descontando reembolso do parceiro).
+function custoDoCandidato(c) {
+  var piso = c.piso||0, periodo = c.periodo||0, upfront = c.upfront||0;
+  var gatilhos = (c.trigger1_tri_val||0)+(c.trigger1_val||0)+(c.trigger2_val||0)+(c.trigger3_val||0)+(c.trigger4_val||0);
+  var bruto = (piso*periodo) + upfront + gatilhos;
+  var liquido = bruto - (c.coparticipacao||0);
+  return { bruto:bruto, liquido:liquido };
+}
+// Tabela com "10 primeiros + expandir" — pra qualquer lista que possa crescer muito.
+var _expandCounter = 0;
+function _tabelaExpandivel(headerHtml, linhasHtml, limite) {
+  limite = limite || 10;
+  _expandCounter++;
+  var id = 'exp-'+_expandCounter;
+  var visiveis = linhasHtml.slice(0, limite).join('');
+  var ocultas = linhasHtml.slice(limite);
+  var ocultasHtml = ocultas.map(function(l){ return l.replace('<tr>', '<tr class="linha-oculta-'+id+'" style="display:none;">'); }).join('');
+  var botao = ocultas.length
+    ? '<button id="btn-'+id+'" onclick="_toggleExpandir(\''+id+'\','+ocultas.length+')" style="margin-top:10px;background:none;border:1px solid var(--wrule);border-radius:5px;padding:6px 14px;font-size:11px;font-weight:700;color:var(--wgold);cursor:pointer;font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:.04em;">Ver todos ('+ocultas.length+' a mais) ▾</button>'
+    : '';
+  return '<table><thead>'+headerHtml+'</thead><tbody>'+visiveis+ocultasHtml+'</tbody></table>'+botao;
+}
+function _toggleExpandir(id, n) {
+  var btn = document.getElementById('btn-'+id);
+  var linhas = document.querySelectorAll('.linha-oculta-'+id);
+  var expandido = btn.getAttribute('data-expandido') === '1';
+  linhas.forEach(function(tr){ tr.style.display = expandido ? 'none' : 'table-row'; });
+  btn.setAttribute('data-expandido', expandido ? '0' : '1');
+  btn.textContent = expandido ? 'Ver todos ('+n+' a mais) ▾' : 'Ver menos ▴';
+}
+
+// ════════ Resumo Contratação × Trabalhando (comum às 3 abas) ════════
+function renderResumoBrutoLiquido(numSec, C, ini, fim, labelPeriodo) {
+  var dados = calcularPeriodo(C, ini, fim);
+  var totalContratado = dados.contratados.length;
+  var totalTrabalhando = dados.trabalhando.length;
+  var pendentes = dados.pendentesInicio.length;
+  var carryIn = dados.carryIn.length;
+  var declinados = dados.declinados.length;
+  var taxaQueda = (totalContratado+declinados) ? Math.round(declinados/(totalContratado+declinados)*100) : 0;
+
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Contratação × Trabalhando — '+labelPeriodo+'</span><span class="ss">O que assinou vs. o que já está de fato atuando (o número que pesa no business plan)</span></div>'
+    + '<div class="row cols-5">'
+      + kpi('info','Contratado (Bruto)', totalContratado, 'assinou contrato no período')
+      + kpi('ok','Trabalhando (Líquido)', totalTrabalhando, 'já começou a atuar no período')
+      + kpi(pendentes>0?'warn':'ok','Pendente de Início', pendentes, 'assinou aqui, ainda vai começar → sensibiliza período seguinte')
+      + kpi(carryIn>0?'info':'ok','Carrego Recebido', carryIn, 'começou agora, mas foi assinado em período anterior')
+      + kpi(declinados>0?'bad':'ok','Saíram do Processo', declinados, taxaQueda+'% de queda no período')
+    + '</div>'
+    + '<div class="nota blue">📐 <b>Como ler:</b> "Pendente de Início" é quem assinou agora mas o CRM ainda não tem (ou tem uma data futura para) o início de trabalho — esse pessoal vai aparecer como "Trabalhando" só no período seguinte, e é isso que "carrega" a meta entre os semestres. "Carrego Recebido" é o espelho: gente que só virou headcount líquido agora, mas tinha sido assinada antes.</div>';
+}
+
+// ════════ Diagnóstico em 1 Frase ════════
+function renderDiagnostico(C, ini, fim, contratadoAtual, metaPeriodo, labelFim) {
+  var hoje = new Date();
+  var fimData = new Date(fim+'T12:00:00');
+  var iniData = new Date(ini+'T12:00:00');
+  var mesesTotais = Math.max(1, Math.round((fimData-iniData)/(30.44*86400000))+1);
+  var mesesDecorridos = hoje < iniData ? 0 : (hoje > fimData ? mesesTotais : Math.max(1, Math.round((hoje-iniData)/(30.44*86400000))+1));
+  var mesesRestantes = Math.max(0, mesesTotais - mesesDecorridos);
+
+  var ritmoAtual = mesesDecorridos > 0 ? contratadoAtual/mesesDecorridos : 0;
+  var projecaoFechamento = Math.round(contratadoAtual + ritmoAtual*mesesRestantes);
+  var gap = Math.max(0, metaPeriodo - contratadoAtual);
+  var deficitProjetado = Math.max(0, metaPeriodo - projecaoFechamento);
+
+  var comHunter = C.filter(function(c){ return c.hunter && contratadoBruto(c) && c.data_contratacao; });
+  var porHunter = {};
+  comHunter.forEach(function(c){
+    if (!porHunter[c.hunter]) porHunter[c.hunter] = { total:0, meses:{} };
+    porHunter[c.hunter].total++;
+    porHunter[c.hunter].meses[c.data_contratacao.slice(0,7)] = true;
+  });
+  var mediaGeral = Object.keys(porHunter).length
+    ? Object.keys(porHunter).reduce(function(s,h){ var r=porHunter[h]; var m=Object.keys(r.meses).length; return s+(m?r.total/m:0); },0) / Object.keys(porHunter).length
+    : 0;
+  var huntersNecessarios = (deficitProjetado>0 && mediaGeral>0) ? Math.ceil(deficitProjetado/(mediaGeral*Math.max(1,mesesRestantes))) : 0;
+
+  var cor, icone, texto;
+  if (gap===0) {
+    cor='var(--wgreen-ok)'; icone='🟢';
+    texto = 'Meta batida — '+contratadoAtual+' de '+metaPeriodo+' já fechados.';
+  } else if (mesesRestantes===0) {
+    cor='var(--wred)'; icone='🔴';
+    texto = 'Período encerrado com '+contratadoAtual+'/'+metaPeriodo+' — déficit de '+gap+'.';
+  } else if (deficitProjetado===0) {
+    cor='var(--wgreen-ok)'; icone='🟢';
+    texto = 'No pace. Mantendo o ritmo atual ('+ritmoAtual.toFixed(1)+'/mês), fecha '+labelFim+' com '+projecaoFechamento+'/'+metaPeriodo+'.';
+  } else {
+    cor='var(--wred)'; icone='🔴';
+    texto = 'Fora do pace. No ritmo atual, fecha '+labelFim+' com ~'+projecaoFechamento+'/'+metaPeriodo+' — déficit projetado de '+deficitProjetado+'.'
+      + (huntersNecessarios>0 ? ' Pra recuperar, precisa de +'+huntersNecessarios+' hunter(s) dedicado(s) já.' : '');
+  }
+
+  return '<div class="card" style="border-left:4px solid '+cor+';padding:16px 20px;margin-bottom:20px;">'
+    + '<div style="font-family:Oswald,sans-serif;font-size:15px;font-weight:600;color:var(--wt1);">'+icone+' '+texto+'</div>'
+  + '</div>';
+}
+
+// ════════ ABA 2026 — 2º Semestre ════════
+function renderAba2026(C) {
+  var ini = '2026-07-01', fim = '2026-12-31';
+  var assessoriaC = calcularPeriodo(C, ini, fim, function(c){ return c.vaga==='Assessor'; });
+  var futureVsbC = calcularPeriodo(C, ini, fim, function(c){ return ehFuture(c)||ehVSB(c); });
+
+  var metaA = PARAMS.meta_h2_assessoria, metaF = PARAMS.meta_h2_future_vsb, metaT = PARAMS.meta_2026_total || (metaA+metaF);
+  var contratadoA = assessoriaC.contratados.length, contratadoF = futureVsbC.contratados.length;
+  var contratadoTotal = contratadoA + contratadoF;
+  var gapA = Math.max(0, metaA-contratadoA), gapF = Math.max(0, metaF-contratadoF);
+
+  var linhasFrente = '<tr><td><b>Assessoria</b></td><td>'+contratadoA+'</td><td>'+assessoriaC.trabalhando.length+'</td><td>'+metaA+'</td>'+_pctCols(contratadoA,metaA)+'<td style="width:130px;">'+_barra(contratadoA,metaA,contratadoA>=metaA?'green':'gold')+'</td><td>'+gapA+'</td></tr>'
+    + '<tr><td><b>Future + Vem Ser Blue</b></td><td>'+contratadoF+'</td><td>'+futureVsbC.trabalhando.length+'</td><td>'+metaF+'</td>'+_pctCols(contratadoF,metaF)+'<td style="width:130px;">'+_barra(contratadoF,metaF,contratadoF>=metaF?'green':'gold')+'</td><td>'+gapF+'</td></tr>';
+
+  var html = renderDiagnostico(C, ini, fim, contratadoTotal, metaT, 'dezembro/2026');
+
+  html += '<div class="sh"><span class="sn">01</span><span class="st">Operação Imediata — 2º Semestre 2026</span><span class="ss">Meta: 60+60=120 (diretoria) · referência oficial do plano: '+metaT+'</span></div>'
+    + '<div class="card"><table><thead><tr><th>Frente</th><th>Contratado</th><th>Trabalhando</th><th>Meta</th><th>%Ating.</th><th>%Falt.</th><th>Progresso</th><th>Gap</th></tr></thead><tbody>'+linhasFrente+'</tbody></table></div>';
+
+  html += renderResumoBrutoLiquido('02', C, ini, fim, '2º Semestre 2026');
+  html += renderPaceMensal('03', C, [{y:2026,m:7,l:'Julho'},{y:2026,m:8,l:'Agosto'},{y:2026,m:9,l:'Setembro'},{y:2026,m:10,l:'Outubro'},{y:2026,m:11,l:'Novembro'},{y:2026,m:12,l:'Dezembro'}]);
+  html += renderPracas('04', C, ini, fim);
+  html += renderQualidade('05', C, ini, fim);
+  html += renderCusto('06', C, ini, fim);
+  html += renderConcentracao('07', C, ini, fim);
+  html += renderFunilNecessario('08', C, [{label:'Assessoria', filtro:function(c){return c.vaga==='Assessor';}, gap:gapA},{label:'Future + Vem Ser Blue', filtro:function(c){return ehFuture(c)||ehVSB(c);}, gap:gapF}]);
+  html += renderCapacidade('09', C, ini, fim, metaT);
+  html += renderSimulador('10', C, ini, fim, metaT, '2026');
+  return html;
+}
+
+// ════════ ABA 2027 / 2028 — Ano Cheio (4 frentes) ════════
+function renderAbaAno(C, ano) {
+  var metaTotal901 = PARAMS.meta_36m_gerentes_banco + PARAMS.meta_36m_als_xp + PARAMS.meta_36m_future + PARAMS.meta_36m_als_fusao;
+  var metaAnoOficial = ano===2027 ? PARAMS.meta_2027_total : PARAMS.meta_2028_total; // 390 — número exato da diretoria, bate 121+390+390=901
+
+  var FRENTES_DEF = [
+    { key:'gb', label:'Gerentes de Banco', metaOrig:PARAMS.meta_36m_gerentes_banco, real:true, filtro:ehGerenteBanco },
+    { key:'xp', label:'Als XP', metaOrig:PARAMS.meta_36m_als_xp, real:true, filtro:ehAlsXP },
+    { key:'fu', label:'Future', metaOrig:PARAMS.meta_36m_future, real:true, filtro:ehFuture },
+    { key:'ma', label:'Als Fusão', metaOrig:PARAMS.meta_36m_als_fusao, real:false, filtro:ehMA }
+  ];
+  // Meta de cada frente pro ano = meta oficial do ano (390) rateada na mesma proporção do plano original (450/80/225/146)
+  FRENTES_DEF.forEach(function(f){
+    f.metaPorAno = metaTotal901 ? (f.metaOrig/metaTotal901)*metaAnoOficial : 0;
+    f.metaPorSemestre = f.metaPorAno / 2;
+  });
+
+  function tabelaSemestre(semLabel, ini, fim) {
+    var linhas = FRENTES_DEF.map(function(f){
+      var metaSem = Math.round(f.metaPorSemestre);
+      var dados = f.real ? calcularPeriodo(C, ini, fim, f.filtro) : { contratados:[], trabalhando:[] };
+      var contratado = dados.contratados.length, trabalhando = dados.trabalhando.length;
+      var tagOrigem = f.real ? '<span class="tag-ok">ao vivo</span>' : '<span class="tag-manual">manual</span>';
+      var gap = Math.max(0, metaSem-contratado);
+      return '<tr><td><b>'+f.label+'</b></td><td>'+contratado+'</td><td>'+trabalhando+'</td><td>'+metaSem+'</td>'+_pctCols(contratado,metaSem)+'<td style="width:110px;">'+_barra(contratado,metaSem,contratado>=metaSem?'green':'gold')+'</td><td>'+gap+'</td><td>'+tagOrigem+'</td></tr>';
+    }).join('');
+    var metaTotalSem = FRENTES_DEF.reduce(function(s,f){ return s+Math.round(f.metaPorSemestre); },0);
+    var contratadoTotalSem = FRENTES_DEF.reduce(function(s,f){ return s+(f.real?calcularPeriodo(C,ini,fim,f.filtro).contratados.length:0); },0);
+    return '<div class="card"><div style="font-family:Oswald,sans-serif;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--wgold);margin-bottom:10px;">'+semLabel+' <span style="color:var(--wt3);font-weight:400;">('+contratadoTotalSem+'/'+metaTotalSem+' contratados no período)</span></div>'
+      + '<table><thead><tr><th>Frente</th><th>Contratado</th><th>Trabalhando</th><th>Meta</th><th>%Ating.</th><th>%Falt.</th><th>Progresso</th><th>Gap</th><th>Origem</th></tr></thead><tbody>'+linhas+'</tbody></table></div>';
+  }
+
+  var ini1 = ano+'-01-01', fim1 = ano+'-06-30', ini2 = ano+'-07-01', fim2 = ano+'-12-31';
+  var contratadoAnoTotal = FRENTES_DEF.reduce(function(s,f){ return s+(f.real?calcularPeriodo(C,ini1,fim2,f.filtro).contratados.length:0); },0);
+
+  var html = renderDiagnostico(C, ini1, fim2, contratadoAnoTotal, metaAnoOficial, 'dezembro/'+ano);
+
+  html += '<div class="sh"><span class="sn">01</span><span class="st">Mapa Estratégico — '+ano+'</span><span class="ss">Meta oficial do ano: '+metaAnoOficial+' · rateada nas 4 frentes na proporção 450/80/225/146</span></div>'
+    + '<div class="row cols-4">'
+      + '<div class="kpi"><div class="kpi-label">Meta Total do Plano</div><div class="kpi-value">'+metaTotal901+'</div><div class="kpi-sub">soma das 4 frentes, 2026-2ºS a 2028</div></div>'
+      + '<div class="kpi"><div class="kpi-label">Meta 2026 (2ºS)</div><div class="kpi-value">'+(PARAMS.meta_2026_total||121)+'</div><div class="kpi-sub">referência oficial</div></div>'
+      + '<div class="kpi"><div class="kpi-label">Meta de '+ano+'</div><div class="kpi-value">'+metaAnoOficial+'</div><div class="kpi-sub">número exato da diretoria</div></div>'
+      + '<div class="kpi"><div class="kpi-label">Contratado em '+ano+'</div><div class="kpi-value">'+contratadoAnoTotal+'</div><div class="kpi-sub">'+Math.round(metaAnoOficial?contratadoAnoTotal/metaAnoOficial*100:0)+'% da meta do ano</div></div>'
+    + '</div>'
+    + tabelaSemestre(ano+' — 1º Semestre', ini1, fim1)
+    + tabelaSemestre(ano+' — 2º Semestre', ini2, fim2);
+
+  html += renderResumoBrutoLiquido('02', C, ini1, fim2, ano+' (ano cheio)');
+  html += renderPaceMensal('03', C, [1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){ return {y:ano,m:m,l:['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][m-1]}; }));
+  html += renderPracas('04', C, ini1, fim2);
+  html += renderQualidade('05', C, ini1, fim2);
+  html += renderCusto('06', C, ini1, fim2);
+  html += renderConcentracao('07', C, ini1, fim2);
+
+  html += renderFunilNecessario('08', C, [
+    { label:'Gerentes de Banco', filtro:ehGerenteBanco, gap:Math.round(Math.max(0,FRENTES_DEF[0].metaPorAno-calcularPeriodo(C,ini1,fim2,ehGerenteBanco).contratados.length)) },
+    { label:'Als XP', filtro:ehAlsXP, gap:Math.round(Math.max(0,FRENTES_DEF[1].metaPorAno-calcularPeriodo(C,ini1,fim2,ehAlsXP).contratados.length)) },
+    { label:'Future', filtro:ehFuture, gap:Math.round(Math.max(0,FRENTES_DEF[2].metaPorAno-calcularPeriodo(C,ini1,fim2,ehFuture).contratados.length)) }
+  ]);
+  html += renderCapacidade('09', C, ini1, fim2, Math.round(FRENTES_DEF[0].metaPorAno+FRENTES_DEF[1].metaPorAno+FRENTES_DEF[2].metaPorAno));
+  html += renderSimulador('10', C, ini1, fim2, metaAnoOficial, String(ano));
+  return html;
+}
+
+// ════════ Pace Mensal (genérico) ════════
+function renderPaceMensal(numSec, C, meses) {
+  var linhas = meses.map(function(m){
+    var mm = String(m.m).padStart(2,'0');
+    var prefixo = m.y+'-'+mm;
+    var contratado = C.filter(function(c){ return contratadoBruto(c) && c.data_contratacao && c.data_contratacao.slice(0,7)===prefixo; }).length;
+    var trabalhando = C.filter(function(c){ return trabalhandoLiquido(c) && c.data_inicio && c.data_inicio.slice(0,7)===prefixo; }).length;
+    var futuro = new Date() < new Date(m.y, m.m-1, 1);
+    return '<tr'+(futuro?' style="opacity:.45;"':'')+'><td><b>'+m.l+'/'+m.y+'</b>'+(futuro?' <span style="font-size:9px;color:var(--wt4);">(ainda não chegou)</span>':'')+'</td><td>'+contratado+'</td><td>'+trabalhando+'</td></tr>';
+  }).join('');
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Pace Mensal</span><span class="ss">Contratado (assinou) vs. Trabalhando (começou), mês a mês</span></div>'
+    + '<div class="card"><table><thead><tr><th>Mês</th><th>Contratado</th><th>Trabalhando</th></tr></thead><tbody>'+linhas+'</tbody></table></div>';
+}
+
+// ════════ Praças — Alvo + Demais ════════
+function renderPracas(numSec, C, ini, fim) {
+  var relevantes = C.filter(function(c){ return (c.vaga==='Assessor' || ehFuture(c) || ehVSB(c)) && contratadoBruto(c) && c.data_contratacao && c.data_contratacao>=ini && c.data_contratacao<=fim; });
+  var porPraca = {};
+  relevantes.forEach(function(c){
+    var key = (c.praca||'Sem praça') + '|' + c.vaga;
+    if (!porPraca[key]) porPraca[key] = { praca:c.praca||'Sem praça', vaga:c.vaga, total:0, trabalhando:0 };
+    porPraca[key].total++;
+    if (trabalhandoLiquido(c)) porPraca[key].trabalhando++;
+  });
+  var linhas = Object.keys(porPraca).map(function(k){ return porPraca[k]; });
+  linhas.forEach(function(l){ l.isAlvo = (l.vaga==='Assessor' && PRACAS_ALVO_ASSESSORIA.indexOf(cidadeDe(l.praca))>-1) || l.vaga==='Future' || l.vaga==='Vem ser Blue'; });
+  linhas.sort(function(a,b){ if (a.isAlvo!==b.isAlvo) return a.isAlvo?-1:1; return b.total-a.total; });
+
+  var corpo = linhas.map(function(l){
+    var vagaLbl = l.vaga==='Assessor'?'Assessoria':(l.vaga==='Future'?'Future':'Vem Ser Blue');
+    return '<tr><td>'+(l.isAlvo?'<span style="color:var(--wgold);">★</span> ':'')+'<b>'+esc(l.praca.replace(/^Blue3\s*[-–]\s*/i,''))+'</b></td><td style="color:var(--wt3);">'+vagaLbl+'</td><td>'+l.total+'</td><td>'+l.trabalhando+'</td></tr>';
+  });
+
+  var tabelaHtml = corpo.length
+    ? _tabelaExpandivel('<tr><th>Praça</th><th>Canal</th><th>Contratado</th><th>Trabalhando</th></tr>', corpo, 10)
+    : '<table><tbody><tr><td colspan="4" style="text-align:center;color:var(--wt4);padding:16px;">Sem contratação no período</td></tr></tbody></table>';
+
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Praças — Alvo e Demais</span><span class="ss"><span style="color:var(--wgold);">★</span> = praça-alvo · contratados no período · ordenado por volume · '+linhas.length+' praça(s)</span></div>'
+    + '<div class="card">'+tabelaHtml+'</div>';
+}
+
+// ════════ Funil Necessário ════════
+function renderFunilNecessario(numSec, C, canais) {
+  var linhas = canais.map(function(cn){
+    var doCanal = C.filter(cn.filtro);
+    var aprovados = doCanal.filter(contratadoBruto).length;
+    var taxa = doCanal.length ? (aprovados/doCanal.length*100) : null;
+    var necessarios = (taxa && taxa>0) ? Math.ceil(Number((cn.gap/(taxa/100)).toFixed(4))) : null;
+    return '<tr><td><b>'+cn.label+'</b></td><td>'+cn.gap+'</td><td>'+(taxa!==null?taxa.toFixed(1)+'%':'—')+'</td><td style="color:var(--wgold);font-weight:700;">'+(necessarios!==null?necessarios+' candidatos':'<span style="color:var(--wt4);">sem dado suficiente</span>')+'</td></tr>';
+  }).join('');
+
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Funil Necessário</span><span class="ss">Quantos candidatos novos precisam entrar, na conversão histórica de cada frente</span></div>'
+    + '<div class="card"><table><thead><tr><th>Frente</th><th>Gap Restante</th><th>Taxa Conversão Histórica</th><th>Precisam Entrar no Funil</th></tr></thead><tbody>'+linhas+'</tbody></table>'
+      + '<div class="nota">📐 Conta: gap ÷ taxa de conversão histórica (todo o histórico do CRM). Assume que a conversão futura se comporta como a passada.</div>'
+    + '</div>';
+}
+
+// ════════ Capacidade Necessária ════════
+function renderCapacidade(numSec, C, ini, fim, metaPeriodo) {
+  var comHunter = C.filter(function(c){ return c.hunter && contratadoBruto(c) && c.data_contratacao; });
+  var porHunter = {};
+  comHunter.forEach(function(c){
+    var h = c.hunter;
+    if (!porHunter[h]) porHunter[h] = { total:0, meses:{} };
+    porHunter[h].total++;
+    porHunter[h].meses[c.data_contratacao.slice(0,7)] = true;
+  });
+  var nomes = Object.keys(porHunter);
+  var mediaGeral = nomes.length ? nomes.reduce(function(s,h){ var r=porHunter[h]; var m=Object.keys(r.meses).length; return s+(m?r.total/m:0); },0) / nomes.length : 0;
+
+  if (!mediaGeral) {
+    return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Capacidade Necessária</span></div><div class="card"><div style="padding:10px 0;color:var(--wt4);">Sem dado histórico suficiente de hunter × contratação.</div></div>';
+  }
+
+  var contratadoPeriodo = C.filter(function(c){ return contratadoBruto(c) && c.data_contratacao && c.data_contratacao>=ini && c.data_contratacao<=fim; }).length;
+  var gap = Math.max(0, metaPeriodo - contratadoPeriodo);
+  var hunterMes = gap / mediaGeral;
+
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Capacidade Necessária</span><span class="ss">Capacidade média real: <b style="color:var(--wt1);">'+mediaGeral.toFixed(2)+' contratações/mês/hunter</b> · <span class="tag-ok">ao vivo</span></span></div>'
+    + '<div class="row cols-3">'
+      + '<div class="kpi"><div class="kpi-label">Gap do Período</div><div class="kpi-value">'+gap+'</div><div class="kpi-sub">contratações que faltam</div></div>'
+      + '<div class="kpi"><div class="kpi-label">Capacidade Necessária</div><div class="kpi-value">'+hunterMes.toFixed(1)+'</div><div class="kpi-sub">hunters-mês adicionais</div></div>'
+      + '<div class="kpi"><div class="kpi-label">Hunters Ativos Hoje</div><div class="kpi-value">'+nomes.length+'</div><div class="kpi-sub">com histórico de contratação</div></div>'
+    + '</div>'
+    + '<div class="card"><div class="nota">📐 Capacidade média = contratações de cada hunter ÷ meses em que ele realmente teve pelo menos 1 contratação (não meses corridos).</div></div>';
+}
+
+// ════════ Risco de Concentração de Hunters ════════
+function renderConcentracao(numSec, C, ini, fim) {
+  var comHunter = C.filter(function(c){ return c.hunter && contratadoBruto(c) && c.data_contratacao && c.data_contratacao>=ini && c.data_contratacao<=fim; });
+  var porHunter = {};
+  comHunter.forEach(function(c){ porHunter[c.hunter] = (porHunter[c.hunter]||0)+1; });
+  var nomes = Object.keys(porHunter).sort(function(a,b){ return porHunter[b]-porHunter[a]; });
+  var total = comHunter.length;
+
+  if (!total) {
+    return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Risco de Concentração</span></div><div class="card"><div style="padding:10px 0;color:var(--wt4);">Sem contratação com hunter atribuído no período.</div></div>';
+  }
+
+  var top3 = nomes.slice(0,3);
+  var top3Total = top3.reduce(function(s,h){ return s+porHunter[h]; },0);
+  var concentracao = Math.round(top3Total/total*100);
+  var risco = concentracao>=60 ? {cor:'var(--wred)', label:'ALTO'} : (concentracao>=40 ? {cor:'var(--wgold)', label:'MODERADO'} : {cor:'var(--wgreen-ok)', label:'BAIXO'});
+
+  var linhas = nomes.map(function(h){
+    var pct = Math.round(porHunter[h]/total*100);
+    return '<tr><td><b>'+esc(h)+'</b></td><td>'+porHunter[h]+'</td><td>'+pct+'%</td><td>'+_barra(porHunter[h],nomes.length?porHunter[nomes[0]]:1,'gold')+'</td></tr>';
+  });
+
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Risco de Concentração de Hunters</span><span class="ss">Top-3 respondem por <b style="color:'+risco.cor+';">'+concentracao+'%</b> da capacidade — risco <span style="color:'+risco.cor+';font-weight:700;">'+risco.label+'</span></span></div>'
+    + '<div class="card">' + _tabelaExpandivel('<tr><th>Hunter</th><th>Contratações</th><th>% do Total</th><th>Peso</th></tr>', linhas, 10)
+    + '<div class="nota">📐 Se '+concentracao+'% da capacidade depende de só '+top3.length+' pessoa(s), a saída ou afastamento de qualquer uma delas trava boa parte do ritmo. Acima de 60% é risco alto — vale diversificar antes de depender ainda mais desse grupo.</div>'
+    + '</div>';
+}
+
+// ════════ Custo da Operação ════════
+function renderCusto(numSec, C, ini, fim) {
+  var doPeriodo = C.filter(function(c){ return contratadoBruto(c) && c.data_contratacao && c.data_contratacao>=ini && c.data_contratacao<=fim; });
+  var custos = doPeriodo.map(custoDoCandidato);
+  var brutoPeriodo = custos.reduce(function(s,c){ return s+c.bruto; },0);
+  var liquidoPeriodo = custos.reduce(function(s,c){ return s+c.liquido; },0);
+  var medioLiquido = doPeriodo.length ? liquidoPeriodo/doPeriodo.length : 0;
+
+  // Acumulado desde o início do plano (Set/2026) até o fim deste período — comparado ao alvo total da diretoria
+  var desdeInicio = C.filter(function(c){ return contratadoBruto(c) && c.data_contratacao && c.data_contratacao>='2026-09-01' && c.data_contratacao<=fim; });
+  var custosAcum = desdeInicio.map(custoDoCandidato);
+  var liquidoAcum = custosAcum.reduce(function(s,c){ return s+c.liquido; },0);
+  var alvoTotal = PARAMS.caixa_prevista_total; // negativo
+  var pctOrcamento = alvoTotal ? Math.min(999, Math.round(Math.abs(liquidoAcum)/Math.abs(alvoTotal)*100)) : 0;
+
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Custo da Operação</span><span class="ss">Piso×período + upfront + gatilhos, líquido de coparticipação · <span class="tag-ok">ao vivo</span></span></div>'
+    + '<div class="row cols-4">'
+      + '<div class="kpi"><div class="kpi-label">Custo Bruto do Período</div><div class="kpi-value" style="font-size:19px;">'+fmtR(brutoPeriodo)+'</div><div class="kpi-sub">antes de coparticipação</div></div>'
+      + '<div class="kpi"><div class="kpi-label">Custo Líquido do Período</div><div class="kpi-value" style="font-size:19px;">'+fmtR(liquidoPeriodo)+'</div><div class="kpi-sub">o que sai do caixa Blue3</div></div>'
+      + '<div class="kpi"><div class="kpi-label">Custo Médio / Contratação</div><div class="kpi-value" style="font-size:19px;">'+fmtR(medioLiquido)+'</div><div class="kpi-sub">líquido, por pessoa</div></div>'
+      + '<div class="kpi '+(pctOrcamento>100?'bad':(pctOrcamento>80?'warn':'ok'))+'"><div class="kpi-label">Orçamento Usado</div><div class="kpi-value">'+pctOrcamento+'%</div><div class="kpi-sub">de '+fmtR(alvoTotal)+' (acumulado desde set/26)</div></div>'
+    + '</div>'
+    + '<div class="card"><div class="nota">📐 Fórmula igual ao Simulador de Propostas: Custo Bruto = piso×período + upfront + todos os gatilhos. Líquido = bruto − coparticipação do parceiro. "Orçamento Usado" compara o líquido acumulado desde set/2026 com o teto de '+fmtR(alvoTotal)+' informado pela diretoria pro plano inteiro (set/26 a dez/28).</div></div>';
+}
+
+// ════════ Qualidade — Mix de Senioridade e AuC ════════
+function renderQualidade(numSec, C, ini, fim) {
+  var doPeriodo = C.filter(function(c){ return contratadoBruto(c) && c.data_contratacao && c.data_contratacao>=ini && c.data_contratacao<=fim; });
+  var niveis = ['Sênior','Pleno','Júnior'];
+  var total = doPeriodo.length;
+  var porNivel = {}; niveis.forEach(function(n){ porNivel[n]=0; });
+  doPeriodo.forEach(function(c){ if (porNivel[c.nivel]!=null) porNivel[c.nivel]++; else porNivel['Outro']=(porNivel['Outro']||0)+1; });
+
+  var aucValidos = doPeriodo.filter(function(c){ return c.auc_mm>0; });
+  var aucMedio = aucValidos.length ? aucValidos.reduce(function(s,c){ return s+c.auc_mm; },0)/aucValidos.length : 0;
+
+  if (!total) {
+    return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Qualidade — Senioridade e AuC</span></div><div class="card"><div style="padding:10px 0;color:var(--wt4);">Sem contratação no período.</div></div>';
+  }
+
+  var barraMix = Object.keys(porNivel).filter(function(n){return porNivel[n]>0;}).map(function(n){
+    var p = Math.round(porNivel[n]/total*100);
+    var cor = n==='Sênior'?'var(--wgreen-ok)':(n==='Pleno'?'var(--wgold)':'var(--wblue)');
+    return '<span style="display:inline-block;width:'+p+'%;background:'+cor+';height:100%;"></span>';
+  }).join('');
+
+  var legenda = Object.keys(porNivel).filter(function(n){return porNivel[n]>0;}).map(function(n){
+    var cor = n==='Sênior'?'var(--wgreen-ok)':(n==='Pleno'?'var(--wgold)':'var(--wblue)');
+    return '<span style="font-size:10px;color:var(--wt3);margin-right:14px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+cor+';margin-right:5px;"></span>'+n+' · '+porNivel[n]+' ('+Math.round(porNivel[n]/total*100)+'%)</span>';
+  }).join('');
+
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Qualidade — Senioridade e AuC</span><span class="ss">Volume não conta a história inteira — perfil de quem está entrando</span></div>'
+    + '<div class="card">'
+      + '<div style="display:flex;height:20px;border-radius:5px;overflow:hidden;margin-bottom:10px;border:1px solid var(--wrule);">'+barraMix+'</div>'
+      + '<div style="margin-bottom:14px;">'+legenda+'</div>'
+      + '<div class="row cols-3" style="margin-bottom:0;">'
+        + '<div class="kpi"><div class="kpi-label">AuC Médio (meta)</div><div class="kpi-value" style="font-size:19px;">'+(aucMedio?aucMedio.toFixed(1)+'MM':'—')+'</div><div class="kpi-sub">'+aucValidos.length+' com meta de captação registrada</div></div>'
+        + '<div class="kpi"><div class="kpi-label">% Sênior</div><div class="kpi-value" style="font-size:19px;">'+Math.round((porNivel['Sênior']||0)/total*100)+'%</div><div class="kpi-sub">do total contratado no período</div></div>'
+        + '<div class="kpi"><div class="kpi-label">Total no Período</div><div class="kpi-value" style="font-size:19px;">'+total+'</div><div class="kpi-sub">base do mix acima</div></div>'
+      + '</div>'
+    + '</div>';
+}
+
+// ════════ Simulador — E se eu contratar mais hunters? ════════
+function renderSimulador(numSec, C, ini, fim, metaPeriodo, idSim) {
+  var contratadoAtual = C.filter(function(c){ return contratadoBruto(c) && c.data_contratacao && c.data_contratacao>=ini && c.data_contratacao<=fim; }).length;
+  window['_simCtx_'+idSim] = { C:C, ini:ini, fim:fim, meta:metaPeriodo, atual:contratadoAtual };
+
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Simulador — E se eu contratar mais hunters?</span><span class="ss">Projeta o impacto de reforçar o time agora</span></div>'
+    + '<div class="card">'
+      + '<div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;">'
+        + '<div><label style="display:block;font-size:9px;color:var(--wt3);margin-bottom:4px;font-family:Oswald,sans-serif;text-transform:uppercase;">Hunters adicionais</label><input type="number" id="sim-qtd-'+idSim+'" value="2" min="0" style="width:90px;padding:8px 10px;border:1px solid var(--wrule);border-radius:5px;background:var(--wbg);color:var(--wt1);font-family:DM Sans,sans-serif;"></div>'
+        + '<div><label style="display:block;font-size:9px;color:var(--wt3);margin-bottom:4px;font-family:Oswald,sans-serif;text-transform:uppercase;">A partir de quantos meses</label><input type="number" id="sim-meses-'+idSim+'" value="1" min="0" style="width:90px;padding:8px 10px;border:1px solid var(--wrule);border-radius:5px;background:var(--wbg);color:var(--wt1);font-family:DM Sans,sans-serif;"></div>'
+        + '<button class="btn-w" onclick="_rodarSimulador(\''+idSim+'\')">Simular</button>'
+      + '</div>'
+      + '<div id="sim-resultado-'+idSim+'"></div>'
+    + '</div>';
+}
+function _rodarSimulador(idSim) {
+  var ctx = window['_simCtx_'+idSim];
+  var qtd = parseInt(document.getElementById('sim-qtd-'+idSim).value,10) || 0;
+  var mesesAte = parseInt(document.getElementById('sim-meses-'+idSim).value,10) || 0;
+
+  var comHunter = ctx.C.filter(function(c){ return c.hunter && contratadoBruto(c) && c.data_contratacao; });
+  var porHunter = {};
+  comHunter.forEach(function(c){
+    if (!porHunter[c.hunter]) porHunter[c.hunter] = { total:0, meses:{} };
+    porHunter[c.hunter].total++;
+    porHunter[c.hunter].meses[c.data_contratacao.slice(0,7)] = true;
+  });
+  var mediaGeral = Object.keys(porHunter).length
+    ? Object.keys(porHunter).reduce(function(s,h){ var r=porHunter[h]; var m=Object.keys(r.meses).length; return s+(m?r.total/m:0); },0) / Object.keys(porHunter).length
+    : 0;
+
+  var hoje = new Date();
+  var fimData = new Date(ctx.fim+'T12:00:00');
+  var iniData = new Date(ctx.ini+'T12:00:00');
+  var mesesTotais = Math.max(1, Math.round((fimData-iniData)/(30.44*86400000))+1);
+  var mesesDecorridos = hoje < iniData ? 0 : (hoje > fimData ? mesesTotais : Math.max(1, Math.round((hoje-iniData)/(30.44*86400000))+1));
+  var mesesRestantes = Math.max(0, mesesTotais - mesesDecorridos);
+  var ritmoBase = mesesDecorridos > 0 ? ctx.atual/mesesDecorridos : 0;
+
+  var projecaoSemReforco = Math.round(ctx.atual + ritmoBase*mesesRestantes);
+  var mesesComReforco = Math.max(0, mesesRestantes - mesesAte);
+  var extraDoReforco = Math.round(qtd * mediaGeral * mesesComReforco);
+  var projecaoComReforco = projecaoSemReforco + extraDoReforco;
+
+  var el = document.getElementById('sim-resultado-'+idSim);
+  el.innerHTML = '<div class="row cols-3" style="margin-bottom:0;">'
+    + '<div class="kpi"><div class="kpi-label">Projeção Sem Reforço</div><div class="kpi-value">'+projecaoSemReforco+'</div><div class="kpi-sub">de '+ctx.meta+' na meta</div></div>'
+    + '<div class="kpi ok"><div class="kpi-label">Projeção Com Reforço</div><div class="kpi-value">'+projecaoComReforco+'</div><div class="kpi-sub">+'+extraDoReforco+' contratações extras estimadas</div></div>'
+    + '<div class="kpi '+(projecaoComReforco>=ctx.meta?'ok':'warn')+'"><div class="kpi-label">Resultado</div><div class="kpi-value" style="font-size:16px;">'+(projecaoComReforco>=ctx.meta?'Fecha a meta':'Gap de '+(ctx.meta-projecaoComReforco))+'</div><div class="kpi-sub">com '+qtd+' hunter(s) a partir de '+mesesAte+' mês(es)</div></div>'
+  + '</div>'
+  + '<div class="nota">📐 Conta: '+qtd+' hunter(s) × '+mediaGeral.toFixed(2)+' contratações/mês (capacidade média real) × '+mesesComReforco+' mês(es) de atuação = +'+extraDoReforco+'. Assume que o hunter novo atinge a capacidade média do time desde o primeiro mês — na prática, hunter novo costuma ter ramp-up, então isso é um teto otimista.</div>';
+}
+
+
+function abrirEdicaoPremissas() {
+  var p = PARAMS;
+  var campos = [
+    ['meta_h2_assessoria','Meta H2 — Assessoria'], ['meta_h2_future_vsb','Meta H2 — Future + VSB'],
+    ['meta_36m_gerentes_banco','Meta Plano — Gerentes de Banco'], ['meta_36m_als_xp','Meta Plano — Als XP'],
+    ['meta_36m_future','Meta Plano — Future'], ['meta_36m_als_fusao','Meta Plano — Als Fusão'],
+    ['meta_2026_total','Meta Oficial 2026 (2ºS)'], ['meta_2027_total','Meta Oficial 2027'], ['meta_2028_total','Meta Oficial 2028'],
+    ['caixa_prevista_total','Caixa Prevista Total (R$, negativo)'],
+    ['turnover_pct','Turnover assumido (%)'], ['total_liquido_informado','Total líquido informado'],
+    ['tamanho_time_atual','Tamanho do time hoje'], ['ma_headcount_manual','Headcount M&A já trazido (manual)']
+  ];
+  var prev = document.getElementById('guerra-edit-overlay');
+  if (prev) prev.remove();
+
+  var ov = document.createElement('div');
+  ov.id = 'guerra-edit-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px;';
+  var campoHtml = campos.map(function(c){
+    return '<div style="margin-bottom:10px;"><label style="display:block;font-size:10px;color:var(--wt3);margin-bottom:4px;font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:.05em;">'+c[1]+'</label>'
+      + '<input type="number" id="edit-'+c[0]+'" value="'+(p[c[0]]!=null?p[c[0]]:0)+'" style="width:100%;padding:8px 10px;border:1px solid var(--wrule);border-radius:5px;background:var(--wbg);color:var(--wt1);font-family:DM Sans,sans-serif;font-size:13px;">'
+    + '</div>';
+  }).join('');
+  ov.innerHTML = '<div style="background:var(--wpanel);border:1px solid var(--wrule);border-radius:12px;max-width:480px;width:100%;max-height:85vh;overflow:auto;padding:24px;">'
+    + '<div style="font-family:Oswald,sans-serif;font-size:16px;font-weight:600;color:var(--wt1);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">Editar Premissas</div>'
+    + '<div style="font-size:11px;color:var(--wt3);margin-bottom:16px;">Alterações ficam salvas pra todo mundo que abrir a Sala de Guerra.</div>'
+    + campoHtml
+    + '<div style="display:flex;gap:10px;margin-top:16px;"><button class="btn-w" onclick="salvarPremissas()" style="flex:1;">Salvar</button><button class="btn-w2" onclick="document.getElementById(\'guerra-edit-overlay\').remove()">Cancelar</button></div>'
+  + '</div>';
+  ov.onclick = function(e){ if (e.target===ov) ov.remove(); };
+  document.body.appendChild(ov);
+}
+function salvarPremissas() {
+  var campos = ['meta_h2_assessoria','meta_h2_future_vsb','meta_36m_gerentes_banco','meta_36m_als_xp','meta_36m_future','meta_36m_als_fusao','turnover_pct','total_liquido_informado','tamanho_time_atual','ma_headcount_manual','meta_2026_total','meta_2027_total','meta_2028_total','caixa_prevista_total'];
+  var body = {};
+  campos.forEach(function(c){ body[c] = parseFloat(document.getElementById('edit-'+c).value) || 0; });
+  supaPatch('guerra_parametros?id=eq.1', body).then(function(r){
+    PARAMS = (r && r[0]) ? r[0] : Object.assign({}, PARAMS, body);
+    document.getElementById('guerra-edit-overlay').remove();
+    mudarAba(ABA_ATUAL);
+  }).catch(function(){
+    PARAMS = Object.assign({}, PARAMS, body);
+    document.getElementById('guerra-edit-overlay').remove();
+    mudarAba(ABA_ATUAL);
+    alert('Não consegui salvar no banco (a tabela guerra_parametros existe?), mas apliquei os valores nesta tela.');
+  });
+}
+
+carregar();
+</script>
+</body>
+</html>
