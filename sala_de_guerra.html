@@ -354,8 +354,22 @@ function renderDiagnostico(C, ini, fim, contratadoAtual, metaPeriodo, labelFim) 
       + (huntersNecessarios>0 ? ' Pra recuperar, precisa de +'+huntersNecessarios+' hunter(s) dedicado(s) já.' : '');
   }
 
+  // Tendência: últimas 4 semanas vs as 4 semanas anteriores — melhorando ou piorando?
+  function _diasAtras(n){ var d=new Date(hoje); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+  var ultimas4 = C.filter(function(c){ return contratadoBruto(c) && c.data_contratacao && c.data_contratacao>=_diasAtras(28) && c.data_contratacao<=_diasAtras(0); }).length;
+  var anteriores4 = C.filter(function(c){ return contratadoBruto(c) && c.data_contratacao && c.data_contratacao>=_diasAtras(56) && c.data_contratacao<_diasAtras(28); }).length;
+  var tendenciaHtml = '';
+  if (ultimas4>0 || anteriores4>0) {
+    var deltaTend = ultimas4-anteriores4;
+    var corTend = deltaTend>0?'var(--wgreen-ok)':(deltaTend<0?'var(--wred)':'var(--wt3)');
+    var setaTend = deltaTend>0?'▲':(deltaTend<0?'▼':'＝');
+    var pctTend = anteriores4>0 ? ' ('+(deltaTend>=0?'+':'')+Math.round(deltaTend/anteriores4*100)+'%)' : '';
+    tendenciaHtml = '<div style="font-size:11px;color:var(--wt3);margin-top:6px;">Tendência: <span style="color:'+corTend+';font-weight:700;">'+setaTend+' '+ultimas4+'</span> nas últimas 4 semanas vs <b style="color:var(--wt2);">'+anteriores4+'</b> nas 4 anteriores'+pctTend+' — '+(deltaTend>0?'acelerando':(deltaTend<0?'desacelerando':'estável'))+'.</div>';
+  }
+
   return '<div class="card" style="border-left:4px solid '+cor+';padding:16px 20px;margin-bottom:20px;">'
     + '<div style="font-family:Oswald,sans-serif;font-size:15px;font-weight:600;color:var(--wt1);">'+icone+' '+texto+'</div>'
+    + tendenciaHtml
   + '</div>';
 }
 
@@ -381,12 +395,16 @@ function renderAba2026(C) {
   html += renderResumoBrutoLiquido('02', C, ini, fim, '2º Semestre 2026');
   html += renderPaceMensal('03', C, [{y:2026,m:7,l:'Julho'},{y:2026,m:8,l:'Agosto'},{y:2026,m:9,l:'Setembro'},{y:2026,m:10,l:'Outubro'},{y:2026,m:11,l:'Novembro'},{y:2026,m:12,l:'Dezembro'}]);
   html += renderPracas('04', C, ini, fim);
-  html += renderQualidade('05', C, ini, fim);
-  html += renderCusto('06', C, ini, fim);
-  html += renderConcentracao('07', C, ini, fim);
-  html += renderFunilNecessario('08', C, [{label:'Assessoria', filtro:function(c){return c.vaga==='Assessor';}, gap:gapA},{label:'Future + Vem Ser Blue', filtro:function(c){return ehFuture(c)||ehVSB(c);}, gap:gapF}]);
-  html += renderCapacidade('09', C, ini, fim, metaT);
-  html += renderSimulador('10', C, ini, fim, metaT, '2026');
+  html += renderProfundidadeFunil('05', C);
+  html += renderQualidade('06', C, ini, fim);
+  html += renderSaudeDados('07', C, ini, fim);
+  html += renderCusto('08', C, ini, fim);
+  html += renderConcentracao('09', C, ini, fim);
+  html += renderPacePorHunter('10', C, ini, fim, metaT);
+  html += renderFunilNecessario('11', C, [{label:'Assessoria', filtro:function(c){return c.vaga==='Assessor';}, gap:gapA},{label:'Future + Vem Ser Blue', filtro:function(c){return ehFuture(c)||ehVSB(c);}, gap:gapF}]);
+  html += renderTempoCiclo('12', C, ini, fim);
+  html += renderCapacidade('13', C, ini, fim, metaT);
+  html += renderSimulador('14', C, ini, fim, metaT, '2026');
   return html;
 }
 
@@ -440,17 +458,21 @@ function renderAbaAno(C, ano) {
   html += renderResumoBrutoLiquido('02', C, ini1, fim2, ano+' (ano cheio)');
   html += renderPaceMensal('03', C, [1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){ return {y:ano,m:m,l:['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][m-1]}; }));
   html += renderPracas('04', C, ini1, fim2);
-  html += renderQualidade('05', C, ini1, fim2);
-  html += renderCusto('06', C, ini1, fim2);
-  html += renderConcentracao('07', C, ini1, fim2);
+  html += renderProfundidadeFunil('05', C);
+  html += renderQualidade('06', C, ini1, fim2);
+  html += renderSaudeDados('07', C, ini1, fim2);
+  html += renderCusto('08', C, ini1, fim2);
+  html += renderConcentracao('09', C, ini1, fim2);
+  html += renderPacePorHunter('10', C, ini1, fim2, Math.round(FRENTES_DEF[0].metaPorAno+FRENTES_DEF[1].metaPorAno+FRENTES_DEF[2].metaPorAno));
 
-  html += renderFunilNecessario('08', C, [
+  html += renderFunilNecessario('11', C, [
     { label:'Gerentes de Banco', filtro:ehGerenteBanco, gap:Math.round(Math.max(0,FRENTES_DEF[0].metaPorAno-calcularPeriodo(C,ini1,fim2,ehGerenteBanco).contratados.length)) },
     { label:'Als XP', filtro:ehAlsXP, gap:Math.round(Math.max(0,FRENTES_DEF[1].metaPorAno-calcularPeriodo(C,ini1,fim2,ehAlsXP).contratados.length)) },
     { label:'Future', filtro:ehFuture, gap:Math.round(Math.max(0,FRENTES_DEF[2].metaPorAno-calcularPeriodo(C,ini1,fim2,ehFuture).contratados.length)) }
   ]);
-  html += renderCapacidade('09', C, ini1, fim2, Math.round(FRENTES_DEF[0].metaPorAno+FRENTES_DEF[1].metaPorAno+FRENTES_DEF[2].metaPorAno));
-  html += renderSimulador('10', C, ini1, fim2, metaAnoOficial, String(ano));
+  html += renderTempoCiclo('12', C, ini1, fim2);
+  html += renderCapacidade('13', C, ini1, fim2, Math.round(FRENTES_DEF[0].metaPorAno+FRENTES_DEF[1].metaPorAno+FRENTES_DEF[2].metaPorAno));
+  html += renderSimulador('14', C, ini1, fim2, metaAnoOficial, String(ano));
   return html;
 }
 
@@ -700,6 +722,134 @@ function _rodarSimulador(idSim) {
 }
 
 
+// ════════ Profundidade do Funil — Praças-Alvo ════════
+// Snapshot de HOJE (não do período): quantos candidatos estão de fato no pipeline
+// de cada praça-alvo agora, independente de quando eles vão converter.
+function renderProfundidadeFunil(numSec, C) {
+  var relevantes = C.filter(function(c){ return c.vaga==='Assessor' || ehFuture(c) || ehVSB(c); });
+  var porPraca = {};
+  relevantes.forEach(function(c){
+    var p = c.praca || 'Sem praça';
+    var isAlvo = (c.vaga==='Assessor' && PRACAS_ALVO_ASSESSORIA.indexOf(cidadeDe(p))>-1) || ehFuture(c) || ehVSB(c);
+    if (!isAlvo) return;
+    if (!porPraca[p]) porPraca[p] = { praca:p, vaga:c.vaga, prospeccao:0, qualificacao:0, negociacao:0, ativos:0 };
+    if (c.etapa==='Prospecção') porPraca[p].prospeccao++;
+    else if (c.etapa==='Qualificação') porPraca[p].qualificacao++;
+    else if (c.etapa==='Negociação') porPraca[p].negociacao++;
+    if (['Prospecção','Qualificação','Negociação'].indexOf(c.etapa)>-1) porPraca[p].ativos++;
+  });
+  var linhas = Object.keys(porPraca).map(function(k){ return porPraca[k]; }).sort(function(a,b){ return a.ativos-b.ativos; });
+  var criticas = linhas.filter(function(l){ return l.ativos===0; }).length;
+
+  if (!linhas.length) {
+    return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Profundidade do Funil — Praças-Alvo</span></div><div class="card"><div style="padding:10px 0;color:var(--wt4);">Nenhuma praça-alvo com candidato registrado ainda.</div></div>';
+  }
+
+  var linhasHtml = linhas.map(function(l){
+    var vagaLbl = l.vaga==='Assessor'?'Assessoria':(l.vaga==='Future'?'Future':'Vem Ser Blue');
+    var critico = l.ativos===0;
+    return '<tr'+(critico?' style="background:rgba(179,58,58,.1);"':'')+'><td>'+(critico?'⚠️ ':'')+'<b>'+esc(l.praca.replace(/^Blue3\s*[-–]\s*/i,''))+'</b></td><td style="color:var(--wt3);">'+vagaLbl+'</td><td>'+l.prospeccao+'</td><td>'+l.qualificacao+'</td><td>'+l.negociacao+'</td><td style="font-weight:700;color:'+(critico?'var(--wred)':'var(--wt1)')+';">'+l.ativos+'</td></tr>';
+  });
+
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Profundidade do Funil — Praças-Alvo</span><span class="ss">'+(criticas>0?('<b style="color:var(--wred);">⚠ '+criticas+' praça(s) sem ninguém no funil</b>'):'todas as praças-alvo têm gente no funil')+'</span></div>'
+    + '<div class="card">' + _tabelaExpandivel('<tr><th>Praça</th><th>Canal</th><th>Prospecção</th><th>Qualificação</th><th>Negociação</th><th>Total Ativo</th></tr>', linhasHtml, 10)
+    + '<div class="nota">📐 Isso é o funil de <b>hoje</b>, não do período — mostra onde tem gente pra converter agora. Praça com 0 no total ativo não vai gerar contratação nenhuma enquanto ninguém for prospectado ali, não importa a meta ou a conversão histórica.</div>'
+    + '</div>';
+}
+
+// ════════ Tempo de Ciclo — Realismo do Prazo ════════
+function renderTempoCiclo(numSec, C, ini, fim) {
+  var canaisFiltro = function(c){ return c.vaga==='Assessor' || ehFuture(c) || ehVSB(c); };
+  var convertidos = C.filter(function(c){ return canaisFiltro(c) && contratadoBruto(c) && c.data_entrada && c.data_contratacao; });
+  var ciclos = convertidos.map(function(c){
+    var d1 = new Date(c.data_entrada+'T12:00:00'), d2 = new Date(c.data_contratacao+'T12:00:00');
+    return Math.round((d2-d1)/86400000);
+  }).filter(function(d){ return d>=0 && d<=720; });
+  var cicloMedio = ciclos.length ? ciclos.reduce(function(s,d){return s+d;},0)/ciclos.length : null;
+
+  var hoje = new Date();
+  var fimData = new Date(fim+'T12:00:00');
+  var diasRestantes = Math.max(0, Math.round((fimData-hoje)/86400000));
+
+  var ativos = C.filter(function(c){ return canaisFiltro(c) && ['Prospecção','Qualificação','Negociação'].indexOf(c.etapa)>-1 && c.data_entrada; });
+
+  var comChance = 0, semChance = 0;
+  ativos.forEach(function(c){
+    if (cicloMedio===null) { comChance++; return; }
+    var d1 = new Date(c.data_entrada+'T12:00:00');
+    var projecao = new Date(d1.getTime() + cicloMedio*86400000);
+    if (projecao <= fimData) comChance++; else semChance++;
+  });
+
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Tempo de Ciclo — Realismo do Prazo</span><span class="ss">Ciclo médio histórico: '+(cicloMedio!==null?Math.round(cicloMedio)+' dias':'sem dado suficiente')+' · '+diasRestantes+' dias restantes</span></div>'
+    + '<div class="card">'
+      + '<div class="row cols-3" style="margin-bottom:0;">'
+        + '<div class="kpi"><div class="kpi-label">No Funil Ativo Agora</div><div class="kpi-value">'+ativos.length+'</div><div class="kpi-sub">Prospecção+Qualificação+Negociação</div></div>'
+        + '<div class="kpi ok"><div class="kpi-label">Com Chance Real de Fechar</div><div class="kpi-value">'+comChance+'</div><div class="kpi-sub">projeção de conversão dentro do prazo</div></div>'
+        + '<div class="kpi '+(semChance>0?'bad':'ok')+'"><div class="kpi-label">Improvável Fechar a Tempo</div><div class="kpi-value">'+semChance+'</div><div class="kpi-sub">no ciclo médio, passa do fim do período</div></div>'
+      + '</div>'
+      + '<div class="nota">📐 Pra cada candidato ativo, projetei a data de conversão como entrada + ciclo médio histórico'+(cicloMedio!==null?' ('+Math.round(cicloMedio)+' dias)':'')+'. Quem passa do fim do período nessa conta entra em "improvável" — é estimativa (candidatos específicos podem acelerar ou travar), mas dá o tamanho real do desafio, sem o otimismo puro da taxa de conversão.</div>'
+    + '</div>';
+}
+
+// ════════ Pace por Hunter Individual ════════
+function renderPacePorHunter(numSec, C, ini, fim, metaPeriodo) {
+  var comHunter = C.filter(function(c){ return c.hunter && contratadoBruto(c) && c.data_contratacao && c.data_contratacao>=ini && c.data_contratacao<=fim; });
+  var porHunter = {};
+  comHunter.forEach(function(c){ porHunter[c.hunter] = (porHunter[c.hunter]||0)+1; });
+  var nomes = Object.keys(porHunter);
+
+  if (!nomes.length) {
+    return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Pace por Hunter</span></div><div class="card"><div style="padding:10px 0;color:var(--wt4);">Sem contratação com hunter atribuído no período.</div></div>';
+  }
+
+  var cotaImplicita = metaPeriodo / nomes.length;
+  var linhas = nomes.sort(function(a,b){ return porHunter[b]-porHunter[a]; }).map(function(h){
+    var atual = porHunter[h];
+    var pct = cotaImplicita ? Math.round(atual/cotaImplicita*100) : 0;
+    var status = pct>=100 ? {t:'No pace',c:'var(--wgreen-ok)'} : (pct>=60 ? {t:'Atenção',c:'var(--wgold)'} : {t:'Abaixo',c:'var(--wred)'});
+    return '<tr><td><b>'+esc(h)+'</b></td><td>'+atual+'</td><td>'+cotaImplicita.toFixed(1)+'</td><td>'+_barra(atual,cotaImplicita,pct>=100?'green':'gold')+'</td><td style="color:'+status.c+';font-weight:700;">'+status.t+'</td></tr>';
+  });
+
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Pace por Hunter</span><span class="ss">Cota implícita: meta ÷ '+nomes.length+' hunter(s) ativo(s) = '+cotaImplicita.toFixed(1)+' cada</span></div>'
+    + '<div class="card">' + _tabelaExpandivel('<tr><th>Hunter</th><th>Contratado</th><th>Cota Implícita</th><th>Progresso</th><th>Status</th></tr>', linhas, 10)
+    + '<div class="nota">📐 "Cota implícita" divide a meta do período igualmente entre os hunters ativos — não é uma meta individual atribuída de verdade no sistema, é uma referência de comparação. Se a distribuição de trabalho não é igualitária na prática (ex: hunter júnior recém-chegado, ou alguém dedicado a outra frente), ajuste a leitura.</div>'
+    + '</div>';
+}
+
+// ════════ Saúde do Dado ════════
+function renderSaudeDados(numSec, C, ini, fim) {
+  var doPeriodo = C.filter(function(c){ return contratadoBruto(c) && c.data_contratacao && c.data_contratacao>=ini && c.data_contratacao<=fim; });
+  if (!doPeriodo.length) {
+    return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Saúde do Dado</span></div><div class="card"><div style="padding:10px 0;color:var(--wt4);">Sem contratação no período.</div></div>';
+  }
+
+  var total = doPeriodo.length;
+  var comPiso = doPeriodo.filter(function(c){ return (c.piso||0)>0; }).length;
+  var comNivel = doPeriodo.filter(function(c){ return !!c.nivel; }).length;
+  var comPraca = doPeriodo.filter(function(c){ return !!c.praca; }).length;
+  var comAuc = doPeriodo.filter(function(c){ return (c.auc_mm||0)>0; }).length;
+
+  function linha(label, n) {
+    var pct = Math.round(n/total*100);
+    var cor = pct>=80?'var(--wgreen-ok)':(pct>=50?'var(--wgold)':'var(--wred)');
+    return '<tr><td><b>'+label+'</b></td><td>'+n+' de '+total+'</td><td style="font-weight:700;color:'+cor+';">'+pct+'%</td><td>'+_barra(n,total,pct>=80?'green':'gold')+'</td></tr>';
+  }
+
+  var pctPiso = Math.round(comPiso/total*100);
+  var alerta = pctPiso<70;
+
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Saúde do Dado</span><span class="ss">Quanto do Custo e da Qualidade acima está calculado sobre base completa</span></div>'
+    + '<div class="card"><table><thead><tr><th>Campo</th><th>Preenchido</th><th>%</th><th>Cobertura</th></tr></thead><tbody>'
+      + linha('Piso (usado no Custo)', comPiso)
+      + linha('Nível/Senioridade (usado na Qualidade)', comNivel)
+      + linha('Praça', comPraca)
+      + linha('AuC / Meta de Captação', comAuc)
+    + '</tbody></table>'
+    + (alerta ? '<div class="nota" style="border-left-color:var(--wred);">⚠️ Só '+pctPiso+'% dos contratados têm piso preenchido — os números de Custo da Operação estão subestimados, calculados sobre uma base parcial.</div>' : '<div class="nota">📐 Cobertura de dado dentro do esperado — os números de Custo e Qualidade acima têm base sólida.</div>')
+    + '</div>';
+}
+
 function abrirEdicaoPremissas() {
   var p = PARAMS;
   var campos = [
@@ -736,9 +886,19 @@ function salvarPremissas() {
   var body = {};
   campos.forEach(function(c){ body[c] = parseFloat(document.getElementById('edit-'+c).value) || 0; });
   supaPatch('guerra_parametros?id=eq.1', body).then(function(r){
-    PARAMS = (r && r[0]) ? r[0] : Object.assign({}, PARAMS, body);
     document.getElementById('guerra-edit-overlay').remove();
-    mudarAba(ABA_ATUAL);
+    if (r && r[0]) {
+      // Supabase confirmou a gravação de verdade (devolveu a linha atualizada)
+      PARAMS = r[0];
+      mudarAba(ABA_ATUAL);
+    } else {
+      // Devolveu 200 com lista vazia — normalmente é RLS bloqueando a escrita
+      // silenciosamente. Aplico na tela pra você não perder o que digitou, mas
+      // avisando que isso NÃO foi salvo de verdade no banco.
+      PARAMS = Object.assign({}, PARAMS, body);
+      mudarAba(ABA_ATUAL);
+      alert('⚠️ Os valores foram aplicados nesta tela, mas o Supabase não confirmou a gravação (devolveu sucesso vazio) — provavelmente RLS bloqueando a escrita. Ao recarregar a página, isso vai voltar ao valor antigo.\n\nRode esta linha no SQL Editor do Supabase:\nalter table guerra_parametros disable row level security;');
+    }
   }).catch(function(){
     PARAMS = Object.assign({}, PARAMS, body);
     document.getElementById('guerra-edit-overlay').remove();
