@@ -146,13 +146,13 @@ function blue3SaveCSV(rows, onDone){
 // ── Carregar dados do CRM (crm_candidatos) ──
 function blue3LoadData(callback){
   // Primeiro carrega crm_candidatos (essencial), depois tenta propostas (opcional)
-  supaFetch('crm_candidatos?order=data_entrada.desc&limit=500',{prefer:'return=representation'})
+  supaFetch('crm_candidatos?order=data_entrada.desc&limit=20000',{prefer:'return=representation'})
   .then(function(r){return r.json();})
   .then(function(rows){
     if(!rows||!rows.length){ callback([]); return; }
 
     // Tenta buscar payback das propostas — falha silenciosa se não conseguir
-    supaFetch('propostas?select=telefone,nome,payback_meses&order=versao.desc&limit=1000',{prefer:'return=representation'})
+    supaFetch('propostas?select=telefone,nome,payback_meses&order=versao.desc&limit=10000',{prefer:'return=representation'})
     .then(function(pr){ return pr.ok ? pr.json() : []; })
     .catch(function(){ return []; })
     .then(function(propRows){
