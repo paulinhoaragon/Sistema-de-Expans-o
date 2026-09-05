@@ -973,7 +973,7 @@ function renderCrescimentoPipeline(cands) {
 // ── Inicialização ─────────────────────────────────────────────
 (function(){
   Promise.all([
-    supa('crm_candidatos?order=criado_em.desc&limit=500&select=id,nome,etapa,nivel,vaga,praca,hunter,lider,mou,data_mou,status_ancord,data_entrada,data_inicio,prev_inicio,data_declinio,auc_mm,piso,periodo,instituicao,estrategico,historico_etapas,comentarios'),
+    supa('crm_candidatos?order=criado_em.desc&limit=20000&select=id,nome,etapa,nivel,vaga,praca,hunter,lider,mou,data_mou,status_ancord,data_entrada,data_inicio,prev_inicio,data_declinio,auc_mm,piso,periodo,instituicao,estrategico,historico_etapas,comentarios'),
     new Promise(function(resolve){
       if (typeof NexusConfig === 'undefined' || typeof NexusConfig.getPracas !== 'function') { resolve([]); return; }
       NexusConfig.getPracas(function(err, pracas){ resolve(err ? [] : (pracas||[])); });
