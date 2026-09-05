@@ -338,7 +338,7 @@ function noPeriodo(c){
 
 // ====== Boot ======
 function boot(){
-  supa('crm_candidatos?order=criado_em.desc&limit=1000')
+  supa('crm_candidatos?order=criado_em.desc&limit=20000')
     .then(function(r){ return r.json(); })
     .then(function(rows){
       _ALL = Array.isArray(rows)?rows:[];
