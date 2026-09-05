@@ -1805,7 +1805,7 @@ function renderPipelineCRM(regFiltro){
   var key='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
   try{ if(window.parent&&window.parent.SUPA_URL)url=window.parent.SUPA_URL; if(window.parent&&window.parent.SUPA_KEY)key=window.parent.SUPA_KEY; }catch(e){}
 
-  fetch(url+'/rest/v1/crm_candidatos?select=*&limit=2000',{
+  fetch(url+'/rest/v1/crm_candidatos?select=*&limit=20000',{
     headers:{'apikey':key,'Authorization':'Bearer '+key}
   }).then(function(r){return r.json();}).then(function(rows){
     if(!Array.isArray(rows)){ if(loadEl)loadEl.textContent='Erro ao carregar pipeline (resposta inesperada do banco).'; return; }
