@@ -303,8 +303,8 @@ function carregar() {
   var camposExtra = 'id,data_contrato_assinado,data_desligamento_solicitado,desligamento_renovacoes,data_contato_30,data_contato_60,data_contato_180,parecer_30,parecer_60,parecer_180';
 
   Promise.all([
-    supaGet('crm_candidatos?select='+camposBase+'&order=nome.asc&limit=1000'),
-    supaGet('crm_candidatos?select='+camposExtra+'&limit=1000').catch(function(){ return null; })
+    supaGet('crm_candidatos?select='+camposBase+'&order=nome.asc&limit=20000'),
+    supaGet('crm_candidatos?select='+camposExtra+'&limit=20000').catch(function(){ return null; })
   ]).then(function(r){
     var base = r[0] || [];
     var extra = r[1];
