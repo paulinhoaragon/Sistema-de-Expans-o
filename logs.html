@@ -220,7 +220,7 @@ function resumoMeta(m){
 var _todos=[],_filtrados=[],_pag=1,_pp=50;
 
 function carregarLogs(){
-  supa('logs_auditoria?order=criado_em.desc&limit=1000')
+  supa('logs_auditoria?order=criado_em.desc&limit=20000')
     .then(function(rows){
       _todos=rows||[];
 
