@@ -248,7 +248,7 @@ function buscar() {
   var q    = (document.getElementById('busca-input').value || '').trim().toLowerCase();
   var st   = document.getElementById('busca-status').value || '';
 
-  var params = 'order=criado_em.desc&limit=200';
+  var params = 'order=criado_em.desc&limit=20000';
   if (st) params += '&status=eq.'+encodeURIComponent(st);
 
   supa('propostas?'+params)
