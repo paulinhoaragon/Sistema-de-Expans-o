@@ -123,7 +123,7 @@ function iniciar() {
   document.getElementById('cv-sub').textContent = 'Bem-vindo(a), ' + user.n;
 
   var campos = 'id,nome,praca,lider,etapa,data_inicio,data_contato_30,data_contato_60,data_contato_180';
-  supaGet('crm_candidatos?select='+campos+'&limit=1000').then(function(rows){
+  supaGet('crm_candidatos?select='+campos+'&limit=20000').then(function(rows){
     var perfil = (user.r||'').toLowerCase();
     var verTudo = perfil === 'master' || perfil === 'gerente';
     var nomeUser = normalizarNome(user.n);
