@@ -751,7 +751,7 @@ function supa(path, opts) {
 }
 
 function carregar() {
-  supa('crm_candidatos?order=criado_em.desc&limit=500')
+  supa('crm_candidatos?order=criado_em.desc&limit=20000')
     .then(function(r){ return r.json(); })
     .then(function(rows){
       _todos = Array.isArray(rows) ? rows : [];
