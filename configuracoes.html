@@ -601,9 +601,10 @@ function carregarHunters() {
           ? '<img src="'+h.foto_url+'" alt="'+h.nome+'">'
           : inicial;
         var mr = _metasResumoHunter(h.id);
+        var rotuloPeriodo = mr ? (mr.semestre+'S'+mr.ano) : (_periodoVigente().semestre+'S'+_periodoVigente().ano);
         var metaLinha = mr
-          ? '2S2026: ' + mr.str + ' · <b style="color:var(--cobalt)">total ' + mr.total + '</b>'
-          : 'Metas 2S2026: a definir';
+          ? rotuloPeriodo + ': ' + mr.str + ' · <b style="color:var(--cobalt)">total ' + mr.total + '</b>'
+          : 'Metas ' + rotuloPeriodo + ': a definir';
         return '<div class="hunter-row">'
           + '<div class="h-avatar">'+avatarHTML+'</div>'
           + '<div class="h-info">'
@@ -628,16 +629,23 @@ var _CANAL_CURTO = {
   'Assessoria de Investimentos':'Assessoria','Vem ser Blue':'Vem ser Blue','Blue3 Future':'Future',
   'Planejador/Consultor':'Planejador','Vagas Comerciais':'Vagas Com.','M&A':'M&A'
 };
-// Resumo das metas do semestre vigente (2S2026) de um hunter, para a lista
+// Calcula o semestre vigente de verdade (jan-jun = 1º sem, jul-dez = 2º sem),
+// em vez de fixar um ano/semestre específico que ficaria desatualizado.
+function _periodoVigente(){
+  var hoje = new Date();
+  return { ano: hoje.getFullYear(), semestre: (hoje.getMonth()+1) <= 6 ? 1 : 2 };
+}
+// Resumo das metas do semestre vigente de um hunter, para a lista
 function _metasResumoHunter(hunterId){
   if(!_metasCache || !_metasCache.length) return null;
+  var pv = _periodoVigente();
   var rows=_metasCache.filter(function(m){
-    return String(m.hunter_id)===String(hunterId) && Number(m.ano)===2026 && Number(m.semestre)===2 && (m.meta_contratacoes||0)>0;
+    return String(m.hunter_id)===String(hunterId) && Number(m.ano)===pv.ano && Number(m.semestre)===pv.semestre && (m.meta_contratacoes||0)>0;
   });
   if(!rows.length) return null;
   var total=rows.reduce(function(s,m){ return s+(m.meta_contratacoes||0); },0);
   var str=rows.map(function(m){ return (_CANAL_CURTO[m.canal]||m.canal)+' '+m.meta_contratacoes; }).join(' · ');
-  return { total:total, str:str };
+  return { total:total, str:str, ano:pv.ano, semestre:pv.semestre };
 }
 
 // Lista canônica de canais — fallback local para o form desenhar os campos
@@ -727,7 +735,7 @@ function buscarCandidatosPracaErrada() {
   status.textContent = '';
 
   Promise.all([
-    _supaMetasReq('crm_candidatos?select=id,nome,praca,instituicao&praca=eq.'+encodeURIComponent(origem)+'&limit=1000'),
+    _supaMetasReq('crm_candidatos?select=id,nome,praca,instituicao&praca=eq.'+encodeURIComponent(origem)+'&limit=20000'),
     new Promise(function(resolve){ NexusConfig.getPracas(function(err, pracas){ resolve(pracas||[]); }); })
   ]).then(function(res){
     _RECLASS_CANDIDATOS = res[0] || [];
