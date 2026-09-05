@@ -679,11 +679,11 @@ function showEmpty() {
         var G = window.Blue3Data.resumoGeral || {};
         var H = window.Blue3Data.hunters || [];
         Promise.all([
-          supa('crm_candidatos?select=etapa,vaga&limit=500').catch(function(){ return []; }),
-          supa('propostas?select=status&limit=500').catch(function(){ return []; }),
-          supa('ma_pipeline?select=id,nome,praca,auc_b,status&limit=200').catch(function(){ return []; }),
-          supa('vagas?select=id,cargo,unidade,status,prioridade,created_at&status=eq.aberta&limit=100').catch(function(){ return []; }),
-          supa('crm_candidatos?select=id,nome,praca,etapa,data_contratacao,data_mou,data_inicio,data_contrato_assinado,data_desligamento_solicitado,desligamento_renovacoes,data_contato_30,data_contato_60,data_contato_180&limit=1000').catch(function(){ return []; })
+          supa('crm_candidatos?select=etapa,vaga&limit=20000').catch(function(){ return []; }),
+          supa('propostas?select=status&limit=20000').catch(function(){ return []; }),
+          supa('ma_pipeline?select=id,nome,praca,auc_b,status&limit=20000').catch(function(){ return []; }),
+          supa('vagas?select=id,cargo,unidade,status,prioridade,created_at&status=eq.aberta&limit=20000').catch(function(){ return []; }),
+          supa('crm_candidatos?select=id,nome,praca,etapa,data_contratacao,data_mou,data_inicio,data_contrato_assinado,data_desligamento_solicitado,desligamento_renovacoes,data_contato_30,data_contato_60,data_contato_180&limit=20000').catch(function(){ return []; })
         ]).then(function(results){
           if (window.Blue3Data) window.Blue3Data._vagas = results[3] || [];
           renderDash(G, H, results[0], results[1], results[2], results[4]);
