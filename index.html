@@ -733,7 +733,7 @@ function atualizarBadgeMeusRetornos() {
   var item = document.querySelector('[onclick*="meus_retornos.html"]');
   if (!item) return;
   var campos = 'id,lider,etapa,data_inicio,data_contato_30,data_contato_60,data_contato_180';
-  fetch(SUPA_URL+'/rest/v1/crm_candidatos?select='+campos+'&limit=1000', { headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY } })
+  fetch(SUPA_URL+'/rest/v1/crm_candidatos?select='+campos+'&limit=20000', { headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY } })
     .then(function(r){ return r.ok ? r.json() : []; })
     .then(function(rows){
       var perfil = (B3CU.r||'').toLowerCase();
