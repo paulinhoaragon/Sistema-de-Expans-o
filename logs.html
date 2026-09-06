@@ -18,7 +18,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .page{padding:24px 28px 60px;}
 
 /* KPIs */
-.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
 .kpi{background:var(--surface);border-radius:var(--r12);padding:14px 16px;box-shadow:var(--sh);border-top:2px solid var(--cobalt);}
 .kpi.g{border-top-color:var(--g);}
 .kpi.am{border-top-color:var(--am);}
@@ -96,6 +96,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <div class="kpi g"><div class="kl">Hoje</div><div class="kv" id="kpi-hoje">—</div><div class="ks">ações registradas</div></div>
     <div class="kpi am"><div class="kl">Esta Semana</div><div class="kv" id="kpi-sem">—</div><div class="ks">últimos 7 dias</div></div>
     <div class="kpi red"><div class="kl">Exclusões</div><div class="kv" id="kpi-del">—</div><div class="ks">registros removidos</div></div>
+    <div class="kpi am"><div class="kl">💰 Financeiro/Metas</div><div class="kv" id="kpi-fin">—</div><div class="ks">piso, gatilhos, meta, etapa</div></div>
   </div>
 
   <!-- Filtros -->
@@ -112,6 +113,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
       <option value="hist">Histórico de Contatos</option>
       <option value="login">Login</option>
       <option value="delete">Exclusão</option>
+      <option value="financeiro">💰 Financeiro e Metas</option>
     </select>
     <label>De</label><input type="date" id="f-de">
     <label>Até</label><input type="date" id="f-ate">
@@ -254,6 +256,7 @@ function calcKPIs(){
   document.getElementById('kpi-hoje').textContent=_todos.filter(function(r){return r.criado_em&&new Date(r.criado_em)>=h;}).length;
   document.getElementById('kpi-sem').textContent=_todos.filter(function(r){return r.criado_em&&new Date(r.criado_em)>=s;}).length;
   document.getElementById('kpi-del').textContent=_todos.filter(function(r){var a=(r.acao||'').toLowerCase();return a.includes('exclu')||a.includes('delet')||a.includes('remov');}).length;
+  document.getElementById('kpi-fin').textContent=_todos.filter(_ehMudancaFinanceira).length;
 }
 
 // Converte string de data para timestamp de forma segura
@@ -274,6 +277,22 @@ function parseDateSafe(s) {
   return isNaN(t) ? null : t;
 }
 
+// Campos que mexem em dinheiro (Custo da Operação) ou em meta/estratégia —
+// qualquer edição neles aparece no filtro "💰 Financeiro e Metas", mesmo que
+// a ação em si não tenha essas palavras no texto (ex: "Editar Candidato").
+var CAMPOS_FINANCEIROS = [
+  'piso','periodo','upfront','coparticipacao','detalhe_coparticipacao',
+  'trigger1_tri_val','trigger1_val','trigger2_val','trigger3_val','trigger4_val',
+  'auc_mm','auc_custodia_mm','remuneracao_bruta',
+  'meta_contratacoes','etapa'
+];
+function _ehMudancaFinanceira(r){
+  if (!r.mudancas || !r.mudancas.length) return false;
+  return r.mudancas.some(function(m){
+    return CAMPOS_FINANCEIROS.indexOf(m.campo) > -1;
+  });
+}
+
 function aplicarFiltros(){
   var usr=(document.getElementById('f-usr')||{}).value||'';
   var acao=(document.getElementById('f-acao')||{}).value||'';
@@ -288,7 +307,8 @@ function aplicarFiltros(){
 
   _filtrados=_todos.filter(function(r){
     if(usr&&(r.usuario||'')!==usr)return false;
-    if(acao){var a=(r.acao||'').toLowerCase();if(!new RegExp(mapa[acao]||acao).test(a))return false;}
+    if(acao==='financeiro'){ if(!_ehMudancaFinanceira(r)) return false; }
+    else if(acao){var a=(r.acao||'').toLowerCase();if(!new RegExp(mapa[acao]||acao).test(a))return false;}
     // Filtro de data: se criado_em for nulo/inválido, inclui o registro
     var tsCriado = parseDateSafe(r.criado_em);
     if(tsCriado !== null){
