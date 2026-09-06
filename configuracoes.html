@@ -134,6 +134,7 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
   <button class="main-tab" onclick="showTab('tab-params',this)">Parâmetros</button>
   <button class="main-tab" onclick="showTab('tab-usuarios',this);carregarUsuarios()">Usuários</button>
   <button class="main-tab" onclick="showTab('tab-ferramentas',this)">Ferramentas</button>
+  <button class="main-tab" onclick="showTab('tab-saude',this);carregarSaudeSistema()">Saúde do Sistema</button>
 </div>
 
 <!-- Toast de feedback -->
@@ -564,6 +565,21 @@ input[type="color"]{width:0;height:0;opacity:0;position:absolute;}
   </div>
 </div>
 
+<div class="tab-content page" id="tab-saude">
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title">Saúde do Sistema</div>
+    <div class="card-sub">Conta quantos registros existem hoje em cada tabela e compara com o limite usado nas consultas do sistema (padronizado em 20.000 nas últimas correções). Não baixa dado nenhum, só o total — é uma consulta leve, segura de rodar sempre que quiser.</div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="carregarSaudeSistema()">🔄 Atualizar agora</button>
+    </div>
+    <div id="saude-status" style="margin-top:10px;font-size:11px;color:var(--t3);"></div>
+    <div id="saude-tabela" style="margin-top:14px;"></div>
+    <div style="margin-top:14px;font-size:10px;color:var(--t3);background:var(--canvas,#F4F6FB);border-radius:8px;padding:10px 12px;line-height:1.6;">
+      📐 <b>Como ler:</b> as consultas do sistema hoje usam limite de 20.000 registros. 🟢 até 50% disso (10.000) é tranquilo. 🟡 entre 50% e 90% (10.000–18.000) vale ficar de olho. 🔴 acima de 90% (18.000+) precisa aumentar o limite nos arquivos antes que volte a acontecer o que já aconteceu (dado sumindo sem erro nenhum). Essa tela não sabe se algum arquivo específico usa um limite diferente de 20.000 — se você criar um relatório novo com limite menor, é preciso lembrar de manter o padrão.
+    </div>
+  </div>
+</div>
+
 <script>
 // ── Navegação tabs ────────────────────────────────────────────────
 function showTab(id, btn) {
@@ -809,7 +825,75 @@ function _supaMetasReq(path, opts) {
   });
 }
 
-// ── Exportar Propostas para a XP (.xlsx) ───────────────────────────
+// ── Saúde do Sistema — conta registros por tabela sem baixar os dados ──
+var LIMITE_REFERENCIA = 20000; // mesmo limite padronizado nas consultas do sistema
+var TABELAS_MONITORADAS = [
+  { tabela:'crm_candidatos', label:'Candidatos (CRM)' },
+  { tabela:'propostas',      label:'Propostas' },
+  { tabela:'ma_pipeline',    label:'Pipeline M&A' },
+  { tabela:'vagas',          label:'Vagas' },
+  { tabela:'logs_auditoria', label:'Logs de Auditoria' },
+  { tabela:'hunter_metas',   label:'Metas de Hunter' },
+  { tabela:'guerra_parametros', label:'Parâmetros — Sala de Guerra' }
+];
+
+// Pega só o total de linhas de uma tabela, sem baixar nenhum registro
+// (usa Content-Range do Postgres/Supabase — é uma consulta muito leve).
+function _contarRegistros(tabela) {
+  var url='https://cjimsplgxrwkqgzegnkq.supabase.co';
+  var key='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+  return fetch(url+'/rest/v1/'+tabela+'?select=id&limit=1', {
+    method:'GET',
+    headers:{ 'apikey':key, 'Authorization':'Bearer '+key, 'Prefer':'count=exact', 'Range':'0-0' },
+    cache:'no-store'
+  }).then(function(res){
+    if (!res.ok && res.status !== 206) throw new Error('Tabela indisponível (HTTP '+res.status+')');
+    var cr = res.headers.get('content-range'); // formato: "0-0/543"
+    if (!cr) return null;
+    var total = cr.split('/')[1];
+    return total === '*' ? null : parseInt(total, 10);
+  });
+}
+
+function carregarSaudeSistema() {
+  var elStatus = document.getElementById('saude-status');
+  var elTabela = document.getElementById('saude-tabela');
+  elStatus.textContent = 'Contando registros...';
+  elTabela.innerHTML = '';
+
+  Promise.all(TABELAS_MONITORADAS.map(function(t){
+    return _contarRegistros(t.tabela)
+      .then(function(n){ return { label:t.label, tabela:t.tabela, total:n, erro:null }; })
+      .catch(function(e){ return { label:t.label, tabela:t.tabela, total:null, erro:e.message }; });
+  })).then(function(resultados){
+    elStatus.textContent = 'Atualizado agora · ' + new Date().toLocaleTimeString('pt-BR');
+    var linhas = resultados.map(function(r){
+      if (r.erro) {
+        return '<tr><td style="padding:9px 10px;font-weight:600;">'+r.label+'</td><td colspan="3" style="padding:9px 10px;color:var(--t4);font-size:11px;">Tabela não encontrada ou sem acesso (ok se vocês não usam essa tabela)</td></tr>';
+      }
+      var pct = Math.round((r.total||0) / LIMITE_REFERENCIA * 100);
+      var cor, rotulo;
+      if (pct >= 90) { cor = '#DC2626'; rotulo = '🔴 Crítico'; }
+      else if (pct >= 50) { cor = '#B45309'; rotulo = '🟡 Atenção'; }
+      else { cor = '#16A34A'; rotulo = '🟢 Tranquilo'; }
+      return '<tr>'
+        + '<td style="padding:9px 10px;font-weight:600;">'+r.label+'</td>'
+        + '<td style="padding:9px 10px;">'+(r.total!=null?r.total.toLocaleString('pt-BR'):'—')+'</td>'
+        + '<td style="padding:9px 10px;">'+pct+'% de '+LIMITE_REFERENCIA.toLocaleString('pt-BR')+'</td>'
+        + '<td style="padding:9px 10px;font-weight:700;color:'+cor+';">'+rotulo+'</td>'
+      + '</tr>';
+    }).join('');
+    elTabela.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+      + '<thead><tr style="border-bottom:2px solid var(--rule);">'
+        + '<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Tabela</th>'
+        + '<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Registros</th>'
+        + '<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">% do Limite</th>'
+        + '<th style="padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Status</th>'
+      + '</tr></thead><tbody>'+linhas+'</tbody></table>';
+  });
+}
+
+
 var _RENEW_MAP_XP = {3:'mês 1', 6:'mês 3', 12:'mês 6', 18:'meses 6 e 12', 24:'meses 6, 12 e 18'};
 
 function _fmtDataBR(iso) {
