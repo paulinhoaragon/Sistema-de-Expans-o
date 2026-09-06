@@ -181,8 +181,9 @@ var PRACAS_ALVO_ASSESSORIA = ['sao paulo','rio de janeiro','goiania','uberlandia
 
 function carregar() {
   Promise.all([
-    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,estrategico,hunter,lider,data_entrada,data_contratacao,data_inicio,data_declinio,piso,periodo,upfront,trigger1_tri_val,trigger1_val,trigger2_val,trigger3_val,trigger4_val,coparticipacao,auc_mm&limit=5000'),
-    supaGet('guerra_parametros?id=eq.1&limit=1')
+    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,estrategico,hunter,lider,data_entrada,data_contratacao,data_inicio,data_declinio,piso,periodo,upfront,trigger1_tri_val,trigger1_val,trigger2_val,trigger3_val,trigger4_val,coparticipacao,auc_mm&limit=20000'),
+    supaGet('guerra_parametros?id=eq.1&limit=1'),
+    supaGet('ma_pipeline?select=id,headcount,status&limit=20000').catch(function(){ return null; })
   ]).then(function(res){
     TODOS = res[0] || [];
     PARAMS = (res[1] && res[1][0]) ? res[1][0] : {
@@ -191,6 +192,11 @@ function carregar() {
       turnover_pct:20, total_liquido_informado:743, tamanho_time_atual:0, ma_headcount_manual:0,
       meta_2026_total:121, meta_2027_total:390, meta_2028_total:390, caixa_prevista_total:-142100000
     };
+    // Soma automática do headcount de todas as operações de M&A ativas (não declinadas).
+    // Fica só como SUGESTÃO — quem manda no cálculo continua sendo o campo manual
+    // (ma_headcount_manual), editável em "Editar Premissas".
+    MA_HEADCOUNT_AUTO = (res[2] || []).filter(function(op){ return op.status !== 'Declinou'; })
+      .reduce(function(s,op){ return s + (parseInt(op.headcount,10)||0); }, 0);
     if (!res[1] || !res[1][0]) {
       document.getElementById('content-root').insertAdjacentHTML('afterbegin',
         '<div class="nota" style="margin-bottom:16px;">⚠ Tabela <b>guerra_parametros</b> não encontrada ou vazia — rode o <b>guerra_schema.sql</b> no Supabase pra habilitar edição de premissas. Por enquanto, usando valores padrão.</div>');
@@ -200,6 +206,8 @@ function carregar() {
     document.getElementById('content-root').innerHTML = '<div class="empty">⚠️ Erro ao carregar: '+esc(JSON.stringify(err))+'</div>';
   });
 }
+var MA_HEADCOUNT_AUTO = 0;
+
 
 function mudarAba(ano) {
   ABA_ATUAL = ano;
@@ -868,8 +876,14 @@ function abrirEdicaoPremissas() {
   ov.id = 'guerra-edit-overlay';
   ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px;';
   var campoHtml = campos.map(function(c){
+    var extra = '';
+    if (c[0] === 'ma_headcount_manual') {
+      extra = '<div style="font-size:10px;color:var(--wt3);margin-top:4px;">Soma automática das operações de M&A ativas hoje: <b style="color:var(--wgold);">'+MA_HEADCOUNT_AUTO+'</b> '
+        + '<button type="button" onclick="document.getElementById(\'edit-ma_headcount_manual\').value='+MA_HEADCOUNT_AUTO+'" style="margin-left:6px;background:none;border:1px solid var(--wrule);border-radius:4px;padding:2px 8px;font-size:9px;color:var(--wgold);cursor:pointer;">usar este valor</button></div>';
+    }
     return '<div style="margin-bottom:10px;"><label style="display:block;font-size:10px;color:var(--wt3);margin-bottom:4px;font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:.05em;">'+c[1]+'</label>'
       + '<input type="number" id="edit-'+c[0]+'" value="'+(p[c[0]]!=null?p[c[0]]:0)+'" style="width:100%;padding:8px 10px;border:1px solid var(--wrule);border-radius:5px;background:var(--wbg);color:var(--wt1);font-family:DM Sans,sans-serif;font-size:13px;">'
+      + extra
     + '</div>';
   }).join('');
   ov.innerHTML = '<div style="background:var(--wpanel);border:1px solid var(--wrule);border-radius:12px;max-width:480px;width:100%;max-height:85vh;overflow:auto;padding:24px;">'
