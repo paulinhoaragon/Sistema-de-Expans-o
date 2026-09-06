@@ -114,7 +114,7 @@ var NexusConfig = (function() {
 
   // ── Hunters ─────────────────────────────────────────────────────
   function getHunters(cb) {
-    supa('hunters?order=nome.asc&limit=200')
+    supa('hunters?order=nome.asc&limit=20000')
       .then(function(rows) {
         _cache.hunters = rows || [];
         cb(null, _cache.hunters);
@@ -217,7 +217,7 @@ var NexusConfig = (function() {
   // ── Líderes ─────────────────────────────────────────────────────
   // Líder assiste uma ou mais praças. Campo 'pracas' = array (jsonb no banco).
   function getLideres(cb) {
-    supa('lideres?order=nome.asc&limit=200')
+    supa('lideres?order=nome.asc&limit=20000')
       .then(function(rows) {
         _cache.lideres = rows || [];
         cb(null, _cache.lideres);
@@ -248,7 +248,7 @@ var NexusConfig = (function() {
   // ── Regionais ───────────────────────────────────────────────────
   // Regional assiste um bloco de praças. Campo 'pracas' = array (jsonb no banco).
   function getRegionais(cb) {
-    supa('regionais?order=nome.asc&limit=200')
+    supa('regionais?order=nome.asc&limit=20000')
       .then(function(rows) {
         _cache.regionais = rows || [];
         cb(null, _cache.regionais);
@@ -279,7 +279,7 @@ var NexusConfig = (function() {
   // ── Praças ──────────────────────────────────────────────────────
   // Cadastro central de praças. Fonte única para CRM e cadastros.
   function getPracas(cb) {
-    supa('pracas?order=grupo.asc,nome.asc&limit=300')
+    supa('pracas?order=grupo.asc,nome.asc&limit=20000')
       .then(function(rows) {
         _cache.pracas = rows || [];
         cb(null, _cache.pracas);
@@ -364,11 +364,12 @@ var NexusConfig = (function() {
   // ── Histórico de etapas CRM ─────────────────────────────────────
   // Registra automaticamente a mudança de etapa
   // Chamar sempre que etapa mudar (drag ou select)
-  function registrarMudancaEtapa(candidatoId, etapaAnterior, etapaNova, historicoBruto, cb) {
+  function registrarMudancaEtapa(candidatoId, etapaAnterior, etapaNova, historicoBruto, cb, candidatoAtual) {
     var hist = [];
     try { hist = JSON.parse(historicoBruto || '[]'); } catch(e) { hist = []; }
 
     var agora = new Date().toISOString();
+    var hoje  = agora.slice(0, 10);
 
     // Fechar entrada anterior (registrar saída)
     if (hist.length > 0) {
@@ -384,6 +385,26 @@ var NexusConfig = (function() {
       historico_etapas: JSON.stringify(hist),
       atualizado_em: agora,
     };
+
+    // Preenche a data específica da nova etapa automaticamente — mesmo
+    // comportamento que já existe no formulário manual (toggleEtapaDatas do
+    // crm.html) — só quando o candidato ainda não tiver essa data (nunca
+    // sobrescreve uma data que já foi preenchida antes, seja manual ou automática).
+    // Isso cobre o card sendo arrastado direto no board, que antes pulava
+    // essas datas por completo.
+    var c = candidatoAtual || {};
+    if ((etapaNova === 'Contratação' || etapaNova === 'Trabalhando') && !c.data_contratacao) {
+      payload.data_contratacao = hoje;
+    }
+    if (etapaNova === 'Trabalhando' && !c.data_inicio) {
+      payload.data_inicio = hoje;
+    }
+    if (etapaNova === 'Desligado' && !c.data_desligamento) {
+      payload.data_desligamento = hoje;
+    }
+    if (etapaNova === 'Declinou' && !c.data_declinio) {
+      payload.data_declinio = hoje;
+    }
 
     supa('crm_candidatos?id=eq.' + candidatoId, {
       method: 'PATCH',
