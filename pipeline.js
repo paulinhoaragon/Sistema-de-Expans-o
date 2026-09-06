@@ -541,7 +541,7 @@ function blue3SavePipelines(contratados, negociacao, ma){
   .catch(function(){})
   .then(function(){
     var rows = ma.map(function(r){
-      return{nome:r.n,praca:r.p,auc_b:r.a,status:r.s};
+      return{nome:r.n,praca:r.p,auc_b:r.a,headcount:r.h||0,status:r.s};
     });
     if(!rows.length) return;
     return fetch(SUPA_URL+'/rest/v1/ma_pipeline',
@@ -622,7 +622,7 @@ function Blue3_init(callback){
   .then(function(r){ return r.json(); })
   .then(function(rows){
     resultMA = (rows||[]).map(function(r){
-      return {id:r.id||'',n:r.nome||'',p:r.praca||'',a:parseFloat(r.auc_b)||0,s:r.status||'',dec:r.declinado||false};
+      return {id:r.id||'',n:r.nome||'',p:r.praca||'',a:parseFloat(r.auc_b)||0,h:parseInt(r.headcount,10)||0,s:r.status||'',dec:r.declinado||false};
     });
     finish();
   })
