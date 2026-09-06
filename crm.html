@@ -97,6 +97,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .col-neg   .col-hd{background:#FEF3C7}.col-neg   .col-name{color:#92400E}
 .col-cont  .col-hd{background:#FFF7ED}.col-cont  .col-name{color:#C2410C}
 .col-trab  .col-hd{background:#DCFCE7}.col-trab  .col-name{color:#166534}
+.col-desl  .col-hd{background:#FEF3C7}.col-desl  .col-name{color:#92400E}
 .col-dec   .col-hd{background:#FEE2E2}.col-dec   .col-name{color:#991B1B}
 .col-fut   .col-hd{background:#F1F5F9}.col-fut   .col-name{color:#64748B}
 
@@ -375,7 +376,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
             <select id="m-etapa" onchange="toggleEtapaDatas(this.value, true); toggleMotivoDeclinio(this.value);">
               <option>Prospecção</option><option>Qualificação</option>
               <option>Negociação</option><option>Contratação</option>
-              <option>Trabalhando</option><option>Declinou</option>
+              <option>Trabalhando</option><option>Desligado</option><option>Declinou</option>
               <option>Contato Futuro</option>
             </select>
           </div>
@@ -402,6 +403,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           <div class="f-row" id="row-declinio" style="display:none;">
             <label>Data de declínio</label>
             <input id="m-data-declinio" type="date">
+          </div>
+          <div class="f-row" id="row-desligamento" style="display:none;">
+            <label>Data de desligamento</label>
+            <input id="m-data-desligamento" type="date">
           </div>
         </div>
 
@@ -708,10 +713,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
 var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
 
-var ETAPAS = ['Prospecção','Qualificação','Negociação','Contratação','Trabalhando','Declinou','Contato Futuro'];
+var ETAPAS = ['Prospecção','Qualificação','Negociação','Contratação','Trabalhando','Desligado','Declinou','Contato Futuro'];
 var COR_ETAPA = {
   'Prospecção':'col-prosp','Qualificação':'col-qual','Negociação':'col-neg',
-  'Contratação':'col-cont','Trabalhando':'col-trab','Declinou':'col-dec','Contato Futuro':'col-fut'
+  'Contratação':'col-cont','Trabalhando':'col-trab','Desligado':'col-desl','Declinou':'col-dec','Contato Futuro':'col-fut'
 };
 
 var _todos = [];   // cache local
@@ -999,12 +1004,13 @@ function dropCard(e, etapa) {
   renderBoard();
   // Registrar mudança de etapa com data automática
   if (typeof NexusConfig !== 'undefined') {
-    NexusConfig.registrarMudancaEtapa(dragIdAtual, etapaAnterior, etapa, histBruto, null);
+    NexusConfig.registrarMudancaEtapa(dragIdAtual, etapaAnterior, etapa, histBruto, null, cand);
   } else {
     var dragPayload = { etapa: etapa, atualizado_em: new Date().toISOString() };
   var hj = new Date().toISOString().slice(0,10);
   if (etapa === 'Contratação' || etapa === 'Trabalhando') { if(!cand.data_contratacao) dragPayload.data_contratacao = hj; }
   if (etapa === 'Trabalhando') { if(!cand.data_inicio) dragPayload.data_inicio = hj; }
+  if (etapa === 'Desligado')   { if(!cand.data_desligamento) dragPayload.data_desligamento = hj; }
   if (etapa === 'Declinou')    { if(!cand.data_declinio) dragPayload.data_declinio = hj; }
   supa('crm_candidatos?id=eq.'+dragIdAtual, { method:'PATCH', body: JSON.stringify(dragPayload) });
     var cDrag = _todos.find(function(x){return x.id===dragIdAtual;});
@@ -1078,6 +1084,7 @@ function abrirEdicao(id) {
   document.getElementById('m-data-ini').value = r.data_inicio||'';
   var dc = document.getElementById('m-data-contratacao'); if (dc) dc.value = r.data_contratacao||'';
   var dd = document.getElementById('m-data-declinio'); if (dd) dd.value = r.data_declinio||'';
+  var dsl = document.getElementById('m-data-desligamento'); if (dsl) dsl.value = r.data_desligamento||'';
   toggleEtapaDatas(r.etapa||'Prospecção');
   carregarHistorico(r.comentarios||'');
   // Onboarding
@@ -1211,6 +1218,16 @@ function toggleEtapaDatas(etapa, autoData) {
     if (!showDec && inpDec) inpDec.value = '';
   }
 
+  // Data de desligamento — visível somente em Desligado
+  var rowDesl = document.getElementById('row-desligamento');
+  var inpDesl = document.getElementById('m-data-desligamento');
+  if (rowDesl) {
+    var showDesl = (etapa === 'Desligado');
+    rowDesl.style.display = showDesl ? '' : 'none';
+    if (showDesl && autoData && inpDesl && !inpDesl.value) inpDesl.value = hoje;
+    if (!showDesl && inpDesl) inpDesl.value = '';
+  }
+
   // Data de cadastro — sempre visível em edição (campo readonly)
   var rowCad = document.getElementById('row-data-cadastro');
   var mId    = document.getElementById('m-id');
@@ -1262,6 +1279,7 @@ function limparModal() {
   var ph = document.getElementById('crm-prop-hist'); if (ph) ph.style.display='none';
   var pl = document.getElementById('crm-prop-hist-lista'); if (pl) pl.innerHTML='';
   var dd = document.getElementById('m-data-declinio'); if (dd) dd.value = '';
+  var dsl = document.getElementById('m-data-desligamento'); if (dsl) dsl.value = '';
   toggleEtapaDatas('Prospecção');
   _histAtual = [];
   document.getElementById('m-obs').value = '';
@@ -1312,6 +1330,7 @@ function salvarCandidato() {
     data_entrada: g('m-data-ent')||null, data_contratacao: g('m-data-contratacao')||null,
     data_inicio: g('m-data-ini')||null,
     data_declinio: g('m-data-declinio')||null,
+    data_desligamento: g('m-data-desligamento')||null,
     comentarios: g('m-obs'),
     // Carteira atual
     auc_custodia_mm:   parseBRL(g('m-auc-cust')),
@@ -1365,7 +1384,12 @@ function salvarCandidato() {
         var novaEtapa = payload.etapa;
         var candAnt   = _todos.find(function(x){ return x.id===id; });
         if (candAnt && candAnt.etapa !== novaEtapa && typeof NexusConfig !== 'undefined') {
-          NexusConfig.registrarMudancaEtapa(id, candAnt.etapa, novaEtapa, candAnt.historico_etapas||'[]', null);
+          // Passa o estado JÁ SALVO (candAnt + payload que acabou de ir pro banco),
+          // não o estado antigo — senão, se o usuário digitou manualmente uma data
+          // retroativa no formulário (ex: "começou a trabalhar há 2 semanas"), essa
+          // segunda chamada acharia que a data está vazia e sobrescreveria com hoje.
+          var candPosSalvamento = Object.assign({}, candAnt, payload);
+          NexusConfig.registrarMudancaEtapa(id, candAnt.etapa, novaEtapa, candAnt.historico_etapas||'[]', null, candPosSalvamento);
         }
         // LOG: mudança de etapa
         if (candAnt && candAnt.etapa !== novaEtapa) {
@@ -1518,6 +1542,7 @@ function executarImport() {
       'parecer jurídico':'Contratação','contratação':'Contratação','contratacao':'Contratação',
       'aguardando termo':'Contratação','onboarding':'Contratação',
       'trabalhando':'Trabalhando','inserido contrato social':'Trabalhando',
+      'desligado':'Desligado','desligamento':'Desligado','desligada':'Desligado',
       'declinou':'Declinou','desistência':'Declinou','desistencia':'Declinou',
       'contato futuro':'Contato Futuro',
     };
