@@ -367,6 +367,7 @@ function render(C) {
   html += renderContratados(C);
   html += renderPracas(C);
   html += renderAuditoria(C);
+  html += renderMotivoDeclinio(C);
 
   document.getElementById('content-root').innerHTML = html;
   window._C_ATUAL = C; // pra reagir ao toggle Diário/Semanal/Mensal e à auditoria sem reprocessar tudo
@@ -582,6 +583,67 @@ function atualizarAuditoria() {
     + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Candidato</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Praça</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Etapa</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Hunter</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Data de Entrada</th></tr></thead>'
     + '<tbody>'+linhas+'</tbody></table>';
+}
+
+// ── Por Que Perdemos Candidatos — motivo do declínio × hunter e × praça ──
+function renderMotivoDeclinio(C) {
+  var declinados = C.filter(function(c){ return c.etapa === 'Declinou' && c.motivo_declinio; });
+
+  if (!declinados.length) {
+    return '<div class="card"><div class="sh"><span class="sn">14</span><span class="st">Por Que Perdemos Candidatos</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum declínio com motivo registrado no filtro atual.</div></div>';
+  }
+
+  function agrupar(chaveFn) {
+    var mapa = {};
+    declinados.forEach(function(c){
+      var k = chaveFn(c) || '—';
+      if (!mapa[k]) mapa[k] = { reprovou:0, desistiu:0, total:0 };
+      mapa[k].total++;
+      if (c.motivo_declinio === 'Blue3 Reprovou') mapa[k].reprovou++;
+      else if (c.motivo_declinio === 'Desistência') mapa[k].desistiu++;
+    });
+    return Object.keys(mapa).map(function(k){
+      var v = mapa[k];
+      v.chave = k;
+      v.pctReprovou = Math.round(v.reprovou/v.total*100);
+      return v;
+    }).sort(function(a,b){ return b.total-a.total; });
+  }
+
+  function tabela(titulo, linhasAgrupadas) {
+    var corpo = linhasAgrupadas.map(function(v){
+      var alerta = v.total >= 3 && v.pctReprovou >= 60;
+      return '<tr'+(alerta?' style="background:#FEE2E222;"':'')+'>'
+        + '<td style="padding:7px 4px;font-weight:600;">'+(alerta?'⚠️ ':'')+esc(v.chave)+'</td>'
+        + '<td style="padding:7px 4px;text-align:center;">'+v.reprovou+'</td>'
+        + '<td style="padding:7px 4px;text-align:center;">'+v.desistiu+'</td>'
+        + '<td style="padding:7px 4px;text-align:center;">'+v.total+'</td>'
+        + '<td style="padding:7px 4px;text-align:right;font-weight:700;color:'+(v.pctReprovou>=60?'#DC2626':'#7A82A8')+';">'+v.pctReprovou+'%</td>'
+      + '</tr>';
+    }).join('');
+    return '<div style="flex:1;min-width:280px;">'
+      + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:8px;">'+titulo+'</div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+      + '<thead><tr style="border-bottom:1px solid var(--rule);">'
+        + '<th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">'+titulo+'</th>'
+        + '<th style="text-align:center;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Reprovou</th>'
+        + '<th style="text-align:center;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Desistiu</th>'
+        + '<th style="text-align:center;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Total</th>'
+        + '<th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">% Reprovou</th>'
+      + '</tr></thead><tbody>'+corpo+'</tbody></table>'
+    + '</div>';
+  }
+
+  var porHunter = agrupar(function(c){ return c.hunter; });
+  var porPraca  = agrupar(function(c){ return pracaLabel(c.praca); });
+
+  return '<div class="card"><div class="sh"><span class="sn">14</span><span class="st">Por Que Perdemos Candidatos</span><span class="ss">'+declinados.length+' declínio(s) com motivo registrado · ⚠ = 3+ declínios com 60%+ de reprovação</span></div>'
+    + '<div style="display:flex;gap:24px;flex-wrap:wrap;">'
+      + tabela('Hunter', porHunter)
+      + tabela('Praça', porPraca)
+    + '</div>'
+    + '<div class="nota" style="margin-top:14px;font-size:10px;color:var(--t3);background:var(--canvas,#F4F6FB);border-radius:8px;padding:9px 12px;line-height:1.6;">📐 <b>Blue3 Reprovou</b> = a empresa não seguiu com o candidato (pode indicar critério de prospecção a ajustar). <b>Desistência</b> = o candidato que desistiu (pode indicar oferta/processo a revisar). Hunter ou praça com muita reprovação concentrada vale uma conversa — pode ser perfil de candidato sendo trazido fora do que qualifica.</div>'
+    + '</div>';
 }
 
 function renderOrigemLeads(C) {
