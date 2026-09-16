@@ -282,10 +282,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           <div class="f-row"><label>E-mail</label><input id="m-email" type="email" placeholder="email@exemplo.com"></div>
           <div class="f-row"><label>Instituição de origem</label><input id="m-inst" placeholder="ex: XP, BTG, Itaú..."></div>
           <div class="f-row"><label>Praça</label>
-            <select id="m-praca">
+            <select id="m-praca" onchange="toggleCidadeFinSave(this.value); toggleMotivoDeclinioFinSave(document.getElementById('m-etapa') ? document.getElementById('m-etapa').value : '');">
               <option value="">— Selecione —</option>
               <!-- Praças populadas dinamicamente via NexusConfig.getPracas() -->
           </select>
+          </div>
+          <div class="f-row" id="row-cidade-finsave" style="display:none;"><label>Cidade (FinSave)</label>
+            <input id="m-cidade-finsave" type="text" placeholder="ex: Lisboa, Miami, Dubai...">
           </div>
           <div class="f-row"><label>Líder</label>
             <select id="m-lider">
@@ -346,6 +349,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
               <option value="Desistência">Desistência</option>
             </select>
           </div>
+          <div class="f-row" id="row-motivo-declinio-finsave" style="display:none;"><label>Motivo do Declínio (FinSave)</label>
+            <select id="m-motivo-declinio-finsave">
+              <option value="">— Selecione —</option>
+              <option value="FinSave Declinou">FinSave Declinou</option>
+              <option value="Desistência">Desistência</option>
+            </select>
+          </div>
           <div class="f-row"><label>Estratégico</label>
             <select id="m-estrategico">
               <option value="Não" selected>Não</option>
@@ -373,7 +383,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         <div class="sec-lbl">Etapa</div>
         <div class="fgrid">
           <div class="f-row"><label>Etapa</label>
-            <select id="m-etapa" onchange="toggleEtapaDatas(this.value, true); toggleMotivoDeclinio(this.value);">
+            <select id="m-etapa" onchange="toggleEtapaDatas(this.value, true); toggleMotivoDeclinio(this.value); toggleMotivoDeclinioFinSave(this.value);">
               <option>Prospecção</option><option>Qualificação</option>
               <option>Negociação</option><option>Contratação</option>
               <option>Trabalhando</option><option>Desligado</option><option>Declinou</option>
@@ -1053,6 +1063,10 @@ function abrirEdicao(id) {
   document.getElementById('m-nivel').value    = r.nivel||'';
   document.getElementById('m-etapa').value    = r.etapa||'Prospecção';
   toggleMotivoDeclinio(r.etapa||'Prospecção');
+  toggleCidadeFinSave(r.praca||'');
+  var cidadeFSEl = document.getElementById('m-cidade-finsave'); if (cidadeFSEl) cidadeFSEl.value = r.cidade_finsave||'';
+  toggleMotivoDeclinioFinSave(r.etapa||'Prospecção');
+  var motivoFSEl = document.getElementById('m-motivo-declinio-finsave'); if (motivoFSEl) motivoFSEl.value = r.motivo_declinio_finsave||'';
   var origemEl = document.getElementById('m-origem-lead'); if (origemEl) origemEl.value = r.origem_lead||'';
   var motivoEl = document.getElementById('m-motivo-declinio'); if (motivoEl) motivoEl.value = r.motivo_declinio||'';
   document.getElementById('m-auc').value      = r.auc_mm > 0 ? r.auc_mm + ' MM' : '';
@@ -1183,6 +1197,29 @@ function toggleMotivoDeclinio(etapa) {
   if (!show && inp) inp.value = '';
 }
 
+// Mostrar/ocultar campo de Cidade — só faz sentido pra praça = FinSave (candidatos espalhados
+// pelo mundo, sem lista fixa de praças). Preenchimento manual, não vem do cadastro central.
+function toggleCidadeFinSave(praca) {
+  var row = document.getElementById('row-cidade-finsave');
+  var inp = document.getElementById('m-cidade-finsave');
+  if (!row) return;
+  var show = (praca === 'FinSave');
+  row.style.display = show ? '' : 'none';
+  if (!show && inp) inp.value = '';
+}
+
+// Mostrar/ocultar campo de Motivo do Declínio (FinSave) — só faz sentido pra praça = FinSave
+// + etapa Declinou. Mesmo padrão do Future, mas com valores próprios (FinSave Declinou/Desistência).
+function toggleMotivoDeclinioFinSave(etapa) {
+  var row = document.getElementById('row-motivo-declinio-finsave');
+  var inp = document.getElementById('m-motivo-declinio-finsave');
+  if (!row) return;
+  var pracaAtual = document.getElementById('m-praca');
+  var show = (etapa === 'Declinou') && pracaAtual && pracaAtual.value === 'FinSave';
+  row.style.display = show ? '' : 'none';
+  if (!show && inp) inp.value = '';
+}
+
 // Mostrar/ocultar datas conforme etapa
 function toggleDeclinio(etapa) { toggleEtapaDatas(etapa); } // compatibilidade
 function toggleEtapaDatas(etapa, autoData) {
@@ -1280,6 +1317,10 @@ function limparModal() {
   var pl = document.getElementById('crm-prop-hist-lista'); if (pl) pl.innerHTML='';
   var dd = document.getElementById('m-data-declinio'); if (dd) dd.value = '';
   var dsl = document.getElementById('m-data-desligamento'); if (dsl) dsl.value = '';
+  var cidadeFSNova = document.getElementById('m-cidade-finsave'); if (cidadeFSNova) cidadeFSNova.value = '';
+  var motivoFSNovo = document.getElementById('m-motivo-declinio-finsave'); if (motivoFSNovo) motivoFSNovo.value = '';
+  toggleCidadeFinSave('');
+  toggleMotivoDeclinioFinSave('');
   toggleEtapaDatas('Prospecção');
   _histAtual = [];
   document.getElementById('m-obs').value = '';
@@ -1311,6 +1352,8 @@ function salvarCandidato() {
     pre_work: (vaga === 'Future') ? (g('m-pre-work')||null) : null,
     origem_lead: (vaga === 'Future') ? (g('m-origem-lead')||null) : null,
     motivo_declinio: (vaga === 'Future' && g('m-etapa') === 'Declinou') ? (g('m-motivo-declinio')||null) : null,
+    cidade_finsave: (g('m-praca') === 'FinSave') ? (g('m-cidade-finsave')||null) : null,
+    motivo_declinio_finsave: (g('m-praca') === 'FinSave' && g('m-etapa') === 'Declinou') ? (g('m-motivo-declinio-finsave')||null) : null,
     // Proposta base
     auc_mm: (gn('m-t1tri-m') + gn('m-t1m') + gn('m-t2m') + gn('m-t3m') + gn('m-t4m')) || 0, piso: parseBRL(g('m-piso')), periodo: gi('m-periodo'), upfront: parseBRL(g('m-upfront')),
     // Gatilhos
