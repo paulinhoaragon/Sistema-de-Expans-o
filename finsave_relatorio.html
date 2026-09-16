@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nexus · Relatório FinSave · Blue3</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0A0F1E;--cobalt:#1A3BAD;--cobalt-br:#2952E3;
+  --gold:#B8962E;--g:#16A34A;--am:#B45309;--red:#DC2626;
+  --canvas:#F0F2FA;--surface:#fff;--rule:#E2E5F0;
+  --t1:#0A0F1E;--t2:#3A4268;--t3:#7A82A8;--t4:#A8B0CC;
+  --r8:8px;--r12:12px;--sh:0 1px 4px rgba(10,15,30,.07),0 4px 16px rgba(10,15,30,.06);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);font-size:13px;min-height:100vh}
+
+/* ── COVER ── */
+.cover{background:var(--ink);min-height:170px;position:relative;overflow:hidden;}
+.cg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:56px 56px;pointer-events:none;}
+.cgl{position:absolute;top:-100px;right:-60px;width:400px;height:400px;background:radial-gradient(ellipse,rgba(41,82,227,.2) 0%,transparent 65%);pointer-events:none;}
+.cgl2{position:absolute;bottom:-60px;left:180px;width:240px;height:240px;background:radial-gradient(ellipse,rgba(184,150,46,.07) 0%,transparent 65%);pointer-events:none;}
+.cover-in{position:relative;max-width:1320px;margin:0 auto;padding:28px 28px 24px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;}
+.bl{display:flex;flex-direction:column;gap:14px;}
+.cr{text-align:right;flex-shrink:0;}
+.rt{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:#fff;line-height:1.18;}
+.rp{font-size:11px;color:rgba(255,255,255,.45);margin-top:6px;letter-spacing:.02em;}
+.rc{display:inline-block;margin-top:10px;font-size:10px;font-weight:500;color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:4px 14px;letter-spacing:.05em;}
+.cover-rule{height:1px;background:linear-gradient(90deg,transparent,rgba(74,112,245,.4),rgba(184,150,46,.25),transparent);}
+
+/* ── Cabeçalho de seção numerado (mesmo padrão do Relatório Executivo) ── */
+.sh{display:flex;align-items:baseline;gap:11px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--rule);flex-wrap:wrap;}
+.sn{font-family:'Playfair Display',serif;font-size:11px;color:var(--t4);letter-spacing:.06em;}
+.st{font-size:14px;font-weight:600;color:var(--t1);letter-spacing:-.01em;}
+.ss{font-size:11px;color:var(--t3);margin-left:auto;letter-spacing:.02em;}
+
+/* ── FILTROS ── */
+.fbar{background:var(--surface);border-bottom:1px solid var(--rule);padding:10px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:60;}
+.fbar-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);}
+.ms{position:relative;display:inline-block;}
+.ms-btn{padding:6px 12px;border:1px solid var(--rule);border-radius:7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--t1);background:#fafbfd;outline:none;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+.ms-btn::after{content:'▾';font-size:9px;color:var(--t3);}
+.ms-btn.ms-active{border-color:var(--cobalt);background:#EEF2FD;color:var(--cobalt);font-weight:700;}
+.ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid var(--rule);border-radius:8px;box-shadow:0 8px 24px rgba(10,15,30,.14);z-index:500;min-width:220px;max-height:320px;overflow-y:auto;padding:6px 0;}
+.ms-panel.open{display:block;}
+.ms-panel label{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:12px;color:var(--t1);cursor:pointer;white-space:nowrap;}
+.ms-panel label:hover{background:#F4F6FB;}
+.ms-actions{display:flex;justify-content:space-between;padding:7px 12px 4px;border-top:1px solid var(--rule);margin-top:4px;}
+.ms-actions button{background:none;border:none;color:var(--cobalt);font-size:11px;font-weight:700;cursor:pointer;padding:0;}
+.f-count{font-size:11px;color:var(--t4);margin-left:auto}
+
+/* ── CONTEÚDO ── */
+.content{padding:20px 24px 48px;max-width:1320px;margin:0 auto}
+.row{display:grid;gap:14px;margin-bottom:16px;}
+.cols-4{grid-template-columns:repeat(4,1fr)}
+.cols-2{grid-template-columns:repeat(2,1fr)}
+@media (max-width:900px){.cols-4{grid-template-columns:repeat(2,1fr)}}
+
+.kpi{background:var(--surface);border-radius:var(--r12);padding:14px 16px;box-shadow:var(--sh);border-top:3px solid var(--rule);}
+.kpi.c1{border-top-color:var(--cobalt)}
+.kpi.c2{border-top-color:var(--g)}
+.kpi.c3{border-top-color:var(--am)}
+.kpi.c4{border-top-color:var(--red)}
+.kpi-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.kpi-value{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:var(--t1);line-height:1}
+.kpi-sub{font-size:9px;color:var(--t4);margin-top:4px}
+
+.card{background:var(--surface);border-radius:var(--r12);box-shadow:var(--sh);padding:18px 20px;margin-bottom:16px;}
+.card-title{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:2px;}
+.card-sub{font-size:10px;color:var(--t3);margin-bottom:14px;}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;flex-wrap:wrap;gap:8px;}
+
+/* Funil */
+.funil-row{display:grid;grid-template-columns:150px 1fr auto auto;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--rule);}
+.funil-row:last-child{border-bottom:none;}
+.funil-lbl{font-size:12px;font-weight:600;color:var(--t2);}
+.funil-lbl small{display:block;font-size:9px;font-weight:400;color:var(--t4);margin-top:1px;}
+.funil-track{background:var(--canvas);border-radius:5px;height:20px;position:relative;overflow:hidden;}
+.funil-fill{height:100%;border-radius:5px;transition:width .2s;}
+.funil-val{font-size:14px;font-weight:700;color:var(--t1);min-width:30px;text-align:right;}
+.funil-pct{font-size:10px;color:var(--t4);min-width:40px;text-align:right;}
+
+.seg{display:inline-flex;gap:4px;background:var(--canvas);padding:3px;border-radius:9px;}
+.seg button{border:none;background:transparent;color:var(--t2);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer;white-space:nowrap;}
+.seg button.on{background:var(--cobalt);color:#fff;}
+
+.cresc-row{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--rule);}
+.cresc-row:last-child{border-bottom:none;}
+.cresc-lbl{font-size:11px;color:var(--t2);white-space:nowrap;min-width:96px;}
+.cresc-track{background:var(--canvas);border-radius:5px;height:16px;position:relative;overflow:hidden;}
+.cresc-fill{background:var(--cobalt);height:100%;border-radius:5px;}
+.cresc-val{font-size:12px;font-weight:700;color:var(--t1);min-width:24px;text-align:right;}
+.cresc-delta{font-size:10px;font-weight:700;min-width:64px;text-align:right;white-space:nowrap;}
+.cresc-delta.up{color:#16A34A;}
+.cresc-delta.down{color:#DC2626;}
+.cresc-delta.flat{color:var(--t4);}
+
+.declin-box{display:flex;gap:14px;flex-wrap:wrap;}
+.declin-item{flex:1;min-width:160px;background:var(--canvas);border-radius:8px;padding:12px 14px;}
+.declin-item .n{font-size:20px;font-weight:700;color:var(--t1);}
+.declin-item .l{font-size:10px;color:var(--t3);margin-top:2px;}
+
+.prework-bar{display:flex;height:22px;border-radius:6px;overflow:hidden;margin-bottom:8px;}
+.prework-bar span{display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:var(--t3);}
+.legend .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;}
+
+.praca-row{display:grid;grid-template-columns:130px 1fr auto;align-items:center;gap:10px;padding:6px 0;}
+.praca-track{background:var(--canvas);border-radius:5px;height:14px;overflow:hidden;}
+.praca-fill{background:var(--gold);height:100%;border-radius:5px;}
+.sel-aud{padding:6px 10px;border:1px solid var(--rule);border-radius:7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--t1);background:#fafbfd;outline:none;cursor:pointer;}
+
+.empty{text-align:center;padding:60px 20px;color:var(--t4)}
+.empty-icon{font-size:36px;margin-bottom:10px}
+
+@media print{
+  @page { size: A4 portrait; margin: 10mm 8mm; }
+  .fbar,.cv-actions{display:none !important;}
+  body{background:#fff;}
+  .card,.kpi{box-shadow:none;border:1px solid #E2E5F0;}
+
+  /* Evita cortar cards, KPIs e linhas de gráfico no meio, entre uma página e outra */
+  .cover{page-break-after:avoid;break-after:avoid;}
+  .card{page-break-inside:avoid;break-inside:avoid;}
+  .row{page-break-inside:avoid;break-inside:avoid;}
+  .kpi{page-break-inside:avoid;break-inside:avoid;}
+  .funil-row,.cresc-row,.praca-row{page-break-inside:avoid;break-inside:avoid;}
+
+  /* Tabelas: cabeçalho repete em cada página, mas cada linha continua inteira */
+  table{page-break-inside:auto;}
+  thead{display:table-header-group;}
+  tr{page-break-inside:avoid;break-inside:avoid;}
+
+  /* No PDF, sempre mostra a lista completa de "Candidatos Parados" (ignora o "Ver 10 primeiros" da tela) */
+  .linha-parado-extra{display:table-row !important;}
+  #btn-parados-expandir{display:none !important;}
+
+  /* Cabeçalho de seção (número + título) nunca fica sozinho no fim de uma página, separado do conteúdo */
+  .sh{page-break-after:avoid;break-after:avoid;}
+
+  /* Cards com tabelas longas (Hunters, Parados, Contratados, Auditoria) podem atravessar
+     páginas normalmente — só a linha inteira é protegida (via "tr" acima), não o card inteiro */
+  .card.card-flow{page-break-inside:auto;break-inside:auto;}
+
+  .content{padding-top:12px;}
+
+  body::after{
+    content:"CONFIDENCIAL \00B7 BLUE3 EXPANSÃO";
+    position:fixed;bottom:5mm;right:8mm;
+    font-size:7px;font-weight:700;letter-spacing:.12em;
+    color:rgba(0,0,0,.18);text-transform:uppercase;
+    font-family:'DM Sans',sans-serif;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cg"></div><div class="cgl"></div><div class="cgl2"></div>
+  <div class="cover-in">
+
+    <div class="bl">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <svg width="30" height="30" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+          <radialGradient id="ncg" cx="40%" cy="30%" r="70%"><stop offset="0%" stop-color="#7AA3FF"/><stop offset="100%" stop-color="#1A3BAD"/></radialGradient>
+          <line x1="30" y1="8" x2="46" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="46" y1="17" x2="46" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="46" y1="35" x2="30" y2="44" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="30" y1="44" x2="14" y2="35" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="14" y1="35" x2="14" y2="17" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="14" y1="17" x2="30" y2="8" stroke="#4A70F5" stroke-width="2" stroke-opacity=".7"/>
+          <line x1="30" y1="8" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="46" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="46" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="30" y1="44" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="14" y1="35" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <line x1="14" y1="17" x2="30" y2="26" stroke="#4A70F5" stroke-width="1.2" stroke-opacity=".5"/>
+          <circle cx="30" cy="8"  r="3" fill="#4A70F5"/>
+          <circle cx="46" cy="17" r="3" fill="#4A70F5"/>
+          <circle cx="46" cy="35" r="3" fill="#4A70F5"/>
+          <circle cx="30" cy="44" r="3" fill="#4A70F5"/>
+          <circle cx="14" cy="35" r="3" fill="#4A70F5"/>
+          <circle cx="14" cy="17" r="3" fill="#4A70F5"/>
+          <circle cx="30" cy="26" r="5.5" fill="url(#ncg)" stroke="#4A70F5" stroke-width="1.5"/>
+          <circle cx="28.5" cy="24.5" r="1.8" fill="white" fill-opacity=".45"/>
+        </svg>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:#fff;letter-spacing:.06em;font-family:'Playfair Display',serif;">NEXUS</div>
+          <div style="font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#4A70F5;margin-top:1px;">Blue3 Expansão Suite</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cr">
+      <div class="rt">FinSave<br><span style="font-size:18px;">Funil de Candidatos</span></div>
+      <div class="rp">Acompanhamento pra apresentação à XP</div>
+      <div class="rc">Atualizado <span id="rt-atualizado">—</span> · Confidencial</div>
+    </div>
+  </div>
+
+  <div class="cover-rule"></div>
+</div>
+
+<div class="fbar">
+  <span class="fbar-lbl">Cidade</span>
+  <div class="ms" id="ms-praca">
+    <button type="button" class="ms-btn" onclick="msToggleOpen()">Todas as cidades FinSave</button>
+    <div class="ms-panel" id="ms-panel-praca"></div>
+  </div>
+  <span class="f-count" id="f-count">—</span>
+  <div style="margin-left:auto;display:flex;gap:8px;">
+    <button onclick="exportarCSV()" style="background:#fff;border:1px solid var(--rule);color:var(--t2);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.02em;padding:8px 16px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:7px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar CSV
+    </button>
+    <button onclick="exportarPDF()" id="btn-export-pdf" style="background:var(--cobalt);border:none;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.04em;padding:8px 16px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:7px;" onmouseover="this.style.background='#162FA0'" onmouseout="this.style.background='var(--cobalt)'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar PDF
+    </button>
+  </div>
+</div>
+
+<div class="content" id="content-root">
+  <div class="empty"><div class="empty-icon">⏳</div>Carregando candidatos da FinSave...</div>
+</div>
+
+<script>
+var SUPA_URL = 'https://cjimsplgxrwkqgzegnkq.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqaW1zcGxneHJ3a3FnemVnbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTg5MTEsImV4cCI6MjA5MTY3NDkxMX0.V5euouwf-Q4KaskXGB4eLg0FPV7pH96hTrQikcV7K6A';
+
+function supaGet(path) {
+  return fetch(SUPA_URL+'/rest/v1/'+path, { headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY }, cache:'no-store' })
+    .then(function(r){ return r.ok ? r.json() : []; });
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDate(s){ if(!s) return ''; var d = new Date(s+'T12:00:00'); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'}); }
+function hojeISO(){ return new Date().toISOString().slice(0,10); }
+function diasEntre(de, ate){
+  if (!de) return null;
+  var d1 = new Date(de+'T12:00:00');
+  var d2 = ate ? new Date(ate+'T12:00:00') : new Date();
+  if (isNaN(d1)) return null;
+  d2.setHours(12,0,0,0);
+  return Math.floor((d2-d1)/86400000);
+}
+
+var TODOS = [];       // todos os candidatos FinSave (sem filtro de cidade)
+var TELEFONES_COM_PROPOSTA = {};
+var MS_PRACA = new Set();
+var _MODO_CRESC = 'semana'; // 'dia' | 'semana' | 'mes'
+
+// ── ETAPAS: rótulo + cor + numeração R1/R2/R3 ──
+var ETAPA_INFO = {
+  'Prospecção':   { lbl:'R1 · Prospecção',  cor:'#7A82A8' },
+  'Qualificação': { lbl:'R2 · Qualificação', cor:'#1A3BAD' },
+  'Negociação':   { lbl:'R3 · Negociação',   cor:'#4A70F5' },
+  'Contratação':  { lbl:'Aprovado e Contratado', cor:'#B8962E' },
+  'Trabalhando':  { lbl:'Trabalhando',       cor:'#16A34A' },
+  'Declinou':     { lbl:'Declinou',          cor:'#DC2626' },
+  'Contato Futuro': { lbl:'Contato Futuro',  cor:'#A8B0CC' }
+};
+var ETAPAS_ORDEM = ['Prospecção','Qualificação','Negociação','Contratação','Trabalhando','Declinou','Contato Futuro'];
+
+function carregar() {
+  var elAtualizado = document.getElementById('rt-atualizado');
+  if (elAtualizado) {
+    elAtualizado.textContent = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' }).replace('.', '');
+  }
+  Promise.all([
+    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,email,mou,data_mou,data_entrada,data_contratacao,data_inicio,data_declinio,cidade_finsave,motivo_declinio_finsave&limit=3000'),
+    supaGet('propostas?select=telefone&limit=5000')
+  ]).then(function(res){
+    var candidatos = res[0] || [];
+    var propostas = res[1] || [];
+
+    TELEFONES_COM_PROPOSTA = {};
+    propostas.forEach(function(p){
+      var tel = (p.telefone||'').replace(/\D/g,'');
+      if (tel) TELEFONES_COM_PROPOSTA[tel] = true;
+    });
+
+    TODOS = candidatos.filter(function(c){ return (c.praca||'').trim() === 'FinSave'; });
+
+    popularFiltroPraca();
+    aplicarFiltro();
+  }).catch(function(err){
+    document.getElementById('content-root').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Erro ao carregar: '+esc(JSON.stringify(err))+'</div>';
+  });
+}
+
+// ── Filtro de Cidade (dinâmico — construído a partir do que foi digitado nos candidatos,
+// já que a FinSave não usa a lista fixa de praças do cadastro central) ──
+function popularFiltroPraca() {
+  var doDados = {};
+  TODOS.forEach(function(c){ if (c.cidade_finsave) doDados[c.cidade_finsave.trim()] = true; });
+  var todasCidades = Object.keys(doDados).sort(function(a,b){ return a.localeCompare(b); });
+
+  var panel = document.getElementById('ms-panel-praca');
+  var html = todasCidades.map(function(p){
+    var checked = MS_PRACA.has(p) ? ' checked' : '';
+    return '<label><input type="checkbox" value="'+esc(p)+'"'+checked+' onchange="msToggle(this.value,this.checked)"> '+esc(p)+'</label>';
+  }).join('');
+  html += '<div class="ms-actions"><button type="button" onclick="msLimpar()">Limpar</button><button type="button" onclick="msFechar()">Fechar</button></div>';
+  panel.innerHTML = html || '<div style="padding:10px 12px;font-size:11px;color:var(--t4);">Nenhuma cidade FinSave encontrada</div>';
+  msAtualizarLabel();
+}
+function msToggle(v, checked){ if(checked) MS_PRACA.add(v); else MS_PRACA.delete(v); msAtualizarLabel(); aplicarFiltro(); }
+function msLimpar(){ MS_PRACA.clear(); document.querySelectorAll('#ms-panel-praca input').forEach(function(c){c.checked=false;}); msAtualizarLabel(); aplicarFiltro(); }
+function msAtualizarLabel(){
+  var btn = document.querySelector('#ms-praca .ms-btn');
+  if (!MS_PRACA.size) { btn.textContent = 'Todas as cidades FinSave'; btn.classList.remove('ms-active'); return; }
+  if (MS_PRACA.size === 1) { btn.textContent = [...MS_PRACA][0]; }
+  else { btn.textContent = MS_PRACA.size + ' cidades'; }
+  btn.classList.add('ms-active');
+}
+function msToggleOpen(){ var p=document.getElementById('ms-panel-praca'); var e=p.classList.contains('open'); msFechar(); if(!e) p.classList.add('open'); }
+function msFechar(){ document.querySelectorAll('.ms-panel.open').forEach(function(p){p.classList.remove('open');}); }
+document.addEventListener('click', function(e){ if(!e.target.closest('.ms')) msFechar(); });
+
+function aplicarFiltro() {
+  var filtrados = TODOS.filter(function(c){ return !MS_PRACA.size || MS_PRACA.has((c.cidade_finsave||'').trim()); });
+  document.getElementById('f-count').textContent = filtrados.length + ' candidato' + (filtrados.length!==1?'s':'') + ' FinSave';
+  render(filtrados);
+}
+
+// ════════ RENDER ════════
+function render(C) {
+  if (!C.length) {
+    document.getElementById('content-root').innerHTML = '<div class="empty"><div class="empty-icon">📭</div>Nenhum candidato FinSave encontrado com os filtros atuais.</div>';
+    return;
+  }
+
+  var html = '';
+  html += renderKPIs(C);
+  html += renderFunil(C);
+  html += renderConversaoEtapas(C);
+  html += renderVelocidade(C);
+  html += renderHunters(C);
+  html += renderParados(C);
+  html += renderCrescimento(C);
+  html += renderNovosPorPraca(C);
+  html += renderContratados(C);
+  html += renderPracas(C);
+  html += renderAuditoria(C);
+  html += renderMotivoDeclinio(C);
+
+  document.getElementById('content-root').innerHTML = html;
+  window._C_ATUAL = C; // pra reagir ao toggle Diário/Semanal/Mensal e à auditoria sem reprocessar tudo
+  atualizarAuditoria();
+}
+
+function renderKPIs(C) {
+  var ativos = C.filter(function(c){ return c.etapa !== 'Declinou'; }).length;
+  var declinados = C.filter(function(c){ return c.etapa === 'Declinou'; }).length;
+  var contratados = C.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; }).length;
+  var pctConv = C.length ? Math.round(contratados / C.length * 100) : 0;
+
+  var seteDiasAtras = hojeMenosDias(7);
+  var catorzeDiasAtras = hojeMenosDias(14);
+  var novosSemana = C.filter(function(c){ return c.data_entrada && c.data_entrada >= seteDiasAtras; }).length;
+  var novosSemanaAnterior = C.filter(function(c){ return c.data_entrada && c.data_entrada >= catorzeDiasAtras && c.data_entrada < seteDiasAtras; }).length;
+  var declinadosSemana = C.filter(function(c){ return c.data_declinio && c.data_declinio >= seteDiasAtras; }).length;
+  var declinadosSemanaAnterior = C.filter(function(c){ return c.data_declinio && c.data_declinio >= catorzeDiasAtras && c.data_declinio < seteDiasAtras; }).length;
+
+  return '<div class="sh"><span class="sn">01</span><span class="st">Visão Geral do Funil</span></div>'
+    + '<div class="row cols-4">'
+    + kpi('c1','No Funil (ativo)', ativos, 'exclui declinados')
+    + kpi('c4','Declinou', declinados, (C.length? Math.round(declinados/C.length*100):0)+'% do total', _tendencia(declinadosSemana, declinadosSemanaAnterior, true))
+    + kpi('c2','Conversão', pctConv+'%', contratados+' aprovados/contratados de '+C.length)
+    + kpi('c3','Novos (7 dias)', novosSemana, 'cadastrados na última semana', _tendencia(novosSemana, novosSemanaAnterior, false))
+  + '</div>';
+}
+// Compara a semana atual com a anterior. "inverteCor"=true significa que SUBIR é ruim (ex: Declinou) — inverte verde/vermelho.
+function _tendencia(atual, anterior, inverteCor) {
+  if (anterior === 0 && atual === 0) return '';
+  var delta = atual - anterior;
+  var bom = inverteCor ? delta <= 0 : delta >= 0;
+  var cor = delta === 0 ? '#7A82A8' : (bom ? '#16A34A' : '#DC2626');
+  var seta = delta > 0 ? '▲' : (delta < 0 ? '▼' : '＝');
+  var pctTxt = anterior > 0 ? ' ('+(delta>=0?'+':'')+Math.round(delta/anterior*100)+'%)' : '';
+  return '<span style="color:'+cor+';font-weight:700;">'+seta+' '+(delta>0?'+':'')+delta+pctTxt+'</span> vs semana anterior';
+}
+function kpi(cls,label,val,sub,tendencia){
+  return '<div class="kpi '+cls+'"><div class="kpi-label">'+esc(label)+'</div><div class="kpi-value">'+val+'</div><div class="kpi-sub">'+esc(sub)+'</div>'
+    + (tendencia ? '<div class="kpi-sub" style="margin-top:3px;">'+tendencia+'</div>' : '')
+  + '</div>';
+}
+
+function renderFunil(C) {
+  var porEtapa = {};
+  ETAPAS_ORDEM.forEach(function(e){ porEtapa[e] = []; });
+  C.forEach(function(c){ if (porEtapa[c.etapa]) porEtapa[c.etapa].push(c); });
+
+  var max = Math.max.apply(null, ETAPAS_ORDEM.map(function(e){ return porEtapa[e].length; }).concat([1]));
+
+  var linhas = ETAPAS_ORDEM.map(function(etapa){
+    var lista = porEtapa[etapa];
+    var info = ETAPA_INFO[etapa];
+    var largura = Math.round(lista.length / max * 100);
+    var pct = C.length ? Math.round(lista.length / C.length * 100) : 0;
+    var sub = '';
+
+    if (etapa === 'Negociação') {
+      var comProposta = lista.filter(function(c){ return TELEFONES_COM_PROPOSTA[(c.telefone||'').replace(/\D/g,'')]; }).length;
+      sub = comProposta + ' com proposta no sistema · ' + (lista.length-comProposta) + ' sem proposta ainda';
+    }
+    if (etapa === 'Declinou') {
+      var reprovou = lista.filter(function(c){ return c.motivo_declinio === 'Blue3 Reprovou'; }).length;
+      var desistiu = lista.filter(function(c){ return c.motivo_declinio === 'Desistência'; }).length;
+      var semMotivo = lista.length - reprovou - desistiu;
+      var base = lista.length || 1;
+      var pR = Math.round(reprovou/base*100), pD = Math.round(desistiu/base*100), pS = Math.round(semMotivo/base*100);
+      sub = reprovou + ' Blue3 reprovou ('+pR+'%) · ' + desistiu + ' desistência ('+pD+'%)' + (semMotivo?' · '+semMotivo+' sem motivo registrado ('+pS+'%)':'');
+    }
+
+    return '<div class="funil-row">'
+      + '<div class="funil-lbl">'+info.lbl+(sub?'<small>'+esc(sub)+'</small>':'')+'</div>'
+      + '<div class="funil-track"><div class="funil-fill" style="width:'+largura+'%;background:'+info.cor+';"></div></div>'
+      + '<div class="funil-val">'+lista.length+'</div>'
+      + '<div class="funil-pct">'+pct+'%</div>'
+    + '</div>';
+  }).join('');
+
+  return '<div class="card"><div class="sh"><span class="sn">02</span><span class="st">Funil por Etapa</span><span class="ss">Prospecção (R1) → Qualificação (R2) → Negociação (R3) → Aprovado e Contratado → Trabalhando</span></div>'+linhas+'</div>';
+}
+
+function hojeMenosDias(n){ var d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+
+function renderNovosPorPraca(C) {
+  var seteDiasAtras = hojeMenosDias(7);
+  var novos = C.filter(function(c){ return c.data_entrada && c.data_entrada >= seteDiasAtras; });
+  if (!novos.length) {
+    return '<div class="card"><div class="sh"><span class="sn">08</span><span class="st">Novos Leads da Semana — por Cidade</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum lead novo nos últimos 7 dias com o filtro atual.</div></div>';
+  }
+  var porCidade = {};
+  novos.forEach(function(c){ var p=(c.cidade_finsave||'').trim()||'Sem cidade'; porCidade[p]=(porCidade[p]||0)+1; });
+  var lista = Object.keys(porCidade).sort(function(a,b){ return porCidade[b]-porCidade[a]; });
+  var max = Math.max.apply(null, lista.map(function(p){ return porCidade[p]; }).concat([1]));
+  var total = novos.length;
+
+  var linhas = lista.map(function(p){
+    var v = porCidade[p];
+    var largura = Math.round(v/max*100);
+    var pct = Math.round(v/total*100);
+    return '<div class="praca-row"><div>'+esc(p)+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;background:var(--am);"></div></div><div style="font-weight:700;">'+v+' <span style="font-weight:400;color:var(--t4);font-size:10px;">('+pct+'%)</span></div></div>';
+  }).join('');
+
+  return '<div class="card"><div class="sh"><span class="sn">08</span><span class="st">Novos Leads da Semana — por Cidade</span><span class="ss">'+total+' cadastrados nos últimos 7 dias, segmentado por cidade</span></div>'+linhas+'</div>';
+}
+
+// ── Taxa de conversão entre etapas ──
+// Metodologia: "alcançou a etapa N" = está atualmente na etapa N ou em qualquer etapa posterior
+// (quem chegou em Negociação necessariamente passou por Qualificação). Candidatos "Declinou" ficam
+// de fora dessa conta específica, porque não temos registro de em qual etapa eles estavam quando
+// declinaram — incluí-los aqui inflaria artificialmente a taxa de perda de uma etapa aleatória.
+var FUNIL_SEQ = ['Prospecção','Qualificação','Negociação','Contratação','Trabalhando'];
+function renderConversaoEtapas(C) {
+  var ativos = C.filter(function(c){ return FUNIL_SEQ.indexOf(c.etapa) > -1; });
+  var idxDe = function(c){ return FUNIL_SEQ.indexOf(c.etapa); };
+
+  var linhas = '';
+  for (var i = 0; i < FUNIL_SEQ.length - 1; i++) {
+    var alcancou = ativos.filter(function(c){ return idxDe(c) >= i; }).length;
+    var avancou  = ativos.filter(function(c){ return idxDe(c) >= i+1; }).length;
+    var taxa = alcancou ? Math.round(avancou/alcancou*100) : 0;
+    var cor = taxa >= 60 ? '#16A34A' : (taxa >= 30 ? '#B45309' : '#DC2626');
+    linhas += '<div class="funil-row" style="grid-template-columns:190px 1fr auto;">'
+      + '<div class="funil-lbl">'+esc(FUNIL_SEQ[i])+' → '+esc(FUNIL_SEQ[i+1])+'<small>'+alcancou+' alcançaram · '+avancou+' avançaram</small></div>'
+      + '<div class="funil-track"><div class="funil-fill" style="width:'+taxa+'%;background:'+cor+';"></div></div>'
+      + '<div class="funil-val" style="color:'+cor+';">'+taxa+'%</div>'
+    + '</div>';
+  }
+
+  return '<div class="card"><div class="sh"><span class="sn">03</span><span class="st">Taxa de Conversão entre Etapas</span><span class="ss">% de quem alcançou a etapa e avançou pra próxima · não inclui "Declinou" (não sabemos de qual etapa vieram)</span></div>'+linhas+'</div>';
+}
+
+// ── Velocidade do funil ──
+// Uso só as datas que confio 100% (data_entrada, data_contratacao, data_inicio, data_declinio).
+// Não tentei decifrar o campo historico_etapas — sem ver um exemplo real populado, o risco de
+// mostrar um número errado é maior que o ganho de ter o detalhe por etapa individual.
+function _mediaDias(pares) {
+  var validos = pares.filter(function(d){ return d !== null && d >= 0; });
+  if (!validos.length) return null;
+  var soma = validos.reduce(function(s,d){ return s+d; }, 0);
+  return Math.round(soma / validos.length);
+}
+function renderVelocidade(C) {
+  var entradaAteContratacao = C.filter(function(c){ return c.data_contratacao; })
+    .map(function(c){ return diasEntre(c.data_entrada, c.data_contratacao); });
+  var contratacaoAteInicio = C.filter(function(c){ return c.data_contratacao && c.data_inicio; })
+    .map(function(c){ return diasEntre(c.data_contratacao, c.data_inicio); });
+  var entradaAteDeclinio = C.filter(function(c){ return c.etapa === 'Declinou' && c.data_declinio; })
+    .map(function(c){ return diasEntre(c.data_entrada, c.data_declinio); });
+  var entradaHoje = C.filter(function(c){ return FUNIL_SEQ.indexOf(c.etapa) > -1 && c.etapa !== 'Trabalhando' && c.data_entrada; })
+    .map(function(c){ return diasEntre(c.data_entrada, null); });
+
+  var m1 = _mediaDias(entradaAteContratacao);
+  var m2 = _mediaDias(contratacaoAteInicio);
+  var m3 = _mediaDias(entradaAteDeclinio);
+  var m4 = _mediaDias(entradaHoje);
+
+  return '<div class="card"><div class="sh"><span class="sn">04</span><span class="st">Velocidade do Funil</span><span class="ss">Tempo médio, em dias corridos, entre marcos confiáveis do processo</span></div>'
+    + '<div class="row cols-4" style="margin-bottom:0;">'
+      + _velCard('Entrada → Contratação', m1, entradaAteContratacao.length, '#1A3BAD')
+      + _velCard('Contratação → Início', m2, contratacaoAteInicio.length, '#16A34A')
+      + _velCard('Entrada → Declínio', m3, entradaAteDeclinio.length, '#DC2626')
+      + _velCard('No funil hoje (em aberto)', m4, entradaHoje.length, '#B45309')
+    + '</div></div>';
+}
+function _velCard(label, media, n, cor) {
+  return '<div class="kpi" style="border-top-color:'+cor+';box-shadow:none;border:1px solid var(--rule);border-top-width:3px;">'
+    + '<div class="kpi-label">'+esc(label)+'</div>'
+    + '<div class="kpi-value" style="font-size:20px;">'+(media!==null?media+'d':'—')+'</div>'
+    + '<div class="kpi-sub">'+(n?'baseado em '+n+' candidato'+(n!==1?'s':''):'sem dados suficientes')+'</div>'
+  + '</div>';
+}
+
+// ── Auditoria de Cadastro — quem falta qualificar ──
+function renderAuditoria(C) {
+  return '<div class="card card-flow">'
+    + '<div class="card-head">'
+      + '<div class="sh" style="border-bottom:none;margin-bottom:0;padding-bottom:0;flex:1;"><span class="sn">11</span><span class="st">Auditoria de Cadastro — Pendências</span><span class="ss">Informação faltando pra qualificar</span></div>'
+      + '<select id="sel-auditoria" class="sel-aud" onchange="atualizarAuditoria()">'
+        + '<option value="motivo">🔎 Declinou sem motivo registrado</option>'
+        + '<option value="cidade">🔎 Sem cidade cadastrada</option>'
+      + '</select>'
+    + '</div>'
+    + '<div id="auditoria-tabela" style="margin-top:10px;"></div>'
+  + '</div>';
+}
+function atualizarAuditoria() {
+  var sel = document.getElementById('sel-auditoria');
+  var tbody = document.getElementById('auditoria-tabela');
+  if (!sel || !tbody) return;
+  var C = window._C_ATUAL || [];
+  var tipo = sel.value;
+  var lista = (tipo === 'motivo')
+    ? C.filter(function(c){ return c.etapa === 'Declinou' && !c.motivo_declinio_finsave; })
+    : C.filter(function(c){ return !c.cidade_finsave; });
+
+  if (!lista.length) {
+    tbody.innerHTML = '<div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhuma pendência encontrada com o filtro atual — tudo qualificado. 🎉</div>';
+    return;
+  }
+
+  var linhas = lista.map(function(c){
+    var info = ETAPA_INFO[c.etapa] || { lbl:c.etapa, cor:'#7A82A8' };
+    return '<tr style="border-bottom:1px solid var(--rule);">'
+      + '<td style="padding:7px 4px;font-weight:600;">'+esc(c.nome)+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.cidade_finsave||'—')+'</td>'
+      + '<td style="padding:7px 4px;"><span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+info.cor+'22;color:'+info.cor+';">'+esc(info.lbl)+'</span></td>'
+      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.hunter||'—')+'</td>'
+      + '<td style="padding:7px 4px;text-align:right;color:var(--t3);">'+fmtDate(c.data_entrada)+'</td>'
+    + '</tr>';
+  }).join('');
+
+  tbody.innerHTML = '<div style="font-size:11px;color:var(--t3);margin-bottom:8px;">'+lista.length+' candidato(s) precisam ser qualificados — abra o card no CRM e preencha o campo faltando.</div>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Candidato</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Cidade</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Etapa</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Hunter</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Data de Entrada</th></tr></thead>'
+    + '<tbody>'+linhas+'</tbody></table>';
+}
+
+// ── Por Que Perdemos Candidatos — motivo do declínio × hunter e × cidade ──
+function renderMotivoDeclinio(C) {
+  var declinados = C.filter(function(c){ return c.etapa === 'Declinou' && c.motivo_declinio_finsave; });
+
+  if (!declinados.length) {
+    return '<div class="card"><div class="sh"><span class="sn">12</span><span class="st">Por Que Perdemos Candidatos</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum declínio com motivo registrado no filtro atual.</div></div>';
+  }
+
+  function agrupar(chaveFn) {
+    var mapa = {};
+    declinados.forEach(function(c){
+      var k = chaveFn(c) || '—';
+      if (!mapa[k]) mapa[k] = { reprovou:0, desistiu:0, total:0 };
+      mapa[k].total++;
+      if (c.motivo_declinio_finsave === 'FinSave Declinou') mapa[k].reprovou++;
+      else if (c.motivo_declinio_finsave === 'Desistência') mapa[k].desistiu++;
+    });
+    return Object.keys(mapa).map(function(k){
+      var v = mapa[k];
+      v.chave = k;
+      v.pctReprovou = Math.round(v.reprovou/v.total*100);
+      return v;
+    }).sort(function(a,b){ return b.total-a.total; });
+  }
+
+  function tabela(titulo, linhasAgrupadas) {
+    var corpo = linhasAgrupadas.map(function(v){
+      var alerta = v.total >= 3 && v.pctReprovou >= 60;
+      return '<tr'+(alerta?' style="background:#FEE2E222;"':'')+'>'
+        + '<td style="padding:7px 4px;font-weight:600;">'+(alerta?'⚠️ ':'')+esc(v.chave)+'</td>'
+        + '<td style="padding:7px 4px;text-align:center;">'+v.reprovou+'</td>'
+        + '<td style="padding:7px 4px;text-align:center;">'+v.desistiu+'</td>'
+        + '<td style="padding:7px 4px;text-align:center;">'+v.total+'</td>'
+        + '<td style="padding:7px 4px;text-align:right;font-weight:700;color:'+(v.pctReprovou>=60?'#DC2626':'#7A82A8')+';">'+v.pctReprovou+'%</td>'
+      + '</tr>';
+    }).join('');
+    return '<div style="flex:1;min-width:280px;">'
+      + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:8px;">'+titulo+'</div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+      + '<thead><tr style="border-bottom:1px solid var(--rule);">'
+        + '<th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">'+titulo+'</th>'
+        + '<th style="text-align:center;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">FinSave Declinou</th>'
+        + '<th style="text-align:center;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Desistiu</th>'
+        + '<th style="text-align:center;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Total</th>'
+        + '<th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">% FinSave Declinou</th>'
+      + '</tr></thead><tbody>'+corpo+'</tbody></table>'
+    + '</div>';
+  }
+
+  var porHunter = agrupar(function(c){ return c.hunter; });
+  var porCidade = agrupar(function(c){ return (c.cidade_finsave||'').trim() || 'Sem cidade'; });
+
+  return '<div class="card"><div class="sh"><span class="sn">12</span><span class="st">Por Que Perdemos Candidatos</span><span class="ss">'+declinados.length+' declínio(s) com motivo registrado · ⚠ = 3+ declínios com 60%+ de reprovação</span></div>'
+    + '<div style="display:flex;gap:24px;flex-wrap:wrap;">'
+      + tabela('Hunter', porHunter)
+      + tabela('Cidade', porCidade)
+    + '</div>'
+    + '<div class="nota" style="margin-top:14px;font-size:10px;color:var(--t3);background:var(--canvas,#F4F6FB);border-radius:8px;padding:9px 12px;line-height:1.6;">📐 <b>FinSave Declinou</b> = a empresa não seguiu com o candidato (pode indicar critério de prospecção a ajustar). <b>Desistência</b> = o candidato que desistiu (pode indicar oferta/processo a revisar). Hunter ou cidade com muita reprovação concentrada vale uma conversa — pode ser perfil de candidato sendo trazido fora do que qualifica.</div>'
+    + '</div>';
+}
+
+// ── Candidatos parados ──
+// "Parado" aqui = tempo desde o cadastro (data_entrada), não tempo na etapa atual específica
+// (isso exigiria o historico_etapas, que não estou usando por segurança — ver nota acima).
+var LIMITE_PARADO = 20;
+var PARADOS_LIMITE_INICIAL = 10;
+function renderParados(C) {
+  var candidatosAtivos = C.filter(function(c){ return FUNIL_SEQ.indexOf(c.etapa) > -1 && c.etapa !== 'Trabalhando' && c.data_entrada; });
+  var parados = candidatosAtivos.map(function(c){
+    return { c:c, dias: diasEntre(c.data_entrada, null) };
+  }).filter(function(x){ return x.dias !== null && x.dias >= LIMITE_PARADO; })
+    .sort(function(a,b){ return b.dias - a.dias; });
+
+  if (!parados.length) {
+    return '<div class="card"><div class="sh"><span class="sn">06</span><span class="st">Candidatos Parados</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum candidato há mais de '+LIMITE_PARADO+' dias no funil sem avançar — funil saudável no filtro atual.</div></div>';
+  }
+
+  function _linhaParado(x, oculta){
+    var info = ETAPA_INFO[x.c.etapa];
+    return '<tr class="'+(oculta?'linha-parado-extra':'')+'" style="border-bottom:1px solid var(--rule);'+(oculta?'display:none;':'')+'">'
+      + '<td style="padding:7px 4px;font-weight:600;">'+esc(x.c.nome)+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(x.c.cidade_finsave||'—')+'</td>'
+      + '<td style="padding:7px 4px;"><span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+info.cor+'22;color:'+info.cor+';">'+esc(info.lbl)+'</span></td>'
+      + '<td style="padding:7px 4px;text-align:right;font-weight:700;color:#DC2626;">'+x.dias+'d</td>'
+    + '</tr>';
+  }
+
+  var linhasVisiveis = parados.slice(0, PARADOS_LIMITE_INICIAL).map(function(x){ return _linhaParado(x, false); }).join('');
+  var linhasOcultas  = parados.slice(PARADOS_LIMITE_INICIAL).map(function(x){ return _linhaParado(x, true); }).join('');
+  var restantes = parados.length - PARADOS_LIMITE_INICIAL;
+
+  var botaoExpandir = restantes > 0
+    ? '<button id="btn-parados-expandir" onclick="toggleParadosExpandir()" style="margin-top:10px;background:none;border:1px solid var(--rule);border-radius:7px;padding:6px 14px;font-size:11px;font-weight:700;color:var(--cobalt);cursor:pointer;font-family:\'DM Sans\',sans-serif;">Ver todos ('+restantes+' a mais) ▾</button>'
+    : '';
+
+  return '<div class="card card-flow"><div class="sh"><span class="sn">06</span><span class="st">Candidatos Parados</span><span class="ss">'+parados.length+' candidato(s) há '+LIMITE_PARADO+'+ dias sem chegar em Trabalhando ou Declinou</span></div>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Candidato</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Cidade</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Etapa Atual</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Dias parado</th></tr></thead>'
+    + '<tbody>'+linhasVisiveis+linhasOcultas+'</tbody></table>'
+    + botaoExpandir
+  + '</div>';
+}
+function toggleParadosExpandir() {
+  var btn = document.getElementById('btn-parados-expandir');
+  var linhas = document.querySelectorAll('.linha-parado-extra');
+  var expandido = btn.getAttribute('data-expandido') === '1';
+  linhas.forEach(function(tr){ tr.style.display = expandido ? 'none' : 'table-row'; });
+  btn.setAttribute('data-expandido', expandido ? '0' : '1');
+  btn.textContent = expandido ? btn.textContent.replace('Ver menos ▴', '') : '';
+  if (expandido) {
+    btn.textContent = 'Ver todos (' + linhas.length + ' a mais) ▾';
+  } else {
+    btn.textContent = 'Ver menos ▴';
+  }
+}
+
+// ── Performance por Hunter ──
+function renderHunters(C) {
+  var comHunter = C.filter(function(c){ return c.hunter; });
+  var porHunter = {};
+  comHunter.forEach(function(c){
+    var h = c.hunter;
+    if (!porHunter[h]) porHunter[h] = { total:0, cidades:{}, etapas:{}, aprovados:0, declinados:0 };
+    var reg = porHunter[h];
+    reg.total++;
+    var p = (c.cidade_finsave||'').trim() || 'Sem cidade';
+    reg.cidades[p] = (reg.cidades[p]||0)+1;
+    reg.etapas[c.etapa] = (reg.etapas[c.etapa]||0)+1;
+    if (c.etapa === 'Contratação' || c.etapa === 'Trabalhando') reg.aprovados++;
+    if (c.etapa === 'Declinou') reg.declinados++;
+  });
+
+  var nomes = Object.keys(porHunter).sort(function(a,b){ return porHunter[b].total - porHunter[a].total; });
+  if (!nomes.length) {
+    return '<div class="card"><div class="sh"><span class="sn">05</span><span class="st">Performance por Hunter</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum lead com hunter atribuído no filtro atual.</div></div>';
+  }
+
+  var linhas = nomes.map(function(h){
+    var reg = porHunter[h];
+    var taxa = reg.total ? Math.round(reg.aprovados/reg.total*100) : 0;
+    var corTaxa = taxa >= 30 ? '#16A34A' : (taxa >= 10 ? '#B45309' : '#7A82A8');
+
+    var cidadesTxt = Object.keys(reg.cidades).sort(function(a,b){ return reg.cidades[b]-reg.cidades[a]; }).join(', ');
+
+    var etapasTags = ETAPAS_ORDEM.filter(function(e){ return reg.etapas[e]; }).map(function(e){
+      var info = ETAPA_INFO[e];
+      return '<span style="display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:'+info.cor+'22;color:'+info.cor+';margin:1px 3px 1px 0;white-space:nowrap;">'+esc(info.lbl.replace(/^R\d · /,''))+' '+reg.etapas[e]+'</span>';
+    }).join('');
+
+    return '<tr style="border-bottom:1px solid var(--rule);vertical-align:top;">'
+      + '<td style="padding:8px 4px;font-weight:600;">'+esc(h)+'</td>'
+      + '<td style="padding:8px 4px;text-align:center;font-weight:700;">'+reg.total+'</td>'
+      + '<td style="padding:8px 4px;color:var(--t3);font-size:11px;">'+esc(cidadesTxt)+'</td>'
+      + '<td style="padding:8px 4px;">'+etapasTags+'</td>'
+      + '<td style="padding:8px 4px;text-align:right;font-weight:700;color:'+corTaxa+';">'+taxa+'%</td>'
+    + '</tr>';
+  }).join('');
+
+  return '<div class="card card-flow"><div class="sh"><span class="sn">05</span><span class="st">Performance por Hunter</span><span class="ss">Volume, cidades, etapas e conversão (aprovados+contratados ÷ total)</span></div>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Hunter</th><th style="text-align:center;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Total</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Cidades</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Distribuição por Etapa</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Conversão</th></tr></thead>'
+    + '<tbody>'+linhas+'</tbody></table>'
+  + '</div>';
+}
+
+function _inicioSemana(d){ var dia=(d.getDay()+6)%7; var s=new Date(d); s.setDate(d.getDate()-dia); s.setHours(0,0,0,0); return s; }
+function _fmtDiaLbl(iso){ var d=new Date(iso+'T12:00:00'); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'); }
+function _fmtSemanaLbl(iso){ var d=new Date(iso+'T12:00:00'); var f=new Date(d); f.setDate(d.getDate()+6); var ff=function(x){return String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0');}; return ff(d)+'–'+ff(f); }
+function _fmtMesLbl(chave){ var partes=chave.split('-'); var meses=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']; return meses[parseInt(partes[1],10)-1]+'/'+partes[0].slice(2); }
+
+function toggleModoCresc(modo){ _MODO_CRESC = modo; aplicarFiltro(); }
+
+function renderCrescimento(C) {
+  var buckets = {};
+  C.forEach(function(c){
+    if (!c.data_entrada) return;
+    var d = new Date(c.data_entrada+'T12:00:00');
+    if (isNaN(d.getTime())) return;
+    var chave;
+    if (_MODO_CRESC === 'dia') chave = c.data_entrada;
+    else if (_MODO_CRESC === 'semana') chave = _inicioSemana(d).toISOString().slice(0,10);
+    else chave = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    buckets[chave] = (buckets[chave]||0)+1;
+  });
+
+  var chaves = Object.keys(buckets).sort();
+  var JANELA = _MODO_CRESC === 'dia' ? 14 : (_MODO_CRESC === 'semana' ? 8 : 6);
+  var visiveis = chaves.slice(-JANELA);
+
+  if (!visiveis.length) {
+    return '<div class="card"><div class="sh"><span class="sn">07</span><span class="st">Crescimento da Base</span></div><div style="padding:16px;text-align:center;color:var(--t4);font-size:12px;">Sem datas de cadastro suficientes.</div></div>';
+  }
+
+  var maxVal = Math.max.apply(null, visiveis.map(function(k){ return buckets[k]; }));
+  var linhas = visiveis.map(function(k){
+    var atual = buckets[k];
+    var idxReal = chaves.indexOf(k);
+    var anteriorKey = chaves[idxReal-1];
+    var anterior = anteriorKey!=null ? buckets[anteriorKey] : null;
+    var largura = maxVal>0 ? Math.round(atual/maxVal*100) : 0;
+    var deltaHtml = '<span class="cresc-delta flat">—</span>';
+    if (anterior !== null) {
+      var delta = atual - anterior;
+      var cls = delta>0?'up':(delta<0?'down':'flat');
+      var seta = delta>0?'▲':(delta<0?'▼':'＝');
+      var pctTxt = anterior>0 ? ' ('+(delta>=0?'+':'')+Math.round(delta/anterior*100)+'%)' : '';
+      deltaHtml = '<span class="cresc-delta '+cls+'">'+seta+' '+(delta>0?'+':'')+delta+pctTxt+'</span>';
+    }
+    var lbl = _MODO_CRESC==='dia' ? _fmtDiaLbl(k) : (_MODO_CRESC==='semana' ? _fmtSemanaLbl(k) : _fmtMesLbl(k));
+    return '<div class="cresc-row"><div class="cresc-lbl">'+esc(lbl)+'</div><div class="cresc-track"><div class="cresc-fill" style="width:'+largura+'%;"></div></div><div class="cresc-val">'+atual+'</div>'+deltaHtml+'</div>';
+  }).join('');
+
+  var totalJanela = visiveis.reduce(function(s,k){ return s+buckets[k]; },0);
+
+  return '<div class="card">'
+    + '<div class="card-head"><div class="sh" style="border-bottom:none;margin-bottom:0;padding-bottom:0;flex:1;"><span class="sn">07</span><span class="st">Crescimento da Base</span><span class="ss">Novos cadastros · '+totalJanela+' no período exibido</span></div>'
+      + '<div class="seg">'
+        + '<button class="'+(_MODO_CRESC==='dia'?'on':'')+'" onclick="toggleModoCresc(\'dia\')">Diário</button>'
+        + '<button class="'+(_MODO_CRESC==='semana'?'on':'')+'" onclick="toggleModoCresc(\'semana\')">Semanal</button>'
+        + '<button class="'+(_MODO_CRESC==='mes'?'on':'')+'" onclick="toggleModoCresc(\'mes\')">Mensal</button>'
+      + '</div></div>'
+    + '<div style="margin-top:10px;">'+linhas+'</div>'
+  + '</div>';
+}
+
+// ── Candidatos Contratados (dados espelhados pra conferência/exportação) ──
+function renderContratados(C) {
+  var contratados = C.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; })
+    .sort(function(a,b){ return (b.data_contratacao||'').localeCompare(a.data_contratacao||''); });
+
+  if (!contratados.length) {
+    return '<div class="card"><div class="sh"><span class="sn">09</span><span class="st">Candidatos Contratados</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum candidato aprovado/contratado no filtro atual.</div></div>';
+  }
+
+  var linhas = contratados.map(function(c){
+    var mouOk = (c.mou||'').toLowerCase() === 'assinado';
+    var statusHtml = mouOk
+      ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#DCFCE7;color:#166534;">MOU Assinado · '+fmtDate(c.data_mou)+'</span>'
+      : '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF3C7;color:#92400E;">MOU Pendente</span>';
+    return '<tr style="border-bottom:1px solid var(--rule);">'
+      + '<td style="padding:7px 4px;white-space:nowrap;">'+fmtDate(c.data_contratacao)+'</td>'
+      + '<td style="padding:7px 4px;">'+statusHtml+'</td>'
+      + '<td style="padding:7px 4px;font-weight:600;">'+esc(c.nome)+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.telefone||'—')+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.email||'—')+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.cidade_finsave||'—')+'</td>'
+    + '</tr>';
+  }).join('');
+
+  return '<div class="card card-flow"><div class="sh"><span class="sn">09</span><span class="st">Candidatos Contratados</span><span class="ss">'+contratados.length+' candidato(s) — dados pra conferência e exportação</span></div>'
+    + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Data Contratação</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Status</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Nome Completo</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Telefone</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">E-mail</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Cidade</th></tr></thead>'
+    + '<tbody>'+linhas+'</tbody></table></div>'
+  + '</div>';
+}
+
+function renderPracas(C) {
+  var porCidade = {};
+  C.forEach(function(c){ var p=(c.cidade_finsave||'').trim()||'Sem cidade'; porCidade[p]=(porCidade[p]||0)+1; });
+  var lista = Object.keys(porCidade).sort(function(a,b){ return porCidade[b]-porCidade[a]; });
+  var max = Math.max.apply(null, lista.map(function(p){ return porCidade[p]; }).concat([1]));
+
+  var linhas = lista.map(function(p){
+    var v = porCidade[p];
+    var largura = Math.round(v/max*100);
+    return '<div class="praca-row"><div>'+esc(p)+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;"></div></div><div style="font-weight:700;">'+v+'</div></div>';
+  }).join('');
+
+  return '<div class="card"><div class="sh"><span class="sn">10</span><span class="st">Distribuição por Cidade</span></div>'+linhas+'</div>';
+}
+
+// ════════ EXPORT PDF ════════
+// Como o relatório é montado inteiramente em HTML/CSS (sem <canvas>), a impressão
+// nativa do navegador já é suficiente — o CSS de @media print cuida das quebras
+// de página. Essa função existe pra manter o mesmo padrão dos outros relatórios.
+function exportarPDF() {
+  window.print();
+}
+
+// ════════ EXPORT CSV ════════
+function exportarCSV() {
+  var C = window._C_ATUAL || [];
+  if (!C.length) { alert('Nada para exportar com os filtros atuais.'); return; }
+
+  var hdr = ['Nome','Telefone','E-mail','Cidade','Etapa','Hunter','Líder','Status Proposta','Status MOU','Motivo Declínio','Data Entrada','Data Contratação','Data Início','Data Declínio'];
+  var linhas = C.map(function(c){
+    var temProposta = TELEFONES_COM_PROPOSTA[(c.telefone||'').replace(/\D/g,'')] ? 'Sim' : 'Não';
+    var statusMou = (c.mou||'').toLowerCase() === 'assinado' ? 'Assinado ('+fmtDate(c.data_mou)+')' : 'Pendente';
+    return [
+      c.nome||'', c.telefone||'', c.email||'', c.cidade_finsave||'', (ETAPA_INFO[c.etapa]||{}).lbl || c.etapa || '',
+      c.hunter||'', c.lider||'', temProposta, statusMou, c.motivo_declinio_finsave||'',
+      fmtDate(c.data_entrada), fmtDate(c.data_contratacao), fmtDate(c.data_inicio), fmtDate(c.data_declinio)
+    ].map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(';');
+  });
+
+  var csv = '\uFEFF' + hdr.join(';') + '\n' + linhas.join('\n');
+  var blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var hoje = new Date();
+  a.href = url;
+  a.download = 'finsave_' + hoje.getFullYear() + String(hoje.getMonth()+1).padStart(2,'0') + String(hoje.getDate()).padStart(2,'0') + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+carregar();
+</script>
+</body>
+</html>
