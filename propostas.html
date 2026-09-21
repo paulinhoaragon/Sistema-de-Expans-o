@@ -211,6 +211,14 @@ body{font-family:'Inter',sans-serif;font-size:12px;background:#e8ecf3;color:#1a2
   <!-- BUSCA -->
   <div class="busca-wrap">
     <input type="text" id="busca-input" placeholder="Buscar por nome ou telefone..." onkeydown="if(event.key==='Enter')buscar()">
+    <select id="busca-canal" onchange="buscar()">
+      <option value="">Todos os canais</option>
+      <option value="Blue3">Blue3</option>
+      <option value="Future">Future</option>
+      <option value="FinSave">FinSave</option>
+      <option value="M&amp;A">M&amp;A</option>
+      <option value="Outros">Outros</option>
+    </select>
     <select id="busca-status" onchange="buscar()">
       <option value="">Todos os status</option>
       <option value="Em negociação">Em negociação</option>
@@ -222,6 +230,9 @@ body{font-family:'Inter',sans-serif;font-size:12px;background:#e8ecf3;color:#1a2
     <button class="btn-limpar" onclick="limparBusca()">Limpar</button>
     <span id="busca-count" style="font-size:10px;color:#a0aacc;margin-left:4px;"></span>
   </div>
+
+  <!-- TOTALIZADOR POR STATUS (respeita os filtros ativos) -->
+  <div id="totais-status" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;"></div>
 
   <!-- LISTA -->
   <div id="lista"></div>
@@ -253,9 +264,23 @@ function statusClass(s) {
 }
 
 // ── Carregar / Buscar ─────────────────────────────────────────────
+// ── Classificação por canal (a partir da praça salva na proposta) ──
+// Segue o mesmo padrão de prefixo já usado no resto do Nexus:
+// "Blue3 - <cidade>", "Future - <cidade>", "FinSave", "M&A" ; o que não
+// bater com nenhum prefixo conhecido cai em "Outros".
+function grupoCanalDe(praca) {
+  var p = (praca || '').trim();
+  if (/^Blue3\b/i.test(p))   return 'Blue3';
+  if (/^Future\b/i.test(p))  return 'Future';
+  if (/^FinSave\b/i.test(p)) return 'FinSave';
+  if (/^M\s*&\s*A\b/i.test(p)) return 'M&A';
+  return 'Outros';
+}
+
 function buscar() {
-  var q    = (document.getElementById('busca-input').value || '').trim().toLowerCase();
-  var st   = document.getElementById('busca-status').value || '';
+  var q     = (document.getElementById('busca-input').value || '').trim().toLowerCase();
+  var st    = document.getElementById('busca-status').value || '';
+  var canal = document.getElementById('busca-canal').value || '';
 
   var params = 'order=criado_em.desc&limit=20000';
   if (st) params += '&status=eq.'+encodeURIComponent(st);
@@ -267,6 +292,8 @@ function buscar() {
       if (q) rows = rows.filter(function(r){
         return (r.nome||'').toLowerCase().includes(q) || (r.telefone||'').includes(q);
       });
+      // filtro client-side por canal (grupo derivado da praça)
+      if (canal) rows = rows.filter(function(r){ return grupoCanalDe(r.praca) === canal; });
       renderLista(rows);
     })
     .catch(function(e){ renderErro(e); });
@@ -275,7 +302,39 @@ function buscar() {
 function limparBusca() {
   document.getElementById('busca-input').value = '';
   document.getElementById('busca-status').value = '';
+  document.getElementById('busca-canal').value = '';
   buscar();
+}
+
+// ── Totalizador por status — conta 1x por candidato (versão mais
+// recente de cada telefone), respeitando os filtros ativos ─────────
+function renderTotais(candidatos) {
+  var box = document.getElementById('totais-status');
+  if (!box) return;
+  var ordem = ['Em negociação','Aceita','Declinada','Expirada'];
+  var cores = {
+    'Em negociação': { bg:'#FEF3C7', fg:'#92400E' },
+    'Aceita':         { bg:'#DCFCE7', fg:'#166534' },
+    'Declinada':      { bg:'#FEE2E2', fg:'#991B1B' },
+    'Expirada':       { bg:'#F1F5F9', fg:'#64748B' }
+  };
+  var cont = { 'Em negociação':0, 'Aceita':0, 'Declinada':0, 'Expirada':0 };
+  (candidatos||[]).forEach(function(g){
+    var st = g.versoes[0].status;
+    if (cont.hasOwnProperty(st)) cont[st]++; else cont['Em negociação']++;
+  });
+  var total = (candidatos||[]).length;
+  box.innerHTML = '<div style="background:#fff;border:1px solid #e2e6f2;border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,.05);">'
+    + '<span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#7a82a8;">Total</span>'
+    + '<span style="font-size:16px;font-weight:800;color:#1a2035;">'+total+'</span>'
+    + '</div>'
+    + ordem.map(function(s){
+        var c = cores[s];
+        return '<div style="background:'+c.bg+';border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:8px;">'
+          + '<span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:'+c.fg+';">'+s+'</span>'
+          + '<span style="font-size:16px;font-weight:800;color:'+c.fg+';">'+cont[s]+'</span>'
+          + '</div>';
+      }).join('');
 }
 
 // ── Agrupar por candidato (telefone) ─────────────────────────────
@@ -284,6 +343,7 @@ function renderLista(rows) {
   if (!rows || !rows.length) {
     lista.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-t">Nenhuma proposta encontrada</div><div class="empty-s">Use o Simulador e clique "Salvar no Histórico" para registrar.</div></div>';
     document.getElementById('busca-count').textContent = '';
+    renderTotais([]);
     return;
   }
 
@@ -309,6 +369,7 @@ function renderLista(rows) {
 
   var candidatos = Object.values(grupos);
   document.getElementById('busca-count').textContent = candidatos.length + ' candidato' + (candidatos.length!==1?'s':'') + ' · ' + rows.length + ' proposta' + (rows.length!==1?'s':'');
+  renderTotais(candidatos);
 
   lista.innerHTML = candidatos.map(function(g, gi) {
     var ultima = g.versoes[0];
