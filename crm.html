@@ -1012,6 +1012,9 @@ function dropCard(e, etapa) {
   var histBruto     = cand.historico_etapas || '[]';
   cand.etapa = etapa;
   renderBoard();
+  // Sincroniza o status da proposta mais recente com a nova etapa
+  // (Declinou → Declinada · Contratação/Trabalhando → Aceita)
+  sincronizarStatusProposta(cand.telefone, etapa);
   // Registrar mudança de etapa com data automática
   if (typeof NexusConfig !== 'undefined') {
     NexusConfig.registrarMudancaEtapa(dragIdAtual, etapaAnterior, etapa, histBruto, null, cand);
@@ -1334,6 +1337,39 @@ function gn(id){ return parseFloat(g(id))||0; }
 function gi(id){ return parseInt(g(id))||0; }
 function gc(id){ var e=document.getElementById(id); return e ? !!e.checked : false; }
 
+// ── Sincronização de status da proposta a partir da etapa do CRM ──
+// O funil (etapa, em crm_candidatos) e o histórico de propostas (status,
+// em propostas) são campos independentes — sem isso, mover um candidato
+// pra "Declinou" no board nunca refletia no Histórico de Propostas.
+function statusPropostaPorEtapa(etapa) {
+  if (etapa === 'Declinou') return 'Declinada';
+  if (etapa === 'Contratação' || etapa === 'Trabalhando') return 'Aceita';
+  return null; // demais etapas não mexem no status da proposta
+}
+
+function sincronizarStatusProposta(telefone, etapa) {
+  var alvo = statusPropostaPorEtapa(etapa);
+  if (!alvo) return;
+  var tel = (telefone || '').replace(/\D/g, '');
+  if (!tel) return;
+  supa('propostas?telefone=eq.'+tel+'&order=versao.desc&limit=1')
+    .then(function(r){ return r.json(); })
+    .then(function(rows){
+      if (!rows || !rows.length) return; // candidato ainda sem proposta salva — nada a sincronizar
+      var prop = rows[0];
+      if (prop.status === alvo) return; // já está no status certo
+      return supa('propostas?id=eq.'+prop.id, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: alvo, atualizado_em: new Date().toISOString() })
+      }).then(function(){
+        if (typeof nexusLog !== 'undefined') {
+          nexusLog('Status de Proposta Sincronizado via CRM', { proposta_id: prop.id, telefone: tel, etapa: etapa, novo_status: alvo });
+        }
+      });
+    })
+    .catch(function(e){ console.warn('Sincronização status proposta falhou:', e); });
+}
+
 function salvarCandidato() {
   if (window._CRM_READONLY) { alert('Seu perfil tem acesso somente leitura ao CRM.'); return; }
   var nome = g('m-nome').trim();
@@ -1439,6 +1475,9 @@ function salvarCandidato() {
           nexusLog('Mudança de Etapa', { candidato: payload.nome, de: candAnt.etapa, para: novaEtapa });
         }
       }
+      // Sincroniza o status da proposta mais recente com a etapa salva agora
+      // (Declinou → Declinada · Contratação/Trabalhando → Aceita)
+      sincronizarStatusProposta(payload.telefone, payload.etapa);
       fecharModal(); carregar();
     })
     .catch(function(e){ alert('Erro ao salvar: '+e+'\nCrie a tabela crm_candidatos no Supabase.'); })
@@ -2082,6 +2121,30 @@ function renderPareceresPerformance(r) {
   box.style.display = 'block';
 }
 
+// Mesmo critério de expiração automática usado no Histórico de Propostas
+// (propostas.html) — mantém os dois em sincronia visual.
+var VALIDADE_PROPOSTA_DIAS = 7;
+function expirarAutomaticamente(rows) {
+  var paraAtualizar = [];
+  (rows || []).forEach(function(r) {
+    if (r.status !== 'Em negociação') return;
+    var baseStr = (r.dados && r.dados.date) ? (r.dados.date + 'T00:00:00') : r.criado_em;
+    if (!baseStr) return;
+    var base = new Date(baseStr);
+    if (isNaN(base.getTime())) return;
+    var dias = (Date.now() - base.getTime()) / 86400000;
+    if (dias > VALIDADE_PROPOSTA_DIAS) {
+      r.status = 'Expirada';
+      paraAtualizar.push(r.id);
+    }
+  });
+  paraAtualizar.forEach(function(id) {
+    supa('propostas?id=eq.'+id, { method:'PATCH', body: JSON.stringify({ status:'Expirada', atualizado_em:new Date().toISOString() }) })
+      .catch(function(e){ console.warn('Falha ao expirar proposta '+id+':', e); });
+  });
+  return rows;
+}
+
 function carregarPropostasCRM(telefone) {
   var wrap  = document.getElementById('crm-prop-hist');
   var lista = document.getElementById('crm-prop-hist-lista');
@@ -2102,6 +2165,7 @@ function carregarPropostasCRM(telefone) {
   .then(function(r){ return r.json(); })
   .then(function(rows) {
     if (!rows || !rows.length) { wrap.style.display='none'; return; }
+    rows = expirarAutomaticamente(rows);
     wrap.style.display = 'block';
     lista.innerHTML = rows.map(function(p) {
       var cor = corStatus[p.status] || '64748B;background:#F1F5F9';
