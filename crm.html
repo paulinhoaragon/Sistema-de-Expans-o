@@ -2107,9 +2107,14 @@ function carregarPropostasCRM(telefone) {
       var cor = corStatus[p.status] || '64748B;background:#F1F5F9';
       var resumo = p.resumo || (p.dados && p.dados.piso ? 'Piso R$'+p.dados.piso+'/mês' : '—');
       var data = p.criado_em ? new Date(p.criado_em).toLocaleDateString('pt-BR') : '';
+      var canalP = p.canal || (p.dados && p.dados.canal) || 'Blue3';
+      var canalBadge = (canalP === 'FinSave')
+        ? '<span style="background:#0FB48A;color:#00281f;font-size:9px;font-weight:800;padding:2px 7px;border-radius:4px;flex-shrink:0;">FinSave</span>'
+        : '<span style="background:#F5A623;color:#002855;font-size:9px;font-weight:800;padding:2px 7px;border-radius:4px;flex-shrink:0;">Blue3</span>';
       var pdfBtn = '<button onclick="abrirPDFproposta(\''+p.id+'\')" style="flex-shrink:0;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;background:#EEF2FD;color:#1A3BAD;border:1px solid #c7d2f5;cursor:pointer;white-space:nowrap;">↗ PDF</button>';
       return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;background:#f7f9ff;border:1px solid #e8edf5;margin-bottom:4px;font-size:11px;">'
         + '<span style="background:#1A3BAD;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:4px;flex-shrink:0;">v'+p.versao+'</span>'
+        + canalBadge
         + '<span style="flex:1;color:#3a4268;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+resumo+'</span>'
         + '<span style="font-size:9px;color:#a0aacc;flex-shrink:0;">'+data+'</span>'
         + '<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;color:'+cor+';flex-shrink:0;">'+p.status+'</span>'
@@ -2143,6 +2148,7 @@ function abrirPDFproposta(propId) {
       hunter:    prop.hunter    || '',
       crm_id:    prop.crm_id    || '',
       praca:     prop.praca     || (prop.dados && prop.dados.praca) || '',
+      canal:     prop.canal     || (prop.dados && prop.dados.canal) || '',
       condicoes_renovacao: prop.condicoes_renovacao || null
     }));
     // Abre simulador com ?pdf=1 — ele carrega os dados e dispara exportPDF automaticamente
@@ -2183,10 +2189,15 @@ function gerarProposta() {
 
   var crmId = g('m-id'); // ID do registro no Supabase
 
+  // Canal da proposta: candidatos com Praça = FinSave chamam o modelo FinSave no simulador;
+  // demais praças seguem no modelo Blue3 (o seletor no simulador permanece editável).
+  var canalVal = (pracaVal === 'FinSave') ? 'FinSave' : 'Blue3';
+
   // Montar objeto compatível com b3_carregar_proposta do simulador
   var dados = {
     nome:      nome,
     praca:     pracaVal,
+    canal:     canalVal,
     piso:      parseBRL(g('m-piso')),
     pisoMeses: gi('m-periodo') || 12,
     luva:      parseBRL(g('m-upfront')),
@@ -2215,6 +2226,7 @@ function gerarProposta() {
     telefone: tel,
     nome:     nome,
     praca:    pracaVal,
+    canal:    canalVal,
     hunter:   g('m-hunter'),
     condicoes_renovacao: (function(){
       var el = document.getElementById('m-renov-data');
