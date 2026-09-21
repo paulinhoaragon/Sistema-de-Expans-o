@@ -173,9 +173,18 @@ body{font-family:'Inter',sans-serif;font-size:12px;background:#e8ecf3;color:#1a2
     </div>
     <div class="f-grid">
       <div class="f-row">
+        <label>Canal</label>
+        <select id="m-canal">
+          <option value="Blue3">Blue3</option>
+          <option value="FinSave">FinSave</option>
+        </select>
+      </div>
+      <div class="f-row">
         <label>Hunter</label>
         <input type="text" id="m-hunter" placeholder="ex: Eduarda">
       </div>
+    </div>
+    <div class="f-grid">
       <div class="f-row">
         <label>Status</label>
         <select id="m-status">
@@ -286,6 +295,13 @@ function renderLista(rows) {
     grupos[k].versoes.push(r);
   });
 
+  function canalDe(r) { return r.canal || (r.dados && r.dados.canal) || 'Blue3'; }
+  function canalBadgeHtml(canal) {
+    return (canal === 'FinSave')
+      ? '<span style="background:#0FB48A;color:#00281f;font-size:9px;font-weight:800;padding:2px 8px;border-radius:10px;">FinSave</span>'
+      : '<span style="background:#F5A623;color:#002855;font-size:9px;font-weight:800;padding:2px 8px;border-radius:10px;">Blue3</span>';
+  }
+
   // Ordenar versões desc
   Object.keys(grupos).forEach(function(k){
     grupos[k].versoes.sort(function(a,b){ return b.versao - a.versao; });
@@ -308,6 +324,7 @@ function renderLista(rows) {
       var resumo = v.resumo || montarResumo(v.dados);
       return '<div class="versao-row">'
         + '<span class="v-tag">v'+v.versao+'</span>'
+        + canalBadgeHtml(canalDe(v))
         + '<span class="v-resumo">'+resumo+'</span>'
         + '<span class="v-data">'+fmtData(v.criado_em)+'</span>'
         + '<span class="v-status '+statusClass(v.status)+'">'+v.status+'</span>'
@@ -330,8 +347,9 @@ function renderLista(rows) {
       + '<div class="cand-meta">'+g.telefone+(g.praca?' · '+g.praca:'')+(g.hunter?' · Hunter: '+g.hunter:'')+(metaUlt?' · '+metaUlt:'')+'</div>'
       + '</div>'
       + '<div class="cand-right">'
+      + canalBadgeHtml(canalDe(ultima))
       + '<span class="cand-badge">'+qtdV+' versã'+(qtdV===1?'o':'ões')+'</span>'
-      + '<button class="btn-v btn-abrir" style="font-size:10px" onclick="novaVersao(\''+g.telefone+'\',\''+g.nome+'\',\''+g.praca+'\',\''+g.hunter+'\','+ultima.versao+',event)">+ versão</button>'
+      + '<button class="btn-v btn-abrir" style="font-size:10px" onclick="novaVersao(\''+g.telefone+'\',\''+g.nome+'\',\''+g.praca+'\',\''+g.hunter+'\','+ultima.versao+',event,\''+canalDe(ultima)+'\')">+ versão</button>'
       + '<button class="btn-v btn-del" style="font-size:10px" onclick="deletarCandidato(\''+g.telefone+'\',\''+g.nome+'\',event)" title="Excluir todas as versões">🗑 Excluir tudo</button>'
       + '<svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'
       + '</div>'
@@ -370,7 +388,7 @@ function renderErro(e) {
 }
 
 // ── Modal ─────────────────────────────────────────────────────────
-function abrirModal(tel, nome, praca, hunter, versaoBase) {
+function abrirModal(tel, nome, praca, hunter, versaoBase, canal) {
   _dadosSim = lerDadosSimulador();
   _versaoAtual = (versaoBase || 0) + 1;
 
@@ -379,6 +397,7 @@ function abrirModal(tel, nome, praca, hunter, versaoBase) {
   document.getElementById('m-nome').value   = nome   || (_dadosSim ? _dadosSim.nome : '');
   document.getElementById('m-praca').value  = praca  || (_dadosSim ? _dadosSim.praca : '');
   document.getElementById('m-hunter').value = hunter || '';
+  document.getElementById('m-canal').value  = canal  || (_dadosSim ? _dadosSim.canal : '') || 'Blue3';
 
   if (versaoBase) {
     var vi = document.getElementById('v-info');
@@ -413,6 +432,7 @@ function buscarPorTel() {
           document.getElementById('m-nome').value  = r.nome;
           document.getElementById('m-praca').value = r.praca || '';
           document.getElementById('m-hunter').value= r.hunter || '';
+          document.getElementById('m-canal').value = r.canal || (r.dados && r.dados.canal) || 'Blue3';
           document.getElementById('m-tel-hint').textContent = '✓ Candidato encontrado · será salvo como v'+_versaoAtual;
           var vi = document.getElementById('v-info');
           vi.textContent = 'Já existe v'+r.versao+' para este candidato. Será salvo como v'+_versaoAtual+'.';
@@ -432,15 +452,17 @@ function salvarProposta() {
   var praca  = document.getElementById('m-praca').value.trim();
   var hunter = document.getElementById('m-hunter').value.trim();
   var status = document.getElementById('m-status').value;
+  var canal  = (document.getElementById('m-canal') || {}).value || 'Blue3';
 
   if (!tel)  { alert('Informe o telefone.'); return; }
   if (!nome) { alert('Informe o nome do candidato.'); return; }
 
   var dadosSim = lerDadosSimulador();
   var resumo   = montarResumo(dadosSim);
+  if (dadosSim) dadosSim.canal = dadosSim.canal || canal; // garante consistência dentro do jsonb também
 
   var payload = {
-    telefone: tel, nome: nome, praca: praca, hunter: hunter,
+    telefone: tel, nome: nome, praca: praca, hunter: hunter, canal: canal,
     versao: _versaoAtual, status: status,
     dados: dadosSim || {}, resumo: resumo,
     payback_meses: (dadosSim && dadosSim.payback_meses) || null
@@ -491,9 +513,9 @@ function lerDadosSimulador() {
 }
 
 // ── Nova versão ───────────────────────────────────────────────────
-function novaVersao(tel, nome, praca, hunter, versaoBase, e) {
+function novaVersao(tel, nome, praca, hunter, versaoBase, e, canal) {
   if (e) e.stopPropagation();
-  abrirModal(tel, nome, praca, hunter, versaoBase);
+  abrirModal(tel, nome, praca, hunter, versaoBase, canal);
 }
 
 // ── Abrir no simulador ────────────────────────────────────────────
@@ -578,7 +600,7 @@ function alterarStatus(id, novoStatus, el) {
 (function(){
   // Ler pacote completo do simulador (inclui crm_id, telefone, hunter)
   var pacoteRaw = sessionStorage.getItem('b3_pacote_salvar');
-  var _pacTel='', _pacNome='', _pacPraca='', _pacHunter='';
+  var _pacTel='', _pacNome='', _pacPraca='', _pacHunter='', _pacCanal='';
   if (pacoteRaw) {
     try {
       var pac = JSON.parse(pacoteRaw);
@@ -586,6 +608,7 @@ function alterarStatus(id, novoStatus, el) {
       _pacNome   = pac.nome     || '';
       _pacPraca  = pac.praca    || '';
       _pacHunter = pac.hunter   || '';
+      _pacCanal  = pac.canal    || (pac.dados && pac.dados.canal) || '';
       window._b3CrmId = pac.crm_id || '';
     } catch(e){}
   }
@@ -598,6 +621,7 @@ function alterarStatus(id, novoStatus, el) {
       if (_pacNome)   { var el=document.getElementById('m-nome');   if(el) el.value=_pacNome; }
       if (_pacPraca)  { var el=document.getElementById('m-praca');  if(el) el.value=_pacPraca; }
       if (_pacHunter) { var el=document.getElementById('m-hunter'); if(el) el.value=_pacHunter; }
+      if (_pacCanal)  { var el=document.getElementById('m-canal');  if(el) el.value=_pacCanal; }
     }, 300);
   }
   buscar();
