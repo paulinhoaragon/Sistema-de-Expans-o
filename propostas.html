@@ -140,6 +140,10 @@ body{font-family:'Inter',sans-serif;font-size:12px;background:#e8ecf3;color:#1a2
     <div class="cover-s">Blue3 Expansão · Propostas comerciais por candidato · versões e status</div>
   </div>
   <div class="cover-r">
+    <button class="btn-nova" id="btn-sync-crm" onclick="sincronizarComCRM()" title="Corrige o status das propostas com base na etapa atual de cada candidato no CRM (Declinou/Contratação/Trabalhando)" style="background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);margin-right:8px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 11-2.64-6.36" stroke-linecap="round"/><polyline points="21 3 21 9 15 9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Sincronizar com CRM
+    </button>
     <button class="btn-nova" onclick="abrirModal()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Nova proposta
@@ -277,6 +281,96 @@ function grupoCanalDe(praca) {
   return 'Outros';
 }
 
+// ── Expiração automática ────────────────────────────────────────────
+// Proposta que segue "Em negociação" passados N dias da emissão vira
+// "Expirada" sozinha — o mesmo prazo já usado no PDF ("Válida até").
+var VALIDADE_PROPOSTA_DIAS = 7;
+
+function expirarAutomaticamente(rows) {
+  var paraAtualizar = [];
+  (rows || []).forEach(function(r) {
+    if (r.status !== 'Em negociação') return;
+    var baseStr = (r.dados && r.dados.date) ? (r.dados.date + 'T00:00:00') : r.criado_em;
+    if (!baseStr) return;
+    var base = new Date(baseStr);
+    if (isNaN(base.getTime())) return;
+    var dias = (Date.now() - base.getTime()) / 86400000;
+    if (dias > VALIDADE_PROPOSTA_DIAS) {
+      r.status = 'Expirada'; // já reflete na tela nesta mesma passada
+      paraAtualizar.push(r.id);
+    }
+  });
+  if (paraAtualizar.length) {
+    paraAtualizar.forEach(function(id) {
+      supa('propostas?id=eq.'+id, { method:'PATCH', body: JSON.stringify({ status:'Expirada', atualizado_em:new Date().toISOString() }) })
+        .catch(function(e){ console.warn('Falha ao expirar proposta '+id+':', e); });
+    });
+    gravarLog('Expiração Automática de Propostas', { quantidade: paraAtualizar.length, ids: paraAtualizar, validade_dias: VALIDADE_PROPOSTA_DIAS });
+  }
+  return rows;
+}
+
+// ── Sincronização retroativa com o CRM (etapa → status) ─────────────
+// Corrige o histórico já existente: candidatos cuja etapa no funil já é
+// Declinou/Contratação/Trabalhando mas cuja proposta ficou com o status
+// antigo porque ninguém voltou aqui pra atualizar manualmente.
+function statusPropostaPorEtapa(etapa) {
+  if (etapa === 'Declinou') return 'Declinada';
+  if (etapa === 'Contratação' || etapa === 'Trabalhando') return 'Aceita';
+  return null;
+}
+
+async function sincronizarComCRM() {
+  if (!confirm('Isso vai conferir todos os candidatos com etapa Declinou, Contratação ou Trabalhando no CRM e corrigir o status da proposta mais recente de cada um, quando estiver desatualizado.\n\nPode levar alguns segundos. Continuar?')) return;
+  var btn = document.getElementById('btn-sync-crm');
+  var txtOriginal = btn.innerHTML;
+  btn.disabled = true; btn.textContent = 'Sincronizando...';
+  try {
+    var etapasAlvo = ['Declinou','Contratação','Trabalhando'];
+    var inList = etapasAlvo.map(encodeURIComponent).join(',');
+    var candR = await supa('crm_candidatos?select=telefone,etapa&etapa=in.('+inList+')&limit=5000');
+    var candidatos = await candR.json();
+
+    var propR = await supa('propostas?select=id,telefone,versao,status&limit=20000');
+    var propostas = await propR.json();
+
+    // Última versão salva por telefone
+    var ultimaPorTel = {};
+    (propostas || []).forEach(function(p){
+      var t = (p.telefone || '').replace(/\D/g,'');
+      if (!t) return;
+      if (!ultimaPorTel[t] || p.versao > ultimaPorTel[t].versao) ultimaPorTel[t] = p;
+    });
+
+    var atualizacoes = [];
+    (candidatos || []).forEach(function(c){
+      var alvo = statusPropostaPorEtapa(c.etapa);
+      if (!alvo) return;
+      var t = (c.telefone || '').replace(/\D/g,'');
+      var prop = ultimaPorTel[t];
+      if (!prop) return; // candidato ainda sem proposta salva no histórico
+      if (prop.status !== alvo) atualizacoes.push({ id: prop.id, status: alvo });
+    });
+
+    var ok = 0, falhas = 0;
+    for (var i = 0; i < atualizacoes.length; i++) {
+      var u = atualizacoes[i];
+      try {
+        var r = await supa('propostas?id=eq.'+u.id, { method:'PATCH', body: JSON.stringify({ status:u.status, atualizado_em:new Date().toISOString() }) });
+        if (r.ok) ok++; else falhas++;
+      } catch(e) { falhas++; }
+    }
+
+    gravarLog('Sincronização Retroativa CRM→Propostas', { candidatos_avaliados: candidatos.length, propostas_atualizadas: ok, falhas: falhas });
+    alert('Sincronização concluída.\n\nCandidatos avaliados: '+candidatos.length+'\nPropostas atualizadas: '+ok+(falhas ? '\nFalhas: '+falhas : ''));
+    buscar();
+  } catch (e) {
+    alert('Erro ao sincronizar com o CRM: '+e);
+  } finally {
+    btn.disabled = false; btn.innerHTML = txtOriginal;
+  }
+}
+
 function buscar() {
   var q     = (document.getElementById('busca-input').value || '').trim().toLowerCase();
   var st    = document.getElementById('busca-status').value || '';
@@ -288,6 +382,7 @@ function buscar() {
   supa('propostas?'+params)
     .then(function(r){ return r.json(); })
     .then(function(rows) {
+      rows = expirarAutomaticamente(rows);
       // filtro client-side para nome/telefone
       if (q) rows = rows.filter(function(r){
         return (r.nome||'').toLowerCase().includes(q) || (r.telefone||'').includes(q);
