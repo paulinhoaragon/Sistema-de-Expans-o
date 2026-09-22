@@ -911,15 +911,48 @@ function renderContratados(C) {
       + '<td style="padding:7px 4px;font-weight:600;">'+esc(c.nome)+'</td>'
       + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.telefone||'—')+'</td>'
       + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.email||'—')+'</td>'
-      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(pracaLabel(c.praca))+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);" title="Valor bruto no banco: '+esc(c.praca||'—')+'">'+esc(pracaLabel(c.praca))+'</td>'
       + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.origem_lead||'—')+'</td>'
     + '</tr>';
+  }).join('');
+
+  var porOrigem = {};
+  contratados.forEach(function(c){ var o=c.origem_lead||'Não informado'; porOrigem[o]=(porOrigem[o]||0)+1; });
+  var listaOrigem = Object.keys(porOrigem).sort(function(a,b){ return porOrigem[b]-porOrigem[a]; });
+  var maxOrigem = Math.max.apply(null, listaOrigem.map(function(o){ return porOrigem[o]; }).concat([1]));
+  var totalOrigem = contratados.length;
+  var linhasOrigem = listaOrigem.map(function(o){
+    var v = porOrigem[o];
+    var largura = Math.round(v/maxOrigem*100);
+    var pct = Math.round(v/totalOrigem*100);
+    return '<div class="praca-row"><div>'+esc(o)+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;background:var(--am);"></div></div><div style="font-weight:700;">'+v+' <span style="font-weight:400;color:var(--t4);font-size:10px;">('+pct+'%)</span></div></div>';
+  }).join('');
+
+  // Consolidador por praça (cidade) — cobre qualquer praça nova do Future automaticamente,
+  // pois agrupa pelo valor bruto de c.praca em vez de uma lista fixa.
+  var porPracaOrigem = {};
+  contratados.forEach(function(c){ var p=pracaLabel(c.praca)||c.praca||'Sem praça'; porPracaOrigem[p]=(porPracaOrigem[p]||0)+1; });
+  var listaPracaOrigem = Object.keys(porPracaOrigem).sort(function(a,b){ return porPracaOrigem[b]-porPracaOrigem[a]; });
+  var maxPracaOrigem = Math.max.apply(null, listaPracaOrigem.map(function(p){ return porPracaOrigem[p]; }).concat([1]));
+  var linhasPracaOrigem = listaPracaOrigem.map(function(p){
+    var v = porPracaOrigem[p];
+    var largura = Math.round(v/maxPracaOrigem*100);
+    var pct = Math.round(v/totalOrigem*100);
+    return '<div class="praca-row"><div>'+esc(p)+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;background:var(--am);"></div></div><div style="font-weight:700;">'+v+' <span style="font-weight:400;color:var(--t4);font-size:10px;">('+pct+'%)</span></div></div>';
   }).join('');
 
   return '<div class="card card-flow"><div class="sh"><span class="sn">11</span><span class="st">Candidatos Contratados</span><span class="ss">'+contratados.length+' candidato(s) — dados pra conferência e exportação</span></div>'
     + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Data Contratação</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">MOU</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Situação</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Nome Completo</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Telefone</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">E-mail</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Praça</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Origem do Lead</th></tr></thead>'
     + '<tbody>'+linhas+'</tbody></table></div>'
+    + '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);">'
+      + '<div style="font-size:9px;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:8px;">Consolidador de Origem do Lead — Quantidade e Percentual</div>'
+      + '<div>'+linhasOrigem+'</div>'
+    + '</div>'
+    + '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);">'
+      + '<div style="font-size:9px;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:8px;">Consolidador por Praça — Quantidade e Percentual</div>'
+      + '<div>'+linhasPracaOrigem+'</div>'
+    + '</div>'
   + '</div>';
 }
 
