@@ -900,19 +900,25 @@ function renderContratados(C) {
     var statusHtml = mouOk
       ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#DCFCE7;color:#166534;">MOU Assinado · '+fmtDate(c.data_mou)+'</span>'
       : '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF3C7;color:#92400E;">MOU Pendente</span>';
+    var trabalhando = c.etapa === 'Trabalhando';
+    var situacaoHtml = trabalhando
+      ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#DCFCE7;color:#166534;">Trabalhando'+(c.data_inicio?' · '+fmtDate(c.data_inicio):'')+'</span>'
+      : '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#EEF2FD;color:#1A3BAD;">Contratado · Aguardando início</span>';
     return '<tr style="border-bottom:1px solid var(--rule);">'
       + '<td style="padding:7px 4px;white-space:nowrap;">'+fmtDate(c.data_contratacao)+'</td>'
       + '<td style="padding:7px 4px;">'+statusHtml+'</td>'
+      + '<td style="padding:7px 4px;">'+situacaoHtml+'</td>'
       + '<td style="padding:7px 4px;font-weight:600;">'+esc(c.nome)+'</td>'
       + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.telefone||'—')+'</td>'
       + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.email||'—')+'</td>'
       + '<td style="padding:7px 4px;color:var(--t3);">'+esc(pracaLabel(c.praca))+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.origem_lead||'—')+'</td>'
     + '</tr>';
   }).join('');
 
   return '<div class="card card-flow"><div class="sh"><span class="sn">11</span><span class="st">Candidatos Contratados</span><span class="ss">'+contratados.length+' candidato(s) — dados pra conferência e exportação</span></div>'
     + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">'
-    + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Data Contratação</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Status</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Nome Completo</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Telefone</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">E-mail</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Praça</th></tr></thead>'
+    + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Data Contratação</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">MOU</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Situação</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Nome Completo</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Telefone</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">E-mail</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Praça</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Origem do Lead</th></tr></thead>'
     + '<tbody>'+linhas+'</tbody></table></div>'
   + '</div>';
 }
