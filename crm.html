@@ -521,6 +521,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           <div class="f-row"><label>Piso R$/mês</label><input id="m-piso" type="text" placeholder="0" oninput="calcProposta()"></div>
           <div class="f-row"><label>Período (meses)</label><input id="m-periodo" type="number" placeholder="12" oninput="calcProposta(); renderRenovacao()"></div>
           <div class="f-row"><label>Sign-in / Upfront R$</label><input id="m-upfront" type="text" placeholder="0" oninput="calcProposta()"></div>
+          <div class="f-row" id="row-perfil" style="display:none;"><label>Perfil (Future)</label>
+            <select id="m-perfil">
+              <option value="">— Selecione —</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+            </select>
+          </div>
         </div>
 
         <!-- Condições de Renovação — geradas dinamicamente pelo período -->
@@ -1068,6 +1077,7 @@ function abrirEdicao(id) {
   var vagaEl = document.getElementById('m-vaga'); if (vagaEl) vagaEl.value = r.vaga||'';
   toggleCamposPorVaga(r.vaga||'');
   var preWorkEl = document.getElementById('m-pre-work'); if (preWorkEl) preWorkEl.value = r.pre_work||'';
+  var perfilEl = document.getElementById('m-perfil'); if (perfilEl) perfilEl.value = r.perfil||'';
   var estEl = document.getElementById('m-estrategico'); if (estEl) estEl.value = r.estrategico||'Não';
   document.getElementById('m-email').value    = r.email||'';
   document.getElementById('m-inst').value     = r.instituicao||'';
@@ -1154,7 +1164,7 @@ function abrirEdicao(id) {
   carregarPropostasCRM(r.telefone || '');
   renderPareceresPerformance(r);
   if (r.etapa === 'Contratação' || r.etapa === 'Trabalhando') {
-    carregarResumoContratacao(r.telefone || '', r.coparticipacao, r.detalhe_coparticipacao);
+    carregarResumoContratacao(r.telefone || '', r.coparticipacao, r.detalhe_coparticipacao, r.perfil);
   } else {
     var rcBox = document.getElementById('m-resumo-contrat-box');
     if (rcBox) rcBox.style.display = 'none';
@@ -1194,6 +1204,14 @@ function toggleCamposPorVaga(vaga) {
     var showOrig = (vaga === 'Future');
     rowOrig.style.display = showOrig ? '' : 'none';
     if (!showOrig && inpOrig) inpOrig.value = '';
+  }
+  // Perfil (A/B/C/D) — só se aplica a candidatos do Future
+  var rowPerfil = document.getElementById('row-perfil');
+  var inpPerfil = document.getElementById('m-perfil');
+  if (rowPerfil) {
+    var showPerfil = (vaga === 'Future');
+    rowPerfil.style.display = showPerfil ? '' : 'none';
+    if (!showPerfil && inpPerfil) inpPerfil.value = '';
   }
   // Motivo do declínio depende de vaga E etapa juntos — reavalia sempre que a vaga mudar
   var etapaAtual = document.getElementById('m-etapa');
@@ -1398,6 +1416,7 @@ function salvarCandidato() {
     hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), vaga: vaga, estrategico: g('m-estrategico')||'Não', etapa: g('m-etapa'),
     pre_work: (vaga === 'Future') ? (g('m-pre-work')||null) : null,
     origem_lead: (vaga === 'Future') ? (g('m-origem-lead')||null) : null,
+    perfil: (vaga === 'Future') ? (g('m-perfil')||null) : null,
     motivo_declinio: (vaga === 'Future' && g('m-etapa') === 'Declinou') ? (g('m-motivo-declinio')||null) : null,
     cidade_finsave: (g('m-praca') === 'FinSave') ? (g('m-cidade-finsave')||null) : null,
     motivo_declinio_finsave: (g('m-praca') === 'FinSave' && g('m-etapa') === 'Declinou') ? (g('m-motivo-declinio-finsave')||null) : null,
@@ -2015,10 +2034,12 @@ function fmtAuCResumo(n) {
 
 // Reproduz EXATAMENTE a mesma lógica textual usada no exportPDF() do simulador —
 // isso garante que o texto copiado aqui bate com o PDF gerado lá.
-function montarResumoContratacao(dados, copart, copartDet) {
+function montarResumoContratacao(dados, copart, copartDet, perfil) {
   if (!dados) return '';
   var linhas = ['Proposta Comercial:'];
   var piso = dados.piso || 0, pisoDur = dados.pisoMeses || 12, luva = dados.luva || 0;
+
+  if (perfil) linhas.push('Perfil: ' + perfil);
 
   linhas.push('Piso: ' + fmtBRLResumo(piso) + ' por ' + pisoDur + ' meses');
 
@@ -2072,7 +2093,7 @@ function montarResumoContratacao(dados, copart, copartDet) {
   return linhas.join('\n');
 }
 
-function carregarResumoContratacao(telefone, copart, copartDet) {
+function carregarResumoContratacao(telefone, copart, copartDet, perfil) {
   var box = document.getElementById('m-resumo-contrat-box');
   var txt = document.getElementById('m-resumo-contrat-txt');
   if (!box || !txt) return;
@@ -2087,7 +2108,7 @@ function carregarResumoContratacao(telefone, copart, copartDet) {
   .then(function(r){ return r.ok ? r.json() : []; })
   .then(function(rows){
     if (!rows || !rows.length || !rows[0].dados) return; // sem proposta aceita — bloco continua oculto
-    var texto = montarResumoContratacao(rows[0].dados, copart, copartDet);
+    var texto = montarResumoContratacao(rows[0].dados, copart, copartDet, perfil);
     if (!texto) return;
     txt.value = texto;
     box.style.display = 'block';
