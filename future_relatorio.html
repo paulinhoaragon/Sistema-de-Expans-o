@@ -887,9 +887,52 @@ function renderCrescimento(C) {
 }
 
 // ── Candidatos Contratados (dados espelhados pra conferência/exportação) ──
+// Estado de ordenação da tabela — controlado pelos ícones clicáveis no cabeçalho.
+var _SORT_CONTRATADOS = { campo: 'data_contratacao', dir: 'desc' };
+
+// Extrai o valor de comparação de um candidato para um dado campo ordenável.
+function _valorOrdenacaoContratados(c, campo) {
+  switch (campo) {
+    case 'data_contratacao': return c.data_contratacao || '';
+    case 'mou': return (c.mou||'').toLowerCase() === 'assinado' ? '1' : '0';
+    case 'situacao': return c.etapa === 'Trabalhando' ? '1' : '0';
+    case 'nome': return (c.nome||'').toLowerCase();
+    case 'telefone': return (c.telefone||'');
+    case 'email': return (c.email||'').toLowerCase();
+    case 'praca': return (pracaLabel(c.praca)||c.praca||'').toLowerCase();
+    case 'perfil': return (c.perfil||'');
+    case 'origem_lead': return (c.origem_lead||'').toLowerCase();
+    default: return '';
+  }
+}
+
+// Aplica o estado de ordenação atual (_SORT_CONTRATADOS) a uma lista de contratados.
+function _ordenarContratados(lista) {
+  var campo = _SORT_CONTRATADOS.campo;
+  var mult = _SORT_CONTRATADOS.dir === 'asc' ? 1 : -1;
+  return lista.slice().sort(function(a,b){
+    var va = _valorOrdenacaoContratados(a, campo);
+    var vb = _valorOrdenacaoContratados(b, campo);
+    if (va < vb) return -1 * mult;
+    if (va > vb) return 1 * mult;
+    return 0;
+  });
+}
+
+// Chamado ao clicar no ícone de ordenação de uma coluna — alterna asc/desc se já for a coluna ativa.
+function ordenarContratadosPor(campo) {
+  if (_SORT_CONTRATADOS.campo === campo) {
+    _SORT_CONTRATADOS.dir = (_SORT_CONTRATADOS.dir === 'asc') ? 'desc' : 'asc';
+  } else {
+    _SORT_CONTRATADOS.campo = campo;
+    // Datas e MOU/Situação (booleanos) começam decrescente; texto começa crescente.
+    _SORT_CONTRATADOS.dir = (campo === 'data_contratacao' || campo === 'mou' || campo === 'situacao') ? 'desc' : 'asc';
+  }
+  atualizarContratados();
+}
+
 function renderContratados(C) {
-  var contratados = C.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; })
-    .sort(function(a,b){ return (b.data_contratacao||'').localeCompare(a.data_contratacao||''); });
+  var contratados = _ordenarContratados(C.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; }));
 
   if (!contratados.length) {
     return '<div class="card"><div class="sh"><span class="sn">11</span><span class="st">Candidatos Contratados</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum candidato aprovado/contratado no filtro atual.</div></div>';
@@ -915,8 +958,7 @@ function atualizarContratados() {
   var contagem = document.getElementById('contratados-count');
   if (!sel || !corpo) return;
   var C = window._C_ATUAL || [];
-  var todosContratados = C.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; })
-    .sort(function(a,b){ return (b.data_contratacao||'').localeCompare(a.data_contratacao||''); });
+  var todosContratados = _ordenarContratados(C.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; }));
 
   var tipo = sel.value;
   var filtrados = todosContratados;
@@ -930,6 +972,19 @@ function atualizarContratados() {
   corpo.innerHTML = filtrados.length
     ? _corpoContratados(filtrados)
     : '<div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum candidato encontrado com esse filtro. 🎉</div>';
+}
+
+// Monta um <th> clicável com ícone de ordenação (▲/▼ quando ativo, ⇅ neutro quando não).
+function _thOrdenavel(label, campo) {
+  var ativo = _SORT_CONTRATADOS.campo === campo;
+  var icone = ativo ? (_SORT_CONTRATADOS.dir === 'asc' ? '▲' : '▼') : '⇅';
+  var corIcone = ativo ? 'var(--ac,#1A3BAD)' : 'var(--t4)';
+  return '<th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);white-space:nowrap;">'
+    + '<span onclick="ordenarContratadosPor(\''+campo+'\')" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:4px;" title="Clique para ordenar">'
+      + '<span>'+esc(label)+'</span>'
+      + '<span style="font-size:10px;color:'+corIcone+';'+(ativo?'font-weight:700;':'')+'">'+icone+'</span>'
+    + '</span>'
+  + '</th>';
 }
 
 // Monta a tabela + os dois consolidadores a partir de uma lista já filtrada de contratados.
@@ -993,8 +1048,15 @@ function _corpoContratados(contratados) {
     return '<div class="praca-row"><div>'+esc(p)+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;background:var(--am);"></div></div><div style="font-weight:700;">'+v+' <span style="font-weight:400;color:var(--t4);font-size:10px;">('+pct+'%)</span></div></div>';
   }).join('');
 
+  var colunas = [
+    ['data_contratacao','Data Contratação'], ['mou','MOU'], ['situacao','Situação'],
+    ['nome','Nome Completo'], ['telefone','Telefone'], ['email','E-mail'],
+    ['praca','Praça'], ['perfil','Perfil'], ['origem_lead','Origem do Lead']
+  ];
+  var theadHtml = colunas.map(function(col){ return _thOrdenavel(col[1], col[0]); }).join('');
+
   return '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">'
-    + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Data Contratação</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">MOU</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Situação</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Nome Completo</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Telefone</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">E-mail</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Praça</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Perfil</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Origem do Lead</th></tr></thead>'
+    + '<thead><tr style="border-bottom:1px solid var(--rule);">'+theadHtml+'</tr></thead>'
     + '<tbody>'+linhas+'</tbody></table></div>'
     + '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);">'
       + '<div style="font-size:9px;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:8px;">Consolidador de Origem do Lead — Quantidade e Percentual</div>'
