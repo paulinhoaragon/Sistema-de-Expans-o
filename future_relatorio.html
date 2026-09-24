@@ -987,27 +987,30 @@ function _thOrdenavel(label, campo) {
   + '</th>';
 }
 
+// Data curta (dd/mm/aa) usada só nos badges de MOU/Situação, pra não estourar a largura da coluna.
+function _fmtDataCurta(s){ if(!s) return ''; var d = new Date(s+'T12:00:00'); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
+
 // Monta a tabela + os dois consolidadores a partir de uma lista já filtrada de contratados.
 function _corpoContratados(contratados) {
   var linhas = contratados.map(function(c){
     var mouOk = (c.mou||'').toLowerCase() === 'assinado';
     var statusHtml = mouOk
-      ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#DCFCE7;color:#166534;">MOU Assinado · '+fmtDate(c.data_mou)+'</span>'
-      : '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF3C7;color:#92400E;">MOU Pendente</span>';
+      ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#DCFCE7;color:#166534;white-space:nowrap;">MOU Assinado · '+_fmtDataCurta(c.data_mou)+'</span>'
+      : '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF3C7;color:#92400E;white-space:nowrap;">MOU Pendente</span>';
     var trabalhando = c.etapa === 'Trabalhando';
     var situacaoHtml = trabalhando
-      ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#DCFCE7;color:#166534;">Trabalhando'+(c.data_inicio?' · '+fmtDate(c.data_inicio):'')+'</span>'
-      : '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#EEF2FD;color:#1A3BAD;">Contratado · Aguardando início</span>';
+      ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#DCFCE7;color:#166534;white-space:nowrap;">Trabalhando'+(c.data_inicio?' · '+_fmtDataCurta(c.data_inicio):'')+'</span>'
+      : '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#EEF2FD;color:#1A3BAD;white-space:nowrap;">Aguardando início</span>';
     return '<tr style="border-bottom:1px solid var(--rule);">'
       + '<td style="padding:7px 4px;white-space:nowrap;">'+fmtDate(c.data_contratacao)+'</td>'
-      + '<td style="padding:7px 4px;">'+statusHtml+'</td>'
-      + '<td style="padding:7px 4px;">'+situacaoHtml+'</td>'
-      + '<td style="padding:7px 4px;font-weight:600;">'+esc(c.nome)+'</td>'
-      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.telefone||'—')+'</td>'
-      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.email||'—')+'</td>'
-      + '<td style="padding:7px 4px;color:var(--t3);" title="Valor bruto no banco: '+esc(c.praca||'—')+'">'+esc(pracaLabel(c.praca))+'</td>'
-      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.perfil||'—')+'</td>'
-      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.origem_lead||'—')+'</td>'
+      + '<td style="padding:7px 4px;white-space:nowrap;">'+statusHtml+'</td>'
+      + '<td style="padding:7px 4px;white-space:nowrap;">'+situacaoHtml+'</td>'
+      + '<td style="padding:7px 4px;font-weight:600;white-space:nowrap;">'+esc(c.nome)+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);white-space:nowrap;">'+esc(c.telefone||'—')+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);white-space:nowrap;">'+esc(c.email||'—')+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);white-space:nowrap;" title="Valor bruto no banco: '+esc(c.praca||'—')+'">'+esc(pracaLabel(c.praca))+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);white-space:nowrap;">'+esc(c.perfil||'—')+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);white-space:nowrap;">'+esc(c.origem_lead||'—')+'</td>'
     + '</tr>';
   }).join('');
 
