@@ -234,6 +234,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <button type="button" class="ms-btn" onclick="msToggleOpen('vaga')">Todas as vagas</button>
     <div class="ms-panel" id="ms-panel-vaga"></div>
   </div>
+  <select id="f-audit" class="f-inp" style="min-width:0;cursor:pointer;" onchange="renderBoard()">
+    <option value="">Auditoria — Todos</option>
+    <option value="sem-data">🔎 Contratados sem data de contratação</option>
+  </select>
   <span class="f-count" id="f-count"></span>
 </div>
 
@@ -925,6 +929,8 @@ function popularFiltrosLider() {
 function renderBoard() {
   var _norm = function(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); };
   var q     = _norm(document.getElementById('f-busca').value||'');
+  var auditEl = document.getElementById('f-audit');
+  var audit = auditEl ? auditEl.value : '';
 
   var filtrados = _todos.filter(function(r){
     if (q && !_norm(r.nome||'').includes(q) && !_norm(r.instituicao||'').includes(q)) return false;
@@ -934,6 +940,11 @@ function renderBoard() {
     if (MS.mou.size    && !MS.mou.has(r.mou||''))      return false;
     if (MS.lider.size  && !MS.lider.has(r.lider||''))  return false;
     if (MS.vaga.size   && !MS.vaga.has(r.vaga||''))    return false;
+    // Auditoria \u2014 n\u00edvel banco de dados, cobre todas as pra\u00e7as/canais (Blue3, Future, FinSave, M&A etc.)
+    if (audit === 'sem-data') {
+      var contratado = (r.etapa === 'Contrata\u00e7\u00e3o' || r.etapa === 'Trabalhando');
+      if (!contratado || r.data_contratacao) return false;
+    }
     return true;
   });
 
