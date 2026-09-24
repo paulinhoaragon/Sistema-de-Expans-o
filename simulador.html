@@ -643,7 +643,7 @@ function buildSumCard(d, periodoMeses, mostrarBonus) {
   if (mostrarBonus === false) {
     // FinSave não possui AuC/bônus por metas — cartão com apenas Piso + Total
     return '<div class="sumcard">'
-      + '<div class="sumcard-col"><div class="sc-lbl">Contraprestação</div><div class="sc-val gold">'+fmt(totalGarantido)+'</div><div class="sc-sub">Piso'+( d.luva>0 ? ' + Luva' : '')+' durante '+d.pisoDur+' meses</div></div>'
+      + '<div class="sumcard-col"><div class="sc-lbl">Contraprestação</div><div class="sc-val gold">'+fmt(d.piso)+'<span style="font-size:6pt;font-weight:600;opacity:.85;">/mês</span></div><div class="sc-sub">Durante '+d.pisoDur+' meses'+( d.luva>0 ? ' + Luva de '+fmt(d.luva) : '')+'</div></div>'
       + '<div class="sumcard-col"><div class="sc-lbl">Total do Pacote</div><div class="sc-val">'+fmt(totalRemuneracao)+'</div><div class="sc-sub">Em até '+periodoMeses+' meses</div></div>'
       + '</div>';
   }
@@ -734,6 +734,11 @@ function exportPDF(){
   if(CANAL_ATUAL==='Blue3'){
     propHtml+='<p class="pt-sub">Renovação automática do piso em '+(renewMap[d.pisoDur]||'—')+' = '+d.pisoRenov+' MM</p>';
     propHtml+='<p class="pt-sub">Abaixo deste montante, caberá ao time de Performance Comercial analisar e aprovar a renovação do piso</p>';
+  }
+  if(CANAL_ATUAL==='FinSave'){
+    // FinSave não usa AuC como gatilho — a renovação do piso é avaliada na metade do período contratado.
+    var renewMonthFin = Math.round(d.pisoDur/2);
+    propHtml+='<p class="pt-sub">Ao final do mês '+renewMonthFin+', caberá ao time de Performance Comercial analisar e aprovar a renovação do piso</p>';
   }
   if(d.luva>0)propHtml+='<p class="pt-line" style="margin-top:5px"><strong>Luva / Sign-in:</strong> '+fmt(d.luva)+' — pago no ingresso</p>';
   if(CANAL_ATUAL==='Blue3' && d.trigs.length>0){
