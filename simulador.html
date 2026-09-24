@@ -643,7 +643,7 @@ function buildSumCard(d, periodoMeses, mostrarBonus) {
   if (mostrarBonus === false) {
     // FinSave não possui AuC/bônus por metas — cartão com apenas Piso + Total
     return '<div class="sumcard">'
-      + '<div class="sumcard-col"><div class="sc-lbl">Remuneração Garantida</div><div class="sc-val gold">'+fmt(totalGarantido)+'</div><div class="sc-sub">Piso'+( d.luva>0 ? ' + Luva' : '')+' durante '+d.pisoDur+' meses</div></div>'
+      + '<div class="sumcard-col"><div class="sc-lbl">Contraprestação</div><div class="sc-val gold">'+fmt(totalGarantido)+'</div><div class="sc-sub">Piso'+( d.luva>0 ? ' + Luva' : '')+' durante '+d.pisoDur+' meses</div></div>'
       + '<div class="sumcard-col"><div class="sc-lbl">Total do Pacote</div><div class="sc-val">'+fmt(totalRemuneracao)+'</div><div class="sc-sub">Em até '+periodoMeses+' meses</div></div>'
       + '</div>';
   }
@@ -941,8 +941,7 @@ function exportPDF(){
 
     +'</div>'   /* .page */
 
-    /* ── PAGE 3: EVOLUÇÃO (somente FinSave) — página extra fixa, arte oficial FinSave Academy ── */
-    +(MOD.paginaEvolucao ? '<div class="cover" style="page-break-before:always;"><img src="'+MOD.paginaEvolucao+'" alt="'+(MOD.paginaEvolucaoAlt||'')+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:block;"></div>' : '')
+    /* PAGE 3 (Evolução) removida da exportação a pedido — o PDF final fica só com Capa + Proposta. */
 
     +'</body></html>';
 
