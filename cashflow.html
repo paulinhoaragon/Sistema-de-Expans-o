@@ -6,6 +6,7 @@
 <title>Nexus · Projeção de Caixa · Blue3</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="pipeline.js"></script>
+<script src="config.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -263,6 +264,18 @@ tfoot td:first-child{text-align:left}
 // ── Navegação ──
 var _N = 12;
 var _PROJ = [];
+
+// ── Praças (cadastro central) — mesmo padrão do future_relatorio.html ──
+// Traduz o código bruto salvo em crm_candidatos.praca (ex: "Future - Uberlandia")
+// para o rótulo de exibição cadastrado em `pracas`, cobrindo qualquer praça nova
+// (inclusive as do Future) sem precisar de lista fixa aqui.
+var _PRACAS_CAD = [];
+function pracaLabel(nomeCanonico) {
+  if (!nomeCanonico) return '';
+  var achou = _PRACAS_CAD.find(function(p){ return p.nome === nomeCanonico; });
+  if (achou && achou.label) return achou.label;
+  return nomeCanonico.replace(/^Blue3\s*[-–]\s*/i,'');
+}
 
 // ── Formatters ──
 function fmt(v) {
@@ -727,7 +740,7 @@ function _renderTb2(sorted) {
     var _areaCheck = (_areaVal.toLowerCase() !== 'assessor')
       ? '<span title="'+_areaVal+'" style="color:#B45309;font-size:15px;font-weight:700;">✓</span>'
       : '<span style="color:#CBD5E1;font-size:12px;">—</span>';
-    return '<tr><td>'+a.n+'</td><td style="color:var(--t3)">'+(a.p||'').replace(/^Blue3\s*[-–]\s*/i,'')+'</td>'
+    return '<tr><td>'+a.n+'</td><td style="color:var(--t3)" title="Valor bruto no banco: '+(a.p||'—')+'">'+pracaLabel(a.p)+'</td>'
       +'<td style="text-align:left;color:var(--t3)" title="'+(a.org||'')+'">'+(a.org||'—')+'</td>'
       +'<td>'+(a.aucCust ? Number(a.aucCust).toLocaleString('pt-BR') : '—')+'</td>'
       +'<td style="font-size:10px;">'+(a.sen||'—')+'</td><td>'+badge+'</td>'
@@ -877,7 +890,6 @@ function _renderXPRows() {
     return asc ? va - vb : vb - va;
   });
 
-  var filialFmt = function(p){ return (p||'').replace(/^Blue3\s*[-–]\s*/i,''); };
   tb.innerHTML = data.map(function(a){
     var pct = a.comp > 0 ? Math.round(a.xp / a.comp * 100) : 0;
     var badge = a.ativo
@@ -886,7 +898,7 @@ function _renderXPRows() {
     var pb = (a.payback_meses && a.payback_meses > 0) ? (a.payback_meses + ' m') : '—';
     return '<tr>'
       + '<td>'+(a.n||'—')+'</td>'
-      + '<td style="color:var(--t3)" title="'+(a.p||'')+'">'+filialFmt(a.p)+'</td>'
+      + '<td style="color:var(--t3)" title="Valor bruto no banco: '+(a.p||'—')+'">'+pracaLabel(a.p)+'</td>'
       + '<td>'+badge+'</td>'
       + '<td style="text-align:right;">'+fmt(a.comp)+'</td>'
       + '<td style="text-align:right;color:#DC2626;font-weight:600;">'+fmt(a.xp)+'</td>'
@@ -927,7 +939,8 @@ function _updateXPSortIcons() {
 function renderPraca(fin) {
   var byP = {};
   fin.forEach(function(r) {
-    var p = (r.p || r.praca || r.filial || 'Sem praça').trim();
+    var pRaw = (r.p || r.praca || r.filial || '').trim();
+    var p = pRaw ? pracaLabel(pRaw) : 'Sem praça';
     if (!byP[p]) byP[p] = { n:0, blue3:0, xp:0 };
     byP[p].n++;
     // Blue3 = custo total - coparticipação XP
@@ -1012,13 +1025,27 @@ function showEmptyState(msg) {
 // ── Inicialização ──
 (function() {
   try { localStorage.removeItem('B3D'); localStorage.removeItem('B3D_RAW'); } catch(e){}
-  if (typeof Blue3_init === 'function') {
-    Blue3_init(function(ok) {
-      if (ok) renderPage();
-      else showEmptyState();
+
+  function _iniciarPipeline() {
+    if (typeof Blue3_init === 'function') {
+      Blue3_init(function(ok) {
+        if (ok) renderPage();
+        else showEmptyState();
+      });
+    } else {
+      showEmptyState();
+    }
+  }
+
+  // Carrega o cadastro central de praças (mesma fonte do relatório Future) antes
+  // de renderizar, pra "Filial" já sair traduzida (ex: código → nome da cidade).
+  if (typeof NexusConfig !== 'undefined' && typeof NexusConfig.getPracas === 'function') {
+    NexusConfig.getPracas(function(err, pracas) {
+      _PRACAS_CAD = err ? [] : (pracas || []);
+      _iniciarPipeline();
     });
   } else {
-    showEmptyState();
+    _iniciarPipeline();
   }
 })();
 
