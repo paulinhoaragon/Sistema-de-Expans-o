@@ -268,17 +268,27 @@ function renderCRM(cands){
   var pracasTop=Object.keys(pracaMap).sort(function(a,b){return pracaMap[b]-pracaMap[a];});
 
   // ── Hunters ──
+  // Guarda também os candidatos de cada hunter (cands[]) e a contagem por etapa
+  // individual (prosp/qual/neg/cont/trab/dec/futuro), usados no detalhe expansível
+  // de cada hunter (funil completo, curva de novos leads, lista de abertos).
   var hunterMap={};
   cands.forEach(function(c){
     if(!c.hunter)return;
     var h=c.hunter.trim();
-    if(!hunterMap[h])hunterMap[h]={total:0,ativos:0,trab:0,neg:0,dec:0,auc:0};
-    hunterMap[h].total++;
-    if(c.etapa==='Trabalhando'||c.etapa==='Contratação')hunterMap[h].ativos++;
-    if(c.etapa==='Trabalhando')hunterMap[h].trab++;
-    if(c.etapa==='Negociação')hunterMap[h].neg++;
-    if(c.etapa==='Declinou')hunterMap[h].dec++;
-    hunterMap[h].auc+=(parseFloat(c.auc_mm)||0);
+    if(!hunterMap[h])hunterMap[h]={cands:[],total:0,ativos:0,trab:0,neg:0,dec:0,auc:0,prosp:0,qual:0,cont:0,futuro:0,abertos:0};
+    var d=hunterMap[h];
+    d.cands.push(c);
+    d.total++;
+    if(c.etapa==='Trabalhando'||c.etapa==='Contratação')d.ativos++;
+    if(c.etapa==='Trabalhando')d.trab++;
+    if(c.etapa==='Negociação')d.neg++;
+    if(c.etapa==='Declinou')d.dec++;
+    if(c.etapa==='Prospecção')d.prosp++;
+    if(c.etapa==='Qualificação')d.qual++;
+    if(c.etapa==='Contratação')d.cont++;
+    if(c.etapa==='Contato Futuro')d.futuro++;
+    if(['Prospecção','Qualificação','Negociação','Contratação'].indexOf(c.etapa)>-1)d.abertos++;
+    d.auc+=(parseFloat(c.auc_mm)||0);
   });
 
   // ── Origens ──
@@ -646,32 +656,54 @@ function renderCRM(cands){
       (function(){
         var hunters=Object.keys(hunterMap).sort(function(a,b){return hunterMap[b].ativos-hunterMap[a].ativos;});
         if(!hunters.length) return'<div class="card"><div class="card-title">Performance hunters</div><div style="padding:20px;text-align:center;color:var(--t4);">Sem dados.</div></div>';
-        var rows=hunters.map(function(h){
+        // Guarda o hunterMap atual + a lista de nomes (por índice) em global pra o
+        // clique de expandir (toggleHunterDetail) montar o painel de detalhe sem
+        // precisar re-rodar todo o cálculo. Passa o ÍNDICE no onclick (não o nome
+        // em si) pra não ter problema com hunter cujo nome tenha aspas/acentos.
+        window._hunterMapAtual = hunterMap;
+        window._hunterNamesAtual = hunters;
+        var rows=hunters.map(function(h,i){
           var d=hunterMap[h];
           var tx=d.total>0?Math.round(d.ativos/d.total*100):0;
           var txCor=tx>=60?'var(--g)':tx>=35?'var(--am)':'var(--red)';
           var aucMed=d.ativos>0?(d.auc/d.ativos).toFixed(1):0;
-          return'<tr>'
-            +'<td>'+esc(h)+'</td>'
+          var hid='hd-'+i;
+          // Tendência rápida — novos leads cadastrados (data_entrada) nesta semana/mês vs anterior,
+          // pra ver de bate-olho se o funil do hunter tá crescendo ou regredindo, sem precisar clicar.
+          var tnd=_tendenciaHunter(d.cands);
+          var linhaPrincipal='<tr class="hrow" style="cursor:pointer;" onclick="toggleHunterDetail('+i+')">'
+            +'<td><span id="'+hid+'-chev" style="display:inline-block;width:12px;color:var(--t4);font-size:9px;">▸</span> '+esc(h)+'</td>'
             +'<td style="text-align:center;color:var(--t2);">'+d.total+'</td>'
-            +'<td style="text-align:center;font-weight:700;color:var(--cobalt);">'+d.ativos+'</td>'
-            +'<td style="text-align:center;color:var(--g);">'+d.trab+'</td>'
+            +'<td style="text-align:center;font-weight:700;color:var(--cobalt);">'+d.abertos+'</td>'
+            +'<td style="text-align:center;color:var(--t3);">'+d.prosp+'</td>'
+            +'<td style="text-align:center;color:var(--t3);">'+d.qual+'</td>'
             +'<td style="text-align:center;color:var(--am);">'+d.neg+'</td>'
+            +'<td style="text-align:center;color:var(--t3);">'+d.cont+'</td>'
+            +'<td style="text-align:center;color:var(--g);">'+d.trab+'</td>'
             +'<td style="text-align:center;color:var(--red);">'+d.dec+'</td>'
             +'<td style="text-align:center;font-weight:700;color:'+txCor+';">'+tx+'%</td>'
             +'<td style="text-align:center;font-weight:600;color:var(--t2);">'+aucMed+' MM</td>'
+            +'<td style="text-align:center;white-space:nowrap;">'+_tendBadge(tnd.semAtual,tnd.semAnt)+'</td>'
+            +'<td style="text-align:center;white-space:nowrap;">'+_tendBadge(tnd.mesAtual,tnd.mesAnt)+'</td>'
             +'</tr>';
+          var linhaDetalhe='<tr id="'+hid+'" style="display:none;"><td colspan="13" style="padding:0;background:var(--canvas);">'
+            +'<div id="'+hid+'-body" style="padding:14px 16px;"></div>'
+            +'</td></tr>';
+          return linhaPrincipal+linhaDetalhe;
         }).join('');
         return'<div class="card">'
-          +'<div class="card-title">Performance por hunter</div>'
-          +'<table class="htable"><thead><tr>'
-            +'<th>Hunter</th><th style="text-align:center;">Total funil</th><th style="text-align:center;">Contratados</th>'
-            +'<th style="text-align:center;">Trabalhando</th><th style="text-align:center;">Em negociação</th>'
+          +'<div class="card-title">Performance por hunter <span style="font-weight:400;color:var(--t4);text-transform:none;letter-spacing:0;">· clique no hunter pra ver o detalhe (funil completo, curva de novos leads, leads abertos) · tendência = novos leads cadastrados no período atual vs anterior</span></div>'
+          +'<div style="overflow-x:auto;"><table class="htable"><thead><tr>'
+            +'<th>Hunter</th><th style="text-align:center;">Total funil</th><th style="text-align:center;">Abertos</th>'
+            +'<th style="text-align:center;">Prosp.</th><th style="text-align:center;">Qualif.</th><th style="text-align:center;">Negoc.</th>'
+            +'<th style="text-align:center;">Contrat.</th><th style="text-align:center;">Trabalhando</th>'
             +'<th style="text-align:center;">Declinados</th><th style="text-align:center;">Taxa conv.</th>'
             +'<th style="text-align:center;">AuC médio (MM)</th>'
-          +'</tr></thead><tbody>'+rows+'</tbody></table>'
+            +'<th style="text-align:center;">Tend. Semanal</th><th style="text-align:center;">Tend. Mensal</th>'
+          +'</tr></thead><tbody>'+rows+'</tbody></table></div>'
           +'</div>';
       })(),
+      renderEvolucaoMensalHunters(cands),
     '</div>',
 
     '<div class="row cols-2">',
@@ -968,6 +1000,257 @@ function renderCrescimentoPipeline(cands) {
     + '<div style="font-size:10px;color:var(--t3);margin-bottom:10px;">Novos cadastros no funil · filtro atual: '+esc(filtroTxt)+' · '+totalJanela+' no total do período exibido</div>'
     + linhas
   + '</div>';
+}
+
+// ── Tendência rápida por hunter (coluna da tabela) ──────────────
+// Conta candidatos cadastrados (data_entrada) na semana/mês ATUAL vs semana/mês
+// ANTERIOR, pra sinalizar de bate-olho se o funil do hunter tá crescendo/regredindo
+// sem precisar abrir o detalhe. Mesma definição de "semana" usada no resto do
+// relatório (segunda a domingo, via _inicioSemana).
+function _tendenciaHunter(hcands){
+  var hoje=new Date();
+  var semAtualIni=_inicioSemana(hoje).getTime();
+  var semAntDate=new Date(semAtualIni); semAntDate.setDate(semAntDate.getDate()-7);
+  var semAntIni=semAntDate.getTime();
+  var mesAtual=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0');
+  var mesAntDate=new Date(hoje.getFullYear(),hoje.getMonth()-1,1);
+  var mesAnt=mesAntDate.getFullYear()+'-'+String(mesAntDate.getMonth()+1).padStart(2,'0');
+
+  var out={semAtual:0,semAnt:0,mesAtual:0,mesAnt:0};
+  (hcands||[]).forEach(function(c){
+    if(!c.data_entrada) return;
+    var d=new Date(c.data_entrada+'T12:00:00');
+    if(isNaN(d.getTime())) return;
+    var semD=_inicioSemana(d).getTime();
+    if(semD===semAtualIni) out.semAtual++;
+    else if(semD===semAntIni) out.semAnt++;
+    var mesD=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    if(mesD===mesAtual) out.mesAtual++;
+    else if(mesD===mesAnt) out.mesAnt++;
+  });
+  return out;
+}
+
+// Badge compacto "atual/anterior" com seta colorida — usado na tabela de hunters.
+function _tendBadge(atual, anterior){
+  var delta=atual-anterior;
+  var cor=delta>0?'#16A34A':(delta<0?'#DC2626':'var(--t4)');
+  var seta=delta>0?'▲':(delta<0?'▼':'＝');
+  return '<span style="color:'+cor+';font-weight:700;font-size:11px;">'+seta+' '+atual+'</span>'
+    +'<span style="color:var(--t4);font-size:10px;"> /'+anterior+'</span>';
+}
+
+// ── Evolução Mensal por Hunter — semestre atual ─────────────────
+// Matriz hunter × mês (Jan–Jun ou Jul–Dez, conforme o mês corrente) com o volume
+// de novos leads cadastrados em cada mês. Responde "como o mês atual compara com
+// os meses anteriores do semestre" pra cada hunter, com uma seta de tendência
+// comparando o último mês com dado contra o mês imediatamente anterior.
+function renderEvolucaoMensalHunters(cands){
+  var hoje=new Date();
+  var ano=hoje.getFullYear();
+  var semestreIni = hoje.getMonth()<6 ? 0 : 6; // 0=Jan .. 6=Jul
+  var mesesNomes=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  var meses=[];
+  for(var m=semestreIni; m<semestreIni+6; m++){ meses.push({mes:m, chave:ano+'-'+String(m+1).padStart(2,'0')}); }
+
+  var porHunterMes={};
+  cands.forEach(function(c){
+    if(!c.hunter || !c.data_entrada) return;
+    var h=c.hunter.trim();
+    var d=new Date(c.data_entrada+'T12:00:00');
+    if(isNaN(d.getTime())) return;
+    var chave=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    if(meses.map(function(mm){return mm.chave;}).indexOf(chave)===-1) return;
+    if(!porHunterMes[h]) porHunterMes[h]={};
+    porHunterMes[h][chave]=(porHunterMes[h][chave]||0)+1;
+  });
+
+  var hunters=Object.keys(porHunterMes);
+  var labelPeriodo=mesesNomes[meses[0].mes]+'–'+mesesNomes[meses[meses.length-1].mes]+'/'+ano;
+  if(!hunters.length){
+    return '<div class="card"><div class="card-title">Evolução mensal por hunter <span style="font-weight:400;color:var(--t4);text-transform:none;letter-spacing:0;">· '+labelPeriodo+'</span></div>'
+      + '<div style="padding:20px;text-align:center;color:var(--t4);font-size:12px;">Sem cadastros no semestre atual pra este filtro.</div></div>';
+  }
+
+  hunters.sort(function(a,b){
+    var ta=meses.reduce(function(s,mm){return s+(porHunterMes[a][mm.chave]||0);},0);
+    var tb=meses.reduce(function(s,mm){return s+(porHunterMes[b][mm.chave]||0);},0);
+    return tb-ta;
+  });
+
+  var maxCel=1;
+  hunters.forEach(function(h){ meses.forEach(function(mm){ maxCel=Math.max(maxCel, porHunterMes[h][mm.chave]||0); }); });
+
+  function corCelula(v){
+    if(!v) return '#F4F6FB';
+    var t=Math.min(1, v/maxCel);
+    var r=Math.round(238-t*(238-26)), g=Math.round(242-t*(242-59)), b=Math.round(253-t*(253-173));
+    return 'rgb('+r+','+g+','+b+')';
+  }
+  function corTexto(v){ return (v && v/maxCel>0.55) ? '#fff' : 'var(--t1)'; }
+
+  var headerMeses=meses.map(function(mm){ return '<th style="text-align:center;">'+mesesNomes[mm.mes]+(mm.mes===hoje.getMonth()&&ano===hoje.getFullYear()?' <span style="color:var(--cobalt);">●</span>':'')+'</th>'; }).join('');
+
+  var rows=hunters.map(function(h){
+    var valores=meses.map(function(mm){ return porHunterMes[h][mm.chave]||0; });
+    var total=valores.reduce(function(s,v){return s+v;},0);
+    // Último mês com dado (permite comparar mesmo se o mês corrente ainda tiver poucos registros)
+    var idxUlt=-1;
+    for(var i=meses.length-1;i>=0;i--){ if(valores[i]>0){ idxUlt=i; break; } }
+    if(idxUlt===-1) idxUlt=meses.length-1;
+    var tendHtml='<span style="color:var(--t4);">—</span>';
+    if(idxUlt>0){
+      var atual=valores[idxUlt], ant=valores[idxUlt-1];
+      var delta=atual-ant;
+      var cor=delta>0?'#16A34A':(delta<0?'#DC2626':'var(--t4)');
+      var seta=delta>0?'▲':(delta<0?'▼':'＝');
+      tendHtml='<span style="color:'+cor+';font-weight:700;">'+seta+' '+(delta>0?'+':'')+delta+'</span>';
+    }
+    var celHtml=valores.map(function(v){
+      return '<td style="text-align:center;background:'+corCelula(v)+';color:'+corTexto(v)+';font-weight:600;border-radius:4px;">'+(v||'·')+'</td>';
+    }).join('');
+    return '<tr><td style="font-weight:600;">'+esc(h)+'</td>'+celHtml
+      +'<td style="text-align:center;font-weight:700;color:var(--t2);">'+total+'</td>'
+      +'<td style="text-align:center;">'+tendHtml+'</td></tr>';
+  }).join('');
+
+  var totalGeral=hunters.reduce(function(s,h){ return s+meses.reduce(function(ss,mm){return ss+(porHunterMes[h][mm.chave]||0);},0); },0);
+
+  return '<div class="card">'
+    + '<div class="card-title">Evolução mensal por hunter <span style="font-weight:400;color:var(--t4);text-transform:none;letter-spacing:0;">· novos leads cadastrados por mês · semestre atual ('+labelPeriodo+') · '+totalGeral+' no total · ● = mês corrente</span></div>'
+    + '<div style="overflow-x:auto;"><table class="htable"><thead><tr><th>Hunter</th>'+headerMeses+'<th style="text-align:center;">Total</th><th style="text-align:center;">Tend.</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+    + '</div>';
+}
+
+// ── Detalhe por Hunter (expansível na tabela "Performance por hunter") ──
+// Clicar no hunter abre: funil completo (todas as etapas), curva de novos leads
+// (semanal/mensal, independente do gráfico agregado do topo) e a lista dos leads
+// hoje abertos (Prospecção, Qualificação, Negociação, Contratação) desse hunter.
+window._hunterModoCresc  = window._hunterModoCresc  || {}; // estado semana/mês por painel
+window._hunterCandsCache = window._hunterCandsCache || {}; // candidatos do hunter aberto (pra re-render do toggle)
+
+function toggleHunterDetail(i){
+  var hid='hd-'+i;
+  var row=document.getElementById(hid);
+  var chev=document.getElementById(hid+'-chev');
+  if(!row) return;
+  var abrir = row.style.display==='none';
+  row.style.display = abrir ? 'table-row' : 'none';
+  if(chev) chev.textContent = abrir ? '▾' : '▸';
+  if(abrir){
+    var body=document.getElementById(hid+'-body');
+    if(body && !body.getAttribute('data-built')){
+      var hunterName=(window._hunterNamesAtual||[])[i];
+      var d=(window._hunterMapAtual||{})[hunterName];
+      body.innerHTML = d ? _buildHunterDetailHTML(hid, d) : '<div style="padding:8px 0;font-size:12px;color:var(--t4);">Sem dados.</div>';
+      body.setAttribute('data-built','1');
+    }
+  }
+}
+
+function _buildHunterDetailHTML(hid, d){
+  var hcands = d.cands||[];
+
+  // Funil completo — todas as etapas, inclusive as zeradas (dá pra ver onde o hunter não tem nada)
+  var ETAPAS_H=['Prospecção','Qualificação','Negociação','Contratação','Trabalhando','Declinou','Contato Futuro'];
+  var contagem={}; ETAPAS_H.forEach(function(e){ contagem[e]=0; });
+  hcands.forEach(function(c){ if(contagem[c.etapa]!==undefined) contagem[c.etapa]++; });
+  var maxE=Math.max.apply(null, ETAPAS_H.map(function(e){ return contagem[e]; }).concat([1]));
+  var funilHtml = ETAPAS_H.map(function(e){
+    var n=contagem[e], p = maxE>0 ? Math.round(n/maxE*100) : 0;
+    return '<div class="bar-row"><div class="bar-hd"><span style="color:var(--t2);">'+esc(e)+'</span><span style="font-weight:700;color:var(--t1);">'+n+'</span></div>'
+      +'<div class="bar-track"><div class="bar-fill" style="width:'+p+'%;background:'+(ETAPA_COR[e]||'#94A3B8')+';"></div></div></div>';
+  }).join('');
+
+  // Leads abertos — Prospecção/Qualificação/Negociação/Contratação, mais antigos no funil primeiro
+  var abertosLista = hcands.filter(function(c){ return ['Prospecção','Qualificação','Negociação','Contratação'].indexOf(c.etapa)>-1; })
+    .sort(function(a,b){ return (diasAtras(a.data_entrada)||0)-(diasAtras(b.data_entrada)||0); }).reverse();
+  var bgEtapa={'Prospecção':'#F1F5F9','Qualificação':'#EDE9FE','Negociação':'#FEF3C7','Contratação':'#EEF2FD'};
+  var corEtapa={'Prospecção':'#475569','Qualificação':'#6D28D9','Negociação':'#92400E','Contratação':'#1A3BAD'};
+  var abertosHtml = abertosLista.length
+    ? listaCands(abertosLista, 6, hid+'-abertos', function(c){
+        var dias=diasAtras(c.data_entrada);
+        return '<div class="cand-row">'+avatar(c.nome)
+          +'<div><div class="cand-name">'+esc(c.nome)+'</div>'
+          +'<div class="cand-meta">'+esc(c.praca||'—')+(dias!==null?' · '+dias+'d no funil':'')+'</div></div>'
+          +'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:'+(bgEtapa[c.etapa]||'#F1F5F9')+';color:'+(corEtapa[c.etapa]||'#475569')+';">'+esc(c.etapa)+'</span></div>';
+      })
+    : '<div style="padding:10px 0;text-align:center;font-size:12px;color:var(--g);">✓ Nenhum lead aberto no momento</div>';
+
+  return '<div class="row cols-2" style="margin-bottom:12px;">'
+      + '<div class="card" style="box-shadow:none;border:1px solid var(--rule);">'
+        + '<div class="card-title">Funil completo</div>'
+        + funilHtml
+      + '</div>'
+      + '<div class="card" style="box-shadow:none;border:1px solid var(--rule);">'
+        + '<div class="card-title">Leads abertos <span style="font-weight:400;color:var(--t4);">('+abertosLista.length+')</span></div>'
+        + abertosHtml
+      + '</div>'
+    + '</div>'
+    + '<div class="card" style="box-shadow:none;border:1px solid var(--rule);" id="'+hid+'-cresc-wrap">'
+      + _buildHunterCrescHTML(hid, hcands, 'semana')
+    + '</div>';
+}
+
+// Curva de novos leads cadastrados (data_entrada) — igual à do topo, mas recortada
+// só pros candidatos deste hunter, com toggle semana/mês independente por painel.
+function _buildHunterCrescHTML(hid, hcands, modoInicial){
+  var modo = window._hunterModoCresc[hid] || modoInicial || 'semana';
+  window._hunterModoCresc[hid]  = modo;
+  window._hunterCandsCache[hid] = hcands;
+
+  var buckets={};
+  hcands.forEach(function(c){
+    if(!c.data_entrada) return;
+    var dd=new Date(c.data_entrada+'T12:00:00');
+    if(isNaN(dd.getTime())) return;
+    var chave = (modo==='semana') ? _inicioSemana(dd).toISOString().slice(0,10) : dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0');
+    buckets[chave]=(buckets[chave]||0)+1;
+  });
+  var chaves=Object.keys(buckets).sort();
+  var JANELA = modo==='semana' ? 8 : 6;
+  var visiveis=chaves.slice(-JANELA);
+
+  var corpo;
+  if(!visiveis.length){
+    corpo = '<div style="padding:14px 0;text-align:center;color:var(--t4);font-size:12px;">Sem datas de cadastro suficientes pra este hunter.</div>';
+  } else {
+    var maxVal=Math.max.apply(null, visiveis.map(function(k){ return buckets[k]; }));
+    corpo = visiveis.map(function(k){
+      var atual=buckets[k];
+      var chaveAnterior=chaves[chaves.indexOf(k)-1];
+      var anterior=chaveAnterior ? (buckets[chaveAnterior]||0) : null;
+      var largura=maxVal>0 ? Math.round(atual/maxVal*100) : 0;
+      var deltaHtml='<span class="cresc-delta flat">—</span>';
+      if(anterior!==null){
+        var delta=atual-anterior;
+        var cls=delta>0?'up':(delta<0?'down':'flat');
+        var seta=delta>0?'▲':(delta<0?'▼':'＝');
+        var pctTxt=anterior>0 ? ' ('+(delta>=0?'+':'')+Math.round(delta/anterior*100)+'%)' : '';
+        deltaHtml='<span class="cresc-delta '+cls+'">'+seta+' '+(delta>0?'+':'')+delta+pctTxt+'</span>';
+      }
+      var lbl = modo==='semana' ? _fmtSemanaLbl(k) : _fmtMesLbl(k);
+      return '<div class="cresc-row"><div class="cresc-lbl">'+esc(lbl)+'</div>'
+        +'<div class="cresc-track"><div class="cresc-fill" style="width:'+largura+'%;"></div></div>'
+        +'<div class="cresc-val">'+atual+'</div>'+deltaHtml+'</div>';
+    }).join('');
+  }
+
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+      + '<div class="card-title" style="margin-bottom:0;">Novos leads cadastrados</div>'
+      + '<div class="seg" style="padding:2px;">'
+        + '<button class="'+(modo==='semana'?'on':'')+'" onclick="_toggleHunterCresc(\''+hid+'\',\'semana\')" style="font-size:10px;padding:5px 10px;">Semanal</button>'
+        + '<button class="'+(modo==='mes'?'on':'')+'" onclick="_toggleHunterCresc(\''+hid+'\',\'mes\')" style="font-size:10px;padding:5px 10px;">Mensal</button>'
+      + '</div>'
+    + '</div>'
+    + corpo;
+}
+
+function _toggleHunterCresc(hid, modo){
+  window._hunterModoCresc[hid]=modo;
+  var wrap=document.getElementById(hid+'-cresc-wrap');
+  if(!wrap) return;
+  wrap.innerHTML = _buildHunterCrescHTML(hid, window._hunterCandsCache[hid]||[], modo);
 }
 
 // ── Inicialização ─────────────────────────────────────────────
