@@ -64,11 +64,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--wbg);color:var(--wt1);fon
 .ss{font-size:11px;color:var(--wt3);margin-left:auto;letter-spacing:.02em;}
 
 .row{display:grid;gap:14px;margin-bottom:16px;}
+.cols-6{grid-template-columns:repeat(6,1fr)}
 .cols-5{grid-template-columns:repeat(5,1fr)}
 .cols-4{grid-template-columns:repeat(4,1fr)}
 .cols-3{grid-template-columns:repeat(3,1fr)}
+@media (max-width:1200px){.cols-6{grid-template-columns:repeat(3,1fr)}}
 @media (max-width:1100px){.cols-5{grid-template-columns:repeat(3,1fr)}}
-@media (max-width:900px){.cols-4,.cols-3{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:900px){.cols-4,.cols-3,.cols-6{grid-template-columns:repeat(2,1fr)}}
 
 .kpi{background:var(--wpanel);border-radius:var(--r10);padding:14px 15px;border:1px solid var(--wrule);border-top:3px solid var(--wrule);}
 .kpi.ok{border-top-color:var(--wgreen-ok)}
@@ -78,6 +80,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--wbg);color:var(--wt1);fon
 .kpi-label{font-family:'Oswald',sans-serif;font-size:9px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--wt3);margin-bottom:6px}
 .kpi-value{font-family:'Oswald',sans-serif;font-size:25px;font-weight:700;color:var(--wt1);line-height:1}
 .kpi-sub{font-size:9px;color:var(--wt4);margin-top:5px}
+
+.bloco{margin:38px 0 16px 0;padding-top:22px;border-top:1px solid var(--wrule);}
+.bloco:first-of-type{margin-top:0;padding-top:0;border-top:none;}
+.bloco-num{font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;color:var(--wgold);opacity:.7;margin-right:8px;}
+.bloco-label{font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--wgold);}
+.bloco-sub{font-size:11px;color:var(--wt3);margin-top:4px;}
 
 .card{background:var(--wpanel);border:1px solid var(--wrule);border-radius:var(--r14);padding:20px 22px;margin-bottom:16px;}
 .nota{font-size:10px;color:var(--wt3);background:var(--wpanel2);border-left:2px solid var(--wgold);border-radius:4px;padding:9px 13px;margin-top:12px;line-height:1.6;}
@@ -89,6 +97,8 @@ th{text-align:left;padding:7px 8px;font-family:'Oswald',sans-serif;font-size:9px
 td{padding:9px 8px;border-bottom:1px solid var(--wrule);color:var(--wt2);}
 tr:last-child td{border-bottom:none;}
 td b, td strong{color:var(--wt1);}
+tr.tr-total td{border-top:2px solid var(--wrule);border-bottom:none;background:rgba(255,255,255,.03);font-weight:700;color:var(--wt1);padding-top:10px;padding-bottom:10px;}
+tr.tr-total td:first-child{text-transform:uppercase;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.04em;color:var(--wgold);}
 
 .bar-track{background:var(--wbg);border-radius:5px;height:16px;position:relative;overflow:hidden;border:1px solid var(--wrule);}
 .bar-fill{height:100%;border-radius:4px;}
@@ -181,9 +191,11 @@ var PRACAS_ALVO_ASSESSORIA = ['sao paulo','rio de janeiro','goiania','uberlandia
 
 function carregar() {
   Promise.all([
-    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,estrategico,hunter,lider,data_entrada,data_contratacao,data_inicio,data_declinio,piso,periodo,upfront,trigger1_tri_val,trigger1_val,trigger2_val,trigger3_val,trigger4_val,coparticipacao,auc_mm&limit=20000'),
+    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,estrategico,hunter,lider,data_entrada,data_contratacao,data_inicio,data_declinio,piso,periodo,upfront,trigger1_tri_val,trigger1_val,trigger2_val,trigger3_val,trigger4_val,coparticipacao,auc_mm,mou&limit=20000'),
     supaGet('guerra_parametros?id=eq.1&limit=1'),
-    supaGet('ma_pipeline?select=id,headcount,status&limit=20000').catch(function(){ return null; })
+    supaGet('ma_pipeline?select=id,headcount,status&limit=20000').catch(function(){ return null; }),
+    supaGet('hunters?select=id,nome&limit=5000').catch(function(){ return null; }),
+    supaGet('hunter_metas?select=hunter_id,ano,semestre,canal,meta_contratacoes&limit=5000').catch(function(){ return null; })
   ]).then(function(res){
     TODOS = res[0] || [];
     PARAMS = (res[1] && res[1][0]) ? res[1][0] : {
@@ -197,6 +209,10 @@ function carregar() {
     // (ma_headcount_manual), editável em "Editar Premissas".
     MA_HEADCOUNT_AUTO = (res[2] || []).filter(function(op){ return op.status !== 'Declinou'; })
       .reduce(function(s,op){ return s + (parseInt(op.headcount,10)||0); }, 0);
+    // Metas individuais reais por hunter (tabela hunter_metas, editada no CRM) — usadas
+    // na seção "Hunters — Concentração de Risco e Pace" no lugar da cota dividida igualmente.
+    HUNTERS = res[3] || [];
+    HUNTER_METAS = res[4] || [];
     if (!res[1] || !res[1][0]) {
       document.getElementById('content-root').insertAdjacentHTML('afterbegin',
         '<div class="nota" style="margin-bottom:16px;">⚠ Tabela <b>guerra_parametros</b> não encontrada ou vazia — rode o <b>guerra_schema.sql</b> no Supabase pra habilitar edição de premissas. Por enquanto, usando valores padrão.</div>');
@@ -207,6 +223,40 @@ function carregar() {
   });
 }
 var MA_HEADCOUNT_AUTO = 0;
+var HUNTERS = [];
+var HUNTER_METAS = [];
+
+// Devolve os pares {ano, semestre} que o período [ini,fim] cobre — usado pra somar
+// as metas individuais reais dos hunters (tabela hunter_metas) no período certo.
+function _semestresNoPeriodo(ini, fim) {
+  var anoIni = parseInt(ini.slice(0,4),10), anoFim = parseInt(fim.slice(0,4),10);
+  var out = [];
+  for (var a = anoIni; a <= anoFim; a++) {
+    var s1ini = a+'-01-01', s1fim = a+'-06-30';
+    var s2ini = a+'-07-01', s2fim = a+'-12-31';
+    if (!(s1fim < ini || s1ini > fim)) out.push({ano:a, semestre:1});
+    if (!(s2fim < ini || s2ini > fim)) out.push({ano:a, semestre:2});
+  }
+  return out;
+}
+
+// Soma, por hunter (nome), a meta real configurada em hunter_metas (todos os canais)
+// pros semestres que o período cobre. Retorna {} se a tabela não existir/estiver vazia
+// — quem chama cai de volta pra cota implícita (meta ÷ nº de hunters).
+function metasIndividuaisPeriodo(ini, fim) {
+  var periodos = _semestresNoPeriodo(ini, fim);
+  var idParaNome = {};
+  (HUNTERS||[]).forEach(function(h){ idParaNome[h.id] = h.nome; });
+  var somaPorNome = {};
+  (HUNTER_METAS||[]).forEach(function(m){
+    var bate = periodos.some(function(p){ return p.ano===m.ano && p.semestre===m.semestre; });
+    if (!bate) return;
+    var nome = idParaNome[m.hunter_id];
+    if (!nome) return;
+    somaPorNome[nome] = (somaPorNome[nome]||0) + (m.meta_contratacoes||0);
+  });
+  return somaPorNome;
+}
 
 
 function mudarAba(ano) {
@@ -278,7 +328,9 @@ function custoDoCandidato(c) {
 }
 // Tabela com "10 primeiros + expandir" — pra qualquer lista que possa crescer muito.
 var _expandCounter = 0;
-function _tabelaExpandivel(headerHtml, linhasHtml, limite) {
+// totalHtml (opcional) = uma <tr> de total, sempre visível (fica num <tfoot>,
+// não afetado pelo "Ver todos"/"Ver menos" — soma SEMPRE todas as linhas, mesmo as ocultas).
+function _tabelaExpandivel(headerHtml, linhasHtml, limite, totalHtml) {
   limite = limite || 10;
   _expandCounter++;
   var id = 'exp-'+_expandCounter;
@@ -288,7 +340,18 @@ function _tabelaExpandivel(headerHtml, linhasHtml, limite) {
   var botao = ocultas.length
     ? '<button id="btn-'+id+'" onclick="_toggleExpandir(\''+id+'\','+ocultas.length+')" style="margin-top:10px;background:none;border:1px solid var(--wrule);border-radius:5px;padding:6px 14px;font-size:11px;font-weight:700;color:var(--wgold);cursor:pointer;font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:.04em;">Ver todos ('+ocultas.length+' a mais) ▾</button>'
     : '';
-  return '<table><thead>'+headerHtml+'</thead><tbody>'+visiveis+ocultasHtml+'</tbody></table>'+botao;
+  return '<table><thead>'+headerHtml+'</thead><tbody>'+visiveis+ocultasHtml+'</tbody>'+(totalHtml?'<tfoot>'+totalHtml+'</tfoot>':'')+'</table>'+botao;
+}
+// Monta a <tr> de total padrão do relatório — 1ª célula = rótulo, resto = valores já em HTML.
+function _linhaTotal(label, celulasHtml) {
+  return '<tr class="tr-total"><td>'+esc(label)+'</td>'+celulasHtml.join('')+'</tr>';
+}
+// Divisor de bloco temático — agrupa seções por assunto (storytelling), separado do
+// número/título de cada seção individual (.sh). numBloco é só um contador visual (① ② ③...).
+function _bloco(numBloco, label, subtitulo) {
+  return '<div class="bloco"><div><span class="bloco-num">BLOCO '+numBloco+'</span><span class="bloco-label">'+esc(label)+'</span></div>'
+    + (subtitulo ? '<div class="bloco-sub">'+esc(subtitulo)+'</div>' : '')
+    + '</div>';
 }
 function _toggleExpandir(id, n) {
   var btn = document.getElementById('btn-'+id);
@@ -300,8 +363,12 @@ function _toggleExpandir(id, n) {
 }
 
 // ════════ Resumo Contratação × Trabalhando (comum às 3 abas) ════════
-function renderResumoBrutoLiquido(numSec, C, ini, fim, labelPeriodo) {
-  var dados = calcularPeriodo(C, ini, fim);
+// filtroEscopo = mesmo filtro das frentes oficiais do plano (as mesmas somadas na seção 01/03) —
+// sem isso, essa seção conta QUALQUER vaga contratada no CRM (Líder, Broker, Assistente etc.),
+// que não faz parte do plano de expansão e não bate com o total da seção 01. Passar sempre.
+function renderResumoBrutoLiquido(numSec, C, ini, fim, labelPeriodo, filtroEscopo) {
+  filtroEscopo = filtroEscopo || function(){ return true; };
+  var dados = calcularPeriodo(C, ini, fim, filtroEscopo);
   var totalContratado = dados.contratados.length;
   var totalTrabalhando = dados.trabalhando.length;
   var pendentes = dados.pendentesInicio.length;
@@ -309,15 +376,28 @@ function renderResumoBrutoLiquido(numSec, C, ini, fim, labelPeriodo) {
   var declinados = dados.declinados.length;
   var taxaQueda = (totalContratado+declinados) ? Math.round(declinados/(totalContratado+declinados)*100) : 0;
 
+  var mouAssinado = dados.contratados.filter(function(c){ return (c.mou||'').toLowerCase()==='assinado'; }).length;
+  var pctMou = totalContratado ? Math.round(mouAssinado/totalContratado*100) : 0;
+
+  // Transparência: quem foi contratado no período mas está FORA das frentes do plano
+  // (não some do CRM, só não entra nas contas deste relatório — o gestor precisa saber que existe).
+  var todosNoPeriodo = calcularPeriodo(C, ini, fim).contratados.length;
+  var foraDoEscopo = Math.max(0, todosNoPeriodo - totalContratado);
+  var avisoEscopo = foraDoEscopo > 0
+    ? '<div class="nota" style="border-left-color:var(--wblue);margin-top:10px;">ℹ️ Mais <b>'+foraDoEscopo+' contratação(ões)</b> no período em vagas fora do plano de expansão (ex: Líder, Broker, Assistente, Planejador/Consultor) — não entram nos números acima nem na seção 01, porque não fazem parte da meta rastreada aqui.</div>'
+    : '';
+
   return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Contratação × Trabalhando — '+labelPeriodo+'</span><span class="ss">O que assinou vs. o que já está de fato atuando (o número que pesa no business plan)</span></div>'
-    + '<div class="row cols-5">'
+    + '<div class="row cols-6">'
       + kpi('info','Contratado (Bruto)', totalContratado, 'assinou contrato no período')
+      + kpi(pctMou>=90?'ok':(pctMou>=70?'warn':'bad'),'Contrato Assinado (MOU)', mouAssinado+' de '+totalContratado, pctMou+'% dos contratados com MOU assinado')
       + kpi('ok','Trabalhando (Líquido)', totalTrabalhando, 'já começou a atuar no período')
       + kpi(pendentes>0?'warn':'ok','Pendente de Início', pendentes, 'assinou aqui, ainda vai começar → sensibiliza período seguinte')
       + kpi(carryIn>0?'info':'ok','Carrego Recebido', carryIn, 'começou agora, mas foi assinado em período anterior')
       + kpi(declinados>0?'bad':'ok','Saíram do Processo', declinados, taxaQueda+'% de queda no período')
     + '</div>'
-    + '<div class="nota blue">📐 <b>Como ler:</b> "Pendente de Início" é quem assinou agora mas o CRM ainda não tem (ou tem uma data futura para) o início de trabalho — esse pessoal vai aparecer como "Trabalhando" só no período seguinte, e é isso que "carrega" a meta entre os semestres. "Carrego Recebido" é o espelho: gente que só virou headcount líquido agora, mas tinha sido assinada antes.</div>';
+    + avisoEscopo
+    + '<div class="nota blue">📐 <b>Como ler:</b> "Contrato Assinado (MOU)" mostra quantos dos contratados do período já têm o MOU formalmente assinado no CRM — contratado sem MOU é risco de o "bruto" não virar headcount de verdade. "Pendente de Início" é quem assinou agora mas o CRM ainda não tem (ou tem uma data futura para) o início de trabalho — esse pessoal vai aparecer como "Trabalhando" só no período seguinte, e é isso que "carrega" a meta entre os semestres. "Carrego Recebido" é o espelho: gente que só virou headcount líquido agora, mas tinha sido assinada antes.</div>';
 }
 
 // ════════ Diagnóstico em 1 Frase ════════
@@ -406,23 +486,49 @@ function renderAba2026(C) {
     + '<tr><td><b>Future</b></td><td>'+contratadoFu+'</td><td>'+futureC.trabalhando.length+'</td><td>'+metaFu+'</td>'+_pctCols(contratadoFu,metaFu)+'<td style="width:130px;">'+_barra(contratadoFu,metaFu,contratadoFu>=metaFu?'green':'gold')+'</td><td>'+gapFu+'</td></tr>'
     + '<tr><td><b>Vem Ser Blue</b></td><td>'+contratadoVsb+'</td><td>'+vsbC.trabalhando.length+'</td><td>'+metaVsb+'</td>'+_pctCols(contratadoVsb,metaVsb)+'<td style="width:130px;">'+_barra(contratadoVsb,metaVsb,contratadoVsb>=metaVsb?'green':'gold')+'</td><td>'+gapVsb+'</td></tr>';
 
+  var trabalhandoTotalFrentes = assessoriaC.trabalhando.length + futureC.trabalhando.length + vsbC.trabalhando.length;
+  var metaSomaFrentes = metaA + metaFu + metaVsb;
+  var gapSomaFrentes = gapA + gapFu + gapVsb;
+  linhasFrente += _linhaTotal('Total', [
+    '<td>'+contratadoTotal+'</td>',
+    '<td>'+trabalhandoTotalFrentes+'</td>',
+    '<td>'+metaSomaFrentes+'</td>',
+    _pctCols(contratadoTotal, metaSomaFrentes),
+    '<td style="width:130px;">'+_barra(contratadoTotal,metaSomaFrentes,contratadoTotal>=metaSomaFrentes?'green':'gold')+'</td>',
+    '<td>'+gapSomaFrentes+'</td>'
+  ]);
+
   var html = renderDiagnostico(C, ini, fim, contratadoTotal, metaT, 'dezembro/2026');
+
+  html += _bloco(1, 'Contratações', 'O que já entrou: quanto, quando, onde e com que qualidade');
 
   html += '<div class="sh"><span class="sn">01</span><span class="st">Operação Imediata — 2º Semestre 2026</span><span class="ss">Meta: 60+60=120 (diretoria) · referência oficial do plano: '+metaT+'</span></div>'
     + '<div class="card"><table><thead><tr><th>Frente</th><th>Contratado</th><th>Trabalhando</th><th>Meta</th><th>%Ating.</th><th>%Falt.</th><th>Progresso</th><th>Gap</th></tr></thead><tbody>'+linhasFrente+'</tbody></table></div>';
 
-  html += renderResumoBrutoLiquido('02', C, ini, fim, '2º Semestre 2026');
-  html += renderPaceMensal('03', C, [{y:2026,m:7,l:'Julho'},{y:2026,m:8,l:'Agosto'},{y:2026,m:9,l:'Setembro'},{y:2026,m:10,l:'Outubro'},{y:2026,m:11,l:'Novembro'},{y:2026,m:12,l:'Dezembro'}]);
+  html += renderResumoBrutoLiquido('02', C, ini, fim, '2º Semestre 2026', function(c){ return c.vaga==='Assessor' || ehFuture(c) || ehVSB(c); });
+  html += renderPaceMensal('03', C, [{y:2026,m:7,l:'Julho'},{y:2026,m:8,l:'Agosto'},{y:2026,m:9,l:'Setembro'},{y:2026,m:10,l:'Outubro'},{y:2026,m:11,l:'Novembro'},{y:2026,m:12,l:'Dezembro'}], [
+    {label:'Assessoria', filtro:function(c){return c.vaga==='Assessor';}},
+    {label:'Future', filtro:ehFuture},
+    {label:'Vem Ser Blue', filtro:ehVSB}
+  ]);
   html += renderPracas('04', C, ini, fim);
-  html += renderProfundidadeFunil('05', C);
-  html += renderQualidade('06', C, ini, fim);
-  html += renderSaudeDados('07', C, ini, fim);
-  html += renderCusto('08', C, ini, fim);
+  html += renderQualidade('05', C, ini, fim);
+  html += renderCusto('06', C, ini, fim);
+
+  html += _bloco(2, 'Funil de Leads', 'O que está no pipeline agora — o motor que vai gerar as próximas contratações');
+  html += renderProfundidadeFunil('07', C);
+  html += renderTempoCiclo('08', C, ini, fim);
+
+  html += _bloco(3, 'Hunters', 'Quem está entregando, e o quanto o ritmo depende de cada um');
   html += renderConcentracaoEPace('09', C, ini, fim, metaT);
+
+  html += _bloco(4, 'O Que Falta', 'O gap até a meta, e o que fazer pra fechá-lo');
   html += renderFunilNecessario('10', C, [{label:'Assessoria', filtro:function(c){return c.vaga==='Assessor';}, gap:gapA},{label:'Future', filtro:ehFuture, gap:gapFu},{label:'Vem Ser Blue', filtro:ehVSB, gap:gapVsb}]);
-  html += renderTempoCiclo('11', C, ini, fim);
-  html += renderCapacidade('12', C, ini, fim, metaT);
-  html += renderSimulador('13', C, ini, fim, metaT, '2026');
+  html += renderCapacidade('11', C, ini, fim, metaT);
+  html += renderSimulador('12', C, ini, fim, metaT, '2026');
+
+  html += _bloco(5, 'Apêndice', 'Confiabilidade dos números usados acima');
+  html += renderSaudeDados('13', C, ini, fim);
   return html;
 }
 
@@ -454,6 +560,17 @@ function renderAbaAno(C, ano) {
     }).join('');
     var metaTotalSem = FRENTES_DEF.reduce(function(s,f){ return s+Math.round(f.metaPorSemestre); },0);
     var contratadoTotalSem = FRENTES_DEF.reduce(function(s,f){ return s+(f.real?calcularPeriodo(C,ini,fim,f.filtro).contratados.length:0); },0);
+    var trabalhandoTotalSem = FRENTES_DEF.reduce(function(s,f){ return s+(f.real?calcularPeriodo(C,ini,fim,f.filtro).trabalhando.length:0); },0);
+    var gapTotalSem = Math.max(0, metaTotalSem-contratadoTotalSem);
+    linhas += _linhaTotal('Total', [
+      '<td>'+contratadoTotalSem+'</td>',
+      '<td>'+trabalhandoTotalSem+'</td>',
+      '<td>'+metaTotalSem+'</td>',
+      _pctCols(contratadoTotalSem, metaTotalSem),
+      '<td style="width:110px;">'+_barra(contratadoTotalSem,metaTotalSem,contratadoTotalSem>=metaTotalSem?'green':'gold')+'</td>',
+      '<td>'+gapTotalSem+'</td>',
+      '<td></td>'
+    ]);
     return '<div class="card"><div style="font-family:Oswald,sans-serif;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--wgold);margin-bottom:10px;">'+semLabel+' <span style="color:var(--wt3);font-weight:400;">('+contratadoTotalSem+'/'+metaTotalSem+' contratados no período)</span></div>'
       + '<table><thead><tr><th>Frente</th><th>Contratado</th><th>Trabalhando</th><th>Meta</th><th>%Ating.</th><th>%Falt.</th><th>Progresso</th><th>Gap</th><th>Origem</th></tr></thead><tbody>'+linhas+'</tbody></table></div>';
   }
@@ -473,38 +590,78 @@ function renderAbaAno(C, ano) {
     + tabelaSemestre(ano+' — 1º Semestre', ini1, fim1)
     + tabelaSemestre(ano+' — 2º Semestre', ini2, fim2);
 
-  html += renderResumoBrutoLiquido('02', C, ini1, fim2, ano+' (ano cheio)');
-  html += renderPaceMensal('03', C, [1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){ return {y:ano,m:m,l:['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][m-1]}; }));
+  html += _bloco(1, 'Contratações', 'O que já entrou: quanto, quando, onde e com que qualidade');
+
+  html += renderResumoBrutoLiquido('02', C, ini1, fim2, ano+' (ano cheio)', function(c){ return ehGerenteBanco(c) || ehAlsXP(c) || ehFuture(c) || ehMA(c); });
+  html += renderPaceMensal('03', C, [1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){ return {y:ano,m:m,l:['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][m-1]}; }), [
+    {label:'Gerentes de Banco', filtro:ehGerenteBanco},
+    {label:'Als XP', filtro:ehAlsXP},
+    {label:'Future', filtro:ehFuture},
+    {label:'Als Fusão', filtro:ehMA}
+  ]);
   html += renderPracas('04', C, ini1, fim2);
-  html += renderProfundidadeFunil('05', C);
-  html += renderQualidade('06', C, ini1, fim2);
-  html += renderSaudeDados('07', C, ini1, fim2);
-  html += renderCusto('08', C, ini1, fim2);
+  html += renderQualidade('05', C, ini1, fim2);
+  html += renderCusto('06', C, ini1, fim2);
+
+  html += _bloco(2, 'Funil de Leads', 'O que está no pipeline agora — o motor que vai gerar as próximas contratações');
+  html += renderProfundidadeFunil('07', C);
+  html += renderTempoCiclo('08', C, ini1, fim2);
+
+  html += _bloco(3, 'Hunters', 'Quem está entregando, e o quanto o ritmo depende de cada um');
   html += renderConcentracaoEPace('09', C, ini1, fim2, Math.round(FRENTES_DEF[0].metaPorAno+FRENTES_DEF[1].metaPorAno+FRENTES_DEF[2].metaPorAno));
 
+  html += _bloco(4, 'O Que Falta', 'O gap até a meta, e o que fazer pra fechá-lo');
   html += renderFunilNecessario('10', C, [
     { label:'Gerentes de Banco', filtro:ehGerenteBanco, gap:Math.round(Math.max(0,FRENTES_DEF[0].metaPorAno-calcularPeriodo(C,ini1,fim2,ehGerenteBanco).contratados.length)) },
     { label:'Als XP', filtro:ehAlsXP, gap:Math.round(Math.max(0,FRENTES_DEF[1].metaPorAno-calcularPeriodo(C,ini1,fim2,ehAlsXP).contratados.length)) },
     { label:'Future', filtro:ehFuture, gap:Math.round(Math.max(0,FRENTES_DEF[2].metaPorAno-calcularPeriodo(C,ini1,fim2,ehFuture).contratados.length)) }
   ]);
-  html += renderTempoCiclo('11', C, ini1, fim2);
-  html += renderCapacidade('12', C, ini1, fim2, Math.round(FRENTES_DEF[0].metaPorAno+FRENTES_DEF[1].metaPorAno+FRENTES_DEF[2].metaPorAno));
-  html += renderSimulador('13', C, ini1, fim2, metaAnoOficial, String(ano));
+  html += renderCapacidade('11', C, ini1, fim2, Math.round(FRENTES_DEF[0].metaPorAno+FRENTES_DEF[1].metaPorAno+FRENTES_DEF[2].metaPorAno));
+  html += renderSimulador('12', C, ini1, fim2, metaAnoOficial, String(ano));
+
+  html += _bloco(5, 'Apêndice', 'Confiabilidade dos números usados acima');
+  html += renderSaudeDados('13', C, ini1, fim2);
   return html;
 }
 
 // ════════ Pace Mensal (genérico) ════════
-function renderPaceMensal(numSec, C, meses) {
+// canais = [{label, filtro}] — quebra o "Contratado" de cada mês por frente (Assessoria/
+// Future/Vem Ser Blue na aba 2026; Gerentes de Banco/Als XP/Future/Als Fusão na aba anual).
+function renderPaceMensal(numSec, C, meses, canais) {
+  canais = canais || [];
+  // "Contratado (Total)" e "Trabalhando" ficam escopados à UNIÃO dos canais — nunca conta
+  // vaga fora do plano (ex: Líder, Broker) e nunca dá número diferente da soma das colunas
+  // ao lado, que era exatamente a inconsistência (70 vs 57) entre esta seção e a 01/02.
+  var escopoFiltro = function(c){ return canais.some(function(cn){ return cn.filtro(c); }); };
+  var totalContratado = 0, totalTrabalhando = 0, totalForaEscopo = 0;
+  var totalPorCanal = canais.map(function(){ return 0; });
   var linhas = meses.map(function(m){
     var mm = String(m.m).padStart(2,'0');
     var prefixo = m.y+'-'+mm;
-    var contratado = C.filter(function(c){ return contratadoBruto(c) && c.data_contratacao && c.data_contratacao.slice(0,7)===prefixo; }).length;
-    var trabalhando = C.filter(function(c){ return trabalhandoLiquido(c) && c.data_inicio && c.data_inicio.slice(0,7)===prefixo; }).length;
+    var doMesTudo = C.filter(function(c){ return contratadoBruto(c) && c.data_contratacao && c.data_contratacao.slice(0,7)===prefixo; });
+    var doMes = doMesTudo.filter(escopoFiltro);
+    var contratado = doMes.length;
+    totalForaEscopo += (doMesTudo.length - doMes.length);
+    var trabalhando = C.filter(function(c){ return trabalhandoLiquido(c) && c.data_inicio && c.data_inicio.slice(0,7)===prefixo && escopoFiltro(c); }).length;
+    totalContratado += contratado; totalTrabalhando += trabalhando;
+    var celulasCanal = canais.map(function(cn, i){
+      var n = doMes.filter(cn.filtro).length;
+      totalPorCanal[i] += n;
+      return '<td>'+n+'</td>';
+    }).join('');
     var futuro = new Date() < new Date(m.y, m.m-1, 1);
-    return '<tr'+(futuro?' style="opacity:.45;"':'')+'><td><b>'+m.l+'/'+m.y+'</b>'+(futuro?' <span style="font-size:9px;color:var(--wt4);">(ainda não chegou)</span>':'')+'</td><td>'+contratado+'</td><td>'+trabalhando+'</td></tr>';
+    return '<tr'+(futuro?' style="opacity:.45;"':'')+'><td><b>'+m.l+'/'+m.y+'</b>'+(futuro?' <span style="font-size:9px;color:var(--wt4);">(ainda não chegou)</span>':'')+'</td>'+celulasCanal+'<td><b>'+contratado+'</b></td><td>'+trabalhando+'</td></tr>';
   }).join('');
-  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Pace Mensal</span><span class="ss">Contratado (assinou) vs. Trabalhando (começou), mês a mês</span></div>'
-    + '<div class="card"><table><thead><tr><th>Mês</th><th>Contratado</th><th>Trabalhando</th></tr></thead><tbody>'+linhas+'</tbody></table></div>';
+  var celulasTotalPorCanal = totalPorCanal.map(function(n){ return '<td>'+n+'</td>'; });
+  linhas += _linhaTotal('Total', celulasTotalPorCanal.concat(['<td>'+totalContratado+'</td>', '<td>'+totalTrabalhando+'</td>']));
+  var thsCanal = canais.map(function(cn){ return '<th>'+esc(cn.label)+'</th>'; }).join('');
+  var avisoForaEscopo = totalForaEscopo > 0
+    ? '<div class="nota" style="border-left-color:var(--wblue);">ℹ️ Mais '+totalForaEscopo+' contratação(ões) no período em vagas fora do plano (não aparecem aqui nem na seção 01/02 — ver aviso na seção 02).</div>'
+    : '';
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Pace Mensal</span><span class="ss">Contratado (assinou) por canal vs. Trabalhando (começou), mês a mês</span></div>'
+    + '<div class="card"><table><thead><tr><th>Mês</th>'+thsCanal+'<th>Contratado (Total)</th><th>Trabalhando</th></tr></thead><tbody>'+linhas+'</tbody></table>'
+    + avisoForaEscopo
+    + '</div>';
 }
 
 // ════════ Praças — Alvo + Demais ════════
@@ -526,8 +683,12 @@ function renderPracas(numSec, C, ini, fim) {
     return '<tr><td>'+(l.isAlvo?'<span style="color:var(--wgold);">★</span> ':'')+'<b>'+esc(l.praca.replace(/^Blue3\s*[-–]\s*/i,''))+'</b></td><td style="color:var(--wt3);">'+vagaLbl+'</td><td>'+l.total+'</td><td>'+l.trabalhando+'</td></tr>';
   });
 
+  var totalContratadoPracas = linhas.reduce(function(s,l){ return s+l.total; },0);
+  var totalTrabalhandoPracas = linhas.reduce(function(s,l){ return s+l.trabalhando; },0);
+  var totalRowPracas = _linhaTotal('Total', ['<td></td>', '<td>'+totalContratadoPracas+'</td>', '<td>'+totalTrabalhandoPracas+'</td>']);
+
   var tabelaHtml = corpo.length
-    ? _tabelaExpandivel('<tr><th>Praça</th><th>Canal</th><th>Contratado</th><th>Trabalhando</th></tr>', corpo, 10)
+    ? _tabelaExpandivel('<tr><th>Praça</th><th>Canal</th><th>Contratado</th><th>Trabalhando</th></tr>', corpo, 10, totalRowPracas)
     : '<table><tbody><tr><td colspan="4" style="text-align:center;color:var(--wt4);padding:16px;">Sem contratação no período</td></tr></tbody></table>';
 
   return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Praças — Alvo e Demais</span><span class="ss"><span style="color:var(--wgold);">★</span> = praça-alvo · contratados no período · ordenado por volume · '+linhas.length+' praça(s)</span></div>'
@@ -536,13 +697,21 @@ function renderPracas(numSec, C, ini, fim) {
 
 // ════════ Funil Necessário ════════
 function renderFunilNecessario(numSec, C, canais) {
+  var gapTotal = 0, necessariosTotal = 0, faltaDadoAlgum = false;
   var linhas = canais.map(function(cn){
     var doCanal = C.filter(cn.filtro);
     var aprovados = doCanal.filter(contratadoBruto).length;
     var taxa = doCanal.length ? (aprovados/doCanal.length*100) : null;
     var necessarios = (taxa && taxa>0) ? Math.ceil(Number((cn.gap/(taxa/100)).toFixed(4))) : null;
+    gapTotal += cn.gap;
+    if (necessarios!==null) necessariosTotal += necessarios; else faltaDadoAlgum = true;
     return '<tr><td><b>'+cn.label+'</b></td><td>'+cn.gap+'</td><td>'+(taxa!==null?taxa.toFixed(1)+'%':'—')+'</td><td style="color:var(--wgold);font-weight:700;">'+(necessarios!==null?necessarios+' candidatos':'<span style="color:var(--wt4);">sem dado suficiente</span>')+'</td></tr>';
   }).join('');
+  linhas += _linhaTotal('Total', [
+    '<td>'+gapTotal+'</td>',
+    '<td></td>',
+    '<td style="color:var(--wgold);">'+necessariosTotal+' candidatos'+(faltaDadoAlgum?' <span style="font-size:9px;color:var(--wt4);font-weight:400;">(parcial — falta dado em pelo menos 1 frente)</span>':'')+'</td>'
+  ]);
 
   return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Funil Necessário</span><span class="ss">Quantos candidatos novos precisam entrar, na conversão histórica de cada frente</span></div>'
     + '<div class="card"><table><thead><tr><th>Frente</th><th>Gap Restante</th><th>Taxa Conversão Histórica</th><th>Precisam Entrar no Funil</th></tr></thead><tbody>'+linhas+'</tbody></table>'
@@ -597,19 +766,38 @@ function renderConcentracaoEPace(numSec, C, ini, fim, metaPeriodo) {
   var concentracao = Math.round(top3Total/total*100);
   var risco = concentracao>=60 ? {cor:'var(--wred)', label:'ALTO'} : (concentracao>=40 ? {cor:'var(--wgold)', label:'MODERADO'} : {cor:'var(--wgreen-ok)', label:'BAIXO'});
 
+  // Meta individual real, por hunter — vem da tabela hunter_metas (cadastrada no CRM,
+  // por hunter/ano/semestre/canal). Quando o hunter não tem meta configurada lá,
+  // cai pra cota implícita (meta do período ÷ nº de hunters ativos) como estimativa.
+  var metasReais = metasIndividuaisPeriodo(ini, fim);
+  var temAlgumaMetaReal = Object.keys(metasReais).length > 0;
   var cotaImplicita = metaPeriodo / nomes.length;
 
   var linhas = nomes.map(function(h){
     var atual = porHunter[h];
     var pctTotal = Math.round(atual/total*100);
-    var pctCota = cotaImplicita ? Math.round(atual/cotaImplicita*100) : 0;
+    var temMetaReal = metasReais[h] != null && metasReais[h] > 0;
+    var metaInd = temMetaReal ? metasReais[h] : cotaImplicita;
+    var pctCota = metaInd ? Math.round(atual/metaInd*100) : 0;
     var status = pctCota>=100 ? {t:'No pace',c:'var(--wgreen-ok)'} : (pctCota>=60 ? {t:'Atenção',c:'var(--wgold)'} : {t:'Abaixo',c:'var(--wred)'});
-    return '<tr><td><b>'+esc(h)+'</b></td><td>'+atual+'</td><td>'+pctTotal+'%</td><td>'+_barra(atual,nomes.length?porHunter[nomes[0]]:1,'gold')+'</td><td>'+cotaImplicita.toFixed(1)+'</td><td>'+_barra(atual,cotaImplicita,pctCota>=100?'green':'gold')+'</td><td style="color:'+status.c+';font-weight:700;">'+status.t+'</td></tr>';
+    var metaTxt = (temMetaReal ? metaInd : metaInd.toFixed(1)+' *');
+    // "% da Capacidade" = fatia de cada hunter no total de contratações do período — é
+    // a métrica de concentração de risco em si (a barrinha visualiza esse mesmo número,
+    // não é um dado à parte — por isso os dois vivem juntos na mesma coluna agora).
+    var celulaCapacidade = '<td>'+pctTotal+'%<div style="margin-top:5px;">'+_barra(atual,nomes.length?porHunter[nomes[0]]:1,'gold')+'</div></td>';
+    return '<tr><td><b>'+esc(h)+'</b></td><td>'+atual+'</td>'+celulaCapacidade+'<td>'+metaTxt+'</td>'+_pctCols(atual,metaInd)+'<td style="width:110px;">'+_barra(atual,metaInd,pctCota>=100?'green':'gold')+'</td><td style="color:'+status.c+';font-weight:700;">'+status.t+'</td></tr>';
   });
 
-  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Hunters — Concentração de Risco e Pace</span><span class="ss">Top-3 respondem por <b style="color:'+risco.cor+';">'+concentracao+'%</b> da capacidade — risco <span style="color:'+risco.cor+';font-weight:700;">'+risco.label+'</span> · cota implícita '+cotaImplicita.toFixed(1)+' cada</span></div>'
-    + '<div class="card">' + _tabelaExpandivel('<tr><th>Hunter</th><th>Contratações</th><th>% do Total</th><th>Peso</th><th>Cota Implícita</th><th>Progresso</th><th>Status</th></tr>', linhas, 10)
-    + '<div class="nota">📐 <b>Concentração:</b> se '+concentracao+'% da capacidade depende de só '+top3.length+' pessoa(s), a saída ou afastamento de qualquer uma delas trava boa parte do ritmo — acima de 60% é risco alto. <b>Pace:</b> "Cota implícita" divide a meta do período igualmente entre os hunters ativos (meta ÷ '+nomes.length+') — não é uma meta individual de verdade no sistema, é uma referência. Se a distribuição de trabalho não é igualitária na prática (ex: hunter júnior recém-chegado, ou alguém dedicado a outra frente), ajuste a leitura.</div>'
+  var notaMeta = temAlgumaMetaReal
+    ? '<b>Meta Individual:</b> vem da meta real cadastrada por hunter (tabela de Metas de Hunters, no CRM), somando todos os canais no período. Hunter sem meta configurada lá aparece com <b>*</b> — nesse caso usamos a cota implícita (meta do período ÷ '+nomes.length+' hunters ativos) só como estimativa até a meta real ser cadastrada.'
+    : '<b>Meta Individual:</b> nenhum hunter deste período tem meta real cadastrada na tabela de Metas de Hunters (CRM) — todos os valores abaixo (marcados com <b>*</b>) são estimativa por cota implícita (meta do período ÷ '+nomes.length+' hunters ativos), não a meta de verdade atribuída a cada um.';
+
+  var metaIndSoma = nomes.reduce(function(s,h){ var mr=metasReais[h]; return s+((mr!=null&&mr>0)?mr:cotaImplicita); },0);
+  var totalRowHunters = _linhaTotal('Total', ['<td>'+total+'</td>', '<td>100%</td>', '<td>'+metaIndSoma.toFixed(1)+'</td>', _pctCols(total, metaIndSoma), '<td style="width:110px;"></td>', '<td></td>']);
+
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Hunters — Concentração de Risco e Pace</span><span class="ss">Top-3 respondem por <b style="color:'+risco.cor+';">'+concentracao+'%</b> da capacidade — risco <span style="color:'+risco.cor+';font-weight:700;">'+risco.label+'</span></span></div>'
+    + '<div class="card">' + _tabelaExpandivel('<tr><th>Hunter</th><th>Contratações</th><th>% da Capacidade (peso no total)</th><th>Meta Individual</th><th>%Ating.</th><th>%Falt.</th><th>Progresso</th><th>Status</th></tr>', linhas, 10, totalRowHunters)
+    + '<div class="nota">📐 <b>Concentração:</b> se '+concentracao+'% da capacidade depende de só '+top3.length+' pessoa(s), a saída ou afastamento de qualquer uma delas trava boa parte do ritmo — acima de 60% é risco alto. A coluna "% da Capacidade" é justamente essa fatia — quanto do total de contratações do período aquele hunter sozinho respondeu. '+notaMeta+'</div>'
     + '</div>';
 }
 
@@ -773,8 +961,14 @@ function renderProfundidadeFunil(numSec, C) {
     return '<tr'+(critico?' style="background:rgba(179,58,58,.1);"':'')+'><td>'+(critico?'⚠️ ':'')+'<b>'+esc(l.praca.replace(/^Blue3\s*[-–]\s*/i,''))+'</b></td><td style="color:var(--wt3);">'+vagaLbl+'</td><td>'+l.prospeccao+'</td><td>'+l.qualificacao+'</td><td>'+l.negociacao+'</td><td style="font-weight:700;color:'+(critico?'var(--wred)':'var(--wt1)')+';">'+l.ativos+'</td></tr>';
   });
 
+  var totalFunil = linhas.reduce(function(acc,l){
+    acc.prospeccao += l.prospeccao; acc.qualificacao += l.qualificacao; acc.negociacao += l.negociacao; acc.ativos += l.ativos;
+    return acc;
+  }, {prospeccao:0,qualificacao:0,negociacao:0,ativos:0});
+  var totalRowFunil = _linhaTotal('Total', ['<td></td>', '<td>'+totalFunil.prospeccao+'</td>', '<td>'+totalFunil.qualificacao+'</td>', '<td>'+totalFunil.negociacao+'</td>', '<td>'+totalFunil.ativos+'</td>']);
+
   return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Profundidade do Funil — Praças-Alvo</span><span class="ss">'+(criticas>0?('<b style="color:var(--wred);">⚠ '+criticas+' praça(s) sem ninguém no funil</b>'):'todas as praças-alvo têm gente no funil')+'</span></div>'
-    + '<div class="card">' + _tabelaExpandivel('<tr><th>Praça</th><th>Canal</th><th>Prospecção</th><th>Qualificação</th><th>Negociação</th><th>Total Ativo</th></tr>', linhasHtml, 10)
+    + '<div class="card">' + _tabelaExpandivel('<tr><th>Praça</th><th>Canal</th><th>Prospecção</th><th>Qualificação</th><th>Negociação</th><th>Total Ativo</th></tr>', linhasHtml, 10, totalRowFunil)
     + '<div class="nota">📐 Isso é o funil de <b>hoje</b>, não do período — mostra onde tem gente pra converter agora. Praça com 0 no total ativo não vai gerar contratação nenhuma enquanto ninguém for prospectado ali, não importa a meta ou a conversão histórica.</div>'
     + '</div>';
 }
