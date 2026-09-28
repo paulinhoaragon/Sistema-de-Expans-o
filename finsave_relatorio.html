@@ -133,9 +133,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   thead{display:table-header-group;}
   tr{page-break-inside:avoid;break-inside:avoid;}
 
-  /* No PDF, sempre mostra a lista completa de "Candidatos Parados" (ignora o "Ver 10 primeiros" da tela) */
-  .linha-parado-extra{display:table-row !important;}
-  #btn-parados-expandir{display:none !important;}
+  /* No PDF, sempre mostra a lista completa de qualquer seção "Ver todos" (ignora o "Ver 10 primeiros" da tela) */
+  tr.li-extra{display:table-row !important;}
+  .praca-row.li-extra{display:grid !important;}
+  .btn-expandir{display:none !important;}
 
   /* Cabeçalho de seção (número + título) nunca fica sozinho no fim de uma página, separado do conteúdo */
   .sh{page-break-after:avoid;break-after:avoid;}
@@ -546,21 +547,26 @@ function atualizarAuditoria() {
     return;
   }
 
-  var linhas = lista.map(function(c){
+  function _linhaAuditoria(c, oculta){
     var info = ETAPA_INFO[c.etapa] || { lbl:c.etapa, cor:'#7A82A8' };
-    return '<tr style="border-bottom:1px solid var(--rule);">'
+    return '<tr class="'+(oculta?'li-extra li-extra-auditoria':'')+'" style="border-bottom:1px solid var(--rule);'+(oculta?'display:none;':'')+'">'
       + '<td style="padding:7px 4px;font-weight:600;">'+esc(c.nome)+'</td>'
       + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.cidade_finsave||'—')+'</td>'
       + '<td style="padding:7px 4px;"><span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+info.cor+'22;color:'+info.cor+';">'+esc(info.lbl)+'</span></td>'
       + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.hunter||'—')+'</td>'
       + '<td style="padding:7px 4px;text-align:right;color:var(--t3);">'+fmtDate(c.data_entrada)+'</td>'
     + '</tr>';
-  }).join('');
+  }
+
+  var linhasVisiveis = lista.slice(0, LIMITE_LISTA_INICIAL).map(function(c){ return _linhaAuditoria(c, false); }).join('');
+  var linhasOcultas  = lista.slice(LIMITE_LISTA_INICIAL).map(function(c){ return _linhaAuditoria(c, true); }).join('');
+  var restantes = lista.length - LIMITE_LISTA_INICIAL;
 
   tbody.innerHTML = '<div style="font-size:11px;color:var(--t3);margin-bottom:8px;">'+lista.length+' candidato(s) precisam ser qualificados — abra o card no CRM e preencha o campo faltando.</div>'
     + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Candidato</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Cidade</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Etapa</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Hunter</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Data de Entrada</th></tr></thead>'
-    + '<tbody>'+linhas+'</tbody></table>';
+    + '<tbody>'+linhasVisiveis+linhasOcultas+'</tbody></table>'
+    + _botaoVerTodos('li-extra-auditoria', restantes);
 }
 
 // ── Por Que Perdemos Candidatos — motivo do declínio × hunter e × cidade ──
@@ -588,17 +594,20 @@ function renderMotivoDeclinio(C) {
     }).sort(function(a,b){ return b.total-a.total; });
   }
 
-  function tabela(titulo, linhasAgrupadas) {
-    var corpo = linhasAgrupadas.map(function(v){
+  function tabela(titulo, linhasAgrupadas, classeExtra) {
+    function _linhaGrupo(v, oculta){
       var alerta = v.total >= 3 && v.pctReprovou >= 60;
-      return '<tr'+(alerta?' style="background:#FEE2E222;"':'')+'>'
+      return '<tr class="'+(oculta?('li-extra '+classeExtra):'')+'"'+(oculta?' style="display:none;"':(alerta?' style="background:#FEE2E222;"':''))+'>'
         + '<td style="padding:7px 4px;font-weight:600;">'+(alerta?'⚠️ ':'')+esc(v.chave)+'</td>'
         + '<td style="padding:7px 4px;text-align:center;">'+v.reprovou+'</td>'
         + '<td style="padding:7px 4px;text-align:center;">'+v.desistiu+'</td>'
         + '<td style="padding:7px 4px;text-align:center;">'+v.total+'</td>'
         + '<td style="padding:7px 4px;text-align:right;font-weight:700;color:'+(v.pctReprovou>=60?'#DC2626':'#7A82A8')+';">'+v.pctReprovou+'%</td>'
       + '</tr>';
-    }).join('');
+    }
+    var corpoVisivel = linhasAgrupadas.slice(0, LIMITE_LISTA_INICIAL).map(function(v){ return _linhaGrupo(v, false); }).join('');
+    var corpoOculto  = linhasAgrupadas.slice(LIMITE_LISTA_INICIAL).map(function(v){ return _linhaGrupo(v, true); }).join('');
+    var restantes = linhasAgrupadas.length - LIMITE_LISTA_INICIAL;
     return '<div style="flex:1;min-width:280px;">'
       + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:8px;">'+titulo+'</div>'
       + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
@@ -608,7 +617,8 @@ function renderMotivoDeclinio(C) {
         + '<th style="text-align:center;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Desistiu</th>'
         + '<th style="text-align:center;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Total</th>'
         + '<th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">% FinSave Declinou</th>'
-      + '</tr></thead><tbody>'+corpo+'</tbody></table>'
+      + '</tr></thead><tbody>'+corpoVisivel+corpoOculto+'</tbody></table>'
+      + _botaoVerTodos(classeExtra, restantes)
     + '</div>';
   }
 
@@ -617,18 +627,38 @@ function renderMotivoDeclinio(C) {
 
   return '<div class="card"><div class="sh"><span class="sn">12</span><span class="st">Por Que Perdemos Candidatos</span><span class="ss">'+declinados.length+' declínio(s) com motivo registrado · ⚠ = 3+ declínios com 60%+ de reprovação</span></div>'
     + '<div style="display:flex;gap:24px;flex-wrap:wrap;">'
-      + tabela('Hunter', porHunter)
-      + tabela('Cidade', porCidade)
+      + tabela('Hunter', porHunter, 'li-extra-declinio-hunter')
+      + tabela('Cidade', porCidade, 'li-extra-declinio-cidade')
     + '</div>'
     + '<div class="nota" style="margin-top:14px;font-size:10px;color:var(--t3);background:var(--canvas,#F4F6FB);border-radius:8px;padding:9px 12px;line-height:1.6;">📐 <b>FinSave Declinou</b> = a empresa não seguiu com o candidato (pode indicar critério de prospecção a ajustar). <b>Desistência</b> = o candidato que desistiu (pode indicar oferta/processo a revisar). Hunter ou cidade com muita reprovação concentrada vale uma conversa — pode ser perfil de candidato sendo trazido fora do que qualifica.</div>'
     + '</div>';
+}
+
+// ── "Ver todos" genérico ──────────────────────────────────────
+// Qualquer seção com lista/tabela longa mostra só os N primeiros itens e um botão
+// "Ver todos" pra expandir o resto. Usa uma classe CSS por seção (pra não misturar o
+// expandir de uma seção com o de outra) e alterna a exibição só removendo o inline
+// "display:none" — o CSS de cada elemento (tr, .praca-row) cuida do resto.
+var LIMITE_LISTA_INICIAL = 10;
+function _botaoVerTodos(classe, restantes) {
+  if (restantes <= 0) return '';
+  return '<button class="btn-expandir" data-classe="'+classe+'" data-total="'+restantes+'" data-expandido="0" onclick="toggleVerTodos(this)" '
+    + 'style="margin-top:10px;background:none;border:1px solid var(--rule);border-radius:7px;padding:6px 14px;font-size:11px;font-weight:700;color:var(--cobalt);cursor:pointer;font-family:\'DM Sans\',sans-serif;">'
+    + 'Ver todos ('+restantes+' a mais) ▾</button>';
+}
+function toggleVerTodos(btn) {
+  var cls = btn.getAttribute('data-classe');
+  var total = btn.getAttribute('data-total');
+  var expandido = btn.getAttribute('data-expandido') === '1';
+  document.querySelectorAll('.'+cls).forEach(function(el){ el.style.display = expandido ? 'none' : ''; });
+  btn.setAttribute('data-expandido', expandido ? '0' : '1');
+  btn.textContent = expandido ? ('Ver todos ('+total+' a mais) ▾') : 'Ver menos ▴';
 }
 
 // ── Candidatos parados ──
 // "Parado" aqui = tempo desde o cadastro (data_entrada), não tempo na etapa atual específica
 // (isso exigiria o historico_etapas, que não estou usando por segurança — ver nota acima).
 var LIMITE_PARADO = 20;
-var PARADOS_LIMITE_INICIAL = 10;
 function renderParados(C) {
   var candidatosAtivos = C.filter(function(c){ return FUNIL_SEQ.indexOf(c.etapa) > -1 && c.etapa !== 'Trabalhando' && c.data_entrada; });
   var parados = candidatosAtivos.map(function(c){
@@ -642,7 +672,7 @@ function renderParados(C) {
 
   function _linhaParado(x, oculta){
     var info = ETAPA_INFO[x.c.etapa];
-    return '<tr class="'+(oculta?'linha-parado-extra':'')+'" style="border-bottom:1px solid var(--rule);'+(oculta?'display:none;':'')+'">'
+    return '<tr class="'+(oculta?'li-extra li-extra-parados':'')+'" style="border-bottom:1px solid var(--rule);'+(oculta?'display:none;':'')+'">'
       + '<td style="padding:7px 4px;font-weight:600;">'+esc(x.c.nome)+'</td>'
       + '<td style="padding:7px 4px;color:var(--t3);">'+esc(x.c.cidade_finsave||'—')+'</td>'
       + '<td style="padding:7px 4px;"><span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+info.cor+'22;color:'+info.cor+';">'+esc(info.lbl)+'</span></td>'
@@ -650,33 +680,16 @@ function renderParados(C) {
     + '</tr>';
   }
 
-  var linhasVisiveis = parados.slice(0, PARADOS_LIMITE_INICIAL).map(function(x){ return _linhaParado(x, false); }).join('');
-  var linhasOcultas  = parados.slice(PARADOS_LIMITE_INICIAL).map(function(x){ return _linhaParado(x, true); }).join('');
-  var restantes = parados.length - PARADOS_LIMITE_INICIAL;
-
-  var botaoExpandir = restantes > 0
-    ? '<button id="btn-parados-expandir" onclick="toggleParadosExpandir()" style="margin-top:10px;background:none;border:1px solid var(--rule);border-radius:7px;padding:6px 14px;font-size:11px;font-weight:700;color:var(--cobalt);cursor:pointer;font-family:\'DM Sans\',sans-serif;">Ver todos ('+restantes+' a mais) ▾</button>'
-    : '';
+  var linhasVisiveis = parados.slice(0, LIMITE_LISTA_INICIAL).map(function(x){ return _linhaParado(x, false); }).join('');
+  var linhasOcultas  = parados.slice(LIMITE_LISTA_INICIAL).map(function(x){ return _linhaParado(x, true); }).join('');
+  var restantes = parados.length - LIMITE_LISTA_INICIAL;
 
   return '<div class="card card-flow"><div class="sh"><span class="sn">06</span><span class="st">Candidatos Parados</span><span class="ss">'+parados.length+' candidato(s) há '+LIMITE_PARADO+'+ dias sem chegar em Trabalhando ou Declinou</span></div>'
     + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Candidato</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Cidade</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Etapa Atual</th><th style="text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Dias parado</th></tr></thead>'
     + '<tbody>'+linhasVisiveis+linhasOcultas+'</tbody></table>'
-    + botaoExpandir
+    + _botaoVerTodos('li-extra-parados', restantes)
   + '</div>';
-}
-function toggleParadosExpandir() {
-  var btn = document.getElementById('btn-parados-expandir');
-  var linhas = document.querySelectorAll('.linha-parado-extra');
-  var expandido = btn.getAttribute('data-expandido') === '1';
-  linhas.forEach(function(tr){ tr.style.display = expandido ? 'none' : 'table-row'; });
-  btn.setAttribute('data-expandido', expandido ? '0' : '1');
-  btn.textContent = expandido ? btn.textContent.replace('Ver menos ▴', '') : '';
-  if (expandido) {
-    btn.textContent = 'Ver todos (' + linhas.length + ' a mais) ▾';
-  } else {
-    btn.textContent = 'Ver menos ▴';
-  }
 }
 
 // ── Performance por Hunter ──
@@ -797,12 +810,12 @@ function renderContratados(C) {
     return '<div class="card"><div class="sh"><span class="sn">09</span><span class="st">Candidatos Contratados</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum candidato aprovado/contratado no filtro atual.</div></div>';
   }
 
-  var linhas = contratados.map(function(c){
+  function _linhaContratado(c, oculta){
     var mouOk = (c.mou||'').toLowerCase() === 'assinado';
     var statusHtml = mouOk
       ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#DCFCE7;color:#166534;">MOU Assinado · '+fmtDate(c.data_mou)+'</span>'
       : '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF3C7;color:#92400E;">MOU Pendente</span>';
-    return '<tr style="border-bottom:1px solid var(--rule);">'
+    return '<tr class="'+(oculta?'li-extra li-extra-contratados':'')+'" style="border-bottom:1px solid var(--rule);'+(oculta?'display:none;':'')+'">'
       + '<td style="padding:7px 4px;white-space:nowrap;">'+fmtDate(c.data_contratacao)+'</td>'
       + '<td style="padding:7px 4px;">'+statusHtml+'</td>'
       + '<td style="padding:7px 4px;font-weight:600;">'+esc(c.nome)+'</td>'
@@ -810,12 +823,17 @@ function renderContratados(C) {
       + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.email||'—')+'</td>'
       + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.cidade_finsave||'—')+'</td>'
     + '</tr>';
-  }).join('');
+  }
+
+  var linhasVisiveis = contratados.slice(0, LIMITE_LISTA_INICIAL).map(function(c){ return _linhaContratado(c, false); }).join('');
+  var linhasOcultas  = contratados.slice(LIMITE_LISTA_INICIAL).map(function(c){ return _linhaContratado(c, true); }).join('');
+  var restantes = contratados.length - LIMITE_LISTA_INICIAL;
 
   return '<div class="card card-flow"><div class="sh"><span class="sn">09</span><span class="st">Candidatos Contratados</span><span class="ss">'+contratados.length+' candidato(s) — dados pra conferência e exportação</span></div>'
     + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Data Contratação</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Status</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Nome Completo</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Telefone</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">E-mail</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Cidade</th></tr></thead>'
-    + '<tbody>'+linhas+'</tbody></table></div>'
+    + '<tbody>'+linhasVisiveis+linhasOcultas+'</tbody></table></div>'
+    + _botaoVerTodos('li-extra-contratados', restantes)
   + '</div>';
 }
 
@@ -825,13 +843,20 @@ function renderPracas(C) {
   var lista = Object.keys(porCidade).sort(function(a,b){ return porCidade[b]-porCidade[a]; });
   var max = Math.max.apply(null, lista.map(function(p){ return porCidade[p]; }).concat([1]));
 
-  var linhas = lista.map(function(p){
+  function _linhaCidade(p, oculta){
     var v = porCidade[p];
     var largura = Math.round(v/max*100);
-    return '<div class="praca-row"><div>'+esc(p)+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;"></div></div><div style="font-weight:700;">'+v+'</div></div>';
-  }).join('');
+    return '<div class="praca-row'+(oculta?' li-extra li-extra-cidade':'')+'"'+(oculta?' style="display:none;"':'')+'><div>'+esc(p)+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;"></div></div><div style="font-weight:700;">'+v+'</div></div>';
+  }
 
-  return '<div class="card"><div class="sh"><span class="sn">10</span><span class="st">Distribuição por Cidade</span></div>'+linhas+'</div>';
+  var linhasVisiveis = lista.slice(0, LIMITE_LISTA_INICIAL).map(function(p){ return _linhaCidade(p, false); }).join('');
+  var linhasOcultas  = lista.slice(LIMITE_LISTA_INICIAL).map(function(p){ return _linhaCidade(p, true); }).join('');
+  var restantes = lista.length - LIMITE_LISTA_INICIAL;
+
+  return '<div class="card"><div class="sh"><span class="sn">10</span><span class="st">Distribuição por Cidade</span><span class="ss">'+lista.length+' cidade(s) distintas</span></div>'
+    + linhasVisiveis + linhasOcultas
+    + _botaoVerTodos('li-extra-cidade', restantes)
+  + '</div>';
 }
 
 // ════════ EXPORT PDF ════════
