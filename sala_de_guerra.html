@@ -187,7 +187,7 @@ function carregar() {
   ]).then(function(res){
     TODOS = res[0] || [];
     PARAMS = (res[1] && res[1][0]) ? res[1][0] : {
-      meta_h2_assessoria:60, meta_h2_future_vsb:60,
+      meta_h2_assessoria:60, meta_h2_future_vsb:60, meta_h2_future:30, meta_h2_vsb:30,
       meta_36m_gerentes_banco:450, meta_36m_als_xp:80, meta_36m_future:225, meta_36m_als_fusao:146,
       turnover_pct:20, total_liquido_informado:743, tamanho_time_atual:0, ma_headcount_manual:0,
       meta_2026_total:121, meta_2027_total:390, meta_2028_total:390, caixa_prevista_total:-142100000
@@ -385,15 +385,26 @@ function renderDiagnostico(C, ini, fim, contratadoAtual, metaPeriodo, labelFim) 
 function renderAba2026(C) {
   var ini = '2026-07-01', fim = '2026-12-31';
   var assessoriaC = calcularPeriodo(C, ini, fim, function(c){ return c.vaga==='Assessor'; });
-  var futureVsbC = calcularPeriodo(C, ini, fim, function(c){ return ehFuture(c)||ehVSB(c); });
+  var futureC = calcularPeriodo(C, ini, fim, ehFuture);
+  var vsbC = calcularPeriodo(C, ini, fim, ehVSB);
 
-  var metaA = PARAMS.meta_h2_assessoria, metaF = PARAMS.meta_h2_future_vsb, metaT = PARAMS.meta_2026_total || (metaA+metaF);
-  var contratadoA = assessoriaC.contratados.length, contratadoF = futureVsbC.contratados.length;
-  var contratadoTotal = contratadoA + contratadoF;
-  var gapA = Math.max(0, metaA-contratadoA), gapF = Math.max(0, metaF-contratadoF);
+  var metaA = PARAMS.meta_h2_assessoria;
+  var metaFu = PARAMS.meta_h2_future!=null ? PARAMS.meta_h2_future : Math.round((PARAMS.meta_h2_future_vsb||60)/2);
+  var metaVsb = PARAMS.meta_h2_vsb!=null ? PARAMS.meta_h2_vsb : (PARAMS.meta_h2_future_vsb||60)-metaFu;
+  var metaF = metaFu + metaVsb; // total combinado — usado só como referência (Funil Necessário e meta geral)
+  var metaT = PARAMS.meta_2026_total || (metaA+metaF);
+
+  var contratadoA = assessoriaC.contratados.length;
+  var contratadoFu = futureC.contratados.length, contratadoVsb = vsbC.contratados.length;
+  var contratadoTotal = contratadoA + contratadoFu + contratadoVsb;
+
+  var gapA = Math.max(0, metaA-contratadoA);
+  var gapFu = Math.max(0, metaFu-contratadoFu), gapVsb = Math.max(0, metaVsb-contratadoVsb);
+  var gapF = gapFu + gapVsb;
 
   var linhasFrente = '<tr><td><b>Assessoria</b></td><td>'+contratadoA+'</td><td>'+assessoriaC.trabalhando.length+'</td><td>'+metaA+'</td>'+_pctCols(contratadoA,metaA)+'<td style="width:130px;">'+_barra(contratadoA,metaA,contratadoA>=metaA?'green':'gold')+'</td><td>'+gapA+'</td></tr>'
-    + '<tr><td><b>Future + Vem Ser Blue</b></td><td>'+contratadoF+'</td><td>'+futureVsbC.trabalhando.length+'</td><td>'+metaF+'</td>'+_pctCols(contratadoF,metaF)+'<td style="width:130px;">'+_barra(contratadoF,metaF,contratadoF>=metaF?'green':'gold')+'</td><td>'+gapF+'</td></tr>';
+    + '<tr><td><b>Future</b></td><td>'+contratadoFu+'</td><td>'+futureC.trabalhando.length+'</td><td>'+metaFu+'</td>'+_pctCols(contratadoFu,metaFu)+'<td style="width:130px;">'+_barra(contratadoFu,metaFu,contratadoFu>=metaFu?'green':'gold')+'</td><td>'+gapFu+'</td></tr>'
+    + '<tr><td><b>Vem Ser Blue</b></td><td>'+contratadoVsb+'</td><td>'+vsbC.trabalhando.length+'</td><td>'+metaVsb+'</td>'+_pctCols(contratadoVsb,metaVsb)+'<td style="width:130px;">'+_barra(contratadoVsb,metaVsb,contratadoVsb>=metaVsb?'green':'gold')+'</td><td>'+gapVsb+'</td></tr>';
 
   var html = renderDiagnostico(C, ini, fim, contratadoTotal, metaT, 'dezembro/2026');
 
@@ -407,12 +418,11 @@ function renderAba2026(C) {
   html += renderQualidade('06', C, ini, fim);
   html += renderSaudeDados('07', C, ini, fim);
   html += renderCusto('08', C, ini, fim);
-  html += renderConcentracao('09', C, ini, fim);
-  html += renderPacePorHunter('10', C, ini, fim, metaT);
-  html += renderFunilNecessario('11', C, [{label:'Assessoria', filtro:function(c){return c.vaga==='Assessor';}, gap:gapA},{label:'Future + Vem Ser Blue', filtro:function(c){return ehFuture(c)||ehVSB(c);}, gap:gapF}]);
-  html += renderTempoCiclo('12', C, ini, fim);
-  html += renderCapacidade('13', C, ini, fim, metaT);
-  html += renderSimulador('14', C, ini, fim, metaT, '2026');
+  html += renderConcentracaoEPace('09', C, ini, fim, metaT);
+  html += renderFunilNecessario('10', C, [{label:'Assessoria', filtro:function(c){return c.vaga==='Assessor';}, gap:gapA},{label:'Future', filtro:ehFuture, gap:gapFu},{label:'Vem Ser Blue', filtro:ehVSB, gap:gapVsb}]);
+  html += renderTempoCiclo('11', C, ini, fim);
+  html += renderCapacidade('12', C, ini, fim, metaT);
+  html += renderSimulador('13', C, ini, fim, metaT, '2026');
   return html;
 }
 
@@ -470,17 +480,16 @@ function renderAbaAno(C, ano) {
   html += renderQualidade('06', C, ini1, fim2);
   html += renderSaudeDados('07', C, ini1, fim2);
   html += renderCusto('08', C, ini1, fim2);
-  html += renderConcentracao('09', C, ini1, fim2);
-  html += renderPacePorHunter('10', C, ini1, fim2, Math.round(FRENTES_DEF[0].metaPorAno+FRENTES_DEF[1].metaPorAno+FRENTES_DEF[2].metaPorAno));
+  html += renderConcentracaoEPace('09', C, ini1, fim2, Math.round(FRENTES_DEF[0].metaPorAno+FRENTES_DEF[1].metaPorAno+FRENTES_DEF[2].metaPorAno));
 
-  html += renderFunilNecessario('11', C, [
+  html += renderFunilNecessario('10', C, [
     { label:'Gerentes de Banco', filtro:ehGerenteBanco, gap:Math.round(Math.max(0,FRENTES_DEF[0].metaPorAno-calcularPeriodo(C,ini1,fim2,ehGerenteBanco).contratados.length)) },
     { label:'Als XP', filtro:ehAlsXP, gap:Math.round(Math.max(0,FRENTES_DEF[1].metaPorAno-calcularPeriodo(C,ini1,fim2,ehAlsXP).contratados.length)) },
     { label:'Future', filtro:ehFuture, gap:Math.round(Math.max(0,FRENTES_DEF[2].metaPorAno-calcularPeriodo(C,ini1,fim2,ehFuture).contratados.length)) }
   ]);
-  html += renderTempoCiclo('12', C, ini1, fim2);
-  html += renderCapacidade('13', C, ini1, fim2, Math.round(FRENTES_DEF[0].metaPorAno+FRENTES_DEF[1].metaPorAno+FRENTES_DEF[2].metaPorAno));
-  html += renderSimulador('14', C, ini1, fim2, metaAnoOficial, String(ano));
+  html += renderTempoCiclo('11', C, ini1, fim2);
+  html += renderCapacidade('12', C, ini1, fim2, Math.round(FRENTES_DEF[0].metaPorAno+FRENTES_DEF[1].metaPorAno+FRENTES_DEF[2].metaPorAno));
+  html += renderSimulador('13', C, ini1, fim2, metaAnoOficial, String(ano));
   return html;
 }
 
@@ -571,8 +580,8 @@ function renderCapacidade(numSec, C, ini, fim, metaPeriodo) {
     + '<div class="card"><div class="nota">📐 Capacidade média = contratações de cada hunter ÷ meses em que ele realmente teve pelo menos 1 contratação (não meses corridos).</div></div>';
 }
 
-// ════════ Risco de Concentração de Hunters ════════
-function renderConcentracao(numSec, C, ini, fim) {
+// ════════ Hunters — Concentração de Risco e Pace ════════
+function renderConcentracaoEPace(numSec, C, ini, fim, metaPeriodo) {
   var comHunter = C.filter(function(c){ return c.hunter && contratadoBruto(c) && c.data_contratacao && c.data_contratacao>=ini && c.data_contratacao<=fim; });
   var porHunter = {};
   comHunter.forEach(function(c){ porHunter[c.hunter] = (porHunter[c.hunter]||0)+1; });
@@ -580,7 +589,7 @@ function renderConcentracao(numSec, C, ini, fim) {
   var total = comHunter.length;
 
   if (!total) {
-    return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Risco de Concentração</span></div><div class="card"><div style="padding:10px 0;color:var(--wt4);">Sem contratação com hunter atribuído no período.</div></div>';
+    return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Hunters — Concentração e Pace</span></div><div class="card"><div style="padding:10px 0;color:var(--wt4);">Sem contratação com hunter atribuído no período.</div></div>';
   }
 
   var top3 = nomes.slice(0,3);
@@ -588,14 +597,19 @@ function renderConcentracao(numSec, C, ini, fim) {
   var concentracao = Math.round(top3Total/total*100);
   var risco = concentracao>=60 ? {cor:'var(--wred)', label:'ALTO'} : (concentracao>=40 ? {cor:'var(--wgold)', label:'MODERADO'} : {cor:'var(--wgreen-ok)', label:'BAIXO'});
 
+  var cotaImplicita = metaPeriodo / nomes.length;
+
   var linhas = nomes.map(function(h){
-    var pct = Math.round(porHunter[h]/total*100);
-    return '<tr><td><b>'+esc(h)+'</b></td><td>'+porHunter[h]+'</td><td>'+pct+'%</td><td>'+_barra(porHunter[h],nomes.length?porHunter[nomes[0]]:1,'gold')+'</td></tr>';
+    var atual = porHunter[h];
+    var pctTotal = Math.round(atual/total*100);
+    var pctCota = cotaImplicita ? Math.round(atual/cotaImplicita*100) : 0;
+    var status = pctCota>=100 ? {t:'No pace',c:'var(--wgreen-ok)'} : (pctCota>=60 ? {t:'Atenção',c:'var(--wgold)'} : {t:'Abaixo',c:'var(--wred)'});
+    return '<tr><td><b>'+esc(h)+'</b></td><td>'+atual+'</td><td>'+pctTotal+'%</td><td>'+_barra(atual,nomes.length?porHunter[nomes[0]]:1,'gold')+'</td><td>'+cotaImplicita.toFixed(1)+'</td><td>'+_barra(atual,cotaImplicita,pctCota>=100?'green':'gold')+'</td><td style="color:'+status.c+';font-weight:700;">'+status.t+'</td></tr>';
   });
 
-  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Risco de Concentração de Hunters</span><span class="ss">Top-3 respondem por <b style="color:'+risco.cor+';">'+concentracao+'%</b> da capacidade — risco <span style="color:'+risco.cor+';font-weight:700;">'+risco.label+'</span></span></div>'
-    + '<div class="card">' + _tabelaExpandivel('<tr><th>Hunter</th><th>Contratações</th><th>% do Total</th><th>Peso</th></tr>', linhas, 10)
-    + '<div class="nota">📐 Se '+concentracao+'% da capacidade depende de só '+top3.length+' pessoa(s), a saída ou afastamento de qualquer uma delas trava boa parte do ritmo. Acima de 60% é risco alto — vale diversificar antes de depender ainda mais desse grupo.</div>'
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Hunters — Concentração de Risco e Pace</span><span class="ss">Top-3 respondem por <b style="color:'+risco.cor+';">'+concentracao+'%</b> da capacidade — risco <span style="color:'+risco.cor+';font-weight:700;">'+risco.label+'</span> · cota implícita '+cotaImplicita.toFixed(1)+' cada</span></div>'
+    + '<div class="card">' + _tabelaExpandivel('<tr><th>Hunter</th><th>Contratações</th><th>% do Total</th><th>Peso</th><th>Cota Implícita</th><th>Progresso</th><th>Status</th></tr>', linhas, 10)
+    + '<div class="nota">📐 <b>Concentração:</b> se '+concentracao+'% da capacidade depende de só '+top3.length+' pessoa(s), a saída ou afastamento de qualquer uma delas trava boa parte do ritmo — acima de 60% é risco alto. <b>Pace:</b> "Cota implícita" divide a meta do período igualmente entre os hunters ativos (meta ÷ '+nomes.length+') — não é uma meta individual de verdade no sistema, é uma referência. Se a distribuição de trabalho não é igualitária na prática (ex: hunter júnior recém-chegado, ou alguém dedicado a outra frente), ajuste a leitura.</div>'
     + '</div>';
 }
 
@@ -801,30 +815,6 @@ function renderTempoCiclo(numSec, C, ini, fim) {
 }
 
 // ════════ Pace por Hunter Individual ════════
-function renderPacePorHunter(numSec, C, ini, fim, metaPeriodo) {
-  var comHunter = C.filter(function(c){ return c.hunter && contratadoBruto(c) && c.data_contratacao && c.data_contratacao>=ini && c.data_contratacao<=fim; });
-  var porHunter = {};
-  comHunter.forEach(function(c){ porHunter[c.hunter] = (porHunter[c.hunter]||0)+1; });
-  var nomes = Object.keys(porHunter);
-
-  if (!nomes.length) {
-    return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Pace por Hunter</span></div><div class="card"><div style="padding:10px 0;color:var(--wt4);">Sem contratação com hunter atribuído no período.</div></div>';
-  }
-
-  var cotaImplicita = metaPeriodo / nomes.length;
-  var linhas = nomes.sort(function(a,b){ return porHunter[b]-porHunter[a]; }).map(function(h){
-    var atual = porHunter[h];
-    var pct = cotaImplicita ? Math.round(atual/cotaImplicita*100) : 0;
-    var status = pct>=100 ? {t:'No pace',c:'var(--wgreen-ok)'} : (pct>=60 ? {t:'Atenção',c:'var(--wgold)'} : {t:'Abaixo',c:'var(--wred)'});
-    return '<tr><td><b>'+esc(h)+'</b></td><td>'+atual+'</td><td>'+cotaImplicita.toFixed(1)+'</td><td>'+_barra(atual,cotaImplicita,pct>=100?'green':'gold')+'</td><td style="color:'+status.c+';font-weight:700;">'+status.t+'</td></tr>';
-  });
-
-  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Pace por Hunter</span><span class="ss">Cota implícita: meta ÷ '+nomes.length+' hunter(s) ativo(s) = '+cotaImplicita.toFixed(1)+' cada</span></div>'
-    + '<div class="card">' + _tabelaExpandivel('<tr><th>Hunter</th><th>Contratado</th><th>Cota Implícita</th><th>Progresso</th><th>Status</th></tr>', linhas, 10)
-    + '<div class="nota">📐 "Cota implícita" divide a meta do período igualmente entre os hunters ativos — não é uma meta individual atribuída de verdade no sistema, é uma referência de comparação. Se a distribuição de trabalho não é igualitária na prática (ex: hunter júnior recém-chegado, ou alguém dedicado a outra frente), ajuste a leitura.</div>'
-    + '</div>';
-}
-
 // ════════ Saúde do Dado ════════
 function renderSaudeDados(numSec, C, ini, fim) {
   var doPeriodo = C.filter(function(c){ return contratadoBruto(c) && c.data_contratacao && c.data_contratacao>=ini && c.data_contratacao<=fim; });
@@ -847,21 +837,30 @@ function renderSaudeDados(numSec, C, ini, fim) {
   var pctPiso = Math.round(comPiso/total*100);
   var alerta = pctPiso<70;
 
-  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Saúde do Dado</span><span class="ss">Quanto do Custo e da Qualidade acima está calculado sobre base completa</span></div>'
-    + '<div class="card"><table><thead><tr><th>Campo</th><th>Preenchido</th><th>%</th><th>Cobertura</th></tr></thead><tbody>'
+  return '<div class="sh"><span class="sn">'+numSec+'</span><span class="st">Saúde do Dado</span><span class="ss">Confiabilidade dos números deste relatório, não uma métrica de resultado</span></div>'
+    + '<div class="card">'
+    + '<div class="nota" style="margin-bottom:14px;">📐 <b>Pra que serve esta seção:</b> todo número de Custo (seção 08) e de Qualidade — Mix de Senioridade e AuC (seção 06) sai de campos que o hunter preenche no CRM na hora da contratação. Se um campo estiver vazio, o cálculo simplesmente ignora aquele registro — o que <i>reduz</i> o total mostrado, sem avisar. Esta tabela mostra, campo a campo, quantos dos '+total+' contratados do período têm o dado necessário preenchido. Cobertura baixa (abaixo de 70-80%) é sinal de alerta: os números de cima podem estar subestimados, não porque a operação piorou, mas porque o CRM está incompleto.</div>'
+    + '<table><thead><tr><th>Campo</th><th>Preenchido</th><th>%</th><th>Cobertura</th></tr></thead><tbody>'
       + linha('Piso (usado no Custo)', comPiso)
       + linha('Nível/Senioridade (usado na Qualidade)', comNivel)
       + linha('Praça', comPraca)
       + linha('AuC / Meta de Captação', comAuc)
     + '</tbody></table>'
-    + (alerta ? '<div class="nota" style="border-left-color:var(--wred);">⚠️ Só '+pctPiso+'% dos contratados têm piso preenchido — os números de Custo da Operação estão subestimados, calculados sobre uma base parcial.</div>' : '<div class="nota">📐 Cobertura de dado dentro do esperado — os números de Custo e Qualidade acima têm base sólida.</div>')
+    + (alerta ? '<div class="nota" style="border-left-color:var(--wred);margin-top:10px;">⚠️ Só '+pctPiso+'% dos contratados têm piso preenchido — os números de Custo da Operação (seção 08) estão subestimados, calculados sobre uma base parcial. Vale cobrar o preenchimento no CRM antes de tomar decisão em cima desse número.</div>' : '<div class="nota" style="margin-top:10px;">📐 Cobertura de dado dentro do esperado — os números de Custo e Qualidade acima têm base sólida.</div>')
     + '</div>';
 }
 
 function abrirEdicaoPremissas() {
-  var p = PARAMS;
+  var p = Object.assign({}, PARAMS);
+  // Fallback: se o banco ainda não tem as colunas novas (meta_h2_future/meta_h2_vsb),
+  // pré-preenche o formulário rateando a meta combinada antiga (meta_h2_future_vsb) ao meio.
+  if (p.meta_h2_future==null || p.meta_h2_vsb==null) {
+    var metaFuVsbAntiga = p.meta_h2_future_vsb || 60;
+    if (p.meta_h2_future==null) p.meta_h2_future = Math.round(metaFuVsbAntiga/2);
+    if (p.meta_h2_vsb==null) p.meta_h2_vsb = metaFuVsbAntiga - p.meta_h2_future;
+  }
   var campos = [
-    ['meta_h2_assessoria','Meta H2 — Assessoria'], ['meta_h2_future_vsb','Meta H2 — Future + VSB'],
+    ['meta_h2_assessoria','Meta H2 — Assessoria'], ['meta_h2_future','Meta H2 — Future'], ['meta_h2_vsb','Meta H2 — Vem Ser Blue'],
     ['meta_36m_gerentes_banco','Meta Plano — Gerentes de Banco'], ['meta_36m_als_xp','Meta Plano — Als XP'],
     ['meta_36m_future','Meta Plano — Future'], ['meta_36m_als_fusao','Meta Plano — Als Fusão'],
     ['meta_2026_total','Meta Oficial 2026 (2ºS)'], ['meta_2027_total','Meta Oficial 2027'], ['meta_2028_total','Meta Oficial 2028'],
@@ -896,7 +895,7 @@ function abrirEdicaoPremissas() {
   document.body.appendChild(ov);
 }
 function salvarPremissas() {
-  var campos = ['meta_h2_assessoria','meta_h2_future_vsb','meta_36m_gerentes_banco','meta_36m_als_xp','meta_36m_future','meta_36m_als_fusao','turnover_pct','total_liquido_informado','tamanho_time_atual','ma_headcount_manual','meta_2026_total','meta_2027_total','meta_2028_total','caixa_prevista_total'];
+  var campos = ['meta_h2_assessoria','meta_h2_future','meta_h2_vsb','meta_36m_gerentes_banco','meta_36m_als_xp','meta_36m_future','meta_36m_als_fusao','turnover_pct','total_liquido_informado','tamanho_time_atual','ma_headcount_manual','meta_2026_total','meta_2027_total','meta_2028_total','caixa_prevista_total'];
   var body = {};
   campos.forEach(function(c){ body[c] = parseFloat(document.getElementById('edit-'+c).value) || 0; });
   supaPatch('guerra_parametros?id=eq.1', body).then(function(r){
