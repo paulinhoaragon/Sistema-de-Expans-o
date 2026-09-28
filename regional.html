@@ -387,6 +387,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   <button onclick="setRegional('Yokoy',this)" id="pr-Yokoy" style="font-size:10px;font-weight:600;padding:4px 14px;border-radius:20px;border:1px solid var(--rule);background:var(--canvas);color:var(--t3);cursor:pointer;">Yokoy</button>
   <button onclick="setRegional('Bruno',this)" id="pr-Bruno" style="font-size:10px;font-weight:600;padding:4px 14px;border-radius:20px;border:1px solid var(--rule);background:var(--canvas);color:var(--t3);cursor:pointer;">Bruno</button>
   <button onclick="setRegional('MariaLaura',this)" id="pr-MariaLaura" style="font-size:10px;font-weight:600;padding:4px 14px;border-radius:20px;border:1px solid var(--rule);background:var(--canvas);color:var(--t3);cursor:pointer;">Maria Laura</button>
+  <button onclick="setRegional('Iara',this)" id="pr-Iara" style="font-size:10px;font-weight:600;padding:4px 14px;border-radius:20px;border:1px solid var(--rule);background:var(--canvas);color:var(--t3);cursor:pointer;">Iara</button>
   <span style="width:1px;height:16px;background:var(--rule);margin:0 8px;"></span>
   <span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-right:4px;">Período:</span>
   <span id="periodo-pills" style="display:flex;gap:4px;">
@@ -1496,7 +1497,8 @@ var _REGS_DEFAULT = {
   'Tamires':    ['Blue3 - Bauru','Blue3 - Campinas','Blue3 - Curitiba','Blue3 - Franca','Blue3 - Poços de Caldas','Blue3 - Ribeirão Preto','Blue3 - Rio de Janeiro','Blue3 - São José do Rio Preto','Blue3 - Noventena','Blue3 - Itajaí'],
   'Yokoy':      ['Blue3 - Anywhere','Blue3 - Marília','Blue3 - São José dos Campos','Blue3 - São Paulo'],
   'Bruno':      ['Blue3 - Goiânia','Blue3 - Uberlândia','Blue3 - Brasília','Blue3 - Belo Horizonte','Blue3 - Belém'],
-  'MariaLaura': [] // filtra por área/vaga
+  'MariaLaura': [], // filtra por área/vaga
+  'Iara':       []  // filtra por praça = FinSave
 };
 // _REGS ativo: inicia com o default e é sobrescrito pelo banco no boot.
 var _REGS = JSON.parse(JSON.stringify(_REGS_DEFAULT));
@@ -1509,6 +1511,7 @@ function _regKeyFromNome(nome){
   if(n.indexOf('yokoy')>-1)   return 'Yokoy';
   if(n.indexOf('bruno')>-1)   return 'Bruno';
   if(n.indexOf('maria')>-1 && n.indexOf('laura')>-1) return 'MariaLaura';
+  if(n.indexOf('iara')>-1) return 'Iara';
   return null; // regional fora do conjunto de botões fixos (ignorado por ora)
 }
 
@@ -1535,6 +1538,7 @@ function carregarRegionaisRel(cb){
       });
       // MariaLaura permanece como caso especial (sem praças → filtra por área)
       if(!('MariaLaura' in novo)) novo['MariaLaura']=[];
+      if(!('Iara' in novo)) novo['Iara']=[];
       // Só sobrescreve se veio algo útil; senão mantém default
       if(Object.keys(novo).length){
         _REGS=novo;
@@ -1595,7 +1599,7 @@ function _syncPeriodoUI(){
 function setRegional(reg, btn){
   _regAtiva = reg;
   // Atualizar visual dos pills
-  ['todas','Tamires','Yokoy','Bruno','MariaLaura'].forEach(function(r){
+  ['todas','Tamires','Yokoy','Bruno','MariaLaura','Iara'].forEach(function(r){
     var b=document.getElementById('pr-'+r);
     if(!b)return;
     if(r===reg){ b.style.background='var(--cobalt)'; b.style.borderColor='var(--cobalt)'; b.style.color='#fff'; }
@@ -1619,6 +1623,17 @@ function setRegional(reg, btn){
       if(!found) fA.value='';
     }
     var fP=document.getElementById('flt-praca'); if(fP)fP.value='';
+  } else if(reg==='Iara'){
+    // Filtrar por praça = FinSave
+    var fA2=document.getElementById('flt-area'); if(fA2)fA2.value='';
+    var fP2=document.getElementById('flt-praca');
+    if(fP2){
+      var found2=false;
+      for(var j=0;j<fP2.options.length;j++){
+        if(fP2.options[j].value==='FinSave'){ fP2.value='FinSave'; found2=true; break; }
+      }
+      if(!found2) fP2.value='';
+    }
   } else {
     // Filtrar pelo primeiro select de praça disponível nesta regional
     var praças = _REGS[reg]||[];
@@ -1645,6 +1660,9 @@ function applyFiltersRegional(){
       return a.includes('vem ser')||a.includes('future');
     });
     renderWithFilter(filtered);
+  } else if(reg==='Iara'){
+    var filteredI = C.filter(function(r){ return (r.p||'').trim()==='FinSave'; });
+    renderWithFilter(filteredI);
   } else {
     var praçasReg = _REGS[reg]||[];
     var nsP = function(s){ return (s||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); };
@@ -1695,6 +1713,9 @@ function renderPipelineCRM(regFiltro){
       if(regFiltro==='MariaLaura'){
         var v=nsF(r.vaga||r.area||'');
         return v.includes('vem ser')||v.includes('future');
+      }
+      if(regFiltro==='Iara'){
+        return nsF(r.praca||'')==='finsave';
       }
       return PRACA_TO_REG[nsF(r.praca||'')]===regFiltro;
     });
@@ -2082,6 +2103,8 @@ function renderWithFilter(filteredC){
       if(_regAtiva==='MariaLaura'){
         var _v=norm(r['Área']||r['area']||r['vaga']||'');
         if(_v.indexOf('vem ser')<0 && _v.indexOf('future')<0) return false;
+      } else if(_regAtiva==='Iara'){
+        if(norm(r['Praça']||r['praca']||'')!=='finsave') return false;
       } else {
         var _list=(_REGS[_regAtiva]||[]).map(norm);
         if(_list.indexOf(norm(r['Praça']||r['praca']||''))<0) return false;
@@ -2583,7 +2606,8 @@ function renderRegionais(candidatos) {
   var base = (candidatos || []).filter(function(r){
     var s = (r.st||'').toLowerCase();
     var a = (r.area||r.vaga||'Assessor').trim().toLowerCase();
-    return (s === 'trabalhando' || s === 'contratado(a)') && (a === 'assessor' || a.indexOf('vem ser')>-1 || a.indexOf('future')>-1);
+    var isFinSave = (r.p||'').trim() === 'FinSave';
+    return (s === 'trabalhando' || s === 'contratado(a)') && (a === 'assessor' || a.indexOf('vem ser')>-1 || a.indexOf('future')>-1 || isFinSave);
   });
   var total = base.length;
   if (!total) { wrap.style.display = 'none'; return; }
@@ -2595,16 +2619,22 @@ function renderRegionais(candidatos) {
   });
   dados['Outras'] = { total:0, senior:0, pleno:0, junior:0, pracas:{}, origens:{} };
   dados['MariaLaura'] = { total:0, senior:0, pleno:0, junior:0, pracas:{}, origens:{} };
+  dados['Iara'] = { total:0, senior:0, pleno:0, junior:0, pracas:{}, origens:{} };
 
   base.forEach(function(r){
     var _ar=(r.area||r.vaga||'').toLowerCase();
-    var reg = (_ar.indexOf('vem ser')>-1||_ar.indexOf('future')>-1) ? 'MariaLaura' : (pToR[normP(r.p||'')] || 'Outras');
+    var isFinSave = (r.p||'').trim() === 'FinSave';
+    var reg = isFinSave ? 'Iara'
+      : (_ar.indexOf('vem ser')>-1||_ar.indexOf('future')>-1) ? 'MariaLaura'
+      : (pToR[normP(r.p||'')] || 'Outras');
     dados[reg].total++;
     var s = (r.sen||'').toLowerCase();
     if (s === 'sênior') dados[reg].senior++;
     else if (s === 'pleno') dados[reg].pleno++;
     else if (s === 'júnior' || s === 'junior') dados[reg].junior++;
-    var praLbl = praCidade(r.p||'');
+    // FinSave não tem cidade no cadastro de praças (praça = "FinSave" pra todo mundo) —
+    // a cidade real do candidato vem do campo livre "Cidade (FinSave)" do CRM.
+    var praLbl = isFinSave ? ((r.cidadeFinsave||'').trim() || 'Sem cidade informada') : praCidade(r.p||'');
     if (praLbl) dados[reg].pracas[praLbl] = (dados[reg].pracas[praLbl]||0)+1;
     var _o=(r.org||'').trim(), _on=_o||'Sem origem';
     if(_o.indexOf('Itau')>-1||_o.indexOf('Itaú')>-1)_on='Itaú';
@@ -2617,11 +2647,11 @@ function renderRegionais(candidatos) {
     dados[reg].origens[_on]=(dados[reg].origens[_on]||0)+1;
   });
 
-  var cores = { 'Tamires':'#7C3AED', 'Yokoy':'#1A3BAD', 'Bruno':'#00915A', 'MariaLaura':'#0891B2', 'Outras':'#64748B' };
-  var regLabel = { 'MariaLaura':'Maria Laura', 'Outras':'Não atribuídas' };
-  var bgs   = { 'Tamires':'#F5F3FF', 'Yokoy':'#EEF2FD', 'Bruno':'#F0FDF4', 'MariaLaura':'#ECFEFF', 'Outras':'#F1F5F9' };
+  var cores = { 'Tamires':'#7C3AED', 'Yokoy':'#1A3BAD', 'Bruno':'#00915A', 'MariaLaura':'#0891B2', 'Iara':'#B8962E', 'Outras':'#64748B' };
+  var regLabel = { 'MariaLaura':'Maria Laura', 'Iara':'Iara', 'Outras':'Não atribuídas' };
+  var bgs   = { 'Tamires':'#F5F3FF', 'Yokoy':'#EEF2FD', 'Bruno':'#F0FDF4', 'MariaLaura':'#ECFEFF', 'Iara':'#FDF8ED', 'Outras':'#F1F5F9' };
 
-  grid.innerHTML = ['Tamires','Yokoy','Bruno','MariaLaura','Outras'].filter(function(reg){return reg!=='Outras'||dados['Outras'].total>0;}).map(function(reg){
+  grid.innerHTML = ['Tamires','Yokoy','Bruno','MariaLaura','Iara','Outras'].filter(function(reg){return reg!=='Outras'||dados['Outras'].total>0;}).map(function(reg){
     var d   = dados[reg];
     var pct = total > 0 ? Math.round(d.total/total*100) : 0;
     var cor = cores[reg];
@@ -2656,7 +2686,7 @@ function renderRegionais(candidatos) {
       +'<div style="background:'+bg+';border-bottom:1px solid var(--rule);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">'
       +'<div>'
       +'<div style="font-size:13px;font-weight:700;color:'+cor+';">'+(regLabel[reg]||reg)+'</div>'
-      +'<div style="font-size:10px;color:var(--t3);margin-top:1px;">'+(reg==='Outras'?'Praças sem regional':(reg==='MariaLaura'?'Head · Vem Ser/Future':'Head Regional'))+'</div>'
+      +'<div style="font-size:10px;color:var(--t3);margin-top:1px;">'+(reg==='Outras'?'Praças sem regional':(reg==='MariaLaura'?'Head · Vem Ser/Future':(reg==='Iara'?'Head · FinSave':'Head Regional')))+'</div>'
       +'</div>'
       +'<div style="text-align:right;">'
       +'<div style="font-family:\'Playfair Display\',serif;font-size:28px;font-weight:600;color:'+cor+';">'+d.total+'</div>'
