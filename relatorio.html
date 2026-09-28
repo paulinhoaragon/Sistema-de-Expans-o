@@ -2163,7 +2163,8 @@ function renderRegionais(candidatos) {
   var base = (candidatos || []).filter(function(r){
     var s = (r.st||'').toLowerCase();
     var a = (r.area||r.vaga||'Assessor').trim().toLowerCase();
-    return (s === 'trabalhando' || s === 'contratado(a)') && (a === 'assessor' || a.indexOf('vem ser')>-1 || a.indexOf('future')>-1);
+    var isFinSave = (r.p||'').trim() === 'FinSave';
+    return (s === 'trabalhando' || s === 'contratado(a)') && (a === 'assessor' || a.indexOf('vem ser')>-1 || a.indexOf('future')>-1 || isFinSave);
   });
   var total = base.length;
   if (!total) { grid.innerHTML='<p style="color:var(--t3);font-size:12px;padding:12px;">Sem dados no período.</p>'; return; }
@@ -2176,24 +2177,30 @@ function renderRegionais(candidatos) {
   });
   dados['Outras'] = { total:0, senior:0, pleno:0, junior:0, pracas:{} };
   dados['MariaLaura'] = { total:0, senior:0, pleno:0, junior:0, pracas:{} };
+  dados['Iara'] = { total:0, senior:0, pleno:0, junior:0, pracas:{} };
 
   base.forEach(function(r){
     var _ar = (r.area||r.vaga||'').toLowerCase();
-    var reg = (_ar.indexOf('vem ser')>-1 || _ar.indexOf('future')>-1) ? 'MariaLaura' : (pToR[normP(r.p||'')] || 'Outras');
+    var isFinSave = (r.p||'').trim() === 'FinSave';
+    var reg = isFinSave ? 'Iara'
+      : (_ar.indexOf('vem ser')>-1 || _ar.indexOf('future')>-1) ? 'MariaLaura'
+      : (pToR[normP(r.p||'')] || 'Outras');
     dados[reg].total++;
     var s = (r.sen||'').toLowerCase();
     if (s === 'sênior') dados[reg].senior++;
     else if (s === 'pleno') dados[reg].pleno++;
     else if (s === 'júnior' || s === 'junior') dados[reg].junior++;
-    var praLbl = praCidade(r.p||'');
+    // FinSave não tem cidade no cadastro de praças (praça = "FinSave" pra todo mundo) —
+    // a cidade real do candidato vem do campo livre "Cidade (FinSave)" do CRM.
+    var praLbl = isFinSave ? ((r.cidadeFinsave||'').trim() || 'Sem cidade informada') : praCidade(r.p||'');
     if (praLbl) dados[reg].pracas[praLbl] = (dados[reg].pracas[praLbl]||0)+1;
   });
 
-  var cores = { 'Tamires':'#7C3AED', 'Yokoy':'#1A3BAD', 'Bruno':'#00915A', 'MariaLaura':'#0891B2', 'Outras':'#64748B' };
-  var bgs   = { 'Tamires':'#F5F3FF', 'Yokoy':'#EEF2FD', 'Bruno':'#F0FDF4', 'MariaLaura':'#ECFEFF', 'Outras':'#F1F5F9' };
-  var regLabel = { 'MariaLaura':'Maria Laura', 'Outras':'Não atribuídas' };
+  var cores = { 'Tamires':'#7C3AED', 'Yokoy':'#1A3BAD', 'Bruno':'#00915A', 'MariaLaura':'#0891B2', 'Iara':'#B8962E', 'Outras':'#64748B' };
+  var bgs   = { 'Tamires':'#F5F3FF', 'Yokoy':'#EEF2FD', 'Bruno':'#F0FDF4', 'MariaLaura':'#ECFEFF', 'Iara':'#FDF8ED', 'Outras':'#F1F5F9' };
+  var regLabel = { 'MariaLaura':'Maria Laura', 'Iara':'Iara', 'Outras':'Não atribuídas' };
 
-  grid.innerHTML = ['Tamires','Yokoy','Bruno','MariaLaura','Outras'].filter(function(reg){
+  grid.innerHTML = ['Tamires','Yokoy','Bruno','MariaLaura','Iara','Outras'].filter(function(reg){
     return reg !== 'Outras' || dados['Outras'].total > 0;
   }).map(function(reg){
     var d   = dados[reg];
@@ -2231,7 +2238,7 @@ function renderRegionais(candidatos) {
       +'<div style="background:'+bg+';border-bottom:1px solid var(--rule);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">'
       +'<div>'
       +'<div style="font-size:13px;font-weight:700;color:'+cor+';">'+label+'</div>'
-      +'<div style="font-size:10px;color:var(--t3);margin-top:1px;">'+(reg==='Outras'?'Sem regional atribuída':'Head Regional')+'</div>'
+      +'<div style="font-size:10px;color:var(--t3);margin-top:1px;">'+(reg==='Outras'?'Sem regional atribuída':(reg==='MariaLaura'?'Head · Vem Ser/Future':(reg==='Iara'?'Head · FinSave':'Head Regional')))+'</div>'
       +'</div>'
       +'<div style="text-align:right;">'
       +'<div style="font-family:\'Playfair Display\',serif;font-size:28px;font-weight:600;color:'+cor+';">'+d.total+'</div>'
