@@ -236,6 +236,7 @@ function _processCrmRows(rows, pbByIdMap, pbByNomeMap, callback){
       o['Data Inicio']           = r.data_inicio || '';
       o['Ancord']                = (r.status_ancord||'').trim();
       o['Área']                  = (r.vaga||'Assessor').trim();
+      o['Cidade FinSave']        = (r.cidade_finsave||'').trim();
       o['Detalhe Coparticipação']= parseFloat(r.coparticipacao)||0;
       o['Coparticipação Condição']= (r.detalhe_coparticipacao || '').toString().trim();
       o['Trigger 1 Tri']         = parseFloat(r.trigger1_tri_val)||0;
@@ -271,6 +272,7 @@ function Blue3_dataLoader(){
       lider:(r['lider']||'').trim(),
       sen:(r['Senioridade']||'').trim(),
       area:(r['Área']||r['Area']||'Assessor').trim(),
+      cidadeFinsave:(r['Cidade FinSave']||'').trim(),
       org:(r['Origem']||'').trim(),
       aucCust:pn(r['AuC Custódia']),
       mou:(r['MOU']||'').trim(),
