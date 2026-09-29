@@ -941,6 +941,10 @@ function renderContratados(C) {
   return '<div class="card card-flow">'
     + '<div class="card-head">'
       + '<div class="sh" style="border-bottom:none;margin-bottom:0;padding-bottom:0;flex:1;"><span class="sn">11</span><span class="st">Candidatos Contratados</span><span class="ss" id="contratados-count">'+contratados.length+' candidato(s) — dados pra conferência e exportação</span></div>'
+      + '<select id="sel-contratados-mes" class="sel-aud" onchange="atualizarContratados()" style="margin-right:6px;">'
+        + '<option value="todos">Todos os meses</option>'
+        + _opcoesMesesContratados(contratados)
+      + '</select>'
       + '<select id="sel-contratados-data" class="sel-aud" onchange="atualizarContratados()">'
         + '<option value="todos">Todos</option>'
         + '<option value="com-data">✅ Com data de contratação</option>'
@@ -954,6 +958,7 @@ function renderContratados(C) {
 // Reage à troca do select sem reprocessar o relatório inteiro (mesmo padrão da Auditoria).
 function atualizarContratados() {
   var sel = document.getElementById('sel-contratados-data');
+  var selMes = document.getElementById('sel-contratados-mes');
   var corpo = document.getElementById('contratados-corpo');
   var contagem = document.getElementById('contratados-count');
   if (!sel || !corpo) return;
@@ -961,13 +966,22 @@ function atualizarContratados() {
   var todosContratados = _ordenarContratados(C.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; }));
 
   var tipo = sel.value;
+  var mes = selMes ? selMes.value : 'todos';
   var filtrados = todosContratados;
-  if (tipo === 'com-data') filtrados = todosContratados.filter(function(c){ return !!c.data_contratacao; });
-  if (tipo === 'sem-data') filtrados = todosContratados.filter(function(c){ return !c.data_contratacao; });
+  if (tipo === 'com-data') filtrados = filtrados.filter(function(c){ return !!c.data_contratacao; });
+  if (tipo === 'sem-data') filtrados = filtrados.filter(function(c){ return !c.data_contratacao; });
+  if (mes !== 'todos') filtrados = filtrados.filter(function(c){ return (c.data_contratacao||'').slice(0,7) === mes; });
+
+  var descFiltro = [];
+  if (tipo !== 'todos') descFiltro.push(tipo === 'com-data' ? 'com data de contratação' : 'sem data de contratação');
+  if (mes !== 'todos') {
+    var partesMes = mes.split('-');
+    descFiltro.push((_MESES_NOME[parseInt(partesMes[1],10)]||mes) + ' ' + partesMes[0]);
+  }
 
   if (contagem) {
     contagem.textContent = filtrados.length + ' candidato(s)'
-      + (tipo === 'todos' ? ' — dados pra conferência e exportação' : ' — filtro: ' + (tipo === 'com-data' ? 'com data de contratação' : 'sem data de contratação'));
+      + (descFiltro.length ? ' — filtro: ' + descFiltro.join(', ') : ' — dados pra conferência e exportação');
   }
   corpo.innerHTML = filtrados.length
     ? _corpoContratados(filtrados)
@@ -989,6 +1003,24 @@ function _thOrdenavel(label, campo) {
 
 // Data curta (dd/mm/aa) usada só nos badges de MOU/Situação, pra não estourar a largura da coluna.
 function _fmtDataCurta(s){ if(!s) return ''; var d = new Date(s+'T12:00:00'); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
+
+// Monta as opções do seletor de mês a partir das datas de contratação disponíveis (formato 'YYYY-MM').
+var _MESES_NOME = {1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
+function _opcoesMesesContratados(contratados) {
+  var chaves = {};
+  contratados.forEach(function(c){
+    if (!c.data_contratacao) return;
+    var chave = c.data_contratacao.slice(0,7); // 'YYYY-MM'
+    if (chave.length === 7) chaves[chave] = true;
+  });
+  var ordenadas = Object.keys(chaves).sort(function(a,b){ return b.localeCompare(a); }); // desc
+  return ordenadas.map(function(chave){
+    var partes = chave.split('-');
+    var ano = partes[0], mes = parseInt(partes[1],10);
+    var label = (_MESES_NOME[mes]||chave) + ' ' + ano;
+    return '<option value="'+chave+'">'+label+'</option>';
+  }).join('');
+}
 
 // Monta a tabela + os dois consolidadores a partir de uma lista já filtrada de contratados.
 function _corpoContratados(contratados) {
