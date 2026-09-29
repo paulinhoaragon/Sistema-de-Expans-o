@@ -459,6 +459,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
     <div id="mg-assessores-grid" class="mg"></div>
   </div>
 
+  <!-- Blocos por vaga (gerados dinamicamente) — mesmo padrão de Assessores, um bloco por canal -->
+  <div id="mg-vsb" style="display:none;margin-top:20px;">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--rule);">Vem ser Blue</div>
+    <div id="mg-vsb-grid" class="mg"></div>
+  </div>
+
+  <div id="mg-future" style="display:none;margin-top:20px;">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--rule);">Future</div>
+    <div id="mg-future-grid" class="mg"></div>
+  </div>
+
+  <div id="mg-planejador" style="display:none;margin-top:20px;">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--rule);">Planejador Financeiro</div>
+    <div id="mg-planejador-grid" class="mg"></div>
+  </div>
+
   <!-- Cards outras áreas (gerado dinamicamente) -->
   <div id="mg-outras" style="display:none;margin-top:20px;">
     <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--rule);">Outras Áreas</div>
@@ -1845,15 +1861,12 @@ function renderAssessoresMensal(candidatos) {
   mgEl.style.display = 'block';
 }
 
-function renderOutrasAreas(candidatos) {
-  var mgEl  = document.getElementById('mg-outras');
-  var grid  = document.getElementById('mg-outras-grid');
+function _renderGrupoMensal(candidatos, matchFn, mgElId, gridElId, showAreaTag) {
+  var mgEl  = document.getElementById(mgElId);
+  var grid  = document.getElementById(gridElId);
   if (!mgEl || !grid) return;
 
-  var C = (candidatos || window.Blue3Data.candidatos || [])
-    .filter(function(r){
-      return r.area && ['assessor','assessores'].indexOf(r.area.toLowerCase()) === -1;
-    });
+  var C = (candidatos || window.Blue3Data.candidatos || []).filter(matchFn);
 
   if (!C.length) { mgEl.style.display = 'none'; return; }
 
@@ -1900,7 +1913,7 @@ function renderOutrasAreas(candidatos) {
       var senNorm  = norm(r.sen||'');
       var tagCls   = isPosContrato ? 't-dt-pos' : (senNorm==='sênior'?'t-sr':senNorm==='pleno'?'t-pl':'t-jr');
       var tagLbl   = isPosContrato ? 'Desistência' : (r.sen||'—');
-      var nome = r.n + (r.area ? ' <span style="font-size:9px;color:var(--t3);">['+r.area+']</span>' : '');
+      var nome = r.n + (showAreaTag && r.area ? ' <span style="font-size:9px;color:var(--t3);">['+r.area+']</span>' : '');
       return '<div class="mcp"><span class="mcn">'+nome+'</span><span class="tag '+tagCls+'">'+tagLbl+'</span></div>';
     }).join('');
 
@@ -1917,6 +1930,21 @@ function renderOutrasAreas(candidatos) {
   }).join('');
 
   mgEl.style.display = 'block';
+}
+
+function renderOutrasAreas(candidatos) {
+  var base = candidatos || window.Blue3Data.candidatos || [];
+
+  var isAssessor = function(r){ return r.area && ['assessor','assessores'].indexOf(r.area.toLowerCase()) !== -1; };
+  var isVSB = function(r){ return r.area && r.area.toLowerCase() === 'vem ser blue'; };
+  var isFuture = function(r){ return r.area && r.area.toLowerCase() === 'future'; };
+  var isPlanejador = function(r){ return r.area && r.area.toLowerCase() === 'planejador/consultor'; };
+  var isOutrasResto = function(r){ return r.area && !isAssessor(r) && !isVSB(r) && !isFuture(r) && !isPlanejador(r); };
+
+  _renderGrupoMensal(base, isVSB,        'mg-vsb',        'mg-vsb-grid',        false);
+  _renderGrupoMensal(base, isFuture,     'mg-future',     'mg-future-grid',     false);
+  _renderGrupoMensal(base, isPlanejador, 'mg-planejador', 'mg-planejador-grid', false);
+  _renderGrupoMensal(base, isOutrasResto,'mg-outras',     'mg-outras-grid',     true);
 }
 
 function renderAreaBreakdown(candidatos){
