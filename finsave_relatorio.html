@@ -351,6 +351,7 @@ function render(C) {
   document.getElementById('content-root').innerHTML = html;
   window._C_ATUAL = C; // pra reagir ao toggle Diário/Semanal/Mensal e à auditoria sem reprocessar tudo
   atualizarAuditoria();
+  atualizarContratados();
 }
 
 function renderKPIs(C) {
@@ -802,39 +803,141 @@ function renderCrescimento(C) {
 }
 
 // ── Candidatos Contratados (dados espelhados pra conferência/exportação) ──
+// Estado de ordenação da tabela — controlado pelos ícones clicáveis no cabeçalho.
+var _SORT_CONTRATADOS = { campo: 'data_contratacao', dir: 'desc' };
+
+function _valorOrdenacaoContratados(c, campo) {
+  switch (campo) {
+    case 'data_contratacao': return c.data_contratacao || '';
+    case 'status': return (c.mou||'').toLowerCase() === 'assinado' ? '1' : '0';
+    case 'nome': return (c.nome||'').toLowerCase();
+    case 'telefone': return (c.telefone||'');
+    case 'email': return (c.email||'').toLowerCase();
+    case 'cidade': return (c.cidade_finsave||'').toLowerCase();
+    default: return '';
+  }
+}
+function _ordenarContratados(lista) {
+  var campo = _SORT_CONTRATADOS.campo;
+  var mult = _SORT_CONTRATADOS.dir === 'asc' ? 1 : -1;
+  return lista.slice().sort(function(a,b){
+    var va = _valorOrdenacaoContratados(a, campo);
+    var vb = _valorOrdenacaoContratados(b, campo);
+    if (va < vb) return -1 * mult;
+    if (va > vb) return 1 * mult;
+    return 0;
+  });
+}
+// Chamado ao clicar no ícone de ordenação de uma coluna — alterna asc/desc se já for a coluna ativa.
+function ordenarContratadosPor(campo) {
+  if (_SORT_CONTRATADOS.campo === campo) {
+    _SORT_CONTRATADOS.dir = (_SORT_CONTRATADOS.dir === 'asc') ? 'desc' : 'asc';
+  } else {
+    _SORT_CONTRATADOS.campo = campo;
+    _SORT_CONTRATADOS.dir = (campo === 'data_contratacao' || campo === 'status') ? 'desc' : 'asc';
+  }
+  atualizarContratados();
+}
+// Monta um <th> clicável com ícone de ordenação (▲/▼ quando ativo, ⇅ neutro quando não).
+function _thOrdenavelContratados(label, campo) {
+  var ativo = _SORT_CONTRATADOS.campo === campo;
+  var icone = ativo ? (_SORT_CONTRATADOS.dir === 'asc' ? '▲' : '▼') : '⇅';
+  var corIcone = ativo ? 'var(--ac,#1A3BAD)' : 'var(--t4)';
+  return '<th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);white-space:nowrap;">'
+    + '<span onclick="ordenarContratadosPor(\''+campo+'\')" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:4px;" title="Clique para ordenar">'
+      + '<span>'+esc(label)+'</span>'
+      + '<span style="font-size:10px;color:'+corIcone+';'+(ativo?'font-weight:700;':'')+'">'+icone+'</span>'
+    + '</span>'
+  + '</th>';
+}
+
+// Monta as opções do seletor de mês a partir das datas de contratação disponíveis (formato 'YYYY-MM').
+var _MESES_NOME_CONTRATADOS = {1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
+function _opcoesMesesContratados(contratados) {
+  var chaves = {};
+  contratados.forEach(function(c){
+    if (!c.data_contratacao) return;
+    var chave = c.data_contratacao.slice(0,7); // 'YYYY-MM'
+    if (chave.length === 7) chaves[chave] = true;
+  });
+  var ordenadas = Object.keys(chaves).sort(function(a,b){ return b.localeCompare(a); }); // desc
+  return ordenadas.map(function(chave){
+    var partes = chave.split('-');
+    var ano = partes[0], mes = parseInt(partes[1],10);
+    var label = (_MESES_NOME_CONTRATADOS[mes]||chave) + ' ' + ano;
+    return '<option value="'+chave+'">'+label+'</option>';
+  }).join('');
+}
+
+function _linhaContratado(c, oculta){
+  var mouOk = (c.mou||'').toLowerCase() === 'assinado';
+  var statusHtml = mouOk
+    ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#DCFCE7;color:#166534;">MOU Assinado · '+fmtDate(c.data_mou)+'</span>'
+    : '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF3C7;color:#92400E;">MOU Pendente</span>';
+  return '<tr class="'+(oculta?'li-extra li-extra-contratados':'')+'" style="border-bottom:1px solid var(--rule);'+(oculta?'display:none;':'')+'">'
+    + '<td style="padding:7px 4px;white-space:nowrap;">'+fmtDate(c.data_contratacao)+'</td>'
+    + '<td style="padding:7px 4px;">'+statusHtml+'</td>'
+    + '<td style="padding:7px 4px;font-weight:600;">'+esc(c.nome)+'</td>'
+    + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.telefone||'—')+'</td>'
+    + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.email||'—')+'</td>'
+    + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.cidade_finsave||'—')+'</td>'
+  + '</tr>';
+}
+
+function _corpoContratados(contratados) {
+  var linhasVisiveis = contratados.slice(0, LIMITE_LISTA_INICIAL).map(function(c){ return _linhaContratado(c, false); }).join('');
+  var linhasOcultas  = contratados.slice(LIMITE_LISTA_INICIAL).map(function(c){ return _linhaContratado(c, true); }).join('');
+  var restantes = contratados.length - LIMITE_LISTA_INICIAL;
+  var theadHtml = _thOrdenavelContratados('Data Contratação','data_contratacao')
+    + _thOrdenavelContratados('Status','status')
+    + _thOrdenavelContratados('Nome Completo','nome')
+    + _thOrdenavelContratados('Telefone','telefone')
+    + _thOrdenavelContratados('E-mail','email')
+    + _thOrdenavelContratados('Cidade','cidade');
+  return '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    + '<thead><tr style="border-bottom:1px solid var(--rule);">'+theadHtml+'</tr></thead>'
+    + '<tbody>'+linhasVisiveis+linhasOcultas+'</tbody></table></div>'
+    + _botaoVerTodos('li-extra-contratados', restantes);
+}
+
 function renderContratados(C) {
-  var contratados = C.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; })
-    .sort(function(a,b){ return (b.data_contratacao||'').localeCompare(a.data_contratacao||''); });
+  var contratados = _ordenarContratados(C.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; }));
 
   if (!contratados.length) {
     return '<div class="card"><div class="sh"><span class="sn">09</span><span class="st">Candidatos Contratados</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum candidato aprovado/contratado no filtro atual.</div></div>';
   }
 
-  function _linhaContratado(c, oculta){
-    var mouOk = (c.mou||'').toLowerCase() === 'assinado';
-    var statusHtml = mouOk
-      ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#DCFCE7;color:#166534;">MOU Assinado · '+fmtDate(c.data_mou)+'</span>'
-      : '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF3C7;color:#92400E;">MOU Pendente</span>';
-    return '<tr class="'+(oculta?'li-extra li-extra-contratados':'')+'" style="border-bottom:1px solid var(--rule);'+(oculta?'display:none;':'')+'">'
-      + '<td style="padding:7px 4px;white-space:nowrap;">'+fmtDate(c.data_contratacao)+'</td>'
-      + '<td style="padding:7px 4px;">'+statusHtml+'</td>'
-      + '<td style="padding:7px 4px;font-weight:600;">'+esc(c.nome)+'</td>'
-      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.telefone||'—')+'</td>'
-      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.email||'—')+'</td>'
-      + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.cidade_finsave||'—')+'</td>'
-    + '</tr>';
-  }
-
-  var linhasVisiveis = contratados.slice(0, LIMITE_LISTA_INICIAL).map(function(c){ return _linhaContratado(c, false); }).join('');
-  var linhasOcultas  = contratados.slice(LIMITE_LISTA_INICIAL).map(function(c){ return _linhaContratado(c, true); }).join('');
-  var restantes = contratados.length - LIMITE_LISTA_INICIAL;
-
-  return '<div class="card card-flow"><div class="sh"><span class="sn">09</span><span class="st">Candidatos Contratados</span><span class="ss">'+contratados.length+' candidato(s) — dados pra conferência e exportação</span></div>'
-    + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">'
-    + '<thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Data Contratação</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Status</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Nome Completo</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Telefone</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">E-mail</th><th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);">Cidade</th></tr></thead>'
-    + '<tbody>'+linhasVisiveis+linhasOcultas+'</tbody></table></div>'
-    + _botaoVerTodos('li-extra-contratados', restantes)
+  return '<div class="card card-flow">'
+    + '<div class="card-head">'
+      + '<div class="sh" style="border-bottom:none;margin-bottom:0;padding-bottom:0;flex:1;"><span class="sn">09</span><span class="st">Candidatos Contratados</span><span class="ss" id="contratados-count">'+contratados.length+' candidato(s) — dados pra conferência e exportação</span></div>'
+      + '<select id="sel-contratados-mes" class="sel-aud" onchange="atualizarContratados()">'
+        + '<option value="todos">Todos os meses</option>'
+        + _opcoesMesesContratados(contratados)
+      + '</select>'
+    + '</div>'
+    + '<div id="contratados-corpo" style="margin-top:10px;">'+_corpoContratados(contratados)+'</div>'
   + '</div>';
+}
+
+// Reage à troca do seletor de mês sem reprocessar o relatório inteiro (mesmo padrão da Auditoria).
+function atualizarContratados() {
+  var selMes = document.getElementById('sel-contratados-mes');
+  var corpo = document.getElementById('contratados-corpo');
+  var contagem = document.getElementById('contratados-count');
+  if (!corpo) return;
+  var C = window._C_ATUAL || [];
+  var todosContratados = _ordenarContratados(C.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; }));
+
+  var mes = selMes ? selMes.value : 'todos';
+  var filtrados = mes === 'todos' ? todosContratados : todosContratados.filter(function(c){ return (c.data_contratacao||'').slice(0,7) === mes; });
+
+  if (contagem) {
+    contagem.textContent = filtrados.length + ' candidato(s)'
+      + (mes === 'todos' ? ' — dados pra conferência e exportação' : ' — filtro: ' + ((_MESES_NOME_CONTRATADOS[parseInt(mes.split('-')[1],10)]||mes) + ' ' + mes.split('-')[0]));
+  }
+  corpo.innerHTML = filtrados.length
+    ? _corpoContratados(filtrados)
+    : '<div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum candidato encontrado com esse filtro. 🎉</div>';
 }
 
 function renderPracas(C) {
