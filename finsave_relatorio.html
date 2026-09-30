@@ -238,6 +238,7 @@ function supaGet(path) {
 }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function fmtDate(s){ if(!s) return ''; var d = new Date(s+'T12:00:00'); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'}); }
+function fmtBRL(v){ v = parseFloat(v)||0; if(!v) return '—'; return 'R$ '+Math.round(v).toLocaleString('pt-BR'); }
 function hojeISO(){ return new Date().toISOString().slice(0,10); }
 function diasEntre(de, ate){
   if (!de) return null;
@@ -271,7 +272,7 @@ function carregar() {
     elAtualizado.textContent = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' }).replace('.', '');
   }
   Promise.all([
-    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,email,mou,data_mou,data_entrada,data_contratacao,data_inicio,data_declinio,cidade_finsave,motivo_declinio_finsave&limit=3000'),
+    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,email,mou,data_mou,data_entrada,data_contratacao,data_inicio,data_declinio,cidade_finsave,motivo_declinio_finsave,piso,periodo&limit=3000'),
     supaGet('propostas?select=telefone&limit=5000')
   ]).then(function(res){
     var candidatos = res[0] || [];
@@ -814,6 +815,8 @@ function _valorOrdenacaoContratados(c, campo) {
     case 'telefone': return (c.telefone||'');
     case 'email': return (c.email||'').toLowerCase();
     case 'cidade': return (c.cidade_finsave||'').toLowerCase();
+    case 'piso': return parseFloat(c.piso)||0;
+    case 'periodo': return parseInt(c.periodo)||0;
     default: return '';
   }
 }
@@ -881,6 +884,8 @@ function _linhaContratado(c, oculta){
     + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.telefone||'—')+'</td>'
     + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.email||'—')+'</td>'
     + '<td style="padding:7px 4px;color:var(--t3);">'+esc(c.cidade_finsave||'—')+'</td>'
+    + '<td style="padding:7px 4px;color:var(--t3);white-space:nowrap;text-align:right;">'+fmtBRL(c.piso)+'</td>'
+    + '<td style="padding:7px 4px;color:var(--t3);white-space:nowrap;text-align:center;">'+(parseInt(c.periodo)?c.periodo+' meses':'—')+'</td>'
   + '</tr>';
 }
 
@@ -893,10 +898,21 @@ function _corpoContratados(contratados) {
     + _thOrdenavelContratados('Nome Completo','nome')
     + _thOrdenavelContratados('Telefone','telefone')
     + _thOrdenavelContratados('E-mail','email')
-    + _thOrdenavelContratados('Cidade','cidade');
+    + _thOrdenavelContratados('Cidade','cidade')
+    + _thOrdenavelContratados('Piso Combinado','piso')
+    + _thOrdenavelContratados('Período Acordado','periodo');
+  // Total acumulado do piso — soma de TODOS os candidatos filtrados (não só os visíveis na página),
+  // pra refletir o total real mesmo com "Ver todos" fechado.
+  var totalPiso = contratados.reduce(function(s,c){ return s + (parseFloat(c.piso)||0); }, 0);
+  var tfootHtml = '<tr style="border-top:2px solid var(--rule);font-weight:700;background:#F7F9FC;">'
+    + '<td style="padding:7px 4px;" colspan="6">Total acumulado — piso combinado ('+contratados.length+' candidato'+(contratados.length!==1?'s':'')+')</td>'
+    + '<td style="padding:7px 4px;white-space:nowrap;text-align:right;color:var(--cobalt,#1A3BAD);">'+fmtBRL(totalPiso)+'</td>'
+    + '<td style="padding:7px 4px;"></td>'
+  + '</tr>';
   return '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead><tr style="border-bottom:1px solid var(--rule);">'+theadHtml+'</tr></thead>'
-    + '<tbody>'+linhasVisiveis+linhasOcultas+'</tbody></table></div>'
+    + '<tbody>'+linhasVisiveis+linhasOcultas+'</tbody>'
+    + '<tfoot>'+tfootHtml+'</tfoot></table></div>'
     + _botaoVerTodos('li-extra-contratados', restantes);
 }
 
