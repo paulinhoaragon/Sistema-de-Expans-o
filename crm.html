@@ -284,6 +284,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
             </div>
           </div>
           <div class="f-row"><label>E-mail</label><input id="m-email" type="email" placeholder="email@exemplo.com"></div>
+          <div class="f-row"><label>CPF</label><input id="m-cpf" placeholder="000.000.000-00" oninput="maskCPF(this)" maxlength="14"></div>
           <div class="f-row"><label>Instituição de origem</label><input id="m-inst" placeholder="ex: XP, BTG, Itaú..."></div>
           <div class="f-row"><label>Praça</label>
             <select id="m-praca" onchange="toggleCidadeFinSave(this.value); toggleMotivoDeclinioFinSave(document.getElementById('m-etapa') ? document.getElementById('m-etapa').value : '');">
@@ -1080,6 +1081,7 @@ function abrirEdicao(id) {
   var perfilEl = document.getElementById('m-perfil'); if (perfilEl) perfilEl.value = r.perfil||'';
   var estEl = document.getElementById('m-estrategico'); if (estEl) estEl.value = r.estrategico||'Não';
   document.getElementById('m-email').value    = r.email||'';
+  var cpfEl = document.getElementById('m-cpf'); if (cpfEl) cpfEl.value = r.cpf||'';
   document.getElementById('m-inst').value     = r.instituicao||'';
   _setPracaSelect(r.praca||'');
   _setHunterSelect(r.hunter||'');
@@ -1306,7 +1308,7 @@ function toggleEtapaDatas(etapa, autoData) {
 function limparModal() {
   var pBox = document.getElementById('m-pareceres-box');
   if (pBox) pBox.style.display = 'none';
-  ['m-id','m-nome','m-tel','m-email','m-inst',
+  ['m-id','m-nome','m-tel','m-email','m-cpf','m-inst',
    'm-auc','m-piso','m-periodo','m-upfront',
    'm-t1tri-m','m-t1tri-v','m-t1m','m-t1v','m-t2m','m-t2v','m-t3m','m-t3v','m-t4m','m-t4v',
    'm-copart','m-copart-det','m-codigo-a','m-cs','m-prev-inicio',
@@ -1411,8 +1413,13 @@ function salvarCandidato() {
     alert('Este telefone já está cadastrado para "' + (_dup.nome || 'outro candidato') + '". Não é possível duplicar o cadastro pelo mesmo telefone.');
     return;
   }
+  var _dupCpf = cpfJaCadastrado(g('m-cpf'), _idAtual);
+  if (_dupCpf) {
+    alert('Este CPF já está cadastrado para "' + (_dupCpf.nome || 'outro candidato') + '". Não é possível duplicar o cadastro pelo mesmo CPF.');
+    return;
+  }
   var payload = {
-    nome: nome, telefone: g('m-tel'), email: g('m-email'), instituicao: g('m-inst'), praca: g('m-praca'),
+    nome: nome, telefone: g('m-tel'), email: g('m-email'), cpf: g('m-cpf')||null, instituicao: g('m-inst'), praca: g('m-praca'),
     hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), vaga: vaga, estrategico: g('m-estrategico')||'Não', etapa: g('m-etapa'),
     pre_work: (vaga === 'Future') ? (g('m-pre-work')||null) : null,
     origem_lead: (vaga === 'Future') ? (g('m-origem-lead')||null) : null,
@@ -1803,6 +1810,27 @@ function maskTel(el) {
   else if (d.length <= 6)   el.value = '(' + d.slice(0,2) + ') ' + d.slice(2);
   else if (d.length <= 10)  el.value = '(' + d.slice(0,2) + ') ' + d.slice(2,6) + '-' + d.slice(6);
   else                      el.value = '(' + d.slice(0,2) + ') ' + d.slice(2,7) + '-' + d.slice(7);
+}
+
+function maskCPF(el) {
+  var d = el.value.replace(/\D/g, '').slice(0, 11);
+  if (d.length === 0) { el.value = ''; return; }
+  if (d.length <= 3)        el.value = d;
+  else if (d.length <= 6)   el.value = d.slice(0,3) + '.' + d.slice(3);
+  else if (d.length <= 9)   el.value = d.slice(0,3) + '.' + d.slice(3,6) + '.' + d.slice(6);
+  else                      el.value = d.slice(0,3) + '.' + d.slice(3,6) + '.' + d.slice(6,9) + '-' + d.slice(9);
+}
+
+// Mesmo critério de duplicidade usado pro telefone (telefoneJaCadastrado),
+// mas pra CPF — chave mais estável que o Código A, que muda quando o
+// provisório vira definitivo.
+function cpfJaCadastrado(cpf, idAtual) {
+  var d = (cpf || '').replace(/\D/g, '');
+  if (!d) return null;
+  return (_todos || []).find(function(r) {
+    if (idAtual && r.id === idAtual) return false;
+    return (r.cpf || '').replace(/\D/g, '') === d;
+  }) || null;
 }
 
 // Abre o WhatsApp do candidato. Usa o link canônico e abre numa aba real
