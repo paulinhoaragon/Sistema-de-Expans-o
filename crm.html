@@ -111,6 +111,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .btn-fechar{background:none;border:none;font-size:20px;color:var(--t3);cursor:pointer;padding:2px 6px;border-radius:4px}
 .btn-fechar:hover{background:var(--rule);color:var(--t1)}
 .modal-body{padding:20px 24px}
+.copart-pills{display:flex;gap:8px;margin-top:8px}
+.copart-pill{flex:1;padding:7px 10px;border:1px solid var(--rule);border-radius:6px;background:#fff;color:var(--t2);font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s}
+.copart-pill:hover{border-color:var(--cobalt);color:var(--cobalt)}
+.copart-pill.on{background:#1A3BAD!important;border-color:#1A3BAD!important;color:#fff!important}
+.copart-hint{font-size:10px;color:var(--t3);margin-top:5px;min-height:13px}
 .sec-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--rule)}
 .sec-lbl:first-child{margin-top:0}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -563,7 +568,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
         <div class="sec-lbl">Coparticipação XP</div>
         <div class="fgrid">
-          <div class="f-row"><label>Coparticipação R$</label><input id="m-copart" type="text" placeholder="0" oninput="calcProposta()"></div>
+          <div class="f-row"><label>Coparticipação R$</label><input id="m-copart" type="text" placeholder="0" oninput="copartManual(); calcProposta()">
+            <div class="copart-pills" title="Calcula a coparticipação sobre o Total Comp. da proposta">
+              <button type="button" class="copart-pill" id="cp-50" onclick="copartSel(50)">50% da proposta</button>
+              <button type="button" class="copart-pill" id="cp-70" onclick="copartSel(70)">70% da proposta</button>
+            </div>
+            <div class="copart-hint" id="cp-hint"></div>
+          </div>
           <div class="f-row"><label>Detalhe / Condição</label><input id="m-copart-det" type="text" placeholder="ex: 50% XP · 24 meses"></div>
         </div>
 
@@ -1161,6 +1172,7 @@ function abrirEdicao(id) {
   }
   renEl.value = r.condicoes_renovacao || '';
   calcFinanceiro();
+  copartInferir();
   calcProposta();
   // Carregar mini histórico de propostas
   carregarPropostasCRM(r.telefone || '');
@@ -1306,6 +1318,7 @@ function toggleEtapaDatas(etapa, autoData) {
 }
 
 function limparModal() {
+  copartPct = null; if (typeof copartPillsUI === 'function') copartPillsUI();
   var pBox = document.getElementById('m-pareceres-box');
   if (pBox) pBox.style.display = 'none';
   ['m-id','m-nome','m-tel','m-email','m-cpf','m-inst',
@@ -1909,6 +1922,34 @@ function getRenovacaoPayload() {
   return JSON.stringify(result);
 }
 
+/* ── Coparticipação XP: atalhos de 50% / 70% do total da proposta (Total Comp.) ── */
+var copartPct = null;
+function totalCompAtual() {
+  var periodo = gi('m-periodo') || 12;
+  return (parseBRL(g('m-piso')) * periodo) + parseBRL(g('m-upfront'))
+    + parseBRL(g('m-t1tri-v')) + parseBRL(g('m-t1v')) + parseBRL(g('m-t2v')) + parseBRL(g('m-t3v')) + parseBRL(g('m-t4v'));
+}
+function copartPillsUI() {
+  [50, 70].forEach(function(p){ var b = document.getElementById('cp-' + p); if (b) b.classList.toggle('on', copartPct === p); });
+  var h = document.getElementById('cp-hint');
+  if (h) h.textContent = copartPct ? 'Calculado automaticamente: ' + copartPct + '% do Total Comp. Muda junto com piso, período e bônus.' : '';
+}
+function copartSel(p) {
+  copartPct = (copartPct === p) ? null : p;          // clicar de novo desmarca (mantém o valor, volta a ser manual)
+  var det = document.getElementById('m-copart-det');
+  if (copartPct && det && (!det.value.trim() || /^\d+% do total da proposta comercial$/.test(det.value.trim())))
+    det.value = copartPct + '% do total da proposta comercial';
+  copartPillsUI();
+  calcProposta();
+}
+function copartManual() { if (copartPct) { copartPct = null; copartPillsUI(); } }   // digitou à mão → sai do automático
+function copartInferir() {                          // ao abrir um registro: reativa o botão só se o valor salvo bate com o %
+  copartPct = null;
+  var c = parseBRL(g('m-copart')), t = totalCompAtual();
+  if (c > 0 && t > 0) [50, 70].forEach(function(p){ if (Math.abs(c - Math.round(t * p) / 100) < 1) copartPct = p; });
+  copartPillsUI();
+}
+
 function calcProposta() {
   var piso    = parseBRL(g('m-piso'));
   var periodo = gi('m-periodo') || 12;
@@ -1933,6 +1974,11 @@ function calcProposta() {
   var aucEl = document.getElementById('m-auc');
   if (aucEl) {
     aucEl.value = totalCap > 0 ? totalCap.toFixed(0) + ' MM' : '—';
+  }
+
+  if (copartPct) {
+    copart = Math.round(totalCompAtual() * copartPct) / 100;
+    var cEl = document.getElementById('m-copart'); if (cEl) cEl.value = copart > 0 ? formatBRL(copart) : '';
   }
 
   var ptb = document.getElementById('m-prop-total-box');
