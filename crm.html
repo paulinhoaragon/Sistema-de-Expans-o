@@ -121,6 +121,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .fgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .f-row{display:flex;flex-direction:column;gap:4px}
+.f-row label.req::after{content:' *';color:#DC2626;font-weight:800}
+.f-row.campo-erro input,.f-row.campo-erro select{border-color:#DC2626!important;background:#FEF2F2!important}
 .f-row label{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.07em}
 .f-row input,.f-row select,.f-row textarea{padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--t1);background:#fafbfd;outline:none;transition:border .15s;width:100%}
 .f-row input:focus,.f-row select:focus,.f-row textarea:focus{border-color:var(--cobalt)}
@@ -1039,6 +1041,17 @@ function dropCard(e, etapa) {
   if (!_dragId) return;
   var cand = _todos.find(function(r){ return r.id===_dragId; });
   if (!cand || cand.etapa === etapa) { _dragId=null; return; }
+  var _faltDrag = faltasFuture(cand, etapa);
+  if (_faltDrag.length) {
+    var _id = _dragId; _dragId = null;
+    document.querySelectorAll('.kcard').forEach(function(c){ c.classList.remove('dragging'); });
+    alert('Para mover "' + cand.nome + '" para ' + etapa + ' o cadastro do Future precisa estar completo.\n\nFalta:\n• ' + _faltDrag.map(function(f){return f.t;}).join('\n• ') + '\n\nVou abrir o cadastro para você completar. O card só muda de etapa depois de salvar.');
+    abrirEdicao(_id);
+    var _se = document.getElementById('m-etapa');
+    if (_se) { _se.value = etapa; toggleEtapaDatas(etapa, true); toggleMotivoDeclinio(etapa); toggleMotivoDeclinioFinSave(etapa); }
+    atualizarObrigatorios(); marcarErros(_faltDrag); irParaCampo(_faltDrag[0].id);
+    return;
+  }
   var etapaAnterior = cand.etapa;
   var dragIdAtual   = _dragId;
   var histBruto     = cand.historico_etapas || '[]';
@@ -1227,6 +1240,7 @@ function toggleCamposPorVaga(vaga) {
     rowPerfil.style.display = showPerfil ? '' : 'none';
     if (!showPerfil && inpPerfil) inpPerfil.value = '';
   }
+  setTimeout(atualizarObrigatorios, 0);
   // Motivo do declínio depende de vaga E etapa juntos — reavalia sempre que a vaga mudar
   var etapaAtual = document.getElementById('m-etapa');
   toggleMotivoDeclinio(etapaAtual ? etapaAtual.value : '');
@@ -1269,6 +1283,7 @@ function toggleMotivoDeclinioFinSave(etapa) {
 // Mostrar/ocultar datas conforme etapa
 function toggleDeclinio(etapa) { toggleEtapaDatas(etapa); } // compatibilidade
 function toggleEtapaDatas(etapa, autoData) {
+  setTimeout(atualizarObrigatorios, 0);
   var hoje = new Date().toISOString().slice(0,10);
 
   // Data de Contratação — visível em Contratação e Trabalhando
@@ -1414,6 +1429,58 @@ function sincronizarStatusProposta(telefone, etapa) {
     .catch(function(e){ console.warn('Sincronização status proposta falhou:', e); });
 }
 
+/* ═══ CADASTRO OBRIGATÓRIO — vaga Future ═══
+   Contratação / Trabalhando: nome, telefone, e-mail, valor da contratação (piso e período), perfil e coparticipação XP + descrição.
+   Declinou: motivo do declínio. Usado pelo formulário e pelo arrastar do kanban (mesma regra, um lugar só). */
+var ETAPAS_CONTRATADO = ['Contratação', 'Trabalhando'];
+function faltasFuture(d, etapa) {
+  if (!d || d.vaga !== 'Future') return [];
+  var F = [], vazio = function(v){ return v === null || v === undefined || String(v).trim() === ''; };
+  var num = function(v){ return typeof v === 'number' ? v : parseBRL(v); };
+  if (ETAPAS_CONTRATADO.indexOf(etapa) >= 0) {
+    if (vazio(d.nome)) F.push({id:'m-nome', t:'Nome'});
+    var dig = String(d.telefone||'').replace(/\D/g,'');
+    if (vazio(d.telefone)) F.push({id:'m-tel', t:'Telefone'});
+    else if (dig.length < 10) F.push({id:'m-tel', t:'Telefone (incompleto — informe com DDD)'});
+    if (vazio(d.email)) F.push({id:'m-email', t:'E-mail'});
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(d.email).trim())) F.push({id:'m-email', t:'E-mail (formato inválido)'});
+    if (!(num(d.piso) > 0)) F.push({id:'m-piso', t:'Valor da contratação — Piso R$/mês'});
+    if (!(Number(d.periodo) > 0)) F.push({id:'m-periodo', t:'Valor da contratação — Período (meses)'});
+    if (vazio(d.perfil)) F.push({id:'m-perfil', t:'Perfil (A, B, C ou D)'});
+    if (!(num(d.coparticipacao) > 0)) F.push({id:'m-copart', t:'Coparticipação XP (valor)'});
+    if (vazio(d.detalhe_coparticipacao)) F.push({id:'m-copart-det', t:'Coparticipação XP — Detalhe / Condição'});
+  } else if (etapa === 'Declinou') {
+    if (vazio(d.motivo_declinio)) F.push({id:'m-motivo-declinio', t:'Motivo do declínio'});
+  }
+  return F;
+}
+function irParaCampo(id) {
+  var el = document.getElementById(id); if (!el) return;
+  var pane = el.closest('.tab-pane');
+  if (pane) {
+    var btn = document.querySelector('.tab-btn[onclick*="\'' + pane.id + '\'"]');
+    switchTab(pane.id, btn);
+  }
+  setTimeout(function(){ try { el.scrollIntoView({block:'center'}); el.focus(); } catch(e){} }, 50);
+}
+function marcarErros(F) {
+  document.querySelectorAll('.f-row.campo-erro').forEach(function(r){ r.classList.remove('campo-erro'); });
+  F.forEach(function(f){ var el = document.getElementById(f.id), r = el && el.closest('.f-row'); if (r) r.classList.add('campo-erro'); });
+}
+// Asterisco vermelho nos campos que a etapa/vaga atual exige
+function atualizarObrigatorios() {
+  var vaga = (document.getElementById('m-vaga')||{}).value, etapa = (document.getElementById('m-etapa')||{}).value;
+  var contratado = vaga === 'Future' && ETAPAS_CONTRATADO.indexOf(etapa) >= 0;
+  var declinou   = vaga === 'Future' && etapa === 'Declinou';
+  var map = {'m-tel':contratado,'m-email':contratado,'m-piso':contratado,'m-periodo':contratado,
+             'm-perfil':contratado,'m-copart':contratado,'m-copart-det':contratado,'m-motivo-declinio':declinou};
+  Object.keys(map).forEach(function(id){
+    var el = document.getElementById(id), row = el && el.closest('.f-row'), lb = row && row.querySelector('label');
+    if (lb) lb.classList.toggle('req', !!map[id]);
+  });
+  if (!contratado && !declinou) marcarErros([]);
+}
+
 function salvarCandidato() {
   if (window._CRM_READONLY) { alert('Seu perfil tem acesso somente leitura ao CRM.'); return; }
   var nome = g('m-nome').trim();
@@ -1484,6 +1551,15 @@ function salvarCandidato() {
     onb_xp_encaminhar:      gc('m-onb-xp-encaminhar'),
     atualizado_em: new Date().toISOString()
   };
+  var _falt = faltasFuture(payload, payload.etapa);
+  if (_falt.length) {
+    marcarErros(_falt);
+    var _acao = payload.etapa === 'Declinou' ? 'declinar este candidato' : 'registrar a contratação deste candidato';
+    alert('Não é possível ' + _acao + ' do Future com o cadastro incompleto.\n\nPreencha:\n• ' + _falt.map(function(f){return f.t;}).join('\n• '));
+    irParaCampo(_falt[0].id);
+    return;
+  }
+  marcarErros([]);
   var id = g('m-id');
   console.log('[CRM] Salvando candidato — id:', id || '(novo)', 'nome:', nome);
   document.getElementById('btn-salvar-txt').textContent = 'Salvando...';
