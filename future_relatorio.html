@@ -283,7 +283,7 @@ function carregar() {
     elAtualizado.textContent = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' }).replace('.', '');
   }
   Promise.all([
-    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,email,mou,data_mou,data_entrada,data_contratacao,data_inicio,data_declinio,data_desligamento,pre_work,origem_lead,motivo_declinio,perfil&limit=3000'),
+    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,email,mou,data_mou,data_entrada,data_contratacao,data_inicio,data_declinio,data_desligamento,historico_etapas,pre_work,origem_lead,motivo_declinio,perfil&limit=3000'),
     new Promise(function(resolve){
       if (typeof NexusConfig === 'undefined' || typeof NexusConfig.getPracas !== 'function') { resolve([]); return; }
       NexusConfig.getPracas(function(err, pracas){ resolve(err ? [] : (pracas||[])); });
@@ -370,8 +370,8 @@ function render(C) {
   html += renderCrescimento(C);
   html += renderNovosPorPraca(C);
   html += renderContratados(C);
-  html += renderTurnover(C);
   html += renderPracas(C);
+  html += renderTurnover(C);
   html += renderAuditoria(C);
   html += renderMotivoDeclinio(C);
 
@@ -1134,12 +1134,27 @@ function _corpoContratados(contratados) {
 // Base = todo candidato que chegou a ser contratado (Contratação, Trabalhando ou Desligado).
 // Turnover acumulado = Desligados ÷ Base. Tempo de casa = início (ou contratação) → desligamento.
 var ETAPAS_BASE_TURNOVER = ['Contratação','Trabalhando','Desligado'];
+// Datas efetivas: usa o campo do CRM; se estiver vazio, tenta o histórico de etapas (registrado a cada mudança de etapa).
+function _datasHist(c) {
+  if (c._hist) return c._hist;
+  var h = []; try { h = JSON.parse(c.historico_etapas || '[]'); } catch(e) { h = []; }
+  var primeira = function(etapas){ for (var i=0;i<h.length;i++){ if (etapas.indexOf(h[i].etapa)>=0 && h[i].entrada) return String(h[i].entrada).slice(0,10); } return null; };
+  return (c._hist = { contratacao: primeira(['Contratação','Trabalhando']), inicio: primeira(['Trabalhando']), desligamento: primeira(['Desligado']) });
+}
+function _datasEfetivas(c) {
+  var H = _datasHist(c);
+  return {
+    contratacao: c.data_contratacao || H.contratacao, contratacaoHist: !c.data_contratacao && !!H.contratacao,
+    inicio:      c.data_inicio      || H.inicio,      inicioHist:      !c.data_inicio      && !!H.inicio,
+    desligamento:c.data_desligamento|| H.desligamento,desligamentoHist:!c.data_desligamento&& !!H.desligamento
+  };
+}
 function _diasEntre(a, b) {
   if (!a || !b) return null;
   var d = Math.round((new Date(b+'T12:00:00') - new Date(a+'T12:00:00')) / 864e5);
   return d >= 0 ? d : null;
 }
-function _tempoCasaDias(c) { return _diasEntre(c.data_inicio || c.data_contratacao, c.data_desligamento); }
+function _tempoCasaDias(c) { var D = _datasEfetivas(c); return _diasEntre(D.inicio || D.contratacao, D.desligamento); }
 function _fmtTempoCasa(d) {
   if (d === null || d === undefined) return '—';
   if (d < 60) return d + ' dia' + (d === 1 ? '' : 's');
@@ -1160,7 +1175,7 @@ function _blocoTurnover(titulo, grupos) {
 function renderTurnover(C) {
   var base = C.filter(function(c){ return ETAPAS_BASE_TURNOVER.indexOf((c.etapa||'').trim()) >= 0; });
   var des  = base.filter(function(c){ return (c.etapa||'').trim() === 'Desligado'; });
-  var cab  = function(sub){ return '<div class="sh"><span class="sn">12</span><span class="st">Turnover</span><span class="ss">'+sub+'</span></div>'; };
+  var cab  = function(sub){ return '<div class="sh"><span class="sn">13</span><span class="st">Turnover</span><span class="ss">'+sub+'</span></div>'; };
   if (!base.length) return '<div class="card">'+cab('')+'<div style="padding:10px 0;color:var(--t4);font-size:12px;">Ainda não há candidatos contratados no filtro atual.</div></div>';
 
   var turnPct = Math.round(des.length / base.length * 100);
@@ -1197,25 +1212,32 @@ function renderTurnover(C) {
         return '<div class="praca-row"><div>'+k+'</div><div class="praca-track"><div class="praca-fill" style="width:'+Math.round(v/maxF*100)+'%;background:#475569;"></div></div><div style="font-weight:700;">'+v+' <span style="font-weight:400;color:var(--t4);font-size:10px;">('+pc+'%)</span></div></div>';
       }).join('') + '</div>';
 
-  var lista = des.slice().sort(function(a,b){ return (b.data_desligamento||'').localeCompare(a.data_desligamento||''); });
+  var lista = des.slice().sort(function(a,b){ return (_datasEfetivas(b).desligamento||'').localeCompare(_datasEfetivas(a).desligamento||''); });
   var td = 'padding:7px 4px;white-space:nowrap;';
+  var semDatas = 0;
+  var cel = function(d, hist, ruim){ return d ? fmtDate(d) + (hist ? ' <span title="Data tirada do histórico de etapas (o campo no CRM está vazio)" style="font-size:9px;color:var(--t4);">(hist.)</span>' : '') : '<span style="color:#B45309;font-size:10px;font-weight:700;">'+(ruim||'sem data')+'</span>'; };
   var linhas = lista.map(function(c){
+    var D = _datasEfetivas(c);
+    if (!(D.inicio || D.contratacao) || !D.desligamento) semDatas++;
     return '<tr style="border-bottom:1px solid var(--rule);">'
       + '<td style="'+td+'font-weight:600;">'+esc(c.nome)+'</td>'
       + '<td style="'+td+'color:var(--t3);">'+esc(pracaLabel(c.praca))+'</td>'
       + '<td style="'+td+'color:var(--t3);">'+esc(c.perfil||'—')+'</td>'
       + '<td style="'+td+'color:var(--t3);">'+esc(c.origem_lead||'—')+'</td>'
-      + '<td style="'+td+'">'+(fmtDate(c.data_contratacao)||'—')+'</td>'
-      + '<td style="'+td+'">'+(fmtDate(c.data_inicio)||'—')+'</td>'
-      + '<td style="'+td+'">'+(fmtDate(c.data_desligamento)||'<span style="color:#B45309;font-size:10px;font-weight:700;">sem data</span>')+'</td>'
+      + '<td style="'+td+'">'+cel(D.contratacao, D.contratacaoHist)+'</td>'
+      + '<td style="'+td+'">'+cel(D.inicio, D.inicioHist)+'</td>'
+      + '<td style="'+td+'">'+cel(D.desligamento, D.desligamentoHist)+'</td>'
       + '<td style="'+td+'font-weight:700;">'+_fmtTempoCasa(_tempoCasaDias(c))+'</td></tr>';
   }).join('');
   var th = function(t){ return '<th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);">'+t+'</th>'; };
+  var avisoDatas = semDatas
+    ? '<div style="margin:10px 0 0;padding:9px 12px;background:#FEF3C7;border-radius:8px;font-size:11px;color:#92400E;line-height:1.5;">⚠ <b>'+semDatas+' desligado(s) sem data de contratação/início</b> — não entram no tempo de casa. Abra o candidato no CRM e preencha as datas (ficam visíveis também na etapa Desligado).</div>'
+    : '';
   var tabela = des.length
     ? '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);"><div style="font-size:9px;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:8px;">Candidatos desligados — conferência</div>'
       + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid var(--rule);">'
       + th('Nome')+th('Praça')+th('Perfil')+th('Origem do Lead')+th('Contratação')+th('Início')+th('Desligamento')+th('Tempo de casa')
-      + '</tr></thead><tbody>'+linhas+'</tbody></table></div></div>'
+      + '</tr></thead><tbody>'+linhas+'</tbody></table></div>'+avisoDatas+'</div>'
     : '<div style="padding:12px 0;color:var(--t4);font-size:12px;">Nenhum desligamento registrado no filtro atual. 🎉</div>';
 
   var nota = '<div class="nota" style="margin-top:14px;font-size:10px;color:var(--t3);background:var(--canvas,#F4F6FB);border-radius:8px;padding:9px 12px;line-height:1.6;">📐 <b>Como ler:</b> a base são todos os que chegaram a ser contratados (Contratação, Trabalhando e Desligado). '
@@ -1240,7 +1262,7 @@ function renderPracas(C) {
     return '<div class="praca-row"><div>'+esc(p==='Sem praça'?p:pracaLabel(p))+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;"></div></div><div style="font-weight:700;">'+v+'</div></div>';
   }).join('');
 
-  return '<div class="card"><div class="sh"><span class="sn">13</span><span class="st">Distribuição por Praça</span></div>'+linhas+'</div>';
+  return '<div class="card"><div class="sh"><span class="sn">12</span><span class="st">Distribuição por Praça</span></div>'+linhas+'</div>';
 }
 
 // ════════ EXPORT PDF ════════
