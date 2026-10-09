@@ -109,6 +109,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
 .praca-row{display:grid;grid-template-columns:130px 1fr auto;align-items:center;gap:10px;padding:6px 0;}
 .praca-track{background:var(--canvas);border-radius:5px;height:14px;overflow:hidden;}
+.perf-sub{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 8px 140px;}
+.perf-chip{font-size:10px;color:var(--t2);background:var(--canvas);border:1px solid var(--rule);border-radius:20px;padding:2px 9px;white-space:nowrap;}
+.perf-chip b{color:var(--t1);font-weight:700;}
+.perf-chip.nd{color:var(--t4);border-style:dashed;}
 .praca-fill{background:var(--gold);height:100%;border-radius:5px;}
 .sel-aud{padding:6px 10px;border:1px solid var(--rule);border-radius:7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--t1);background:#fafbfd;outline:none;cursor:pointer;}
 
@@ -1061,14 +1065,25 @@ function _corpoContratados(contratados) {
   // Consolidador por praça (cidade) — cobre qualquer praça nova do Future automaticamente,
   // pois agrupa pelo valor bruto de c.praca em vez de uma lista fixa.
   var porPracaOrigem = {};
-  contratados.forEach(function(c){ var p=pracaLabel(c.praca)||c.praca||'Sem praça'; porPracaOrigem[p]=(porPracaOrigem[p]||0)+1; });
+  var perfisPorPraca = {};   // { praça: { A: n, B: n, ..., 'Sem perfil': n } }
+  contratados.forEach(function(c){
+    var p=pracaLabel(c.praca)||c.praca||'Sem praça'; porPracaOrigem[p]=(porPracaOrigem[p]||0)+1;
+    var pf=(c.perfil||'').trim().toUpperCase()||'Sem perfil';
+    (perfisPorPraca[p]=perfisPorPraca[p]||{})[pf]=((perfisPorPraca[p]||{})[pf]||0)+1;
+  });
+  function chipsPerfil(p){
+    var m=perfisPorPraca[p]||{};
+    var totalPraca=porPracaOrigem[p]||1;
+    var ks=Object.keys(m).sort(function(a,b){ if(a==='Sem perfil')return 1; if(b==='Sem perfil')return -1; return a<b?-1:a>b?1:0; });
+    return '<div class="perf-sub">'+ks.map(function(k){ return '<span class="perf-chip'+(k==='Sem perfil'?' nd':'')+'"><b>'+m[k]+' '+(k==='Sem perfil'?'sem perfil':esc(k))+'</b> = '+Math.round(m[k]/totalPraca*100)+'%</span>'; }).join('')+'</div>';
+  }
   var listaPracaOrigem = Object.keys(porPracaOrigem).sort(function(a,b){ return porPracaOrigem[b]-porPracaOrigem[a]; });
   var maxPracaOrigem = Math.max.apply(null, listaPracaOrigem.map(function(p){ return porPracaOrigem[p]; }).concat([1]));
   var linhasPracaOrigem = listaPracaOrigem.map(function(p){
     var v = porPracaOrigem[p];
     var largura = Math.round(v/maxPracaOrigem*100);
     var pct = Math.round(v/totalOrigem*100);
-    return '<div class="praca-row"><div>'+esc(p)+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;background:var(--am);"></div></div><div style="font-weight:700;">'+v+' <span style="font-weight:400;color:var(--t4);font-size:10px;">('+pct+'%)</span></div></div>';
+    return '<div class="praca-row"><div>'+esc(p)+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;background:var(--am);"></div></div><div style="font-weight:700;">'+v+' <span style="font-weight:400;color:var(--t4);font-size:10px;">('+pct+'%)</span></div></div>'+chipsPerfil(p);
   }).join('');
 
   // Consolidador por Perfil (A/B/C/D) — classificação preenchida no CRM (aba Proposta Comercial).
@@ -1098,7 +1113,7 @@ function _corpoContratados(contratados) {
       + '<div>'+linhasOrigem+'</div>'
     + '</div>'
     + '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);">'
-      + '<div style="font-size:9px;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:8px;">Consolidador por Praça — Quantidade e Percentual</div>'
+      + '<div style="font-size:9px;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:8px;">Consolidador por Praça — Quantidade, Percentual e Perfil</div>'
       + '<div>'+linhasPracaOrigem+'</div>'
     + '</div>'
     + '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);">'
