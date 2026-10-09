@@ -1286,23 +1286,25 @@ function toggleEtapaDatas(etapa, autoData) {
   setTimeout(atualizarObrigatorios, 0);
   var hoje = new Date().toISOString().slice(0,10);
 
-  // Data de Contratação — visível em Contratação e Trabalhando
+  // Data de Contratação — visível em Contratação, Trabalhando e Desligado.
+  // Em Desligado o campo continua visível (e preservado) porque o relatório de turnover precisa dele;
+  // antes ele era escondido e LIMPO ao mudar para Desligado, apagando a data no banco ao salvar.
   var rowCont = document.getElementById('row-data-contratacao');
   var inpCont = document.getElementById('m-data-contratacao');
   if (rowCont) {
-    var showCont = (etapa === 'Contratação' || etapa === 'Trabalhando');
+    var showCont = (etapa === 'Contratação' || etapa === 'Trabalhando' || etapa === 'Desligado');
     rowCont.style.display = showCont ? '' : 'none';
-    if (showCont && autoData && inpCont && !inpCont.value) inpCont.value = hoje;
+    if (showCont && autoData && inpCont && !inpCont.value && etapa !== 'Desligado') inpCont.value = hoje;
     if (!showCont && inpCont) inpCont.value = '';
   }
 
-  // Data início trabalho — visível somente em Trabalhando
+  // Data início trabalho — visível em Trabalhando e Desligado (preservada em Desligado)
   var rowIni = document.getElementById('row-data-ini');
   var inpIni = document.getElementById('m-data-ini');
   if (rowIni) {
-    var showIni = (etapa === 'Trabalhando');
+    var showIni = (etapa === 'Trabalhando' || etapa === 'Desligado');
     rowIni.style.display = showIni ? '' : 'none';
-    if (showIni && autoData && inpIni && !inpIni.value) inpIni.value = hoje;
+    if (showIni && autoData && inpIni && !inpIni.value && etapa !== 'Desligado') inpIni.value = hoje;
     if (!showIni && inpIni) inpIni.value = '';
   }
 
