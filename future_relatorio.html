@@ -271,10 +271,11 @@ var ETAPA_INFO = {
   'Negociação':   { lbl:'R3 · Negociação',   cor:'#4A70F5' },
   'Contratação':  { lbl:'Aprovado e Contratado', cor:'#B8962E' },
   'Trabalhando':  { lbl:'Trabalhando',       cor:'#16A34A' },
+  'Desligado':    { lbl:'Desligado',         cor:'#475569' },
   'Declinou':     { lbl:'Declinou',          cor:'#DC2626' },
   'Contato Futuro': { lbl:'Contato Futuro',  cor:'#A8B0CC' }
 };
-var ETAPAS_ORDEM = ['Prospecção','Qualificação','Negociação','Contratação','Trabalhando','Declinou','Contato Futuro'];
+var ETAPAS_ORDEM = ['Prospecção','Qualificação','Negociação','Contratação','Trabalhando','Desligado','Declinou','Contato Futuro'];
 
 function carregar() {
   var elAtualizado = document.getElementById('rt-atualizado');
@@ -282,7 +283,7 @@ function carregar() {
     elAtualizado.textContent = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' }).replace('.', '');
   }
   Promise.all([
-    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,email,mou,data_mou,data_entrada,data_contratacao,data_inicio,data_declinio,pre_work,origem_lead,motivo_declinio,perfil&limit=3000'),
+    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,email,mou,data_mou,data_entrada,data_contratacao,data_inicio,data_declinio,data_desligamento,pre_work,origem_lead,motivo_declinio,perfil&limit=3000'),
     new Promise(function(resolve){
       if (typeof NexusConfig === 'undefined' || typeof NexusConfig.getPracas !== 'function') { resolve([]); return; }
       NexusConfig.getPracas(function(err, pracas){ resolve(err ? [] : (pracas||[])); });
@@ -369,6 +370,7 @@ function render(C) {
   html += renderCrescimento(C);
   html += renderNovosPorPraca(C);
   html += renderContratados(C);
+  html += renderTurnover(C);
   html += renderPracas(C);
   html += renderAuditoria(C);
   html += renderMotivoDeclinio(C);
@@ -379,7 +381,7 @@ function render(C) {
 }
 
 function renderKPIs(C) {
-  var ativos = C.filter(function(c){ return c.etapa !== 'Declinou'; }).length;
+  var ativos = C.filter(function(c){ return c.etapa !== 'Declinou' && c.etapa !== 'Desligado'; }).length;
   var declinados = C.filter(function(c){ return c.etapa === 'Declinou'; }).length;
   var contratados = C.filter(function(c){ return c.etapa === 'Contratação' || c.etapa === 'Trabalhando'; }).length;
   var pctConv = C.length ? Math.round(contratados / C.length * 100) : 0;
@@ -393,7 +395,7 @@ function renderKPIs(C) {
 
   return '<div class="sh"><span class="sn">01</span><span class="st">Visão Geral do Funil</span></div>'
     + '<div class="row cols-4">'
-    + kpi('c1','No Funil (ativo)', ativos, 'exclui declinados')
+    + kpi('c1','No Funil (ativo)', ativos, 'exclui declinados e desligados')
     + kpi('c4','Declinou', declinados, (C.length? Math.round(declinados/C.length*100):0)+'% do total', _tendencia(declinadosSemana, declinadosSemanaAnterior, true))
     + kpi('c2','Conversão', pctConv+'%', contratados+' aprovados/contratados de '+C.length)
     + kpi('c3','Novos (7 dias)', novosSemana, 'cadastrados na última semana', _tendencia(novosSemana, novosSemanaAnterior, false))
@@ -418,11 +420,14 @@ function kpi(cls,label,val,sub,tendencia){
 function renderFunil(C) {
   var porEtapa = {};
   ETAPAS_ORDEM.forEach(function(e){ porEtapa[e] = []; });
-  C.forEach(function(c){ if (porEtapa[c.etapa]) porEtapa[c.etapa].push(c); });
+  var _outras = [];
+  C.forEach(function(c){ var e=(c.etapa||'').trim(); if (porEtapa[e]) porEtapa[e].push(c); else _outras.push(c); });
+  if (_outras.length) { ETAPA_INFO['__outras'] = { lbl:'Outra etapa / sem etapa', cor:'#94A3B8' }; porEtapa['__outras'] = _outras; }
 
-  var max = Math.max.apply(null, ETAPAS_ORDEM.map(function(e){ return porEtapa[e].length; }).concat([1]));
+  var _ordem = _outras.length ? ETAPAS_ORDEM.concat(['__outras']) : ETAPAS_ORDEM;
+  var max = Math.max.apply(null, _ordem.map(function(e){ return porEtapa[e].length; }).concat([1]));
 
-  var linhas = ETAPAS_ORDEM.map(function(etapa){
+  var linhas = _ordem.map(function(etapa){
     var lista = porEtapa[etapa];
     var info = ETAPA_INFO[etapa];
     var largura = Math.round(lista.length / max * 100);
@@ -433,6 +438,8 @@ function renderFunil(C) {
       var comProposta = lista.filter(function(c){ return TELEFONES_COM_PROPOSTA[(c.telefone||'').replace(/\D/g,'')]; }).length;
       sub = comProposta + ' com proposta no sistema · ' + (lista.length-comProposta) + ' sem proposta ainda';
     }
+    if (etapa === 'Desligado') { sub = 'já foram contratados e saíram'; }
+    if (etapa === '__outras') { var _n={}; lista.forEach(function(c){ var k=(c.etapa||'').trim()||'(vazio)'; _n[k]=(_n[k]||0)+1; }); sub = Object.keys(_n).map(function(k){return k+': '+_n[k];}).join(' · '); }
     if (etapa === 'Declinou') {
       var reprovou = lista.filter(function(c){ return c.motivo_declinio === 'Blue3 Reprovou'; }).length;
       var desistiu = lista.filter(function(c){ return c.motivo_declinio === 'Desistência'; }).length;
@@ -450,7 +457,7 @@ function renderFunil(C) {
     + '</div>';
   }).join('');
 
-  return '<div class="card"><div class="sh"><span class="sn">02</span><span class="st">Funil por Etapa</span><span class="ss">Prospecção (R1) → Qualificação (R2) → Negociação (R3) → Aprovado e Contratado → Trabalhando</span></div>'+linhas+'</div>';
+  return '<div class="card"><div class="sh"><span class="sn">02</span><span class="st">Funil por Etapa</span><span class="ss">Prospecção (R1) → Qualificação (R2) → Negociação (R3) → Aprovado e Contratado → Trabalhando → Desligado</span></div>'+linhas+'</div>';
 }
 
 function hojeMenosDias(n){ var d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
@@ -548,7 +555,7 @@ function _velCard(label, media, n, cor) {
 function renderAuditoria(C) {
   return '<div class="card card-flow">'
     + '<div class="card-head">'
-      + '<div class="sh" style="border-bottom:none;margin-bottom:0;padding-bottom:0;flex:1;"><span class="sn">13</span><span class="st">Auditoria de Cadastro — Pendências</span><span class="ss">Informação faltando pra qualificar</span></div>'
+      + '<div class="sh" style="border-bottom:none;margin-bottom:0;padding-bottom:0;flex:1;"><span class="sn">14</span><span class="st">Auditoria de Cadastro — Pendências</span><span class="ss">Informação faltando pra qualificar</span></div>'
       + '<select id="sel-auditoria" class="sel-aud" onchange="atualizarAuditoria()">'
         + '<option value="motivo">🔎 Declinou sem motivo registrado</option>'
         + '<option value="origem">🔎 Sem origem do lead</option>'
@@ -594,7 +601,7 @@ function renderMotivoDeclinio(C) {
   var declinados = C.filter(function(c){ return c.etapa === 'Declinou' && c.motivo_declinio; });
 
   if (!declinados.length) {
-    return '<div class="card"><div class="sh"><span class="sn">14</span><span class="st">Por Que Perdemos Candidatos</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum declínio com motivo registrado no filtro atual.</div></div>';
+    return '<div class="card"><div class="sh"><span class="sn">15</span><span class="st">Por Que Perdemos Candidatos</span></div><div style="padding:10px 0;color:var(--t4);font-size:12px;">Nenhum declínio com motivo registrado no filtro atual.</div></div>';
   }
 
   function agrupar(chaveFn) {
@@ -641,7 +648,7 @@ function renderMotivoDeclinio(C) {
   var porHunter = agrupar(function(c){ return c.hunter; });
   var porPraca  = agrupar(function(c){ return pracaLabel(c.praca); });
 
-  return '<div class="card"><div class="sh"><span class="sn">14</span><span class="st">Por Que Perdemos Candidatos</span><span class="ss">'+declinados.length+' declínio(s) com motivo registrado · ⚠ = 3+ declínios com 60%+ de reprovação</span></div>'
+  return '<div class="card"><div class="sh"><span class="sn">15</span><span class="st">Por Que Perdemos Candidatos</span><span class="ss">'+declinados.length+' declínio(s) com motivo registrado · ⚠ = 3+ declínios com 60%+ de reprovação</span></div>'
     + '<div style="display:flex;gap:24px;flex-wrap:wrap;">'
       + tabela('Hunter', porHunter)
       + tabela('Praça', porPraca)
@@ -1122,6 +1129,105 @@ function _corpoContratados(contratados) {
     + '</div>';
 }
 
+
+// ════════ TURNOVER ════════
+// Base = todo candidato que chegou a ser contratado (Contratação, Trabalhando ou Desligado).
+// Turnover acumulado = Desligados ÷ Base. Tempo de casa = início (ou contratação) → desligamento.
+var ETAPAS_BASE_TURNOVER = ['Contratação','Trabalhando','Desligado'];
+function _diasEntre(a, b) {
+  if (!a || !b) return null;
+  var d = Math.round((new Date(b+'T12:00:00') - new Date(a+'T12:00:00')) / 864e5);
+  return d >= 0 ? d : null;
+}
+function _tempoCasaDias(c) { return _diasEntre(c.data_inicio || c.data_contratacao, c.data_desligamento); }
+function _fmtTempoCasa(d) {
+  if (d === null || d === undefined) return '—';
+  if (d < 60) return d + ' dia' + (d === 1 ? '' : 's');
+  return (d / 30.4).toFixed(1).replace('.', ',') + ' meses';
+}
+function _linhaTurnover(rotulo, des, base) {
+  var pct = base ? Math.round(des / base * 100) : 0;
+  return '<div class="praca-row"><div>'+esc(rotulo)+'</div><div class="praca-track"><div class="praca-fill" style="width:'+Math.max(pct, des ? 2 : 0)+'%;background:#475569;"></div></div>'
+    + '<div style="font-weight:700;">'+pct+'% <span style="font-weight:400;color:var(--t4);font-size:10px;">('+des+' de '+base+')</span></div></div>';
+}
+function _blocoTurnover(titulo, grupos) {
+  // grupos: { rótulo: {des:n, base:n} } — ordenado por base (maior primeiro)
+  var chaves = Object.keys(grupos).sort(function(a,b){ return grupos[b].base - grupos[a].base; });
+  return '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);">'
+    + '<div style="font-size:9px;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:8px;">'+titulo+'</div>'
+    + chaves.map(function(k){ return _linhaTurnover(k, grupos[k].des, grupos[k].base); }).join('') + '</div>';
+}
+function renderTurnover(C) {
+  var base = C.filter(function(c){ return ETAPAS_BASE_TURNOVER.indexOf((c.etapa||'').trim()) >= 0; });
+  var des  = base.filter(function(c){ return (c.etapa||'').trim() === 'Desligado'; });
+  var cab  = function(sub){ return '<div class="sh"><span class="sn">12</span><span class="st">Turnover</span><span class="ss">'+sub+'</span></div>'; };
+  if (!base.length) return '<div class="card">'+cab('')+'<div style="padding:10px 0;color:var(--t4);font-size:12px;">Ainda não há candidatos contratados no filtro atual.</div></div>';
+
+  var turnPct = Math.round(des.length / base.length * 100);
+  var dias = des.map(_tempoCasaDias).filter(function(d){ return d !== null; });
+  var media = dias.length ? Math.round(dias.reduce(function(a,b){ return a+b; }, 0) / dias.length) : null;
+  var ate90 = dias.filter(function(d){ return d <= 90; }).length;
+  var pct90 = dias.length ? Math.round(ate90 / dias.length * 100) : 0;
+
+  var kpis = '<div class="row cols-4" style="margin-bottom:6px;">'
+    + kpi('c4', 'Turnover acumulado', turnPct + '%', des.length + ' desligados de ' + base.length + ' contratados')
+    + kpi('c1', 'Desligados', des.length, base.length - des.length + ' seguem contratados')
+    + kpi('c2', 'Tempo médio de casa', _fmtTempoCasa(media), dias.length + ' de ' + des.length + ' com datas completas')
+    + kpi('c3', 'Saíram em até 90 dias', dias.length ? pct90 + '%' : '—', ate90 + ' de ' + dias.length + ' desligados')
+  + '</div>';
+
+  var porPraca = {}, porPerfil = {}, porOrigem = {};
+  base.forEach(function(c){
+    var isD = (c.etapa||'').trim() === 'Desligado';
+    var p = pracaLabel(c.praca) || c.praca || 'Sem praça';
+    var pf = (c.perfil||'').trim().toUpperCase(); pf = pf ? 'Perfil ' + pf : 'Sem perfil';
+    var o = c.origem_lead || 'Não informado';
+    [[porPraca,p],[porPerfil,pf],[porOrigem,o]].forEach(function(x){
+      var g = x[0][x[1]] = x[0][x[1]] || {des:0, base:0}; g.base++; if (isD) g.des++;
+    });
+  });
+
+  var faixas = {'Até 3 meses':0,'3 a 6 meses':0,'6 a 12 meses':0,'Mais de 12 meses':0};
+  dias.forEach(function(d){ if (d<=90) faixas['Até 3 meses']++; else if (d<=180) faixas['3 a 6 meses']++; else if (d<=365) faixas['6 a 12 meses']++; else faixas['Mais de 12 meses']++; });
+  var maxF = Math.max.apply(null, Object.keys(faixas).map(function(k){ return faixas[k]; }).concat([1]));
+  var blocoFaixas = '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);">'
+    + '<div style="font-size:9px;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:8px;">Quando saem — tempo de casa dos desligados</div>'
+    + Object.keys(faixas).map(function(k){
+        var v = faixas[k], pc = dias.length ? Math.round(v / dias.length * 100) : 0;
+        return '<div class="praca-row"><div>'+k+'</div><div class="praca-track"><div class="praca-fill" style="width:'+Math.round(v/maxF*100)+'%;background:#475569;"></div></div><div style="font-weight:700;">'+v+' <span style="font-weight:400;color:var(--t4);font-size:10px;">('+pc+'%)</span></div></div>';
+      }).join('') + '</div>';
+
+  var lista = des.slice().sort(function(a,b){ return (b.data_desligamento||'').localeCompare(a.data_desligamento||''); });
+  var td = 'padding:7px 4px;white-space:nowrap;';
+  var linhas = lista.map(function(c){
+    return '<tr style="border-bottom:1px solid var(--rule);">'
+      + '<td style="'+td+'font-weight:600;">'+esc(c.nome)+'</td>'
+      + '<td style="'+td+'color:var(--t3);">'+esc(pracaLabel(c.praca))+'</td>'
+      + '<td style="'+td+'color:var(--t3);">'+esc(c.perfil||'—')+'</td>'
+      + '<td style="'+td+'color:var(--t3);">'+esc(c.origem_lead||'—')+'</td>'
+      + '<td style="'+td+'">'+(fmtDate(c.data_contratacao)||'—')+'</td>'
+      + '<td style="'+td+'">'+(fmtDate(c.data_inicio)||'—')+'</td>'
+      + '<td style="'+td+'">'+(fmtDate(c.data_desligamento)||'<span style="color:#B45309;font-size:10px;font-weight:700;">sem data</span>')+'</td>'
+      + '<td style="'+td+'font-weight:700;">'+_fmtTempoCasa(_tempoCasaDias(c))+'</td></tr>';
+  }).join('');
+  var th = function(t){ return '<th style="text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);">'+t+'</th>'; };
+  var tabela = des.length
+    ? '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);"><div style="font-size:9px;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:8px;">Candidatos desligados — conferência</div>'
+      + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid var(--rule);">'
+      + th('Nome')+th('Praça')+th('Perfil')+th('Origem do Lead')+th('Contratação')+th('Início')+th('Desligamento')+th('Tempo de casa')
+      + '</tr></thead><tbody>'+linhas+'</tbody></table></div></div>'
+    : '<div style="padding:12px 0;color:var(--t4);font-size:12px;">Nenhum desligamento registrado no filtro atual. 🎉</div>';
+
+  var nota = '<div class="nota" style="margin-top:14px;font-size:10px;color:var(--t3);background:var(--canvas,#F4F6FB);border-radius:8px;padding:9px 12px;line-height:1.6;">📐 <b>Como ler:</b> a base são todos os que chegaram a ser contratados (Contratação, Trabalhando e Desligado). '
+    + '<b>Turnover</b> = desligados ÷ base, acumulado desde o início do Future. <b>Tempo de casa</b> = da data de início (ou da contratação, se não houver início) até a data de desligamento; desligados sem essas datas ficam fora das médias.</div>';
+
+  return '<div class="card">' + cab(des.length + ' desligado(s) · ' + turnPct + '% da base contratada') + kpis
+    + _blocoTurnover('Turnover por Praça — desligados ÷ contratados', porPraca)
+    + _blocoTurnover('Turnover por Perfil', porPerfil)
+    + _blocoTurnover('Turnover por Origem do Lead', porOrigem)
+    + blocoFaixas + tabela + nota + '</div>';
+}
+
 function renderPracas(C) {
   var porPraca = {};
   C.forEach(function(c){ var p=c.praca||'Sem praça'; porPraca[p]=(porPraca[p]||0)+1; });
@@ -1134,7 +1240,7 @@ function renderPracas(C) {
     return '<div class="praca-row"><div>'+esc(p==='Sem praça'?p:pracaLabel(p))+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;"></div></div><div style="font-weight:700;">'+v+'</div></div>';
   }).join('');
 
-  return '<div class="card"><div class="sh"><span class="sn">12</span><span class="st">Distribuição por Praça</span></div>'+linhas+'</div>';
+  return '<div class="card"><div class="sh"><span class="sn">13</span><span class="st">Distribuição por Praça</span></div>'+linhas+'</div>';
 }
 
 // ════════ EXPORT PDF ════════
