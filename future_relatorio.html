@@ -267,8 +267,8 @@ function pracaLabel(nomeCanonico) {
 // ── ETAPAS: rótulo + cor + numeração R1/R2/R3 ──
 var ETAPA_INFO = {
   'Prospecção':   { lbl:'R1 · Prospecção',  cor:'#7A82A8' },
-  'Qualificação': { lbl:'R2 · Qualificação', cor:'#1A3BAD' },
-  'Negociação':   { lbl:'R3 · Negociação',   cor:'#4A70F5' },
+  'Qualificação': { lbl:'R2/R3 · Qualificação e Pré-Work', cor:'#1A3BAD' },
+  'Negociação':   { lbl:'R4 · Negociação e proposta',   cor:'#4A70F5' },
   'Contratação':  { lbl:'Aprovado e Contratado', cor:'#B8962E' },
   'Trabalhando':  { lbl:'Trabalhando',       cor:'#16A34A' },
   'Desligado':    { lbl:'Desligado',         cor:'#475569' },
@@ -283,7 +283,7 @@ function carregar() {
     elAtualizado.textContent = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' }).replace('.', '');
   }
   Promise.all([
-    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,email,mou,data_mou,data_entrada,data_contratacao,data_inicio,data_declinio,data_desligamento,historico_etapas,pre_work,origem_lead,motivo_declinio,perfil&limit=3000'),
+    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,email,mou,data_mou,data_entrada,data_contratacao,data_inicio,data_declinio,data_desligamento,historico_etapas,pre_work,origem_lead,motivo_declinio,perfil,r1_agendada,r1_realizada,r1_resultado,r1_motivo,r2_agendada,r2_realizada,r2_resultado,r2_motivo,r3_solicitado,r3_prazo,r3_entregue,r3_resultado,r3_motivo,r4_proposta_enviada,r4_resultado,r4_motivo&limit=3000'),
     new Promise(function(resolve){
       if (typeof NexusConfig === 'undefined' || typeof NexusConfig.getPracas !== 'function') { resolve([]); return; }
       NexusConfig.getPracas(function(err, pracas){ resolve(err ? [] : (pracas||[])); });
@@ -352,6 +352,199 @@ function aplicarFiltro() {
 }
 
 // ════════ RENDER ════════
+
+/* ═══ JORNADA R1→R4 — mesma regra do CRM ═══ */
+var JR_MARCOS = ['R1','R2','R3','R4'];
+var JR_NOMES = { R1:'R1 · Reunião de Apresentação', R2:'R2 · Apresentação ao líder', R3:'R3 · Pré-Work', R4:'R4 · Negociação e proposta' };
+function preWorkStatus(c) {   // Pré-Work vem da jornada (R3); só cai no campo antigo se a jornada não foi lançada
+  var E = jornadaEstado(c);
+  if (E.status.R3 === 'aprovado') return 'validado';
+  if (E.status.R3 === 'solicitado' || E.status.R3 === 'decisao') return 'em_pre_work';
+  if (E.iniciada) return '';
+  return c.pre_work || '';
+}
+function jrDias(a, b) {   // dias corridos entre duas datas YYYY-MM-DD (null se faltar)
+  if (!a || !b) return null;
+  var n = Math.round((new Date(String(b).slice(0,10)+'T12:00:00') - new Date(String(a).slice(0,10)+'T12:00:00')) / 864e5);
+  return isNaN(n) ? null : n;
+}
+function jornadaEstado(d, hoje) {
+  hoje = hoje || new Date().toISOString().slice(0,10);
+  var S = {}, v = function(k){ return (d && d[k]) ? d[k] : null; };
+  // status de cada marco
+  S.R1 = v('r1_resultado') === 'reprovado' ? 'reprovado' : v('r1_resultado') === 'aprovado' ? 'aprovado'
+       : v('r1_realizada') ? 'decisao' : v('r1_agendada') ? 'agendada' : 'nao_agendada';
+  S.R2 = S.R1 !== 'aprovado' ? 'bloqueada'
+       : v('r2_resultado') === 'reprovado' ? 'reprovado' : v('r2_resultado') === 'aprovado' ? 'aprovado'
+       : v('r2_realizada') ? 'decisao' : v('r2_agendada') ? 'agendada' : 'nao_agendada';
+  S.R3 = S.R2 !== 'aprovado' ? 'bloqueada'
+       : v('r3_resultado') === 'reprovado' ? 'reprovado' : v('r3_resultado') === 'aprovado' ? 'aprovado'
+       : v('r3_entregue') ? 'decisao' : v('r3_solicitado') ? 'solicitado' : 'nao_solicitado';
+  S.R4 = S.R3 !== 'aprovado' ? 'bloqueada'
+       : v('r4_resultado') === 'recusada' ? 'reprovado' : v('r4_resultado') === 'aceita' ? 'aprovado'
+       : v('r4_proposta_enviada') ? 'enviada' : 'nao_enviada';
+
+  var reprovadoEm = JR_MARCOS.filter(function(m){ return S[m] === 'reprovado'; })[0] || null;
+  var concluida = S.R4 === 'aprovado';
+  var atual = reprovadoEm ? null : concluida ? null : (JR_MARCOS.filter(function(m){ return S[m] !== 'aprovado'; })[0] || null);
+
+  // com quem está a bola e desde quando
+  var bola = '', desde = null, acao = '';
+  if (!reprovadoEm && !concluida && atual) {
+    var st = S[atual];
+    var M = {
+      R1: { nao_agendada:['Hunter / Expansão','Agendar a R1', v('data_entrada')], agendada:['Hunter / Expansão','Realizar a R1', v('r1_agendada')], decisao:['Expansão','Registrar o resultado da R1', v('r1_realizada')] },
+      R2: { nao_agendada:['Expansão','Agendar a apresentação ao líder', v('r1_realizada')], agendada:['Líder','Realizar a R2', v('r2_agendada')], decisao:['Líder','Aprovar ou reprovar na R2', v('r2_realizada')] },
+      R3: { nao_solicitado:['Líder','Solicitar o Pré-Work', v('r2_realizada')], solicitado:['Candidato','Entregar o Pré-Work', v('r3_solicitado')], decisao:['Líder','Avaliar o Pré-Work', v('r3_entregue')] },
+      R4: { nao_enviada:['Expansão','Enviar a proposta', v('r3_entregue')], enviada:['Candidato','Responder a proposta', v('r4_proposta_enviada')] }
+    };
+    var x = (M[atual] || {})[st];
+    if (x) { bola = x[0]; acao = x[1]; desde = x[2]; }
+  }
+  // etapa do funil que a jornada sustenta
+  var etapa = (reprovadoEm) ? 'Declinou' : concluida ? 'Contratação'
+            : S.R3 === 'aprovado' ? 'Negociação' : S.R1 === 'aprovado' ? 'Qualificação' : 'Prospecção';
+  // tempos entre marcos (dias corridos)
+  var T = {
+    r1_r2: jrDias(v('r1_realizada'), v('r2_realizada')),
+    r2_prework: jrDias(v('r2_realizada'), v('r3_entregue')),
+    prework_proposta: jrDias(v('r3_entregue'), v('r4_proposta_enviada')),
+    proposta_contratacao: jrDias(v('r4_proposta_enviada'), v('data_contratacao'))
+  };
+  var motivo = reprovadoEm ? (v(reprovadoEm.toLowerCase()+'_motivo') || '') : '';
+  var iniciada = !!(v('r1_agendada') || v('r1_realizada') || v('r1_resultado'));
+  return { status:S, atual:atual, reprovadoEm:reprovadoEm, concluida:concluida, bola:bola, acao:acao, desde:desde,
+           diasNaBola: desde ? jrDias(desde, hoje) : null, etapa:etapa, tempos:T, motivo:motivo, iniciada:iniciada };
+}
+
+
+/* ═══ SEÇÃO: Jornada R1–R4 — cadência, tempos e conversão ═══ */
+var JR_LIMITE_BOLA = 7;
+var _TH = 'text-align:left;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);';
+var _THR = 'text-align:right;padding:6px 4px;font-size:9px;text-transform:uppercase;color:var(--t3);';
+function _segunda(iso){ var d = new Date(iso+'T12:00:00'); var w = (d.getDay()+6)%7; d.setDate(d.getDate()-w); return d.toISOString().slice(0,10); }
+function _somaDias(iso,n){ var d = new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function _mediana(a){ var v = a.filter(function(x){return x!==null && x>=0;}).sort(function(x,y){return x-y;}); if(!v.length) return null; var m = Math.floor(v.length/2); return v.length%2 ? v[m] : Math.round((v[m-1]+v[m])/2); }
+function _pct(a,b){ return b ? Math.round(a/b*100)+'%' : '—'; }
+function _fd(s){ if(!s) return '—'; var p = String(s).slice(0,10).split('-'); return p[2]+'/'+p[1]; }
+function renderJornada(C) {
+  var hoje = hojeISO(), semAtual = _segunda(hoje);
+  var ativos = C.filter(function(c){ return ['Prospecção','Qualificação','Negociação'].indexOf(c.etapa) > -1; });
+  var E = {}; C.forEach(function(c){ E[c.id] = jornadaEstado(c, hoje); });
+  var iniciados = C.filter(function(c){ return E[c.id].iniciada; });
+  var semJornada = ativos.filter(function(c){ return !E[c.id].iniciada; });
+
+  // 1) cadência semanal (8 semanas passadas + atual + 2 futuras)
+  var evs = [ ['r1_agendada','r1_realizada'], ['r2_agendada','r2_realizada'], ['r3_solicitado','r3_entregue'], ['r4_proposta_enviada','r4_proposta_enviada'] ];
+  var semanas = []; for (var k=-8;k<=2;k++) semanas.push(_somaDias(semAtual, k*7));
+  var cont = function(campo, ini){ var n=0; C.forEach(function(c){ var x = c[campo]; if (x && x.slice(0,10) >= ini && x.slice(0,10) <= _somaDias(ini,6)) n++; }); return n; };
+  var cel = function(v, dest){ return '<td style="text-align:center;padding:6px 4px;'+(dest?'font-weight:700;':'')+(v?'':'color:var(--t4);')+'">'+(v===null?'—':v)+'</td>'; };
+  var linhasSem = semanas.map(function(ini){
+    var fut = ini > semAtual, atual = ini === semAtual;
+    var lbl = _fd(ini)+' – '+_fd(_somaDias(ini,6)) + (atual ? ' · esta semana' : fut ? ' · prevista' : '');
+    return '<tr style="border-bottom:1px solid var(--rule);'+(atual?'background:rgba(26,59,173,.06);':'')+'"><td style="padding:6px 4px;white-space:nowrap;'+(atual?'font-weight:700;':'')+'">'+lbl+'</td>'
+      + cel(cont('r1_agendada',ini),atual) + cel(fut?null:cont('r1_realizada',ini),atual)
+      + cel(cont('r2_agendada',ini),atual) + cel(fut?null:cont('r2_realizada',ini),atual)
+      + cel(cont('r3_solicitado',ini),atual) + cel(fut?null:cont('r3_entregue',ini),atual)
+      + cel(fut?null:cont('r4_proposta_enviada',ini),atual) + '</tr>';
+  }).join('');
+  var tabSem = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead>'
+    + '<tr><th></th><th colspan="2" style="text-align:center;font-size:9px;color:var(--t3);">R1 · APRESENTAÇÃO</th><th colspan="2" style="text-align:center;font-size:9px;color:var(--t3);">R2 · LÍDER</th><th colspan="2" style="text-align:center;font-size:9px;color:var(--t3);">R3 · PRÉ-WORK</th><th style="text-align:center;font-size:9px;color:var(--t3);">R4</th></tr>'
+    + '<tr style="border-bottom:1px solid var(--rule);"><th style="'+_TH+'">Semana</th><th style="'+_TH+'text-align:center;">Agend.</th><th style="'+_TH+'text-align:center;">Realiz.</th><th style="'+_TH+'text-align:center;">Agend.</th><th style="'+_TH+'text-align:center;">Realiz.</th><th style="'+_TH+'text-align:center;">Solicit.</th><th style="'+_TH+'text-align:center;">Entregues</th><th style="'+_TH+'text-align:center;">Propostas</th></tr>'
+    + '</thead><tbody>'+linhasSem+'</tbody></table></div>';
+
+  // 2) agenda da semana
+  var fimSem = _somaDias(semAtual,6), ag = [];
+  C.forEach(function(c){
+    [['r1_agendada','r1_realizada','R1','Apresentação'],['r2_agendada','r2_realizada','R2','Apresentação ao líder'],['r3_prazo','r3_entregue','R3','Prazo do Pré-Work']].forEach(function(m){
+      var d = c[m[0]]; if (d && d.slice(0,10) >= semAtual && d.slice(0,10) <= fimSem) ag.push({ d:d.slice(0,10), m:m[2], t:m[3], feito:!!c[m[1]], c:c });
+    });
+  });
+  ag.sort(function(a,b){ return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+  var tabAg = ag.length ? '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid var(--rule);"><th style="'+_TH+'">Dia</th><th style="'+_TH+'">Marco</th><th style="'+_TH+'">Candidato</th><th style="'+_TH+'">Hunter</th><th style="'+_TH+'">Líder</th><th style="'+_TH+'">Praça</th><th style="'+_TH+'">Status</th></tr></thead><tbody>'
+    + ag.map(function(a){ return '<tr style="border-bottom:1px solid var(--rule);"><td style="padding:6px 4px;">'+_fd(a.d)+'</td><td style="padding:6px 4px;"><b>'+a.m+'</b> · '+a.t+'</td><td style="padding:6px 4px;">'+esc(a.c.nome)+'</td><td style="padding:6px 4px;">'+esc(a.c.hunter||'—')+'</td><td style="padding:6px 4px;">'+esc(a.c.lider||'—')+'</td><td style="padding:6px 4px;">'+esc(pracaLabel(a.c.praca)||'—')+'</td><td style="padding:6px 4px;color:'+(a.feito?'var(--g)':a.d<hoje?'var(--red)':'var(--t3)')+';">'+(a.feito?'Realizada':a.d<hoje?'Sem registro':'Agendada')+'</td></tr>'; }).join('')
+    + '</tbody></table>'
+    : '<div style="padding:8px 0;color:var(--t4);font-size:12px;">Nada agendado para esta semana — ou a agenda ainda não foi lançada no card dos candidatos.</div>';
+
+  // 3) tempos entre marcos
+  var T = function(k){ return C.map(function(c){ return E[c.id].tempos[k]; }); };
+  var tempos = [ ['R1 → R2','r1_r2','#1A3BAD'], ['R2 → Pré-Work entregue','r2_prework','#4A70F5'], ['Pré-Work → Proposta','prework_proposta','#B45309'], ['Proposta → Contratação','proposta_contratacao','#16A34A'] ];
+  var kpisT = '<div class="row cols-4" style="margin-bottom:0;">' + tempos.map(function(t){
+    var arr = T(t[1]).filter(function(x){return x!==null && x>=0;}), m = _mediaDias(arr), md = _mediana(arr);
+    return '<div class="kpi" style="border-top-color:'+t[2]+';box-shadow:none;border:1px solid var(--rule);border-top-width:3px;"><div class="kpi-label">'+t[0]+'</div><div class="kpi-value" style="font-size:20px;">'+(m!==null?m+'d':'—')+'</div><div class="kpi-sub">'+(arr.length?'mediana '+md+'d · '+arr.length+' candidato'+(arr.length!==1?'s':''):'sem dados suficientes')+'</div></div>';
+  }).join('') + '</div>';
+
+  // 4) conversão por marco (coorte: quem alcançou cada marco)
+  var n = function(f){ return C.filter(f).length; };
+  var st = function(c,m){ return E[c.id].status[m]; };
+  var r1real = n(function(c){ return c.r1_realizada; });
+  var r1ok = n(function(c){ return c.r1_resultado==='aprovado'; });
+  var r2real = n(function(c){ return c.r1_resultado==='aprovado' && c.r2_realizada; });
+  var r2ok = n(function(c){ return c.r2_resultado==='aprovado'; });
+  var r3ent = n(function(c){ return c.r2_resultado==='aprovado' && c.r3_entregue; });
+  var r3ok = n(function(c){ return c.r3_resultado==='aprovado'; });
+  var prop = n(function(c){ return c.r3_resultado==='aprovado' && c.r4_proposta_enviada; });
+  var acei = n(function(c){ return c.r4_resultado==='aceita'; });
+  var reps = { R1:n(function(c){return c.r1_resultado==='reprovado';}), R2:n(function(c){return c.r1_resultado==='aprovado'&&c.r2_resultado==='reprovado';}), R3:n(function(c){return c.r2_resultado==='aprovado'&&c.r3_resultado==='reprovado';}), R4:n(function(c){return c.r3_resultado==='aprovado'&&c.r4_resultado==='recusada';}) };
+  var passos = [
+    ['R1 realizada', r1real, null],
+    ['R1 aprovada', r1ok, r1real],
+    ['R2 realizada (líder)', r2real, r1ok],
+    ['R2 aprovada pelo líder', r2ok, r2real],
+    ['Pré-Work entregue', r3ent, r2ok],
+    ['Pré-Work aprovado', r3ok, r3ent],
+    ['Proposta enviada', prop, r3ok],
+    ['Proposta aceita', acei, prop]
+  ];
+  var topo = Math.max(r1real,1);
+  var tabConv = passos.map(function(p){
+    return '<div class="praca-row"><div style="font-size:12px;">'+p[0]+'</div><div class="praca-track"><div class="praca-fill" style="width:'+Math.round(p[1]/topo*100)+'%;background:#1A3BAD;"></div></div><div style="font-size:12px;white-space:nowrap;"><b>'+p[1]+'</b>'+(p[2]!==null?' <span style="color:var(--t3);">· '+_pct(p[1],p[2])+' do marco anterior</span>':'')+'</div></div>';
+  }).join('')
+  + '<div style="margin-top:10px;font-size:11px;color:var(--t3);">Reprovados/recusados por marco — R1: <b>'+reps.R1+'</b> · R2 (líder): <b>'+reps.R2+'</b> · R3 (Pré-Work): <b>'+reps.R3+'</b> · R4 (proposta): <b>'+reps.R4+'</b></div>';
+
+  // 5) hunter e líder
+  var porPessoa = function(campo){
+    var mp = {};
+    iniciados.forEach(function(c){ var k = c[campo] || '(sem '+campo+')'; (mp[k] = mp[k] || []).push(c); });
+    var linhas = Object.keys(mp).map(function(k){
+      var L = mp[k], f = function(fn){ return L.filter(fn).length; };
+      var r1 = f(function(c){return c.r1_realizada;}), r2 = f(function(c){return c.r2_realizada;}), r3 = f(function(c){return c.r3_entregue;}), pr = f(function(c){return c.r4_proposta_enviada;});
+      var rep = f(function(c){return E[c.id].reprovadoEm;});
+      var tt = campo==='hunter' ? L.map(function(c){return E[c.id].tempos.r1_r2;}) : L.map(function(c){return E[c.id].tempos.r2_prework;});
+      var mediaT = _mediaDias(tt);
+      var pend = L.filter(function(c){ var e = E[c.id]; return e.bola && e.diasNaBola !== null && e.diasNaBola >= JR_LIMITE_BOLA && (campo==='hunter' ? /Expansão|Hunter/.test(e.bola) : e.bola==='Líder'); }).length;
+      return { k:k, tot:L.length, r1:r1, r2:r2, r3:r3, pr:pr, rep:rep, t:mediaT, pend:pend };
+    }).sort(function(a,b){ return b.tot - a.tot; });
+    var tl = campo==='hunter' ? 'R1 → R2' : 'R2 → Pré-Work';
+    return '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid var(--rule);"><th style="'+_TH+'">'+(campo==='hunter'?'Hunter':'Líder')+'</th><th style="'+_THR+'">Em jornada</th><th style="'+_THR+'">R1</th><th style="'+_THR+'">R2</th><th style="'+_THR+'">Pré-Work</th><th style="'+_THR+'">Propostas</th><th style="'+_THR+'">Reprov.</th><th style="'+_THR+'">'+tl+' (méd.)</th><th style="'+_THR+'">Bola parada '+JR_LIMITE_BOLA+'d+</th></tr></thead><tbody>'
+      + linhas.map(function(l){ return '<tr style="border-bottom:1px solid var(--rule);"><td style="padding:6px 4px;">'+esc(l.k)+'</td><td style="text-align:right;padding:6px 4px;">'+l.tot+'</td><td style="text-align:right;padding:6px 4px;">'+l.r1+'</td><td style="text-align:right;padding:6px 4px;">'+l.r2+'</td><td style="text-align:right;padding:6px 4px;">'+l.r3+'</td><td style="text-align:right;padding:6px 4px;">'+l.pr+'</td><td style="text-align:right;padding:6px 4px;">'+l.rep+'</td><td style="text-align:right;padding:6px 4px;">'+(l.t!==null?l.t+'d':'—')+'</td><td style="text-align:right;padding:6px 4px;'+(l.pend?'color:var(--red);font-weight:700;':'color:var(--t4);')+'">'+l.pend+'</td></tr>'; }).join('')
+      + '</tbody></table>';
+  };
+
+  // 6) bola parada
+  var parados = ativos.map(function(c){ return { c:c, e:E[c.id] }; }).filter(function(x){ return x.e.bola && x.e.diasNaBola !== null && x.e.diasNaBola >= JR_LIMITE_BOLA; }).sort(function(a,b){ return b.e.diasNaBola - a.e.diasNaBola; });
+  var porBola = {}; parados.forEach(function(x){ porBola[x.e.bola] = (porBola[x.e.bola]||0)+1; });
+  var tabPar = parados.length ? '<div style="font-size:11px;color:var(--t3);margin-bottom:8px;">'+parados.length+' candidato(s) com a bola parada há '+JR_LIMITE_BOLA+'+ dias — '+Object.keys(porBola).map(function(b){ return '<b>'+esc(b)+'</b>: '+porBola[b]; }).join(' · ')+'</div>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid var(--rule);"><th style="'+_TH+'">Candidato</th><th style="'+_TH+'">Praça</th><th style="'+_TH+'">Marco</th><th style="'+_TH+'">Com quem está a bola</th><th style="'+_TH+'">O que falta</th><th style="'+_THR+'">Dias</th></tr></thead><tbody>'
+    + parados.slice(0,15).map(function(x){ return '<tr style="border-bottom:1px solid var(--rule);"><td style="padding:6px 4px;">'+esc(x.c.nome)+'</td><td style="padding:6px 4px;">'+esc(pracaLabel(x.c.praca)||'—')+'</td><td style="padding:6px 4px;"><b>'+x.e.atual+'</b></td><td style="padding:6px 4px;">'+esc(x.e.bola)+'</td><td style="padding:6px 4px;">'+esc(x.e.acao)+'</td><td style="text-align:right;padding:6px 4px;color:var(--red);font-weight:700;">'+x.e.diasNaBola+'d</td></tr>'; }).join('')
+    + '</tbody></table>' + (parados.length>15 ? '<div style="font-size:11px;color:var(--t4);margin-top:6px;">+ '+(parados.length-15)+' candidato(s) não exibidos.</div>' : '')
+    : '<div style="padding:8px 0;color:var(--t4);font-size:12px;">Nenhum candidato com a bola parada há '+JR_LIMITE_BOLA+'+ dias no filtro atual.</div>';
+
+  var aviso = semJornada.length ? '<div style="background:rgba(180,83,9,.08);border-left:3px solid #B45309;padding:8px 12px;font-size:11px;margin-bottom:14px;"><b>'+semJornada.length+' candidato(s) ativo(s) sem jornada preenchida</b> ('+semJornada.slice(0,5).map(function(c){return esc(c.nome);}).join(', ')+(semJornada.length>5?'…':'')+'). Os números abaixo só consideram quem tem R1–R4 lançadas no card do CRM.</div>' : '';
+  var sub = function(t){ return '<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin:18px 0 8px;">'+t+'</div>'; };
+  return '<div class="card card-flow"><div class="sh"><span class="sn">03</span><span class="st">Jornada R1–R4 — Cadência, Tempos e Conversão</span><span class="ss">'+iniciados.length+' candidato(s) com jornada lançada · R1 apresentação → R2 líder → R3 Pré-Work → R4 proposta</span></div>'
+    + aviso
+    + sub('Cadência semanal — quantidade de reuniões por semana') + tabSem
+    + sub('Agenda desta semana') + tabAg
+    + sub('Tempo entre marcos (dias corridos)') + kpisT
+    + sub('Conversão entre marcos') + tabConv
+    + sub('Por hunter') + '<div style="overflow-x:auto;">'+porPessoa('hunter')+'</div>'
+    + sub('Por líder') + '<div style="overflow-x:auto;">'+porPessoa('lider')+'</div>'
+    + sub('Com quem está a bola — candidatos parados') + tabPar
+    + '</div>';
+}
+function renumerarSecoes(){ var i = 0; document.querySelectorAll('#content-root .sn').forEach(function(el){ i++; el.textContent = (i<10?'0':'')+i; }); }
+
 function render(C) {
   if (!C.length) {
     document.getElementById('content-root').innerHTML = '<div class="empty"><div class="empty-icon">📭</div>Nenhum candidato Future encontrado com os filtros atuais.</div>';
@@ -361,6 +554,7 @@ function render(C) {
   var html = '';
   html += renderKPIs(C);
   html += renderFunil(C);
+  html += renderJornada(C);
   html += renderConversaoEtapas(C);
   html += renderVelocidade(C);
   html += renderOrigemLeads(C);
@@ -376,6 +570,7 @@ function render(C) {
   html += renderMotivoDeclinio(C);
 
   document.getElementById('content-root').innerHTML = html;
+  renumerarSecoes();
   window._C_ATUAL = C; // pra reagir ao toggle Diário/Semanal/Mensal e à auditoria sem reprocessar tudo
   atualizarAuditoria();
 }
@@ -457,7 +652,7 @@ function renderFunil(C) {
     + '</div>';
   }).join('');
 
-  return '<div class="card"><div class="sh"><span class="sn">02</span><span class="st">Funil por Etapa</span><span class="ss">Prospecção (R1) → Qualificação (R2) → Negociação (R3) → Aprovado e Contratado → Trabalhando → Desligado</span></div>'+linhas+'</div>';
+  return '<div class="card"><div class="sh"><span class="sn">02</span><span class="st">Funil por Etapa</span><span class="ss">Prospecção (R1) → Qualificação e Pré-Work (R2/R3) → Negociação e proposta (R4) → Aprovado e Contratado → Trabalhando → Desligado</span></div>'+linhas+'</div>';
 }
 
 function hojeMenosDias(n){ var d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
@@ -806,9 +1001,9 @@ function renderHunters(C) {
 function renderPreWork(C) {
   // Só faz sentido pra quem já passou da Prospecção e ainda não está Trabalhando/Declinou
   var elegiveis = C.filter(function(c){ return ['Qualificação','Negociação','Contratação'].indexOf(c.etapa) > -1; });
-  var emPreWorkLista = elegiveis.filter(function(c){ return c.pre_work === 'em_pre_work'; });
+  var emPreWorkLista = elegiveis.filter(function(c){ return preWorkStatus(c) === 'em_pre_work'; });
   var emPreWork = emPreWorkLista.length;
-  var validado  = elegiveis.filter(function(c){ return c.pre_work === 'validado'; }).length;
+  var validado  = elegiveis.filter(function(c){ return preWorkStatus(c) === 'validado'; }).length;
   var naoIniciado = elegiveis.length - emPreWork - validado;
   var total = elegiveis.length || 1;
 
@@ -816,10 +1011,10 @@ function renderPreWork(C) {
 
   // Não temos a data de quando o Pré-Work começou — só o status atual. Por isso, uso tempo desde
   // o CADASTRO como proxy (mesma lógica de "Candidatos Parados"), deixando isso explícito no rótulo.
-  var diasEmPreWork = emPreWorkLista.map(function(c){ return diasEntre(c.data_entrada, null); }).filter(function(d){ return d !== null; });
+  var diasEmPreWork = emPreWorkLista.map(function(c){ return diasEntre(c.r3_solicitado || c.data_entrada, null); }).filter(function(d){ return d !== null; });
   var mediaPreWork = _mediaDias(diasEmPreWork);
   var avisoTempo = mediaPreWork !== null
-    ? '<div style="font-size:11px;color:var(--t3);margin-top:10px;">⏱ Quem está "Em Pré-Work" hoje está cadastrado, em média, há <b style="color:var(--t1);">'+mediaPreWork+' dias</b> — não é o tempo exato em Pré-Work (não temos essa data específica), é o tempo desde o cadastro.</div>'
+    ? '<div style="font-size:11px;color:var(--t3);margin-top:10px;">⏱ Quem está "Em Pré-Work" hoje está nessa fase, em média, há <b style="color:var(--t1);">'+mediaPreWork+' dias</b> (contados da data de solicitação do Pré-Work na jornada; para quem não tem jornada lançada, do cadastro).</div>'
     : '';
 
   return '<div class="card"><div class="sh"><span class="sn">08</span><span class="st">Status de Pré-Work</span><span class="ss">'+elegiveis.length+' candidato(s) elegível(is) (Qualificação, Negociação ou Contratação)</span></div>'
@@ -1281,7 +1476,7 @@ function exportarCSV() {
   var hdr = ['Nome','Telefone','E-mail','Praça','Etapa','Hunter','Líder','Status Proposta','Status MOU','Pré-Work','Origem do Lead','Motivo Declínio','Data Entrada','Data Contratação','Data Início','Data Declínio'];
   var linhas = C.map(function(c){
     var temProposta = TELEFONES_COM_PROPOSTA[(c.telefone||'').replace(/\D/g,'')] ? 'Sim' : 'Não';
-    var preWorkLbl = c.pre_work === 'validado' ? 'Validado pelo Líder' : (c.pre_work === 'em_pre_work' ? 'Em Pré-Work' : '');
+    var preWorkLbl = preWorkStatus(c) === 'validado' ? 'Aprovado pelo Líder' : (preWorkStatus(c) === 'em_pre_work' ? 'Em Pré-Work' : '');
     var statusMou = (c.mou||'').toLowerCase() === 'assinado' ? 'Assinado ('+fmtDate(c.data_mou)+')' : 'Pendente';
     return [
       c.nome||'', c.telefone||'', c.email||'', pracaLabel(c.praca)||'', (ETAPA_INFO[c.etapa]||{}).lbl || c.etapa || '',
