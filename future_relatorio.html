@@ -427,120 +427,131 @@ function _somaDias(iso,n){ var d = new Date(iso+'T12:00:00'); d.setDate(d.getDat
 function _mediana(a){ var v = a.filter(function(x){return x!==null && x>=0;}).sort(function(x,y){return x-y;}); if(!v.length) return null; var m = Math.floor(v.length/2); return v.length%2 ? v[m] : Math.round((v[m-1]+v[m])/2); }
 function _pct(a,b){ return b ? Math.round(a/b*100)+'%' : '—'; }
 function _fd(s){ if(!s) return '—'; var p = String(s).slice(0,10).split('-'); return p[2]+'/'+p[1]; }
+
+var _jrPer = 'sem', _jrGran = 'sem';
+var _JR_PERIODOS = [['sem','Esta semana'],['semAnt','Semana passada'],['mes','Este mês'],['mesAnt','Mês anterior'],['30d','Últimos 30 dias'],['90d','Últimos 90 dias']];
+function _ymd(y,m,d){ return y+'-'+(m<10?'0':'')+m+'-'+(d<10?'0':'')+d; }
+function _fimMes(y,m){ return new Date(y,m,0).getDate(); }
+function _jrPeriodo(hoje){
+  var y = +hoje.slice(0,4), m = +hoje.slice(5,7), d = +hoje.slice(8,10), seg = _segunda(hoje), r = {};
+  if (_jrPer === 'sem') { var dd = (new Date(hoje+'T12:00:00').getDay()+6)%7; r = { nome:'Esta semana', ini:seg, fim:hoje, iniAnt:_somaDias(seg,-7), fimAnt:_somaDias(seg,-7+dd), fimAgenda:_somaDias(seg,6) }; }
+  else if (_jrPer === 'semAnt') { r = { nome:'Semana passada', ini:_somaDias(seg,-7), fim:_somaDias(seg,-1), iniAnt:_somaDias(seg,-14), fimAnt:_somaDias(seg,-8), fimAgenda:hoje }; }
+  else if (_jrPer === 'mes') { var pm = m===1?12:m-1, py = m===1?y-1:y; r = { nome:'Este mês', ini:_ymd(y,m,1), fim:hoje, iniAnt:_ymd(py,pm,1), fimAnt:_ymd(py,pm,Math.min(d,_fimMes(py,pm))), fimAgenda:_ymd(y,m,_fimMes(y,m)) }; }
+  else if (_jrPer === 'mesAnt') { var pm2 = m===1?12:m-1, py2 = m===1?y-1:y, pm3 = pm2===1?12:pm2-1, py3 = pm2===1?py2-1:py2; r = { nome:'Mês anterior', ini:_ymd(py2,pm2,1), fim:_ymd(py2,pm2,_fimMes(py2,pm2)), iniAnt:_ymd(py3,pm3,1), fimAnt:_ymd(py3,pm3,_fimMes(py3,pm3)), fimAgenda:hoje }; }
+  else { var nd = _jrPer === '30d' ? 30 : 90; r = { nome:'Últimos '+nd+' dias', ini:_somaDias(hoje,-(nd-1)), fim:hoje, iniAnt:_somaDias(hoje,-(2*nd-1)), fimAnt:_somaDias(hoje,-nd), fimAgenda:hoje }; }
+  return r;
+}
+function setJrPer(v){ _jrPer = v; _jrRedesenhar(); }
+function setJrGran(v){ _jrGran = v; _jrRedesenhar(); }
+function _jrRedesenhar(){ var el = document.getElementById('card-jornada'); if (!el || !window._C_ATUAL) return; el.outerHTML = renderJornada(window._C_ATUAL); renumerarSecoes(); }
+function _jrGrafico(C, hoje){
+  var SER = [['R1','r1_realizada','#1A3BAD'],['R2','r2_realizada','#4A70F5'],['R3','r3_entregue','#B45309'],['R4 Propostas','r4_proposta_enviada','#16A34A']];
+  var B = [], k, N = _jrGran === 'sem' ? 12 : 6;
+  if (_jrGran === 'sem') { var s0 = _segunda(hoje); for (k=N-1;k>=0;k--) { var a = _somaDias(s0,-7*k); B.push({ a:a, b:_somaDias(a,6), l:_fd(a), parcial: k===0 }); } }
+  else { var y = +hoje.slice(0,4), m = +hoje.slice(5,7); for (k=N-1;k>=0;k--) { var mm = m-k, yy = y; while (mm<1){ mm+=12; yy--; } var nomes = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']; B.push({ a:_ymd(yy,mm,1), b:_ymd(yy,mm,_fimMes(yy,mm)), l:nomes[mm-1], parcial: k===0 }); } }
+  var dados = SER.map(function(s){ return B.map(function(bk){ return C.filter(function(c){ var x = c[s[1]]; return x && x.slice(0,10) >= bk.a && x.slice(0,10) <= bk.b; }).length; }); });
+  var tot = B.map(function(_,i){ return dados.reduce(function(s,d){ return s + d[i]; },0); });
+  var max = Math.max.apply(null, [1].concat.apply([], dados)), W = 720, H = 200, L = 28, R = 14, T = 12, Bt = 26;
+  var X = function(i){ return L + (B.length>1 ? i*(W-L-R)/(B.length-1) : 0); }, Y = function(v){ return T + (H-T-Bt) * (1 - v/max); };
+  var svg = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;max-height:230px;" role="img" aria-label="Reuniões realizadas por período">';
+  [0,.5,1].forEach(function(f){ var v = Math.round(max*f), y = Y(v); svg += '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="#E2E5F0" stroke-width="1"/><text x="'+(L-6)+'" y="'+(y+3)+'" text-anchor="end" font-size="9" fill="#7A82A8">'+v+'</text>'; });
+  B.forEach(function(bk,i){ svg += '<text x="'+X(i)+'" y="'+(H-8)+'" text-anchor="middle" font-size="9" fill="#7A82A8">'+bk.l+(bk.parcial?'*':'')+'</text>'; });
+  SER.forEach(function(s,si){
+    var pts = dados[si].map(function(v,i){ return X(i)+','+Y(v); });
+    // trecho final (período em andamento) tracejado
+    svg += '<polyline fill="none" stroke="'+s[2]+'" stroke-width="2" points="'+pts.slice(0,-1).join(' ')+'"/>';
+    if (pts.length>1) svg += '<polyline fill="none" stroke="'+s[2]+'" stroke-width="2" stroke-dasharray="4 3" points="'+pts.slice(-2).join(' ')+'"/>';
+    dados[si].forEach(function(v,i){ svg += '<circle cx="'+X(i)+'" cy="'+Y(v)+'" r="3" fill="'+s[2]+'"><title>'+s[0]+' · '+B[i].l+': '+v+'</title></circle>'; });
+  });
+  svg += '</svg>';
+  var leg = SER.map(function(s){ return '<span style="margin-right:14px;font-size:11px;color:var(--t2);"><span style="display:inline-block;width:10px;height:3px;background:'+s[2]+';vertical-align:middle;margin-right:5px;"></span>'+s[0]+'</span>'; }).join('');
+  // tendência: últimos 4 períodos fechados vs 4 anteriores (total de marcos realizados)
+  var fech = tot.slice(0,-1), q = Math.min(4, Math.floor(fech.length/2)), txt = '';
+  if (q >= 2) {
+    var rec = fech.slice(-q).reduce(function(a,b){return a+b;},0), ant = fech.slice(-2*q,-q).reduce(function(a,b){return a+b;},0), un = _jrGran==='sem'?'semanas':'meses';
+    var pct = ant ? Math.round((rec-ant)/ant*100) : null;
+    txt = 'Tendência — últimas '+q+' '+un+' fechadas vs. as '+q+' anteriores: <b>'+rec+'</b> reuniões/marcos contra <b>'+ant+'</b> ' + (pct===null ? '' : (pct>0 ? '<b style="color:var(--g);">▲ +'+pct+'%</b>' : pct<0 ? '<b style="color:var(--red);">▼ '+pct+'%</b>' : '<b>＝ estável</b>'));
+  }
+  var btn = function(v,l){ var on = _jrGran===v; return '<button onclick="setJrGran(\''+v+'\')" style="cursor:pointer;font:inherit;font-size:10px;padding:3px 10px;border-radius:999px;border:1px solid '+(on?'#1A3BAD':'var(--rule)')+';background:'+(on?'#1A3BAD':'transparent')+';color:'+(on?'#fff':'var(--t2)')+';">'+l+'</button>'; };
+  return '<div style="margin:20px 0 8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t2);">Evolução <span style="font-weight:400;letter-spacing:0;text-transform:none;color:var(--t4);">reuniões realizadas por '+(_jrGran==='sem'?'semana':'mês')+'</span></span><span>'+btn('sem','12 semanas')+' '+btn('mes','6 meses')+'</span></div>'
+    + '<div>'+leg+'</div>' + svg
+    + '<div style="font-size:10px;color:var(--t4);">* período em andamento (linha tracejada) — ainda incompleto.</div>'
+    + (txt ? '<div style="font-size:12px;color:var(--t2);margin-top:6px;">'+txt+'</div>' : '');
+}
 function renderJornada(C) {
-  var hoje = hojeISO(), semAtual = _segunda(hoje);
+  var hoje = hojeISO(), semAtual = _segunda(hoje), semAnt = _somaDias(semAtual,-7), fimSem = _somaDias(semAtual,6);
   var ativos = C.filter(function(c){ return ['Prospecção','Qualificação','Negociação'].indexOf(c.etapa) > -1; });
   var E = {}; C.forEach(function(c){ E[c.id] = jornadaEstado(c, hoje); });
   var iniciados = C.filter(function(c){ return E[c.id].iniciada; });
   var semJornada = ativos.filter(function(c){ return !E[c.id].iniciada; });
-
-  // 1) cadência semanal (8 semanas passadas + atual + 2 futuras)
-  var evs = [ ['r1_agendada','r1_realizada'], ['r2_agendada','r2_realizada'], ['r3_solicitado','r3_entregue'], ['r4_proposta_enviada','r4_proposta_enviada'] ];
-  var semanas = []; for (var k=-8;k<=2;k++) semanas.push(_somaDias(semAtual, k*7));
-  var cont = function(campo, ini){ var n=0; C.forEach(function(c){ var x = c[campo]; if (x && x.slice(0,10) >= ini && x.slice(0,10) <= _somaDias(ini,6)) n++; }); return n; };
-  var cel = function(v, dest){ return '<td style="text-align:center;padding:6px 4px;'+(dest?'font-weight:700;':'')+(v?'':'color:var(--t4);')+'">'+(v===null?'—':v)+'</td>'; };
-  var linhasSem = semanas.map(function(ini){
-    var fut = ini > semAtual, atual = ini === semAtual;
-    var lbl = _fd(ini)+' – '+_fd(_somaDias(ini,6)) + (atual ? ' · esta semana' : fut ? ' · prevista' : '');
-    return '<tr style="border-bottom:1px solid var(--rule);'+(atual?'background:rgba(26,59,173,.06);':'')+'"><td style="padding:6px 4px;white-space:nowrap;'+(atual?'font-weight:700;':'')+'">'+lbl+'</td>'
-      + cel(cont('r1_agendada',ini),atual) + cel(fut?null:cont('r1_realizada',ini),atual)
-      + cel(cont('r2_agendada',ini),atual) + cel(fut?null:cont('r2_realizada',ini),atual)
-      + cel(cont('r3_solicitado',ini),atual) + cel(fut?null:cont('r3_entregue',ini),atual)
-      + cel(fut?null:cont('r4_proposta_enviada',ini),atual) + '</tr>';
-  }).join('');
-  var tabSem = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead>'
-    + '<tr><th></th><th colspan="2" style="text-align:center;font-size:9px;color:var(--t3);">R1 · APRESENTAÇÃO</th><th colspan="2" style="text-align:center;font-size:9px;color:var(--t3);">R2 · LÍDER</th><th colspan="2" style="text-align:center;font-size:9px;color:var(--t3);">R3 · PRÉ-WORK</th><th style="text-align:center;font-size:9px;color:var(--t3);">R4</th></tr>'
-    + '<tr style="border-bottom:1px solid var(--rule);"><th style="'+_TH+'">Semana</th><th style="'+_TH+'text-align:center;">Agend.</th><th style="'+_TH+'text-align:center;">Realiz.</th><th style="'+_TH+'text-align:center;">Agend.</th><th style="'+_TH+'text-align:center;">Realiz.</th><th style="'+_TH+'text-align:center;">Solicit.</th><th style="'+_TH+'text-align:center;">Entregues</th><th style="'+_TH+'text-align:center;">Propostas</th></tr>'
-    + '</thead><tbody>'+linhasSem+'</tbody></table></div>';
-
-  // 2) agenda da semana
-  var fimSem = _somaDias(semAtual,6), ag = [];
-  C.forEach(function(c){
-    [['r1_agendada','r1_realizada','R1','Apresentação'],['r2_agendada','r2_realizada','R2','Apresentação ao líder'],['r3_prazo','r3_entregue','R3','Prazo do Pré-Work']].forEach(function(m){
-      var d = c[m[0]]; if (d && d.slice(0,10) >= semAtual && d.slice(0,10) <= fimSem) ag.push({ d:d.slice(0,10), m:m[2], t:m[3], feito:!!c[m[1]], c:c });
-    });
-  });
-  ag.sort(function(a,b){ return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
-  var tabAg = ag.length ? '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid var(--rule);"><th style="'+_TH+'">Dia</th><th style="'+_TH+'">Marco</th><th style="'+_TH+'">Candidato</th><th style="'+_TH+'">Hunter</th><th style="'+_TH+'">Líder</th><th style="'+_TH+'">Praça</th><th style="'+_TH+'">Status</th></tr></thead><tbody>'
-    + ag.map(function(a){ return '<tr style="border-bottom:1px solid var(--rule);"><td style="padding:6px 4px;">'+_fd(a.d)+'</td><td style="padding:6px 4px;"><b>'+a.m+'</b> · '+a.t+'</td><td style="padding:6px 4px;">'+esc(a.c.nome)+'</td><td style="padding:6px 4px;">'+esc(a.c.hunter||'—')+'</td><td style="padding:6px 4px;">'+esc(a.c.lider||'—')+'</td><td style="padding:6px 4px;">'+esc(pracaLabel(a.c.praca)||'—')+'</td><td style="padding:6px 4px;color:'+(a.feito?'var(--g)':a.d<hoje?'var(--red)':'var(--t3)')+';">'+(a.feito?'Realizada':a.d<hoje?'Sem registro':'Agendada')+'</td></tr>'; }).join('')
-    + '</tbody></table>'
-    : '<div style="padding:8px 0;color:var(--t4);font-size:12px;">Nada agendado para esta semana — ou a agenda ainda não foi lançada no card dos candidatos.</div>';
-
-  // 3) tempos entre marcos
-  var T = function(k){ return C.map(function(c){ return E[c.id].tempos[k]; }); };
-  var tempos = [ ['R1 → R2','r1_r2','#1A3BAD'], ['R2 → Pré-Work entregue','r2_prework','#4A70F5'], ['Pré-Work → Proposta','prework_proposta','#B45309'], ['Proposta → Contratação','proposta_contratacao','#16A34A'] ];
-  var kpisT = '<div class="row cols-4" style="margin-bottom:0;">' + tempos.map(function(t){
-    var arr = T(t[1]).filter(function(x){return x!==null && x>=0;}), m = _mediaDias(arr), md = _mediana(arr);
-    return '<div class="kpi" style="border-top-color:'+t[2]+';box-shadow:none;border:1px solid var(--rule);border-top-width:3px;"><div class="kpi-label">'+t[0]+'</div><div class="kpi-value" style="font-size:20px;">'+(m!==null?m+'d':'—')+'</div><div class="kpi-sub">'+(arr.length?'mediana '+md+'d · '+arr.length+' candidato'+(arr.length!==1?'s':''):'sem dados suficientes')+'</div></div>';
-  }).join('') + '</div>';
-
-  // 4) conversão por marco (coorte: quem alcançou cada marco)
   var n = function(f){ return C.filter(f).length; };
-  var st = function(c,m){ return E[c.id].status[m]; };
-  var r1real = n(function(c){ return c.r1_realizada; });
-  var r1ok = n(function(c){ return c.r1_resultado==='aprovado'; });
-  var r2real = n(function(c){ return c.r1_resultado==='aprovado' && c.r2_realizada; });
-  var r2ok = n(function(c){ return c.r2_resultado==='aprovado'; });
-  var r3ent = n(function(c){ return c.r2_resultado==='aprovado' && c.r3_entregue; });
-  var r3ok = n(function(c){ return c.r3_resultado==='aprovado'; });
-  var prop = n(function(c){ return c.r3_resultado==='aprovado' && c.r4_proposta_enviada; });
-  var acei = n(function(c){ return c.r4_resultado==='aceita'; });
-  var reps = { R1:n(function(c){return c.r1_resultado==='reprovado';}), R2:n(function(c){return c.r1_resultado==='aprovado'&&c.r2_resultado==='reprovado';}), R3:n(function(c){return c.r2_resultado==='aprovado'&&c.r3_resultado==='reprovado';}), R4:n(function(c){return c.r3_resultado==='aprovado'&&c.r4_resultado==='recusada';}) };
-  var passos = [
-    ['R1 realizada', r1real, null],
-    ['R1 aprovada', r1ok, r1real],
-    ['R2 realizada (líder)', r2real, r1ok],
-    ['R2 aprovada pelo líder', r2ok, r2real],
-    ['Pré-Work entregue', r3ent, r2ok],
-    ['Pré-Work aprovado', r3ok, r3ent],
-    ['Proposta enviada', prop, r3ok],
-    ['Proposta aceita', acei, prop]
+  var noPeriodo = function(campo, ini, fim){ return n(function(c){ var x = c[campo]; return x && x.slice(0,10) >= ini && x.slice(0,10) <= fim; }); };
+  var sub = function(t, s){ return '<div style="margin:20px 0 8px;"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t2);">'+t+'</span>'+(s?'<span style="font-size:11px;color:var(--t4);margin-left:8px;">'+s+'</span>':'')+'</div>'; };
+
+  // 1) Período selecionado — 4 números comparados com o período anterior
+  var P = _jrPeriodo(hoje);
+  var sem = [
+    ['R1 · Apresentação', 'r1_realizada', 'r1_agendada', '#1A3BAD'],
+    ['R2 · Líder', 'r2_realizada', 'r2_agendada', '#4A70F5'],
+    ['R3 · Pré-Work entregue', 'r3_entregue', 'r3_prazo', '#B45309'],
+    ['R4 · Propostas enviadas', 'r4_proposta_enviada', null, '#16A34A']
   ];
-  var topo = Math.max(r1real,1);
-  var tabConv = passos.map(function(p){
-    return '<div class="praca-row"><div style="font-size:12px;">'+p[0]+'</div><div class="praca-track"><div class="praca-fill" style="width:'+Math.round(p[1]/topo*100)+'%;background:#1A3BAD;"></div></div><div style="font-size:12px;white-space:nowrap;"><b>'+p[1]+'</b>'+(p[2]!==null?' <span style="color:var(--t3);">· '+_pct(p[1],p[2])+' do marco anterior</span>':'')+'</div></div>';
-  }).join('')
-  + '<div style="margin-top:10px;font-size:11px;color:var(--t3);">Reprovados/recusados por marco — R1: <b>'+reps.R1+'</b> · R2 (líder): <b>'+reps.R2+'</b> · R3 (Pré-Work): <b>'+reps.R3+'</b> · R4 (proposta): <b>'+reps.R4+'</b></div>';
+  var cards = '<div class="row cols-4" style="margin-bottom:0;">' + sem.map(function(s){
+    var feitas = noPeriodo(s[1], P.ini, P.fim), ant = noPeriodo(s[1], P.iniAnt, P.fimAnt), dif = feitas - ant;
+    var seta = dif > 0 ? '<span style="color:var(--g);font-weight:700;">▲ +'+dif+'</span>' : dif < 0 ? '<span style="color:var(--red);font-weight:700;">▼ '+dif+'</span>' : '<span style="color:var(--t3);font-weight:700;">＝ 0</span>';
+    var prev = (s[2] && P.fim >= hoje) ? n(function(c){ var x = c[s[2]]; return x && !c[s[1]] && x.slice(0,10) >= hoje && x.slice(0,10) <= P.fimAgenda; }) : null;
+    return '<div class="kpi" style="border-top-color:'+s[3]+';box-shadow:none;border:1px solid var(--rule);border-top-width:3px;"><div class="kpi-label">'+s[0]+'</div><div class="kpi-value">'+feitas+'</div><div class="kpi-sub">'+seta+' vs período anterior ('+ant+')'+(prev!==null ? ' · '+prev+' ainda agendada'+(prev!==1?'s':'') : '')+'</div></div>';
+  }).join('') + '</div>';
+  var filtros = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">' + _JR_PERIODOS.map(function(p){
+    var on = p[0] === _jrPer;
+    return '<button onclick="setJrPer(\''+p[0]+'\')" style="cursor:pointer;font:inherit;font-size:11px;padding:5px 12px;border-radius:999px;border:1px solid '+(on?'#1A3BAD':'var(--rule)')+';background:'+(on?'#1A3BAD':'transparent')+';color:'+(on?'#fff':'var(--t2)')+';">'+p[1]+'</button>';
+  }).join('') + '</div>';
+  var grafico = _jrGrafico(C, hoje);
 
-  // 5) hunter e líder
-  var porPessoa = function(campo){
-    var mp = {};
-    iniciados.forEach(function(c){ var k = c[campo] || '(sem '+campo+')'; (mp[k] = mp[k] || []).push(c); });
-    var linhas = Object.keys(mp).map(function(k){
-      var L = mp[k], f = function(fn){ return L.filter(fn).length; };
-      var r1 = f(function(c){return c.r1_realizada;}), r2 = f(function(c){return c.r2_realizada;}), r3 = f(function(c){return c.r3_entregue;}), pr = f(function(c){return c.r4_proposta_enviada;});
-      var rep = f(function(c){return E[c.id].reprovadoEm;});
-      var tt = campo==='hunter' ? L.map(function(c){return E[c.id].tempos.r1_r2;}) : L.map(function(c){return E[c.id].tempos.r2_prework;});
-      var mediaT = _mediaDias(tt);
-      var pend = L.filter(function(c){ var e = E[c.id]; return e.bola && e.diasNaBola !== null && e.diasNaBola >= JR_LIMITE_BOLA && (campo==='hunter' ? /Expansão|Hunter/.test(e.bola) : e.bola==='Líder'); }).length;
-      return { k:k, tot:L.length, r1:r1, r2:r2, r3:r3, pr:pr, rep:rep, t:mediaT, pend:pend };
-    }).sort(function(a,b){ return b.tot - a.tot; });
-    var tl = campo==='hunter' ? 'R1 → R2' : 'R2 → Pré-Work';
-    return '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid var(--rule);"><th style="'+_TH+'">'+(campo==='hunter'?'Hunter':'Líder')+'</th><th style="'+_THR+'">Em jornada</th><th style="'+_THR+'">R1</th><th style="'+_THR+'">R2</th><th style="'+_THR+'">Pré-Work</th><th style="'+_THR+'">Propostas</th><th style="'+_THR+'">Reprov.</th><th style="'+_THR+'">'+tl+' (méd.)</th><th style="'+_THR+'">Bola parada '+JR_LIMITE_BOLA+'d+</th></tr></thead><tbody>'
-      + linhas.map(function(l){ return '<tr style="border-bottom:1px solid var(--rule);"><td style="padding:6px 4px;">'+esc(l.k)+'</td><td style="text-align:right;padding:6px 4px;">'+l.tot+'</td><td style="text-align:right;padding:6px 4px;">'+l.r1+'</td><td style="text-align:right;padding:6px 4px;">'+l.r2+'</td><td style="text-align:right;padding:6px 4px;">'+l.r3+'</td><td style="text-align:right;padding:6px 4px;">'+l.pr+'</td><td style="text-align:right;padding:6px 4px;">'+l.rep+'</td><td style="text-align:right;padding:6px 4px;">'+(l.t!==null?l.t+'d':'—')+'</td><td style="text-align:right;padding:6px 4px;'+(l.pend?'color:var(--red);font-weight:700;':'color:var(--t4);')+'">'+l.pend+'</td></tr>'; }).join('')
-      + '</tbody></table>';
-  };
+  // 2) Funil da jornada — uma linha por marco
+  var marcos = [
+    { nm:'R1 · Apresentação', ch:n(function(c){return c.r1_realizada;}), ok:n(function(c){return c.r1_resultado==='aprovado';}), no:n(function(c){return c.r1_resultado==='reprovado';}), t:'r1_r2', prox:'até a R2' },
+    { nm:'R2 · Líder', ch:n(function(c){return c.r1_resultado==='aprovado' && c.r2_realizada;}), ok:n(function(c){return c.r2_resultado==='aprovado';}), no:n(function(c){return c.r1_resultado==='aprovado' && c.r2_resultado==='reprovado';}), t:'r2_prework', prox:'até entregar o Pré-Work' },
+    { nm:'R3 · Pré-Work', ch:n(function(c){return c.r2_resultado==='aprovado' && c.r3_entregue;}), ok:n(function(c){return c.r3_resultado==='aprovado';}), no:n(function(c){return c.r2_resultado==='aprovado' && c.r3_resultado==='reprovado';}), t:'prework_proposta', prox:'até a proposta' },
+    { nm:'R4 · Proposta', ch:n(function(c){return c.r3_resultado==='aprovado' && c.r4_proposta_enviada;}), ok:n(function(c){return c.r4_resultado==='aceita';}), no:n(function(c){return c.r3_resultado==='aprovado' && c.r4_resultado==='recusada';}), t:'proposta_contratacao', prox:'até contratar' }
+  ];
+  var tdn = 'text-align:right;padding:7px 4px;';
+  var tabFunil = '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid var(--rule);"><th style="'+_TH+'">Marco</th><th style="'+_THR+'">Realizados</th><th style="'+_THR+'">Aprovados</th><th style="'+_THR+'">Reprovados</th><th style="'+_THR+'">Conversão</th><th style="'+_THR+'">Tempo médio</th></tr></thead><tbody>'
+    + marcos.map(function(m){
+      var arr = C.map(function(c){ return E[c.id].tempos[m.t]; }).filter(function(x){ return x!==null && x>=0; });
+      var med = _mediaDias(arr);
+      return '<tr style="border-bottom:1px solid var(--rule);"><td style="padding:7px 4px;font-weight:600;">'+m.nm+'</td><td style="'+tdn+'">'+m.ch+'</td><td style="'+tdn+'">'+m.ok+'</td><td style="'+tdn+(m.no?'color:var(--red);':'color:var(--t4);')+'">'+m.no+'</td><td style="'+tdn+'font-weight:700;">'+_pct(m.ok, m.ok+m.no)+'</td><td style="'+tdn+'">'+(med!==null?med+' dias <span style="color:var(--t4);font-size:10px;">'+m.prox+'</span>':'—')+'</td></tr>';
+    }).join('') + '</tbody></table>'
+    + '<div style="font-size:10px;color:var(--t4);margin-top:6px;">Conversão = aprovados ÷ (aprovados + reprovados), só de quem já teve decisão. Tempo médio em dias corridos, só de quem já passou pelo marco seguinte.</div>';
 
-  // 6) bola parada
-  var parados = ativos.map(function(c){ return { c:c, e:E[c.id] }; }).filter(function(x){ return x.e.bola && x.e.diasNaBola !== null && x.e.diasNaBola >= JR_LIMITE_BOLA; }).sort(function(a,b){ return b.e.diasNaBola - a.e.diasNaBola; });
+  // 3) Bola parada
+  var parados = ativos.map(function(c){ return { c:c, e:E[c.id] }; }).filter(function(x){ return x.e.iniciada && x.e.bola && x.e.diasNaBola !== null && x.e.diasNaBola >= JR_LIMITE_BOLA; }).sort(function(a,b){ return b.e.diasNaBola - a.e.diasNaBola; });
   var porBola = {}; parados.forEach(function(x){ porBola[x.e.bola] = (porBola[x.e.bola]||0)+1; });
-  var tabPar = parados.length ? '<div style="font-size:11px;color:var(--t3);margin-bottom:8px;">'+parados.length+' candidato(s) com a bola parada há '+JR_LIMITE_BOLA+'+ dias — '+Object.keys(porBola).map(function(b){ return '<b>'+esc(b)+'</b>: '+porBola[b]; }).join(' · ')+'</div>'
-    + '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid var(--rule);"><th style="'+_TH+'">Candidato</th><th style="'+_TH+'">Praça</th><th style="'+_TH+'">Marco</th><th style="'+_TH+'">Com quem está a bola</th><th style="'+_TH+'">O que falta</th><th style="'+_THR+'">Dias</th></tr></thead><tbody>'
-    + parados.slice(0,15).map(function(x){ return '<tr style="border-bottom:1px solid var(--rule);"><td style="padding:6px 4px;">'+esc(x.c.nome)+'</td><td style="padding:6px 4px;">'+esc(pracaLabel(x.c.praca)||'—')+'</td><td style="padding:6px 4px;"><b>'+x.e.atual+'</b></td><td style="padding:6px 4px;">'+esc(x.e.bola)+'</td><td style="padding:6px 4px;">'+esc(x.e.acao)+'</td><td style="text-align:right;padding:6px 4px;color:var(--red);font-weight:700;">'+x.e.diasNaBola+'d</td></tr>'; }).join('')
-    + '</tbody></table>' + (parados.length>15 ? '<div style="font-size:11px;color:var(--t4);margin-top:6px;">+ '+(parados.length-15)+' candidato(s) não exibidos.</div>' : '')
-    : '<div style="padding:8px 0;color:var(--t4);font-size:12px;">Nenhum candidato com a bola parada há '+JR_LIMITE_BOLA+'+ dias no filtro atual.</div>';
+  var resumoBola = Object.keys(porBola).map(function(b){ return '<b>'+esc(b)+'</b> '+porBola[b]; }).join(' · ');
+  var tabPar = parados.length
+    ? '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid var(--rule);"><th style="'+_TH+'">Candidato</th><th style="'+_TH+'">Marco</th><th style="'+_TH+'">Com quem está</th><th style="'+_TH+'">O que falta</th><th style="'+_THR+'">Parado</th></tr></thead><tbody>'
+      + parados.slice(0,8).map(function(x){ return '<tr style="border-bottom:1px solid var(--rule);"><td style="padding:7px 4px;">'+esc(x.c.nome)+'<div style="font-size:10px;color:var(--t4);">'+esc(x.c.hunter||'—')+' · '+esc(x.c.lider||'—')+'</div></td><td style="padding:7px 4px;"><b>'+x.e.atual+'</b></td><td style="padding:7px 4px;">'+esc(x.e.bola)+'</td><td style="padding:7px 4px;">'+esc(x.e.acao)+'</td><td style="'+tdn+'color:var(--red);font-weight:700;">'+x.e.diasNaBola+' dias</td></tr>'; }).join('')
+      + '</tbody></table>' + (parados.length>8 ? '<div style="font-size:11px;color:var(--t4);margin-top:6px;">+ '+(parados.length-8)+' não exibidos.</div>' : '')
+    : '<div style="padding:6px 0;color:var(--t4);font-size:12px;">Nenhum candidato parado há '+JR_LIMITE_BOLA+'+ dias. ✔</div>';
 
-  var aviso = semJornada.length ? '<div style="background:rgba(180,83,9,.08);border-left:3px solid #B45309;padding:8px 12px;font-size:11px;margin-bottom:14px;"><b>'+semJornada.length+' candidato(s) ativo(s) sem jornada preenchida</b> ('+semJornada.slice(0,5).map(function(c){return esc(c.nome);}).join(', ')+(semJornada.length>5?'…':'')+'). Os números abaixo só consideram quem tem R1–R4 lançadas no card do CRM.</div>' : '';
-  var sub = function(t){ return '<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin:18px 0 8px;">'+t+'</div>'; };
-  return '<div class="card card-flow"><div class="sh"><span class="sn">03</span><span class="st">Jornada R1–R4 — Cadência, Tempos e Conversão</span><span class="ss">'+iniciados.length+' candidato(s) com jornada lançada · R1 apresentação → R2 líder → R3 Pré-Work → R4 proposta</span></div>'
+  // 4) Hunters e líderes — uma tabela só
+  var pessoas = {};
+  var add = function(nome, papel, c){ if (!nome) return; var k = papel+'|'+nome; var p = pessoas[k] = pessoas[k] || { nome:nome, papel:papel, tot:0, par:0, rep:0 }; var e = E[c.id]; p.tot++; if (e.reprovadoEm) p.rep++;
+    if (ativos.indexOf(c) > -1 && e.bola && e.diasNaBola !== null && e.diasNaBola >= JR_LIMITE_BOLA && (papel==='Líder' ? e.bola==='Líder' : /Expansão|Hunter/.test(e.bola))) p.par++; };
+  iniciados.forEach(function(c){ add(c.hunter,'Hunter',c); add(c.lider,'Líder',c); });
+  var lp = Object.keys(pessoas).map(function(k){ return pessoas[k]; }).sort(function(a,b){ return b.par - a.par || b.tot - a.tot; });
+  var tabPes = lp.length ? '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid var(--rule);"><th style="'+_TH+'">Pessoa</th><th style="'+_TH+'">Papel</th><th style="'+_THR+'">Em jornada</th><th style="'+_THR+'">Reprovados</th><th style="'+_THR+'">Bola parada '+JR_LIMITE_BOLA+'d+</th></tr></thead><tbody>'
+    + lp.map(function(p){ return '<tr style="border-bottom:1px solid var(--rule);"><td style="padding:7px 4px;">'+esc(p.nome)+'</td><td style="padding:7px 4px;color:var(--t3);">'+p.papel+'</td><td style="'+tdn+'">'+p.tot+'</td><td style="'+tdn+'">'+p.rep+'</td><td style="'+tdn+(p.par?'color:var(--red);font-weight:700;':'color:var(--t4);')+'">'+p.par+'</td></tr>'; }).join('')
+    + '</tbody></table>' : '<div style="padding:6px 0;color:var(--t4);font-size:12px;">Sem jornadas lançadas ainda.</div>';
+
+  var aviso = semJornada.length ? '<div style="background:rgba(180,83,9,.08);border-left:3px solid #B45309;padding:8px 12px;font-size:11px;margin-bottom:6px;"><b>'+semJornada.length+' candidato(s) ativo(s) sem jornada lançada</b> no CRM — não entram nos números abaixo.</div>' : '';
+  return '<div class="card card-flow" id="card-jornada"><div class="sh"><span class="sn">03</span><span class="st">Jornada R1–R4</span><span class="ss">'+iniciados.length+' candidato(s) com jornada lançada</span></div>'
     + aviso
-    + sub('Cadência semanal — quantidade de reuniões por semana') + tabSem
-    + sub('Agenda desta semana') + tabAg
-    + sub('Tempo entre marcos (dias corridos)') + kpisT
-    + sub('Conversão entre marcos') + tabConv
-    + sub('Por hunter') + '<div style="overflow-x:auto;">'+porPessoa('hunter')+'</div>'
-    + sub('Por líder') + '<div style="overflow-x:auto;">'+porPessoa('lider')+'</div>'
-    + sub('Com quem está a bola — candidatos parados') + tabPar
+    + filtros + sub(P.nome, _fd(P.ini)+' a '+_fd(P.fim)+' · comparado com '+_fd(P.iniAnt)+' a '+_fd(P.fimAnt)) + cards
+    + grafico
+    + sub('Funil da jornada', 'acumulado de todos os candidatos') + tabFunil
+    + sub('Bola parada', parados.length ? parados.length+' candidato(s) há '+JR_LIMITE_BOLA+'+ dias — '+resumoBola : '') + tabPar
+    + sub('Hunters e líderes') + tabPes
     + '</div>';
 }
 function renumerarSecoes(){ var i = 0; document.querySelectorAll('#content-root .sn').forEach(function(el){ i++; el.textContent = (i<10?'0':'')+i; }); }
