@@ -200,7 +200,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
 
     <div class="cr">
       <div class="rt">Blue3 Future<br><span style="font-size:18px;">Funil de Candidatos</span></div>
-      <div class="rp">Acompanhamento pra apresentação à XP</div>
+      <div class="rp">Acompanhamento pra apresentação à XP<span id="rt-filtro" style="font-weight:700;"></span></div>
       <div class="rc">Atualizado <span id="rt-atualizado">—</span> · Confidencial</div>
     </div>
   </div>
@@ -213,6 +213,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
   <div class="ms" id="ms-praca">
     <button type="button" class="ms-btn" onclick="msToggleOpen()">Todas as praças Future</button>
     <div class="ms-panel" id="ms-panel-praca"></div>
+  </div>
+  <span class="fbar-lbl" style="margin-left:8px;">Hunter</span>
+  <div class="ms" id="ms-hunter">
+    <button type="button" class="ms-btn" onclick="msHunterToggleOpen()">Todos os hunters</button>
+    <div class="ms-panel" id="ms-panel-hunter"></div>
   </div>
   <span class="f-count" id="f-count">—</span>
   <div style="margin-left:auto;display:flex;gap:8px;">
@@ -303,6 +308,7 @@ function carregar() {
     TODOS = candidatos.filter(function(c){ return (c.vaga||'').trim() === 'Future'; });
 
     popularFiltroPraca();
+    hunterDaUrl();
     aplicarFiltro();
   }).catch(function(err){
     document.getElementById('content-root').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Erro ao carregar: '+esc(JSON.stringify(err))+'</div>';
@@ -332,6 +338,39 @@ function popularFiltroPraca() {
   panel.innerHTML = html || '<div style="padding:10px 12px;font-size:11px;color:var(--t4);">Nenhuma praça Future encontrada</div>';
   msAtualizarLabel();
 }
+
+// ── Filtro de Hunter (multi-seleção) — cada hunter pode tirar o seu relatório ──
+// Também aceita link direto: ?hunter=Nome (ou vários separados por vírgula).
+var MS_HUNTER = new Set();
+function hKey(c){ return String(c.hunter||'').trim().toLowerCase() || '__sem'; }
+function naHunterSel(c){ return !MS_HUNTER.size || MS_HUNTER.has(hKey(c)); }
+function _hunterNomeExibicao(k, lista){ if (k === '__sem') return '(sem hunter)'; var r = lista.filter(function(c){ return hKey(c) === k; })[0]; return r ? String(r.hunter).trim() : k; }
+function msHunterPopular(base) {
+  var panel = document.getElementById('ms-panel-hunter'); if (!panel) return;
+  var cont = {}; base.forEach(function(c){ var k = hKey(c); cont[k] = (cont[k]||0) + 1; });
+  var chaves = Object.keys(cont).sort(function(a,b){ if (a==='__sem') return 1; if (b==='__sem') return -1; return _hunterNomeExibicao(a,base).localeCompare(_hunterNomeExibicao(b,base)); });
+  MS_HUNTER.forEach(function(k){ if (!cont[k]) MS_HUNTER.delete(k); });   // some da lista → sai da seleção
+  var html = chaves.map(function(k){
+    return '<label><input type="checkbox" value="'+esc(k).replace(/"/g,'&quot;')+'"'+(MS_HUNTER.has(k)?' checked':'')+' onchange="msHunterToggle(this.value,this.checked)"> '+esc(_hunterNomeExibicao(k,base))+' <span style="color:var(--t4);font-size:11px;">('+cont[k]+')</span></label>';
+  }).join('');
+  html += '<div class="ms-actions"><button type="button" onclick="msHunterLimpar()">Limpar</button><button type="button" onclick="msHunterFechar()">Fechar</button></div>';
+  panel.innerHTML = chaves.length ? html : '<div style="padding:10px 12px;font-size:11px;color:var(--t4);">Nenhum hunter encontrado</div>';
+  msHunterLabel(base);
+}
+function msHunterLabel(base) {
+  var btn = document.querySelector('#ms-hunter .ms-btn'); if (!btn) return;
+  if (!MS_HUNTER.size) { btn.textContent = 'Todos os hunters'; btn.classList.remove('ms-active'); }
+  else { btn.textContent = MS_HUNTER.size === 1 ? _hunterNomeExibicao([...MS_HUNTER][0], base || HUNTER_BASE_ATUAL) : MS_HUNTER.size + ' hunters'; btn.classList.add('ms-active'); }
+  hunterNaUrl();
+}
+var HUNTER_BASE_ATUAL = [];
+function hunterTexto(){ if (!MS_HUNTER.size) return ''; return [...MS_HUNTER].map(function(k){ return _hunterNomeExibicao(k, HUNTER_BASE_ATUAL.length ? HUNTER_BASE_ATUAL : (window._TODOS_HUNTER || [])); }).join(', '); }
+function hunterNaUrl(){ try { var u = new URL(location.href); if (MS_HUNTER.size) u.searchParams.set('hunter', [...MS_HUNTER].map(function(k){ return k==='__sem'?'(sem hunter)':_hunterNomeExibicao(k, window._TODOS_HUNTER||[]); }).join(',')); else u.searchParams.delete('hunter'); history.replaceState(null,'',u.toString()); } catch(e){} }
+function hunterDaUrl(){ try { var v = new URL(location.href).searchParams.get('hunter'); if (!v) return; v.split(',').forEach(function(n){ n = n.trim().toLowerCase(); if (n) MS_HUNTER.add(n === '(sem hunter)' ? '__sem' : n); }); } catch(e){} }
+function msHunterToggle(k, on){ if (on) MS_HUNTER.add(k); else MS_HUNTER.delete(k); msHunterLabel(); aplicarFiltro(true); }
+function msHunterLimpar(){ MS_HUNTER.clear(); document.querySelectorAll('#ms-panel-hunter input').forEach(function(c){ c.checked = false; }); msHunterLabel(); aplicarFiltro(true); }
+function msHunterFechar(){ document.querySelectorAll('.ms-panel.open').forEach(function(p){ p.classList.remove('open'); }); }
+function msHunterToggleOpen(){ var p = document.getElementById('ms-panel-hunter'), aberto = p.classList.contains('open'); msHunterFechar(); if (!aberto) p.classList.add('open'); }
 function msToggle(v, checked){ if(checked) MS_PRACA.add(v); else MS_PRACA.delete(v); msAtualizarLabel(); aplicarFiltro(); }
 function msLimpar(){ MS_PRACA.clear(); document.querySelectorAll('#ms-panel-praca input').forEach(function(c){c.checked=false;}); msAtualizarLabel(); aplicarFiltro(); }
 function msAtualizarLabel(){
@@ -345,8 +384,14 @@ function msToggleOpen(){ var p=document.getElementById('ms-panel-praca'); var e=
 function msFechar(){ document.querySelectorAll('.ms-panel.open').forEach(function(p){p.classList.remove('open');}); }
 document.addEventListener('click', function(e){ if(!e.target.closest('.ms')) msFechar(); });
 
-function aplicarFiltro() {
-  var filtrados = TODOS.filter(function(c){ return !MS_PRACA.size || MS_PRACA.has(c.praca||''); });
+function aplicarFiltro(semRepopular) {
+  window._TODOS_HUNTER = TODOS;
+  var base = TODOS.filter(function(c){ return !MS_PRACA.size || MS_PRACA.has(c.praca||''); });   // universo de hunters = praças selecionadas
+  HUNTER_BASE_ATUAL = base;
+  if (!semRepopular) msHunterPopular(base); else msHunterLabel(base);
+  var filtrados = base.filter(naHunterSel);
+  var rp = document.getElementById('rt-filtro');
+  if (rp) rp.textContent = MS_HUNTER.size ? ' · Hunter: ' + hunterTexto() : '';
   document.getElementById('f-count').textContent = filtrados.length + ' candidato' + (filtrados.length!==1?'s':'') + ' Future';
   render(filtrados);
 }
@@ -1502,7 +1547,7 @@ function exportarCSV() {
   var a = document.createElement('a');
   var hoje = new Date();
   a.href = url;
-  a.download = 'blue3_future_' + hoje.getFullYear() + String(hoje.getMonth()+1).padStart(2,'0') + String(hoje.getDate()).padStart(2,'0') + '.csv';
+  a.download = 'blue3_future_' + (MS_HUNTER.size ? hunterTexto().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') + '_' : '') + hoje.getFullYear() + String(hoje.getMonth()+1).padStart(2,'0') + String(hoje.getDate()).padStart(2,'0') + '.csv';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
