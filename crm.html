@@ -1109,11 +1109,11 @@ function dropCard(e, etapa) {
   if (!_dragId) return;
   var cand = _todos.find(function(r){ return r.id===_dragId; });
   if (!cand || cand.etapa === etapa) { _dragId=null; return; }
-  var _faltDrag = faltasFuture(cand, etapa).concat(faltasEtapaJornada(jrRegistroDe(cand), etapa, cand.etapa));
+  var _faltDrag = mesclarFaltas(faltasFuture(cand, etapa).concat(faltasEtapaJornada(jrRegistroDe(cand), etapa, cand.etapa)), faltasTelCpf(cand, etapa, cand.etapa));
   if (_faltDrag.length) {
     var _id = _dragId; _dragId = null;
     document.querySelectorAll('.kcard').forEach(function(c){ c.classList.remove('dragging'); });
-    alert('Para mover "' + cand.nome + '" para ' + etapa + ' o cadastro do Future precisa estar completo.\n\nFalta:\n• ' + _faltDrag.map(function(f){return f.t;}).join('\n• ') + '\n\nVou abrir o cadastro para você completar. O card só muda de etapa depois de salvar.');
+    alert('Para mover "' + cand.nome + '" para ' + etapa + ' o cadastro precisa estar completo.\n\nFalta:\n• ' + _faltDrag.map(function(f){return f.t;}).join('\n• ') + '\n\nVou abrir o cadastro para você completar. O card só muda de etapa depois de salvar.');
     abrirEdicao(_id);
     var _se = document.getElementById('m-etapa');
     if (_se) { _se.value = etapa; toggleEtapaDatas(etapa, true); toggleMotivoDeclinio(etapa); toggleMotivoDeclinioFinSave(etapa); }
@@ -1719,6 +1719,34 @@ function faltasFuture(d, etapa) {
   }
   return F;
 }
+/* Telefone e CPF obrigatórios para entrar em Contratação/Trabalhando (qualquer vaga).
+   Vale na ENTRADA na contratação; Future segue a regra estrita (vale em todo salvamento). */
+function cpfValido(v) {
+  var c = String(v||'').replace(/\D/g,'');
+  if (c.length !== 11 || /^(\d)\1{10}$/.test(c)) return false;
+  for (var t = 9; t < 11; t++) {
+    var soma = 0; for (var i = 0; i < t; i++) soma += parseInt(c[i],10) * (t + 1 - i);
+    var dv = ((soma * 10) % 11) % 10;
+    if (dv !== parseInt(c[t],10)) return false;
+  }
+  return true;
+}
+function faltasTelCpf(d, etapa, etapaAnterior) {
+  if (!d || ETAPAS_CONTRATADO.indexOf(etapa) < 0) return [];
+  var jaEraContratado = ETAPAS_CONTRATADO.indexOf(etapaAnterior) >= 0;
+  if (jaEraContratado && d.vaga !== 'Future') return [];   // legado fora do Future: não trava edições não relacionadas
+  var F = [], dig = String(d.telefone||'').replace(/\D/g,''), cpf = String(d.cpf||'').replace(/\D/g,'');
+  if (!dig) F.push({id:'m-tel', t:'Telefone'});
+  else if (dig.length < 10) F.push({id:'m-tel', t:'Telefone (incompleto — informe com DDD)'});
+  if (!cpf) F.push({id:'m-cpf', t:'CPF'});
+  else if (!cpfValido(cpf)) F.push({id:'m-cpf', t:'CPF (inválido — confira os dígitos)'});
+  return F;
+}
+function mesclarFaltas(a, b) {   // junta as listas sem repetir o mesmo campo
+  var vistos = {}, out = [];
+  a.concat(b).forEach(function(f){ if (!vistos[f.id]) { vistos[f.id] = true; out.push(f); } });
+  return out;
+}
 function irParaCampo(id) {
   var el = document.getElementById(id); if (!el) return;
   var pane = el.closest('.tab-pane');
@@ -1737,13 +1765,14 @@ function atualizarObrigatorios() {
   var vaga = (document.getElementById('m-vaga')||{}).value, etapa = (document.getElementById('m-etapa')||{}).value;
   var contratado = vaga === 'Future' && ETAPAS_CONTRATADO.indexOf(etapa) >= 0;
   var declinou   = vaga === 'Future' && etapa === 'Declinou';
-  var map = {'m-tel':contratado,'m-email':contratado,'m-piso':contratado,'m-periodo':contratado,
+  var contratadoQualquer = ETAPAS_CONTRATADO.indexOf(etapa) >= 0;
+  var map = {'m-tel':contratado || contratadoQualquer,'m-cpf':contratadoQualquer,'m-email':contratado,'m-piso':contratado,'m-periodo':contratado,
              'm-perfil':contratado,'m-copart':contratado,'m-copart-det':contratado,'m-motivo-declinio':declinou};
   Object.keys(map).forEach(function(id){
     var el = document.getElementById(id), row = el && el.closest('.f-row'), lb = row && row.querySelector('label');
     if (lb) lb.classList.toggle('req', !!map[id]);
   });
-  if (!contratado && !declinou) marcarErros([]);
+  if (!contratado && !declinou && !contratadoQualquer) marcarErros([]);
 }
 
 function salvarCandidato() {
@@ -1817,15 +1846,16 @@ function salvarCandidato() {
   };
   if (vaga === 'Future') Object.assign(payload, jrPayload());
   var _falt = faltasFuture(payload, payload.etapa);
+  var _candAnt = _idAtual ? _todos.find(function(x){ return x.id === _idAtual; }) : null;
+  _falt = mesclarFaltas(_falt, faltasTelCpf(payload, payload.etapa, _candAnt ? _candAnt.etapa : ''));
   if (vaga === 'Future') {
-    var _candAnt = _idAtual ? _todos.find(function(x){ return x.id === _idAtual; }) : null;
     var _dj = Object.assign({ vaga: vaga }, jrLer());
     _falt = _falt.concat(faltasJornada(jrLer()), faltasEtapaJornada(_dj, payload.etapa, _candAnt ? _candAnt.etapa : 'Prospecção'));
   }
   if (_falt.length) {
     marcarErros(_falt);
     var _acao = payload.etapa === 'Declinou' ? 'declinar este candidato' : (['Contratação','Trabalhando','Desligado'].indexOf(payload.etapa) >= 0 ? 'registrar a contratação deste candidato' : 'salvar este candidato');
-    alert('Não é possível ' + _acao + ' do Future com o cadastro incompleto ou inconsistente.\n\nCorrija:\n• ' + _falt.map(function(f){return f.t;}).join('\n• '));
+    alert('Não é possível ' + _acao + (vaga === 'Future' ? ' do Future' : '') + ' com o cadastro incompleto ou inconsistente.\n\nCorrija:\n• ' + _falt.map(function(f){return f.t;}).join('\n• '));
     irParaCampo(_falt[0].id);
     return;
   }
