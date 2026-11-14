@@ -293,11 +293,13 @@ function carregar() {
       if (typeof NexusConfig === 'undefined' || typeof NexusConfig.getPracas !== 'function') { resolve([]); return; }
       NexusConfig.getPracas(function(err, pracas){ resolve(err ? [] : (pracas||[])); });
     }),
-    supaGet('propostas?select=telefone&limit=5000')
+    supaGet('propostas?select=telefone&limit=5000'),
+    supaGet('prospeccao_semanal?canal=eq.Future&limit=20000')   // fechamento semanal dos hunters (se a tabela ainda não existir, volta vazio)
   ]).then(function(res){
     var candidatos = res[0] || [];
     _PRACAS_CAD = res[1] || [];
     var propostas = res[2] || [];
+    PROSP = Array.isArray(res[3]) ? res[3] : [];
 
     TELEFONES_COM_PROPOSTA = {};
     propostas.forEach(function(p){
@@ -599,6 +601,69 @@ function renderJornada(C) {
     + sub('Hunters e líderes') + tabPes
     + '</div>';
 }
+
+/* ═══ SEÇÃO: Funil por Hunter e Praça — da abordagem no LinkedIn até a proposta ═══
+   Abordados/Responderam vêm do fechamento semanal lançado pelos hunters no CRM.
+   Leads, R1, R2, Pré-Work e Proposta vêm dos candidatos cadastrados no Nexus (coorte: leads que entraram na janela). */
+var PROSP = [];
+var _fhpSemanas = 8;
+function setFhpJanela(n){ _fhpSemanas = n; var el = document.getElementById('card-fhp'); if (!el || !window._C_ATUAL) return; el.outerHTML = renderFunilHunterPraca(window._C_ATUAL); renumerarSecoes(); }
+function renderFunilHunterPraca(C) {
+  var hoje = hojeISO(), ini = _somaDias(_segunda(hoje), -7*(_fhpSemanas-1));
+  var k = function(h){ return (String(h||'').trim().toLowerCase() || '(sem hunter)'); };
+  var HN = {};   // nome de exibição por hunter (prefere a grafia com inicial maiúscula)
+  var nomeH = function(h){ var n = String(h||'').trim() || '(sem hunter)', key = k(h); if (!HN[key] || (HN[key] === HN[key].toLowerCase() && n !== n.toLowerCase())) HN[key] = n; return HN[key]; };
+  var P = {};   // chave hunter|praça
+  var pega = function(h, praca){ var key = k(h)+'|'+(praca||''); return P[key] = P[key] || { h:k(h), praca:praca||'', abord:0, resp:0, leads:0, r1:0, r2:0, pw:0, prop:0, semJ:0 }; };
+  C.forEach(function(c){
+    if (!c.data_entrada || c.data_entrada.slice(0,10) < ini) return;
+    nomeH(c.hunter); var p = pega(c.hunter, c.praca), e = jornadaEstado(c, hoje);
+    p.leads++; if (!e.iniciada) p.semJ++;
+    if (c.r1_realizada) p.r1++; if (c.r2_realizada) p.r2++; if (c.r3_entregue) p.pw++; if (c.r4_proposta_enviada) p.prop++;
+  });
+  var lanc = 0;
+  PROSP.forEach(function(x){
+    if (!x.semana_inicio || x.semana_inicio < ini) return;
+    if (MS_PRACA.size && !MS_PRACA.has(x.praca||'')) return;
+    if (MS_HUNTER.size && !MS_HUNTER.has(k(x.hunter))) return;
+    nomeH(x.hunter); var p = pega(x.hunter, x.praca); p.abord += x.abordados||0; p.resp += x.responderam||0; lanc++;
+  });
+  var linhas = Object.keys(P).map(function(x){ P[x].hn = HN[P[x].h]; return P[x]; }).sort(function(a,b){ return (a.hn||a.h).localeCompare(b.hn||b.h) || pracaLabel(a.praca).localeCompare(pracaLabel(b.praca)); });
+  var T = { abord:0, resp:0, leads:0, r1:0, r2:0, pw:0, prop:0, semJ:0 }; linhas.forEach(function(l){ Object.keys(T).forEach(function(c){ T[c] += l[c]; }); });
+  var pc = function(a,b){ return b > 0 ? Math.round(a/b*100)+'%' : '—'; };
+  var th = 'padding:6px 5px;font-size:9px;text-transform:uppercase;color:var(--t3);white-space:nowrap;';
+  var cv = 'text-align:right;padding:7px 5px;color:var(--cobalt);font-weight:700;background:rgba(26,59,173,.04);';
+  var nm = 'text-align:right;padding:7px 5px;';
+  var linha = function(l, nomeH, tot){
+    var bord = tot ? 'border-top:2px solid var(--rule);font-weight:700;' : 'border-bottom:1px solid var(--rule);';
+    return '<tr style="'+bord+'"><td style="padding:7px 5px;white-space:nowrap;">'+(nomeH ? esc(l.hn||l.h) : '')+'</td><td style="padding:7px 5px;white-space:nowrap;">'+(tot?'Total':esc(pracaLabel(l.praca)||'—'))+'</td>'
+      + '<td style="'+nm+'">'+l.abord+'</td><td style="'+nm+'">'+l.resp+'</td><td style="'+cv+'">'+pc(l.resp,l.abord)+'</td>'
+      + '<td style="'+nm+'">'+l.leads+'</td><td style="'+cv+'">'+(l.abord ? pc(l.leads,l.resp) : '—')+'</td>'
+      + '<td style="'+nm+'">'+l.r1+'</td><td style="'+cv+'">'+pc(l.r1,l.leads)+'</td>'
+      + '<td style="'+nm+'">'+l.r2+'</td><td style="'+cv+'">'+pc(l.r2,l.r1)+'</td>'
+      + '<td style="'+nm+'">'+l.pw+'</td><td style="'+cv+'">'+pc(l.pw,l.r2)+'</td>'
+      + '<td style="'+nm+'">'+l.prop+'</td><td style="'+cv+'">'+pc(l.prop,l.pw)+'</td></tr>';
+  };
+  var ult = '', corpo = linhas.map(function(l){ var novo = k(l.h) !== ult; ult = k(l.h); return linha(l, novo, false); }).join('');
+  var pill = function(n, rot){ var on = n === _fhpSemanas; return '<button onclick="setFhpJanela('+n+')" style="cursor:pointer;font:inherit;font-size:11px;padding:5px 12px;border-radius:999px;border:1px solid '+(on?'#1A3BAD':'var(--rule)')+';background:'+(on?'#1A3BAD':'transparent')+';color:'+(on?'#fff':'var(--t2)')+';">'+rot+'</button>'; };
+  var avisoPro = !PROSP.length ? '<div style="background:rgba(180,83,9,.08);border-left:3px solid #B45309;padding:8px 12px;font-size:11px;margin-bottom:10px;"><b>Ainda não há fechamentos semanais lançados.</b> As colunas Abordados e Responderam ficam zeradas até os hunters usarem “Fechar a semana” no CRM.</div>' : '';
+  return '<div class="card card-flow" id="card-fhp"><div class="sh"><span class="sn">00</span><span class="st">Funil por Hunter e Praça</span><span class="ss">da abordagem no LinkedIn até a proposta · cada praça em linha própria</span></div>'
+    + avisoPro
+    + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"><span style="font-size:11px;color:var(--t3);align-self:center;margin-right:4px;">Janela:</span>'+pill(4,'Últimas 4 semanas')+pill(8,'8 semanas')+pill(12,'12 semanas')+pill(26,'6 meses')+'</div>'
+    + (linhas.length ? '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid var(--rule);">'
+      + '<th style="'+th+'text-align:left;">Hunter</th><th style="'+th+'text-align:left;">Praça</th>'
+      + '<th style="'+th+'text-align:right;">Abordados</th><th style="'+th+'text-align:right;">Resp.</th><th style="'+th+'text-align:right;">Resp./Abord.</th>'
+      + '<th style="'+th+'text-align:right;">Leads</th><th style="'+th+'text-align:right;">Leads/Resp.</th>'
+      + '<th style="'+th+'text-align:right;">R1</th><th style="'+th+'text-align:right;">R1/Leads</th>'
+      + '<th style="'+th+'text-align:right;">R2</th><th style="'+th+'text-align:right;">R2/R1</th>'
+      + '<th style="'+th+'text-align:right;">Pré-Work</th><th style="'+th+'text-align:right;">PW/R2</th>'
+      + '<th style="'+th+'text-align:right;">Proposta</th><th style="'+th+'text-align:right;">Prop./PW</th></tr></thead><tbody>'+corpo+linha(T,false,true)+'</tbody></table></div>'
+      : '<div style="padding:10px 0;color:var(--t4);font-size:12px;">Sem leads nem fechamentos na janela e filtro escolhidos.</div>')
+    + '<div style="font-size:10px;color:var(--t4);margin-top:8px;line-height:1.6;">'
+    + '<b>Abordados / Responderam:</b> lançados pelos hunters no fechamento semanal (LinkedIn). <b>Leads:</b> candidatos cadastrados no Nexus na janela. <b>R1, R2, Pré-Work, Proposta:</b> quantos desses leads já chegaram a cada marco (jornada do CRM) — leads recentes ainda estão a caminho, então as taxas sobem com o tempo.'
+    + (T.semJ ? ' <b style="color:#B45309;">'+T.semJ+' lead(s) da janela sem jornada lançada no CRM</b> entram como zero nos marcos.' : '')
+    + '</div></div>';
+}
 function renumerarSecoes(){ var i = 0; document.querySelectorAll('#content-root .sn').forEach(function(el){ i++; el.textContent = (i<10?'0':'')+i; }); }
 
 function render(C) {
@@ -611,6 +676,7 @@ function render(C) {
   html += renderKPIs(C);
   html += renderFunil(C);
   html += renderJornada(C);
+  html += renderFunilHunterPraca(C);
   html += renderConversaoEtapas(C);
   html += renderVelocidade(C);
   html += renderOrigemLeads(C);
