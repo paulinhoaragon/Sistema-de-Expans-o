@@ -224,6 +224,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Importar CSV
     </button>
+    <button class="btn-import" id="btn-fechar-semana" onclick="fsAbrir()" title="Fechamento semanal de prospecção (Future)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Fechar a semana<span id="fs-badge" style="display:none;margin-left:4px;background:#F59E0B;color:#0A0F1E;border-radius:999px;font-size:10px;font-weight:700;padding:1px 7px;"></span>
+    </button>
     <button class="btn-add" onclick="abrirModal()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Novo candidato
@@ -860,6 +864,7 @@ function carregar() {
       _todos = Array.isArray(rows) ? rows : [];
       popularFiltrosPraca();
       renderBoard();
+      if (typeof fsStatusSemana === 'function' && !window._CRM_READONLY) fsStatusSemana();
     })
     .catch(function(){ renderErro(); });
 }
@@ -1692,6 +1697,169 @@ function jrRegistroDe(r) {   // registro do banco → mesmo formato de jrLer (pa
   var d = { vaga: r.vaga, data_entrada: r.data_entrada, data_contratacao: r.data_contratacao };
   Object.keys(JR_IDS).forEach(function(k) { d[k] = r[k] || null; });
   return d;
+}
+
+
+/* ═══ FECHAMENTO SEMANAL DE PROSPECÇÃO (Future) ═══
+   Cada hunter lança, por praça e semana, quantos abordou no LinkedIn e quantos responderam.
+   Tabela: prospeccao_semanal (hunter, praca, canal, semana_inicio[segunda], abordados, responderam). */
+var FS_CANAL = 'Future';
+var FS = { linhas: [], enc: {}, rec: [] };
+function fsKey(n){ return String(n||'').trim().toLowerCase(); }
+function fsIso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fsSegunda(d){ var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay()+6)%7)); return x; }
+function fsSemanaRef(){   // segunda e terça ainda fecham a semana anterior; de quarta em diante, a atual
+  var h = new Date(), seg = fsSegunda(h), dow = (h.getDay()+6)%7;   // 0 = segunda
+  if (dow <= 1) seg.setDate(seg.getDate()-7);
+  return fsIso(seg);
+}
+function fsLbl(iso){ var a = new Date(iso+'T12:00:00'), b = new Date(a); b.setDate(a.getDate()+6); var f = function(x){ return String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0'); }; return f(a)+' a '+f(b); }
+function fsHdr(extra){ return Object.assign({ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+SUPA_KEY, 'Content-Type':'application/json' }, extra||{}); }
+function fsHunters(){
+  var cad = (window._HUNTERS_CAD || []).map(function(h){ return h.nome; });
+  if (cad.length) return cad;
+  var set = {}; (_todos||[]).forEach(function(r){ if (r.vaga==='Future' && (r.hunter||'').trim()) set[r.hunter.trim()] = true; });
+  return Object.keys(set).sort();
+}
+function fsPracasDoHunter(h){   // praças com hunting em andamento: candidato em Prospecção/Qualificação/Negociação OU lançamento nas últimas 8 semanas; encerradas ficam de fora
+  var set = {};
+  (_todos||[]).forEach(function(r){
+    if (r.vaga!=='Future' || fsKey(r.hunter)!==fsKey(h) || !r.praca) return;
+    if (['Prospecção','Qualificação','Negociação'].indexOf(r.etapa) >= 0) set[r.praca] = true;
+  });
+  (FS.rec||[]).forEach(function(x){ if (fsKey(x.hunter)===fsKey(h) && x.praca) set[x.praca] = true; });
+  return Object.keys(set).filter(function(p){ return !FS.enc[p]; }).sort(function(a,b){ return pracaLabel(a).localeCompare(pracaLabel(b)); });
+}
+// Carrega o que a lista automática precisa: praças encerradas + lançamentos recentes (8 semanas)
+function fsBase(cb){
+  var corte = new Date(); corte.setDate(corte.getDate()-56);
+  Promise.all([
+    fetch(SUPA_URL+'/rest/v1/prospeccao_encerradas?canal=eq.'+FS_CANAL, { headers: fsHdr(), cache:'no-store' }).then(function(r){ return r.json(); }).catch(function(){ return []; }),
+    fetch(SUPA_URL+'/rest/v1/prospeccao_semanal?select=hunter,praca&canal=eq.'+FS_CANAL+'&semana_inicio=gte.'+fsIso(corte), { headers: fsHdr(), cache:'no-store' }).then(function(r){ return r.json(); }).catch(function(){ return []; })
+  ]).then(function(res){
+    FS.enc = {}; (Array.isArray(res[0]) ? res[0] : []).forEach(function(x){ FS.enc[x.praca] = x; });
+    FS.rec = Array.isArray(res[1]) ? res[1] : [];
+    cb();
+  });
+}
+function fsUsuario(){ try { var cu = (window.parent && window.parent.B3CU) ? window.parent.B3CU : (sessionStorage.getItem('b3s') ? JSON.parse(sessionStorage.getItem('b3s')) : null); return cu ? (cu.n || cu.l || '') : ''; } catch(e){ return ''; } }
+function fsAbrir(){
+  if (window._CRM_READONLY) { alert('Seu perfil tem acesso somente leitura ao CRM.'); return; }
+  var ov = document.getElementById('overlay-fs'); if (ov.parentElement !== document.body) document.body.appendChild(ov);   // garante que não fique preso dentro de outro modal
+  var hs = fsHunters(), sel = document.getElementById('fs-hunter'), me = fsKey(fsUsuario());
+  var palpite = me ? hs.filter(function(h){ var k = fsKey(h); return k === me || me.indexOf(k.split(' ')[0]) === 0 || k.indexOf(me.split(' ')[0]) === 0; }) : [];
+  sel.innerHTML = '<option value="">— Selecione o hunter —</option>' + hs.map(function(h){ return '<option value="'+esc(h)+'">'+esc(h)+'</option>'; }).join('');
+  if (palpite.length === 1) sel.value = palpite[0];
+  var ref = fsSemanaRef(), seg = fsSegunda(new Date()), ops = [];
+  for (var i = 0; i < 5; i++) { var d = new Date(seg); d.setDate(seg.getDate() - 7*i); ops.push(fsIso(d)); }
+  document.getElementById('fs-semana').innerHTML = ops.map(function(iso, i){ return '<option value="'+iso+'">'+(i===0?'Semana atual · ':i===1?'Semana passada · ':'')+fsLbl(iso)+'</option>'; }).join('');
+  document.getElementById('fs-semana').value = ref;
+  document.getElementById('fs-msg').textContent = '';
+  document.getElementById('overlay-fs').classList.add('open');
+  fsBase(function(){ fsCarregar(); fsStatusSemana(true, true); });
+}
+function fsFechar(){ document.getElementById('overlay-fs').classList.remove('open'); }
+function fsCarregar(){
+  var h = g('fs-hunter'), sem = g('fs-semana'), box = document.getElementById('fs-linhas');
+  FS.linhas = []; document.getElementById('fs-msg').textContent = '';
+  if (!h) { box.innerHTML = '<div style="padding:14px;text-align:center;color:var(--t4);font-size:12px;">Selecione o hunter para ver as praças.</div>'; document.getElementById('fs-add').style.display = 'none'; return; }
+  fetch(SUPA_URL+'/rest/v1/prospeccao_semanal?canal=eq.'+FS_CANAL+'&hunter=eq.'+encodeURIComponent(h)+'&semana_inicio=eq.'+sem, { headers: fsHdr(), cache:'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(rows){
+      if (!Array.isArray(rows)) throw new Error((rows && rows.message) || 'tabela prospeccao_semanal não encontrada — rode o SQL de migração');
+      var salvo = {}; rows.forEach(function(x){ salvo[x.praca] = x; });
+      var pracas = fsPracasDoHunter(h); Object.keys(salvo).forEach(function(p){ if (pracas.indexOf(p) < 0) pracas.push(p); });
+      FS.linhas = pracas.map(function(p){ return { praca:p, abordados: salvo[p] ? salvo[p].abordados : '', responderam: salvo[p] ? salvo[p].responderam : '', salvo: !!salvo[p] }; });
+      fsRender();
+    })
+    .catch(function(e){ box.innerHTML = '<div style="padding:14px;color:var(--red);font-size:12px;">Não foi possível carregar: '+esc(e.message||e)+'</div>'; });
+}
+function fsRender(){
+  var box = document.getElementById('fs-linhas'), h = g('fs-hunter');
+  if (!FS.linhas.length) { box.innerHTML = '<div style="padding:14px;text-align:center;color:var(--t4);font-size:12px;">Este hunter ainda não tem candidatos Future. Use “+ adicionar praça”.</div>'; }
+  else {
+    var inp = 'width:90px;padding:7px 8px;border:1px solid var(--rule);border-radius:6px;font-family:inherit;font-size:13px;text-align:right;';
+    box.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="border-bottom:1px solid var(--rule);"><th style="text-align:left;padding:6px 4px;font-size:10px;text-transform:uppercase;color:var(--t3);">Praça</th><th style="text-align:right;padding:6px 4px;font-size:10px;text-transform:uppercase;color:var(--t3);">Abordados</th><th style="text-align:right;padding:6px 4px;font-size:10px;text-transform:uppercase;color:var(--t3);">Responderam</th><th></th><th></th></tr></thead><tbody>'
+      + FS.linhas.map(function(l, i){ return '<tr style="border-bottom:1px solid var(--rule);"><td style="padding:8px 4px;">'+esc(pracaLabel(l.praca))+(l.salvo?' <span style="font-size:10px;color:var(--g);">✓ lançado</span>':'')+'</td>'
+        + '<td style="text-align:right;padding:8px 4px;"><input type="number" min="0" step="1" style="'+inp+'" value="'+l.abordados+'" oninput="FS.linhas['+i+'].abordados=this.value"></td>'
+        + '<td style="text-align:right;padding:8px 4px;"><input type="number" min="0" step="1" style="'+inp+'" value="'+l.responderam+'" oninput="FS.linhas['+i+'].responderam=this.value"></td>'
+        + '<td style="padding:8px 0 8px 6px;width:24px;">'+(l.salvo?'':'<button type="button" onclick="fsRemover('+i+')" title="Tirar esta linha" style="border:none;background:none;color:var(--t4);cursor:pointer;font-size:16px;">×</button>')+'</td><td style="padding:8px 0 8px 6px;white-space:nowrap;"><button type="button" onclick="fsEncerrar('+i+')" title="A praça concluiu e não precisa mais de hunting" style="border:1px solid var(--rule);background:#fff;color:var(--t3);cursor:pointer;font-size:10px;padding:4px 8px;border-radius:6px;">Encerrar hunting</button></td></tr>'; }).join('')
+      + '</tbody></table>';
+  }
+  var add = document.getElementById('fs-add'), usadas = FS.linhas.map(function(l){ return l.praca; });
+  var livres = (_PRACAS_CAD||[]).filter(function(p){ return usadas.indexOf(p.nome) < 0; });
+  add.style.display = h ? '' : 'none';
+  add.innerHTML = '<option value="">+ adicionar praça</option>' + livres.map(function(p){ return '<option value="'+esc(p.nome)+'">'+esc(pracaLabel(p.nome))+(FS.enc[p.nome] ? ' (encerrada — reativar)' : '')+'</option>'; }).join('');
+}
+function fsAddPraca(p){
+  if (!p) return;
+  if (FS.enc[p]) {   // praça encerrada: precisa reativar antes de lançar
+    if (!confirm('O hunting em '+pracaLabel(p)+' está encerrado. Reativar para voltar a lançar prospecção nesta praça?')) { fsRender(); return; }
+    return fetch(SUPA_URL+'/rest/v1/prospeccao_encerradas?canal=eq.'+FS_CANAL+'&praca=eq.'+encodeURIComponent(p), { method:'DELETE', headers: fsHdr() })
+      .then(function(res){ if (!res.ok) throw new Error(res.status); delete FS.enc[p]; if (typeof nexusLog === 'function') nexusLog('Hunting reativado na praça', { praca:p }); FS.linhas.push({ praca:p, abordados:'', responderam:'', salvo:false }); fsRender(); fsStatusSemana(true, true); })
+      .catch(function(e){ document.getElementById('fs-msg').style.color = 'var(--red)'; document.getElementById('fs-msg').textContent = 'Não foi possível reativar: '+(e.message||e); });
+  }
+  FS.linhas.push({ praca:p, abordados:'', responderam:'', salvo:false }); fsRender(); }
+function fsRemover(i){ FS.linhas.splice(i,1); fsRender(); }
+function fsEncerrar(i){
+  var l = FS.linhas[i]; if (!l) return;
+  if (!confirm('Encerrar o hunting em '+pracaLabel(l.praca)+'?\n\nA praça sai da lista de TODOS os hunters e deixa de contar como pendente. O histórico de lançamentos continua no relatório. Você pode reativar depois pelo "+ adicionar praça".')) return;
+  fetch(SUPA_URL+'/rest/v1/prospeccao_encerradas?on_conflict=praca,canal', { method:'POST', headers: fsHdr({ 'Prefer':'resolution=merge-duplicates,return=minimal' }), body: JSON.stringify([{ praca:l.praca, canal:FS_CANAL, encerrada_em: fsIso(new Date()), encerrado_por: fsUsuario()||null }]) })
+    .then(function(res){ if (!res.ok) return res.text().then(function(t){ throw new Error(t || res.status); }); })
+    .then(function(){
+      FS.enc[l.praca] = { praca:l.praca }; FS.linhas.splice(i,1); fsRender(); fsStatusSemana(true, true);
+      if (typeof nexusLog === 'function') nexusLog('Hunting encerrado na praça', { praca:l.praca });
+      var m = document.getElementById('fs-msg'); m.style.color = 'var(--g)'; m.textContent = '✓ Hunting encerrado em '+pracaLabel(l.praca)+'.';
+    })
+    .catch(function(e){ var m = document.getElementById('fs-msg'); m.style.color = 'var(--red)'; m.textContent = 'Não foi possível encerrar: '+(e.message||e); });
+}
+function fsSalvar(){
+  var h = g('fs-hunter'), sem = g('fs-semana'), msg = document.getElementById('fs-msg'), erro = function(t){ msg.style.color = 'var(--red)'; msg.textContent = t; };
+  if (!h) return erro('Selecione o hunter.');
+  var out = [], quando = new Date().toISOString();
+  for (var i = 0; i < FS.linhas.length; i++) {
+    var l = FS.linhas[i], a = String(l.abordados).trim(), r = String(l.responderam).trim();
+    if (a === '' && r === '') continue;
+    if (a === '' || r === '') return erro('Preencha Abordados e Responderam em "'+pracaLabel(l.praca)+'" (use 0 se não houve).');
+    var na = Number(a), nr = Number(r);
+    if (!isFinite(na) || !isFinite(nr) || na < 0 || nr < 0 || Math.floor(na) !== na || Math.floor(nr) !== nr) return erro('Use números inteiros, sem negativos, em "'+pracaLabel(l.praca)+'".');
+    if (nr > na) return erro('Em "'+pracaLabel(l.praca)+'", Responderam ('+nr+') não pode ser maior que Abordados ('+na+').');
+    out.push({ hunter:h, praca:l.praca, canal:FS_CANAL, semana_inicio:sem, abordados:na, responderam:nr, lancado_por:fsUsuario()||null, atualizado_em:quando });
+  }
+  if (!out.length) return erro('Informe os números de pelo menos uma praça.');
+  msg.style.color = 'var(--t3)'; msg.textContent = 'Salvando…';
+  fetch(SUPA_URL+'/rest/v1/prospeccao_semanal?on_conflict=hunter,praca,canal,semana_inicio', { method:'POST', headers: fsHdr({ 'Prefer':'resolution=merge-duplicates,return=minimal' }), body: JSON.stringify(out) })
+    .then(function(res){ if (!res.ok) return res.text().then(function(t){ throw new Error(t || res.status); }); })
+    .then(function(){
+
+      if (typeof nexusLog === 'function') nexusLog('Fechamento semanal de prospecção', { hunter:h, semana:sem, praças:out.length, abordados:out.reduce(function(s,x){return s+x.abordados;},0), responderam:out.reduce(function(s,x){return s+x.responderam;},0) });
+      fsBase(function(){ fsCarregar(); fsStatusSemana(true, true); });
+      msg.style.color = 'var(--g)'; msg.textContent = '✓ Fechamento de '+out.length+' praça'+(out.length!==1?'s':'')+' salvo.';
+    })
+    .catch(function(e){ erro('Não foi possível salvar: '+(e.message||e)); });
+}
+// Quem já fechou a semana de referência — alimenta o aviso no botão e a lista do modal
+function fsStatusSemana(comLista, jaBase){
+  if (!jaBase) return fsBase(function(){ fsStatusSemana(comLista, true); });   // garante encerradas e lançamentos recentes atualizados
+  var ref = fsSemanaRef(), hs = fsHunters();
+  fetch(SUPA_URL+'/rest/v1/prospeccao_semanal?select=hunter,praca&canal=eq.'+FS_CANAL+'&semana_inicio=eq.'+ref, { headers: fsHdr(), cache:'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(rows){
+      if (!Array.isArray(rows)) return;
+      var feito = {}; rows.forEach(function(x){ feito[fsKey(x.hunter)+'|'+x.praca] = true; });
+      var linhas = [], pend = 0;
+      hs.forEach(function(h){
+        var ps = fsPracasDoHunter(h); if (!ps.length) return;
+        var falta = ps.filter(function(p){ return !feito[fsKey(h)+'|'+p]; });
+        if (falta.length) pend++;
+        linhas.push('<div>'+(falta.length ? '<span style="color:#B45309;">● pendente</span>' : '<span style="color:var(--g);">✓ fechou</span>')+' &nbsp;<b>'+esc(h)+'</b>'+(falta.length ? ' <span style="color:var(--t3);">— falta '+falta.map(function(p){return esc(pracaLabel(p));}).join(', ')+'</span>' : '')+'</div>');
+      });
+      var b = document.getElementById('fs-badge');
+      if (b) { b.style.display = pend ? '' : 'none'; b.textContent = pend; b.title = pend+' hunter(s) com fechamento pendente na semana de '+fsLbl(ref); }
+      var st = document.getElementById('fs-status');
+      if (st && comLista) st.innerHTML = '<div style="color:var(--t3);margin-bottom:4px;">Semana de '+fsLbl(ref)+'</div>' + (linhas.join('') || '<span style="color:var(--t4);">Nenhum hunter com praças Future.</span>');
+    })
+    .catch(function(){});
 }
 
 /* ═══ CADASTRO OBRIGATÓRIO — vaga Future ═══
@@ -2800,6 +2968,7 @@ function gerarProposta() {
 // ── Hunters dinâmicos ────────────────────────────────────────────
 function popularSelectsHunter(hunters) {
   var ativos = hunters.filter(function(h){ return (h.status||'Ativo') !== 'Inativo'; });
+  window._HUNTERS_CAD = ativos; if (typeof fsStatusSemana === 'function') fsStatusSemana();
   // Select do modal
   var selModal = document.getElementById('m-hunter');
   if (selModal) {
@@ -2950,6 +3119,7 @@ if (typeof NexusConfig !== 'undefined') {
 }
 carregar();
 _aplicaPermissaoCRM();
+setTimeout(function(){ if (!window._CRM_READONLY && typeof fsStatusSemana === 'function') fsStatusSemana(); }, 2500);
 
 // ── Permissão de edição (Líder/Viewer = só leitura) ──────────────
 function _crmPodeEditar(){
@@ -2966,6 +3136,7 @@ function _crmPodeEditar(){
 function _aplicaPermissaoCRM(){
   if (_crmPodeEditar()) return;
   var add = document.querySelector('.btn-add'); if (add) add.style.display = 'none';
+  var fsb = document.getElementById('btn-fechar-semana'); if (fsb) fsb.style.display = 'none';
   document.querySelectorAll('.btn-salvar').forEach(function(b){ b.style.display = 'none'; });
   var del = document.getElementById('btn-excluir'); if (del) del.style.display = 'none';
   window._CRM_READONLY = true;
@@ -3020,5 +3191,37 @@ function nexusLog(acao, meta) {
 }
 
 </script>
+<div class="overlay" id="overlay-fs">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-hd">
+      <div><div class="modal-titulo">Fechar a semana · Prospecção Future</div><div class="modal-sub" id="fs-sub">Abordagens no LinkedIn por praça</div></div>
+      <button class="btn-fechar" onclick="fsFechar()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+        <div style="flex:1;min-width:200px;"><label style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Hunter</label>
+          <select id="fs-hunter" onchange="fsCarregar()" style="width:100%;padding:9px 10px;border:1px solid var(--rule);border-radius:8px;font-family:inherit;font-size:13px;margin-top:4px;"></select></div>
+        <div style="flex:1;min-width:200px;"><label style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);">Semana</label>
+          <select id="fs-semana" onchange="fsCarregar()" style="width:100%;padding:9px 10px;border:1px solid var(--rule);border-radius:8px;font-family:inherit;font-size:13px;margin-top:4px;"></select></div>
+      </div>
+      <div style="background:#F4F6FB;border-radius:8px;padding:10px 12px;font-size:11px;color:var(--t2);line-height:1.6;margin-bottom:14px;">
+        <b>Abordados:</b> candidatos novos para quem você enviou mensagem no LinkedIn na semana.<br>
+        <b>Responderam:</b> quantos desses abordados responderam à sua abordagem.<br>
+        Preencha só o que é seu, por praça. Se não abordou ninguém numa praça, lance 0 e 0.
+      </div>
+      <div id="fs-linhas"></div>
+      <div style="margin-top:10px;"><select id="fs-add" onchange="fsAddPraca(this.value)" style="padding:7px 10px;border:1px dashed var(--rule);border-radius:8px;font-family:inherit;font-size:12px;color:var(--t2);background:#fff;"></select></div>
+      <div id="fs-msg" style="font-size:12px;margin-top:12px;min-height:16px;"></div>
+      <div class="sec-lbl" style="margin-top:18px;">Quem já fechou esta semana</div>
+      <div id="fs-status" style="font-size:12px;color:var(--t2);line-height:1.9;"></div>
+    </div>
+    <div style="padding:14px 24px;border-top:1px solid var(--rule);display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn-import" style="background:#fff;color:var(--t2);border:1px solid var(--rule);" onclick="fsFechar()">Cancelar</button>
+      <button class="btn-add" onclick="fsSalvar()">Salvar fechamento</button>
+    </div>
+  </div>
+</div>
+
+
 </body>
 </html>
