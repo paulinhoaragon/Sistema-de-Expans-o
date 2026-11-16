@@ -188,7 +188,7 @@ table.tot tr.r-pb td{background:#00915A;color:#fff!important;border-radius:2px}
       <div class="f"><label>Duração</label>
         <select class="fi" id="f-dur">
           <option value="3">3 meses</option><option value="6">6 meses</option>
-          <option value="12" selected>12 meses</option><option value="18">18 meses</option><option value="24">24 meses</option>
+          <option value="12" selected>12 meses</option><option value="18">18 meses</option><option value="24">24 meses</option><option value="36">36 meses</option>
         </select>
       </div>
     </div>
@@ -390,7 +390,7 @@ function toggleTr(m){var on=bv('t'+m+'-on');document.getElementById('tr'+m+'-row
 function toggleChk(id){var on=bv('chk-'+id);document.getElementById('chk-'+id+'-lbl').className='chk-item'+(on?' active':'');}
 function pisoHint(){
   var d=parseInt(document.getElementById('f-dur').value);
-  var map={3:'mês 1',6:'mês 3',12:'mês 6',18:'meses 6 e 12',24:'meses 6, 12 e 18'};
+  var map={3:'mês 1',6:'mês 3',12:'mês 6',18:'meses 6 e 12',24:'meses 6, 12 e 18',36:'meses 6, 12, 18, 24 e 30'};
   var el=document.getElementById('piso-hint');
   if(el)el.textContent=map[d]?'→ Renovação automática: '+map[d]:'';
 }
@@ -726,7 +726,7 @@ function exportPDF(){
   var validDate=(function(){var b=d.date?new Date(d.date+'T12:00:00'):new Date();b.setDate(b.getDate()+7);return b.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});})();
   var lastTrig=d.trigs.length>0?d.trigs[d.trigs.length-1]:null;
   var periodoMeses=lastTrig?lastTrig.m:d.pisoDur;
-  var renewMap={3:'mês 1',6:'mês 3',12:'mês 6',18:'meses 6 e 12',24:'meses 6, 12 e 18'};
+  var renewMap={3:'mês 1',6:'mês 3',12:'mês 6',18:'meses 6 e 12',24:'meses 6, 12 e 18',36:'meses 6, 12, 18, 24 e 30'};
 
   /* proposta textual */
   var propHtml='';
