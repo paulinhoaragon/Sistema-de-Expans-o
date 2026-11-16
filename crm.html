@@ -594,8 +594,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           <div class="f-row"><label>Piso R$/mês</label><input id="m-piso" type="text" placeholder="0" oninput="calcProposta()"></div>
           <div class="f-row"><label>Período (meses)</label><input id="m-periodo" type="number" placeholder="12" oninput="calcProposta(); renderRenovacao()"></div>
           <div class="f-row"><label>Sign-in / Upfront R$</label><input id="m-upfront" type="text" placeholder="0" oninput="calcProposta()"></div>
-          <div class="f-row" id="row-perfil" style="display:none;"><label>Perfil (Future)</label>
-            <select id="m-perfil">
+          <div class="f-row" id="row-perfil"><label>Curva</label>
+            <select id="m-curva">
               <option value="">— Selecione —</option>
               <option value="A">A</option>
               <option value="B">B</option>
@@ -631,6 +631,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
             <label>AuC Meta Total (MM) <span style="font-weight:400;color:var(--t4)">consolidado</span></label>
             <input id="m-auc" type="text" readonly placeholder="—" style="background:#f0f2fa;color:var(--cobalt);font-weight:700;cursor:default;">
           </div>
+        </div>
+
+        <div class="sec-lbl">Lock-up e Multa</div>
+        <div class="fgrid">
+          <div class="f-row"><label>Lock-up (meses)</label><input id="m-lockup" type="text" inputmode="numeric" placeholder="ex: 12" oninput="this.value=this.value.replace(/\D/g,'')"></div>
+          <div class="f-row"><label>Multa (múltiplo)</label><input id="m-multa" type="text" inputmode="decimal" placeholder="ex: 1 (= 1x)" oninput="this.value=this.value.replace(/[^0-9.,]/g,'')"></div>
         </div>
 
         <div class="sec-lbl">Coparticipação XP</div>
@@ -1174,7 +1180,9 @@ function abrirEdicao(id) {
   document.getElementById('m-tel').value      = r.telefone||'';
   var vagaEl = document.getElementById('m-vaga'); if (vagaEl) vagaEl.value = r.vaga||'';
   toggleCamposPorVaga(r.vaga||'');
-  var perfilEl = document.getElementById('m-perfil'); if (perfilEl) perfilEl.value = r.perfil||'';
+  var curvaEl = document.getElementById('m-curva'); if (curvaEl) curvaEl.value = r.curva||'';
+  var lkEl = document.getElementById('m-lockup'); if (lkEl) lkEl.value = (r.lockup_meses===null||r.lockup_meses===undefined) ? '' : String(r.lockup_meses);
+  var mtEl = document.getElementById('m-multa'); if (mtEl) mtEl.value = (r.multa_multiplo===null||r.multa_multiplo===undefined) ? '' : String(r.multa_multiplo).replace('.',',');
   var estEl = document.getElementById('m-estrategico'); if (estEl) estEl.value = r.estrategico||'Não';
   document.getElementById('m-email').value    = r.email||'';
   var cpfEl = document.getElementById('m-cpf'); if (cpfEl) cpfEl.value = r.cpf||'';
@@ -1264,7 +1272,7 @@ function abrirEdicao(id) {
   carregarPropostasCRM(r.telefone || '');
   renderPareceresPerformance(r);
   if (r.etapa === 'Contratação' || r.etapa === 'Trabalhando') {
-    carregarResumoContratacao(r.telefone || '', r.coparticipacao, r.detalhe_coparticipacao, r.perfil);
+    carregarResumoContratacao(r.telefone || '', r.coparticipacao, r.detalhe_coparticipacao, {curva:r.curva, lockup:r.lockup_meses, multa:r.multa_multiplo});
   } else {
     var rcBox = document.getElementById('m-resumo-contrat-box');
     if (rcBox) rcBox.style.display = 'none';
@@ -1299,14 +1307,6 @@ function toggleCamposPorVaga(vaga) {
     if (!showOrig && inpOrig) inpOrig.value = '';
   }
   var secJr = document.getElementById('sec-jornada'); if (secJr) secJr.style.display = (vaga === 'Future') ? '' : 'none';
-  // Perfil (A/B/C/D) — só se aplica a candidatos do Future
-  var rowPerfil = document.getElementById('row-perfil');
-  var inpPerfil = document.getElementById('m-perfil');
-  if (rowPerfil) {
-    var showPerfil = (vaga === 'Future');
-    rowPerfil.style.display = showPerfil ? '' : 'none';
-    if (!showPerfil && inpPerfil) inpPerfil.value = '';
-  }
   setTimeout(atualizarObrigatorios, 0);
   // Motivo do declínio depende de vaga E etapa juntos — reavalia sempre que a vaga mudar
   var etapaAtual = document.getElementById('m-etapa');
@@ -1409,7 +1409,7 @@ function limparModal() {
   ['m-id','m-nome','m-tel','m-email','m-cpf','m-inst',
    'm-auc','m-piso','m-periodo','m-upfront',
    'm-t1tri-m','m-t1tri-v','m-t1m','m-t1v','m-t2m','m-t2v','m-t3m','m-t3v','m-t4m','m-t4v',
-   'm-copart','m-copart-det','m-codigo-a','m-cs','m-prev-inicio',
+   'm-copart','m-copart-det','m-lockup','m-multa','m-codigo-a','m-cs','m-prev-inicio',
    'm-data-ent','m-data-contratacao','m-data-ini','m-obs',
    'm-auc-cust','m-clientes','m-rem-bruta','m-bonus-bruto','m-saude','m-vavr',
    'm-saude-anual','m-vavr-anual','m-obs-nova',
@@ -1422,6 +1422,7 @@ function limparModal() {
   ].forEach(function(id){
     var el = document.getElementById(id); if (el) el.checked = false;
   });
+  var _cv = document.getElementById('m-curva'); if (_cv) _cv.value = '';
   document.getElementById('m-hunter').value  = '';
   document.getElementById('m-nivel').value   = '';
   document.getElementById('m-etapa').value   = 'Prospecção';
@@ -1863,7 +1864,8 @@ function fsStatusSemana(comLista, jaBase){
 }
 
 /* ═══ CADASTRO OBRIGATÓRIO — vaga Future ═══
-   Contratação / Trabalhando: nome, telefone, e-mail, valor da contratação (piso e período), perfil e coparticipação XP + descrição.
+   Contratação / Trabalhando: nome, telefone, e-mail, valor da contratação (piso e período) e coparticipação XP + descrição.
+   (Curva, Lock-up e Multa valem para QUALQUER vaga — ver faltasTelCpf.)
    Declinou: motivo do declínio. Usado pelo formulário e pelo arrastar do kanban (mesma regra, um lugar só). */
 var ETAPAS_CONTRATADO = ['Contratação', 'Trabalhando'];
 function faltasFuture(d, etapa) {
@@ -1879,7 +1881,6 @@ function faltasFuture(d, etapa) {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(d.email).trim())) F.push({id:'m-email', t:'E-mail (formato inválido)'});
     if (!(num(d.piso) > 0)) F.push({id:'m-piso', t:'Valor da contratação — Piso R$/mês'});
     if (!(Number(d.periodo) > 0)) F.push({id:'m-periodo', t:'Valor da contratação — Período (meses)'});
-    if (vazio(d.perfil)) F.push({id:'m-perfil', t:'Perfil (A, B, C ou D)'});
     if (!(num(d.coparticipacao) > 0)) F.push({id:'m-copart', t:'Coparticipação XP (valor)'});
     if (vazio(d.detalhe_coparticipacao)) F.push({id:'m-copart-det', t:'Coparticipação XP — Detalhe / Condição'});
   } else if (etapa === 'Declinou') {
@@ -1908,6 +1909,11 @@ function faltasTelCpf(d, etapa, etapaAnterior) {
   else if (dig.length < 10) F.push({id:'m-tel', t:'Telefone (incompleto — informe com DDD)'});
   if (!cpf) F.push({id:'m-cpf', t:'CPF'});
   else if (!cpfValido(cpf)) F.push({id:'m-cpf', t:'CPF (inválido — confira os dígitos)'});
+  // Curva, Lock-up e Multa: qualquer vaga. Lock-up/Multa aceitam 0 (= sem lock-up), mas não podem ficar em branco.
+  var vz = function(v){ return v === null || v === undefined || String(v).trim() === ''; };
+  if (['A','B','C','D'].indexOf(String(d.curva||'').trim()) < 0) F.push({id:'m-curva', t:'Curva (A, B, C ou D)'});
+  if (vz(d.lockup_meses)) F.push({id:'m-lockup', t:'Lock-up (meses — use 0 se não houver)'});
+  if (vz(d.multa_multiplo)) F.push({id:'m-multa', t:'Multa (múltiplo — use 0 se não houver)'});
   return F;
 }
 function mesclarFaltas(a, b) {   // junta as listas sem repetir o mesmo campo
@@ -1935,7 +1941,7 @@ function atualizarObrigatorios() {
   var declinou   = vaga === 'Future' && etapa === 'Declinou';
   var contratadoQualquer = ETAPAS_CONTRATADO.indexOf(etapa) >= 0;
   var map = {'m-tel':contratado || contratadoQualquer,'m-cpf':contratadoQualquer,'m-email':contratado,'m-piso':contratado,'m-periodo':contratado,
-             'm-perfil':contratado,'m-copart':contratado,'m-copart-det':contratado,'m-motivo-declinio':declinou};
+             'm-curva':contratadoQualquer,'m-lockup':contratadoQualquer,'m-multa':contratadoQualquer,'m-copart':contratado,'m-copart-det':contratado,'m-motivo-declinio':declinou};
   Object.keys(map).forEach(function(id){
     var el = document.getElementById(id), row = el && el.closest('.f-row'), lb = row && row.querySelector('label');
     if (lb) lb.classList.toggle('req', !!map[id]);
@@ -1964,7 +1970,9 @@ function salvarCandidato() {
     nome: nome, telefone: g('m-tel'), email: g('m-email'), cpf: g('m-cpf')||null, instituicao: g('m-inst'), praca: g('m-praca'),
     hunter: g('m-hunter'), lider: g('m-lider'), nivel: g('m-nivel'), vaga: vaga, estrategico: g('m-estrategico')||'Não', etapa: g('m-etapa'),
     origem_lead: (vaga === 'Future') ? (g('m-origem-lead')||null) : null,
-    perfil: (vaga === 'Future') ? (g('m-perfil')||null) : null,
+    curva: g('m-curva')||null,
+    lockup_meses: g('m-lockup') === '' ? null : gi('m-lockup'),
+    multa_multiplo: g('m-multa') === '' ? null : parseBRL(g('m-multa')),
     motivo_declinio: (vaga === 'Future' && g('m-etapa') === 'Declinou') ? (g('m-motivo-declinio')||null) : null,
     cidade_finsave: (g('m-praca') === 'FinSave') ? (g('m-cidade-finsave')||null) : null,
     motivo_declinio_finsave: (g('m-praca') === 'FinSave' && g('m-etapa') === 'Declinou') ? (g('m-motivo-declinio-finsave')||null) : null,
@@ -2652,12 +2660,11 @@ function fmtAuCResumo(n) {
 
 // Reproduz EXATAMENTE a mesma lógica textual usada no exportPDF() do simulador —
 // isso garante que o texto copiado aqui bate com o PDF gerado lá.
-function montarResumoContratacao(dados, copart, copartDet, perfil) {
+function montarResumoContratacao(dados, copart, copartDet, extra) {
+  extra = extra || {};
   if (!dados) return '';
   var linhas = ['Proposta Comercial:'];
   var piso = dados.piso || 0, pisoDur = dados.pisoMeses || 12, luva = dados.luva || 0;
-
-  if (perfil) linhas.push('Perfil: ' + perfil);
 
   linhas.push('Piso: ' + fmtBRLResumo(piso) + ' por ' + pisoDur + ' meses');
 
@@ -2708,10 +2715,20 @@ function montarResumoContratacao(dados, copart, copartDet, perfil) {
 
   if (dados.payback_meses) linhas.push('Payback: ' + dados.payback_meses + 'm');
 
+  // Bloco novo (abaixo do resumo): Curva, Lock-up e Multa
+  var temLk = extra.lockup !== null && extra.lockup !== undefined && extra.lockup !== '';
+  var temMt = extra.multa !== null && extra.multa !== undefined && extra.multa !== '';
+  if (extra.curva || temLk || temMt) {
+    linhas.push('');
+    if (extra.curva) linhas.push('Curva: ' + extra.curva);
+    if (temLk) linhas.push('Lock-up: ' + Number(extra.lockup) + ' meses');
+    if (temMt) linhas.push('Multa do lock-up: ' + String(Number(extra.multa)).replace('.', ',') + 'x');
+  }
+
   return linhas.join('\n');
 }
 
-function carregarResumoContratacao(telefone, copart, copartDet, perfil) {
+function carregarResumoContratacao(telefone, copart, copartDet, extra) {
   var box = document.getElementById('m-resumo-contrat-box');
   var txt = document.getElementById('m-resumo-contrat-txt');
   if (!box || !txt) return;
@@ -2726,7 +2743,7 @@ function carregarResumoContratacao(telefone, copart, copartDet, perfil) {
   .then(function(r){ return r.ok ? r.json() : []; })
   .then(function(rows){
     if (!rows || !rows.length || !rows[0].dados) return; // sem proposta aceita — bloco continua oculto
-    var texto = montarResumoContratacao(rows[0].dados, copart, copartDet, perfil);
+    var texto = montarResumoContratacao(rows[0].dados, copart, copartDet, extra);
     if (!texto) return;
     txt.value = texto;
     box.style.display = 'block';
