@@ -2425,7 +2425,9 @@ function checkpointsPadrao(periodo) {
   if (periodo <= 6)  return [3];
   if (periodo <= 12) return [6];
   if (periodo <= 18) return [6, 12];
-  return [6, 12, 18]; // 24+
+  if (periodo <= 24) return [6, 12, 18];
+  if (periodo <= 30) return [6, 12, 18, 24];
+  return [6, 12, 18, 24, 30]; // 31 a 36 meses
 }
 
 function renderRenovacao(valoresSalvos) {
@@ -2668,7 +2670,7 @@ function montarResumoContratacao(dados, copart, copartDet, extra) {
 
   linhas.push('Piso: ' + fmtBRLResumo(piso) + ' por ' + pisoDur + ' meses');
 
-  var renewMap = {3:'mês 1', 6:'mês 3', 12:'mês 6', 18:'meses 6 e 12', 24:'meses 6, 12 e 18'};
+  var renewMap = {3:'mês 1', 6:'mês 3', 12:'mês 6', 18:'meses 6 e 12', 24:'meses 6, 12 e 18',36:'meses 6, 12, 18, 24 e 30'};
   if (dados.checkpoints && dados.checkpoints.length) {
     linhas.push('Renovação automática do piso em ' + (renewMap[pisoDur]||'—') + ' = ' + fmtAuCResumo(dados.checkpoints[0].custodia) + ' MM');
     linhas.push('Abaixo deste montante, caberá ao time de Performance Comercial analisar e aprovar a renovação do piso');
