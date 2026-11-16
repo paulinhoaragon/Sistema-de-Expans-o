@@ -288,7 +288,7 @@ function carregar() {
     elAtualizado.textContent = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' }).replace('.', '');
   }
   Promise.all([
-    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,email,mou,data_mou,data_entrada,data_contratacao,data_inicio,data_declinio,data_desligamento,historico_etapas,pre_work,origem_lead,motivo_declinio,perfil,r1_agendada,r1_realizada,r1_resultado,r1_motivo,r2_agendada,r2_realizada,r2_resultado,r2_motivo,r3_solicitado,r3_prazo,r3_entregue,r3_resultado,r3_motivo,r4_proposta_enviada,r4_resultado,r4_motivo&limit=3000'),
+    supaGet('crm_candidatos?select=id,nome,praca,etapa,vaga,nivel,hunter,lider,telefone,email,mou,data_mou,data_entrada,data_contratacao,data_inicio,data_declinio,data_desligamento,historico_etapas,pre_work,origem_lead,motivo_declinio,curva,r1_agendada,r1_realizada,r1_resultado,r1_motivo,r2_agendada,r2_realizada,r2_resultado,r2_motivo,r3_solicitado,r3_prazo,r3_entregue,r3_resultado,r3_motivo,r4_proposta_enviada,r4_resultado,r4_motivo&limit=3000'),
     new Promise(function(resolve){
       if (typeof NexusConfig === 'undefined' || typeof NexusConfig.getPracas !== 'function') { resolve([]); return; }
       NexusConfig.getPracas(function(err, pracas){ resolve(err ? [] : (pracas||[])); });
@@ -1242,7 +1242,7 @@ function _valorOrdenacaoContratados(c, campo) {
     case 'telefone': return (c.telefone||'');
     case 'email': return (c.email||'').toLowerCase();
     case 'praca': return (pracaLabel(c.praca)||c.praca||'').toLowerCase();
-    case 'perfil': return (c.perfil||'');
+    case 'perfil': return (c.curva||'');
     case 'origem_lead': return (c.origem_lead||'').toLowerCase();
     default: return '';
   }
@@ -1383,7 +1383,7 @@ function _corpoContratados(contratados) {
       + '<td style="padding:7px 4px;color:var(--t3);white-space:nowrap;">'+esc(c.telefone||'—')+'</td>'
       + '<td style="padding:7px 4px;color:var(--t3);white-space:nowrap;">'+esc(c.email||'—')+'</td>'
       + '<td style="padding:7px 4px;color:var(--t3);white-space:nowrap;" title="Valor bruto no banco: '+esc(c.praca||'—')+'">'+esc(pracaLabel(c.praca))+'</td>'
-      + '<td style="padding:7px 4px;color:var(--t3);white-space:nowrap;">'+esc(c.perfil||'—')+'</td>'
+      + '<td style="padding:7px 4px;color:var(--t3);white-space:nowrap;">'+esc(c.curva||'—')+'</td>'
       + '<td style="padding:7px 4px;color:var(--t3);white-space:nowrap;">'+esc(c.origem_lead||'—')+'</td>'
     + '</tr>';
   }).join('');
@@ -1403,17 +1403,17 @@ function _corpoContratados(contratados) {
   // Consolidador por praça (cidade) — cobre qualquer praça nova do Future automaticamente,
   // pois agrupa pelo valor bruto de c.praca em vez de uma lista fixa.
   var porPracaOrigem = {};
-  var perfisPorPraca = {};   // { praça: { A: n, B: n, ..., 'Sem perfil': n } }
+  var perfisPorPraca = {};   // { praça: { A: n, B: n, ..., 'Sem curva': n } }
   contratados.forEach(function(c){
     var p=pracaLabel(c.praca)||c.praca||'Sem praça'; porPracaOrigem[p]=(porPracaOrigem[p]||0)+1;
-    var pf=(c.perfil||'').trim().toUpperCase()||'Sem perfil';
+    var pf=(c.curva||'').trim().toUpperCase()||'Sem curva';
     (perfisPorPraca[p]=perfisPorPraca[p]||{})[pf]=((perfisPorPraca[p]||{})[pf]||0)+1;
   });
   function chipsPerfil(p){
     var m=perfisPorPraca[p]||{};
     var totalPraca=porPracaOrigem[p]||1;
-    var ks=Object.keys(m).sort(function(a,b){ if(a==='Sem perfil')return 1; if(b==='Sem perfil')return -1; return a<b?-1:a>b?1:0; });
-    return '<div class="perf-sub">'+ks.map(function(k){ return '<span class="perf-chip'+(k==='Sem perfil'?' nd':'')+'"><b>'+m[k]+' '+(k==='Sem perfil'?'sem perfil':esc(k))+'</b> = '+Math.round(m[k]/totalPraca*100)+'%</span>'; }).join('')+'</div>';
+    var ks=Object.keys(m).sort(function(a,b){ if(a==='Sem curva')return 1; if(b==='Sem curva')return -1; return a<b?-1:a>b?1:0; });
+    return '<div class="perf-sub">'+ks.map(function(k){ return '<span class="perf-chip'+(k==='Sem curva'?' nd':'')+'"><b>'+m[k]+' '+(k==='Sem curva'?'sem curva':esc(k))+'</b> = '+Math.round(m[k]/totalPraca*100)+'%</span>'; }).join('')+'</div>';
   }
   var listaPracaOrigem = Object.keys(porPracaOrigem).sort(function(a,b){ return porPracaOrigem[b]-porPracaOrigem[a]; });
   var maxPracaOrigem = Math.max.apply(null, listaPracaOrigem.map(function(p){ return porPracaOrigem[p]; }).concat([1]));
@@ -1424,9 +1424,9 @@ function _corpoContratados(contratados) {
     return '<div class="praca-row"><div>'+esc(p)+'</div><div class="praca-track"><div class="praca-fill" style="width:'+largura+'%;background:var(--am);"></div></div><div style="font-weight:700;">'+v+' <span style="font-weight:400;color:var(--t4);font-size:10px;">('+pct+'%)</span></div></div>'+chipsPerfil(p);
   }).join('');
 
-  // Consolidador por Perfil (A/B/C/D) — classificação preenchida no CRM (aba Proposta Comercial).
+  // Consolidador por Curva (A/B/C/D) — classificação preenchida no CRM (aba Proposta Comercial).
   var porPerfil = {};
-  contratados.forEach(function(c){ var p=c.perfil||'Não informado'; porPerfil[p]=(porPerfil[p]||0)+1; });
+  contratados.forEach(function(c){ var p=c.curva||'Não informado'; porPerfil[p]=(porPerfil[p]||0)+1; });
   var listaPerfil = Object.keys(porPerfil).sort(function(a,b){ return porPerfil[b]-porPerfil[a]; });
   var maxPerfil = Math.max.apply(null, listaPerfil.map(function(p){ return porPerfil[p]; }).concat([1]));
   var linhasPerfil = listaPerfil.map(function(p){
@@ -1439,7 +1439,7 @@ function _corpoContratados(contratados) {
   var colunas = [
     ['data_contratacao','Data Contratação'], ['mou','MOU'], ['situacao','Situação'],
     ['nome','Nome Completo'], ['telefone','Telefone'], ['email','E-mail'],
-    ['praca','Praça'], ['perfil','Perfil'], ['origem_lead','Origem do Lead']
+    ['praca','Praça'], ['curva','Curva'], ['origem_lead','Origem do Lead']
   ];
   var theadHtml = colunas.map(function(col){ return _thOrdenavel(col[1], col[0]); }).join('');
 
@@ -1451,11 +1451,11 @@ function _corpoContratados(contratados) {
       + '<div>'+linhasOrigem+'</div>'
     + '</div>'
     + '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);">'
-      + '<div style="font-size:9px;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:8px;">Consolidador por Praça — Quantidade, Percentual e Perfil</div>'
+      + '<div style="font-size:9px;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:8px;">Consolidador por Praça — Quantidade, Percentual e Curva</div>'
       + '<div>'+linhasPracaOrigem+'</div>'
     + '</div>'
     + '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);">'
-      + '<div style="font-size:9px;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:8px;">Consolidador por Perfil — Quantidade e Percentual</div>'
+      + '<div style="font-size:9px;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:8px;">Consolidador por Curva — Quantidade e Percentual</div>'
       + '<div>'+linhasPerfil+'</div>'
     + '</div>';
 }
@@ -1526,7 +1526,7 @@ function renderTurnover(C) {
   base.forEach(function(c){
     var isD = (c.etapa||'').trim() === 'Desligado';
     var p = pracaLabel(c.praca) || c.praca || 'Sem praça';
-    var pf = (c.perfil||'').trim().toUpperCase(); pf = pf ? 'Perfil ' + pf : 'Sem perfil';
+    var pf = (c.curva||'').trim().toUpperCase(); pf = pf ? 'Curva ' + pf : 'Sem curva';
     var o = c.origem_lead || 'Não informado';
     [[porPraca,p],[porPerfil,pf],[porOrigem,o]].forEach(function(x){
       var g = x[0][x[1]] = x[0][x[1]] || {des:0, base:0}; g.base++; if (isD) g.des++;
@@ -1553,7 +1553,7 @@ function renderTurnover(C) {
     return '<tr style="border-bottom:1px solid var(--rule);">'
       + '<td style="'+td+'font-weight:600;">'+esc(c.nome)+'</td>'
       + '<td style="'+td+'color:var(--t3);">'+esc(pracaLabel(c.praca))+'</td>'
-      + '<td style="'+td+'color:var(--t3);">'+esc(c.perfil||'—')+'</td>'
+      + '<td style="'+td+'color:var(--t3);">'+esc(c.curva||'—')+'</td>'
       + '<td style="'+td+'color:var(--t3);">'+esc(c.origem_lead||'—')+'</td>'
       + '<td style="'+td+'">'+cel(D.contratacao, D.contratacaoHist)+'</td>'
       + '<td style="'+td+'">'+cel(D.inicio, D.inicioHist)+'</td>'
@@ -1567,7 +1567,7 @@ function renderTurnover(C) {
   var tabela = des.length
     ? '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);"><div style="font-size:9px;text-transform:uppercase;color:var(--t3);font-weight:700;margin-bottom:8px;">Candidatos desligados — conferência</div>'
       + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid var(--rule);">'
-      + th('Nome')+th('Praça')+th('Perfil')+th('Origem do Lead')+th('Contratação')+th('Início')+th('Desligamento')+th('Tempo de casa')
+      + th('Nome')+th('Praça')+th('Curva')+th('Origem do Lead')+th('Contratação')+th('Início')+th('Desligamento')+th('Tempo de casa')
       + '</tr></thead><tbody>'+linhas+'</tbody></table></div>'+avisoDatas+'</div>'
     : '<div style="padding:12px 0;color:var(--t4);font-size:12px;">Nenhum desligamento registrado no filtro atual. 🎉</div>';
 
@@ -1576,7 +1576,7 @@ function renderTurnover(C) {
 
   return '<div class="card">' + cab(des.length + ' desligado(s) · ' + turnPct + '% da base contratada') + kpis
     + _blocoTurnover('Turnover por Praça — desligados ÷ contratados', porPraca)
-    + _blocoTurnover('Turnover por Perfil', porPerfil)
+    + _blocoTurnover('Turnover por Curva', porPerfil)
     + _blocoTurnover('Turnover por Origem do Lead', porOrigem)
     + blocoFaixas + tabela + nota + '</div>';
 }
