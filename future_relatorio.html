@@ -607,17 +607,31 @@ function renderJornada(C) {
    Leads, R1, R2, Pré-Work e Proposta vêm dos candidatos cadastrados no Nexus (coorte: leads que entraram na janela). */
 var PROSP = [];
 var _fhpSemanas = 8;
-function setFhpJanela(n){ _fhpSemanas = n; var el = document.getElementById('card-fhp'); if (!el || !window._C_ATUAL) return; el.outerHTML = renderFunilHunterPraca(window._C_ATUAL); renumerarSecoes(); }
+function setFhpJanela(n){ _fhpSemanas = /^\d+$/.test(String(n)) ? +n : n; var el = document.getElementById('card-fhp'); if (!el || !window._C_ATUAL) return; el.outerHTML = renderFunilHunterPraca(window._C_ATUAL); renumerarSecoes(); }
 function renderFunilHunterPraca(C) {
-  var hoje = hojeISO(), ini = _somaDias(_segunda(hoje), -7*(_fhpSemanas-1));
+  // Janela: 'sem' = esta semana · 'semAnt' = semana passada · número = últimas N semanas (inclui a atual)
+  var hoje = hojeISO(), seg = _segunda(hoje), J = _fhpSemanas, ini, fim = hoje;
+  if (J === 'sem') ini = seg;
+  else if (J === 'semAnt') { ini = _somaDias(seg,-7); fim = _somaDias(seg,-1); }
+  else ini = _somaDias(seg, -7*(J-1));
+  // Período anterior alinhado (para as setas). Leads: mesmos dias. Abordados/Responderam: só semanas já fechadas.
+  var desloc = 7 * ((J === 'sem' || J === 'semAnt') ? 1 : J);   // anterior = mesmos dias, deslocados pelo nº de semanas da janela
+  var iniAnt = _somaDias(ini,-desloc), fimAnt = _somaDias(fim,-desloc);
+  var semIni = _segunda(ini), semFim = _segunda(fim), fechadas = [];
+  for (var w = semIni; w <= semFim; w = _somaDias(w,7)) { if (w < seg) fechadas.push(w); }
+  var fechAnt = fechadas.map(function(w){ return _somaDias(w,-desloc); });
+  var emFech = function(w){ return fechadas.indexOf(w) >= 0; }, emAnt = function(w){ return fechAnt.indexOf(w) >= 0; };
   var k = function(h){ return (String(h||'').trim().toLowerCase() || '(sem hunter)'); };
   var HN = {};   // nome de exibição por hunter (prefere a grafia com inicial maiúscula)
   var nomeH = function(h){ var n = String(h||'').trim() || '(sem hunter)', key = k(h); if (!HN[key] || (HN[key] === HN[key].toLowerCase() && n !== n.toLowerCase())) HN[key] = n; return HN[key]; };
   var P = {};   // chave hunter|praça
-  var pega = function(h, praca){ var key = k(h)+'|'+(praca||''); return P[key] = P[key] || { h:k(h), praca:praca||'', abord:0, resp:0, leads:0, r1:0, r2:0, r3:0, r4:0, contr:0, semJ:0 }; };
+  var pega = function(h, praca){ var key = k(h)+'|'+(praca||''); return P[key] = P[key] || { h:k(h), praca:praca||'', abord:0, resp:0, leads:0, r1:0, r2:0, r3:0, r4:0, contr:0, semJ:0, abordF:0, respF:0, abordA:0, respA:0, leadsA:0 }; };
   // Coorte: leads cadastrados na janela e até onde cada um chegou na jornada do CRM
   C.forEach(function(c){
-    if (!c.data_entrada || c.data_entrada.slice(0,10) < ini) return;
+    if (!c.data_entrada) return;
+    var de = c.data_entrada.slice(0,10);
+    if (de >= iniAnt && de <= fimAnt) { nomeH(c.hunter); pega(c.hunter, c.praca).leadsA++; return; }   // período anterior: só para a seta
+    if (de < ini || de > fim) return;
     nomeH(c.hunter); var p = pega(c.hunter, c.praca), e = jornadaEstado(c, hoje);
     p.leads++; if (!e.iniciada) p.semJ++;
     if (c.r1_realizada) p.r1++;
@@ -627,21 +641,36 @@ function renderFunilHunterPraca(C) {
     if (['Contratação','Trabalhando','Desligado'].indexOf(c.etapa) >= 0 || c.data_contratacao) p.contr++;   // chegou à contratação (inclui quem saiu depois)
   });
   PROSP.forEach(function(x){
-    if (!x.semana_inicio || x.semana_inicio < ini) return;
+    if (!x.semana_inicio) return;
+    var sw = x.semana_inicio.slice(0,10), noAtual = sw >= semIni && sw <= semFim, noAnt = emAnt(sw);
+    if (!noAtual && !noAnt) return;
     if (MS_PRACA.size && !MS_PRACA.has(x.praca||'')) return;
     if (MS_HUNTER.size && !MS_HUNTER.has(k(x.hunter))) return;
-    nomeH(x.hunter); var p = pega(x.hunter, x.praca); p.abord += x.abordados||0; p.resp += x.responderam||0;
+    nomeH(x.hunter); var p = pega(x.hunter, x.praca);
+    if (noAtual) { p.abord += x.abordados||0; p.resp += x.responderam||0; if (emFech(sw)) { p.abordF += x.abordados||0; p.respF += x.responderam||0; } }
+    if (noAnt) { p.abordA += x.abordados||0; p.respA += x.responderam||0; }
   });
   var linhas = Object.keys(P).map(function(x){ P[x].hn = HN[P[x].h]; return P[x]; }).sort(function(a,b){ return (a.hn||a.h).localeCompare(b.hn||b.h) || pracaLabel(a.praca).localeCompare(pracaLabel(b.praca)); });
-  var T = { abord:0, resp:0, leads:0, r1:0, r2:0, r3:0, r4:0, contr:0, semJ:0 }; linhas.forEach(function(l){ Object.keys(T).forEach(function(c){ T[c] += l[c]; }); });
+  var T = { abord:0, resp:0, leads:0, r1:0, r2:0, r3:0, r4:0, contr:0, semJ:0, abordF:0, respF:0, abordA:0, respA:0, leadsA:0 }; linhas.forEach(function(l){ Object.keys(T).forEach(function(c){ T[c] += l[c]; }); });
 
   // Etapas em fluxo: cada célula mostra o número e, embaixo, a % de quem chegou da etapa anterior.
   // Se a etapa tem MAIS gente que a anterior (ex.: contratados de antes da jornada), a % não faz sentido e fica "—".
   var ETAPAS = [ ['abord',null], ['resp','abord'], ['leads','resp'], ['r1','leads'], ['r2','r1'], ['r3','r2'], ['r4','r3'], ['contr','r4'] ];
+  // Seta de evolução vs. período anterior (só nas colunas de volume de entrada; as etapas seguintes dependem do tempo de maturação)
+  var SETA = { abord:['abordF','abordA'], resp:['respF','respA'], leads:['leads','leadsA'] };
+  var seta = function(l, e){
+    var m = SETA[e]; if (!m) return '';
+    if ((e === 'abord' || e === 'resp') && !fechadas.length) return '';
+    var d = l[m[0]] - l[m[1]];
+    var tip = e === 'leads' ? 'vs. período anterior de mesma duração ('+l[m[1]]+')' : 'semanas fechadas: '+l[m[0]]+' vs. '+l[m[1]]+' no período anterior';
+    if (d > 0) return '<span title="'+tip+'" style="font-size:10px;font-weight:700;color:var(--g);margin-left:5px;">▲ +'+d+'</span>';
+    if (d < 0) return '<span title="'+tip+'" style="font-size:10px;font-weight:700;color:var(--red);margin-left:5px;">▼ '+d+'</span>';
+    return '<span title="'+tip+'" style="font-size:10px;font-weight:700;color:var(--t4);margin-left:5px;">＝</span>';
+  };
   var celula = function(l, e, ant, destaque){
     var pct = '';
     if (ant) { var a = l[ant], v = l[e]; pct = (a > 0 && v <= a) ? Math.round(v/a*100)+'%' : '—'; }
-    return '<td style="text-align:center;padding:7px 6px;'+(destaque?'background:rgba(26,59,173,.04);':'')+'"><div style="font-size:14px;font-weight:700;color:var(--t1);">'+l[e]+'</div>'
+    return '<td style="text-align:center;padding:7px 6px;'+(destaque?'background:rgba(26,59,173,.04);':'')+'"><div style="font-size:14px;font-weight:700;color:var(--t1);white-space:nowrap;">'+l[e]+seta(l,e)+'</div>'
       + (ant ? '<div style="font-size:10px;color:var(--cobalt);font-weight:600;">'+pct+'</div>' : '<div style="font-size:10px;">&nbsp;</div>') + '</td>';
   };
   var linha = function(l, mostraNome, tot){
@@ -653,11 +682,11 @@ function renderFunilHunterPraca(C) {
   var ult = '', corpo = linhas.map(function(l){ var novo = l.h !== ult; ult = l.h; return linha(l, novo, false); }).join('');
   var th = 'padding:4px 6px;font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:var(--t3);text-align:center;white-space:nowrap;';
   var grp = 'padding:5px 6px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-bottom:2px solid ';
-  var pill = function(n, rot){ var on = n === _fhpSemanas; return '<button onclick="setFhpJanela('+n+')" style="cursor:pointer;font:inherit;font-size:11px;padding:5px 12px;border-radius:999px;border:1px solid '+(on?'#1A3BAD':'var(--rule)')+';background:'+(on?'#1A3BAD':'transparent')+';color:'+(on?'#fff':'var(--t2)')+';">'+rot+'</button>'; };
+  var pill = function(n, rot){ var on = n === _fhpSemanas; return '<button onclick="setFhpJanela(\''+n+'\')" style="cursor:pointer;font:inherit;font-size:11px;padding:5px 12px;border-radius:999px;border:1px solid '+(on?'#1A3BAD':'var(--rule)')+';background:'+(on?'#1A3BAD':'transparent')+';color:'+(on?'#fff':'var(--t2)')+';">'+rot+'</button>'; };
   var avisoPro = !PROSP.length ? '<div style="background:rgba(180,83,9,.08);border-left:3px solid #B45309;padding:8px 12px;font-size:11px;margin-bottom:10px;"><b>Ainda não há fechamentos semanais lançados.</b> Abordados e Responderam ficam zerados até os hunters usarem “Fechar a semana” no CRM.</div>' : '';
   return '<div class="card card-flow" id="card-fhp"><div class="sh"><span class="sn">00</span><span class="st">Funil por Hunter e Praça</span><span class="ss">da abordagem no LinkedIn até a contratação · cada praça em linha própria</span></div>'
     + avisoPro
-    + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"><span style="font-size:11px;color:var(--t3);align-self:center;margin-right:4px;">Janela:</span>'+pill(4,'Últimas 4 semanas')+pill(8,'8 semanas')+pill(12,'12 semanas')+pill(26,'6 meses')+'</div>'
+    + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"><span style="font-size:11px;color:var(--t3);align-self:center;margin-right:4px;">Janela:</span>'+pill('sem','Esta semana')+pill('semAnt','Semana passada')+pill(4,'Últimas 4 semanas')+pill(8,'8 semanas')+pill(12,'12 semanas')+pill(26,'6 meses')+'</div>'
     + (linhas.length ? '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead>'
       + '<tr><th colspan="2"></th>'
       + '<th colspan="2" style="'+grp+'#94A3B8;color:#64748B;">LinkedIn · lançado pelo hunter</th>'
@@ -674,7 +703,8 @@ function renderFunilHunterPraca(C) {
       : '<div style="padding:10px 0;color:var(--t4);font-size:12px;">Sem leads nem fechamentos na janela e filtro escolhidos.</div>')
     + '<div style="font-size:10px;color:var(--t4);margin-top:8px;line-height:1.6;">'
     + 'Leia da esquerda para a direita: o número grande é quantos chegaram à etapa e a % embaixo é <b>quantos da etapa anterior chegaram até ela</b>. A última coluna é a conversão total, do lead até a contratação. '
-    + 'Abordados e Responderam são lançados pelos hunters no fechamento semanal; da coluna Leads em diante, os números vêm do CRM (leads cadastrados na janela e até onde chegaram na jornada). Leads recentes ainda estão a caminho, então as taxas sobem com o tempo.'
+    + 'Abordados e Responderam são lançados pelos hunters no fechamento semanal; da coluna Leads em diante, os números vêm do CRM (leads cadastrados na janela e até onde chegaram na jornada). Leads recentes ainda estão a caminho, então as taxas sobem com o tempo. '
+    + '<br><b>▲ ▼ ＝</b> mostram a evolução contra o período anterior de mesma duração: em <b>Leads</b>, os mesmos dias do período anterior; em <b>Abordados</b> e <b>Responderam</b>, só as semanas já fechadas (a semana em andamento ainda não foi lançada). As etapas seguintes não têm seta porque dependem de tempo para amadurecer.'
     + (T.semJ ? ' <b style="color:#B45309;">'+T.semJ+' lead(s) da janela não têm a jornada lançada no CRM</b> e ficam sem R1–R4 (por isso a % de Contratados mostra “—” quando há mais contratados do que propostas).' : '')
     + '</div></div>';
 }
