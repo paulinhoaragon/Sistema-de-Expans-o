@@ -318,7 +318,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           <div class="f-row"><label>CPF</label><input id="m-cpf" placeholder="000.000.000-00" oninput="maskCPF(this)" maxlength="14"></div>
           <div class="f-row"><label>Instituição de origem</label><input id="m-inst" placeholder="ex: XP, BTG, Itaú..."></div>
           <div class="f-row"><label>Praça</label>
-            <select id="m-praca" onchange="toggleCidadeFinSave(this.value); toggleMotivoDeclinioFinSave(document.getElementById('m-etapa') ? document.getElementById('m-etapa').value : '');">
+            <select id="m-praca" onchange="toggleCidadeFinSave(this.value); toggleMotivoDeclinioFinSave(document.getElementById('m-etapa') ? document.getElementById('m-etapa').value : '');; jrAplicarCanal();">
               <option value="">— Selecione —</option>
               <!-- Praças populadas dinamicamente via NexusConfig.getPracas() -->
           </select>
@@ -450,7 +450,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
         </div>
 
         <div id="sec-jornada" style="display:none;">
-          <div class="sec-lbl">Jornada do candidato — R1 a R4 (Future)</div>
+          <div class="sec-lbl" id="jr-sec-lbl">Jornada do candidato — R1 a R4 (Future)</div>
           <div id="jr-resumo" class="jr-resumo"></div>
 
           <div class="jr-marco" id="jr-m-R1">
@@ -487,7 +487,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--t1);f
           </div>
 
           <div class="jr-marco" id="jr-m-R4">
-            <div class="jr-mh"><span class="jr-badge">R4</span><span class="jr-mt">Negociação e proposta <small>expansão</small></span><span class="jr-chip" id="jr-chip-R4"></span></div>
+            <div class="jr-mh"><span class="jr-badge" id="jr-badge-R4">R4</span><span class="jr-mt">Negociação e proposta <small>expansão</small></span><span class="jr-chip" id="jr-chip-R4"></span></div>
             <div class="jr-lock" id="jr-lock-R4"></div>
             <div class="fgrid">
               <div class="f-row"><label>Proposta enviada em</label><input id="jr-r4-env" type="date" onchange="jrChange()"></div>
@@ -1088,9 +1088,9 @@ function cardHTML(r) {
   var ini = r.data_inicio ? '<div class="kc-ini">Início: '+fmtDate(r.data_inicio)+'</div>' : '';
 
   var jrTag = '';
-  if (r.vaga === 'Future' && ['Prospecção','Qualificação','Negociação'].indexOf(r.etapa) >= 0) {
+  if ((r.vaga === 'Future' || jrCanal(r) === 'FinSave') && ['Prospecção','Qualificação','Negociação'].indexOf(r.etapa) >= 0) {
     var _E = jornadaEstado(jrRegistroDe(r));
-    if (!_E.iniciada) jrTag = '<div class="kc-jr">Jornada R1–R4 não iniciada</div>';
+    if (!_E.iniciada) jrTag = '<div class="kc-jr">Jornada ' + (_E.canal === 'FinSave' ? 'R1–R3' : 'R1–R4') + ' não iniciada</div>';
     else if (_E.bola) jrTag = '<div class="kc-jr'+(_E.diasNaBola !== null && _E.diasNaBola >= 7 ? ' late' : '')+'"><b>'+_E.atual+'</b> · '+esc(_E.bola)+(_E.diasNaBola > 0 ? ' · '+_E.diasNaBola+'d' : '')+'</div>';
   }
   return '<div class="kcard" id="kc-'+r.id+'" draggable="true" ondragstart="dragStart(event,\''+r.id+'\')" onclick="abrirEdicao(\''+r.id+'\')">'
@@ -1306,7 +1306,7 @@ function toggleCamposPorVaga(vaga) {
     rowOrig.style.display = showOrig ? '' : 'none';
     if (!showOrig && inpOrig) inpOrig.value = '';
   }
-  var secJr = document.getElementById('sec-jornada'); if (secJr) secJr.style.display = (vaga === 'Future') ? '' : 'none';
+  jrAplicarCanal();
   setTimeout(atualizarObrigatorios, 0);
   // Motivo do declínio depende de vaga E etapa juntos — reavalia sempre que a vaga mudar
   var etapaAtual = document.getElementById('m-etapa');
@@ -1507,6 +1507,7 @@ function sincronizarStatusProposta(telefone, etapa) {
 var JR_MARCOS = ['R1','R2','R3','R4'];
 var JR_NOMES = { R1:'R1 · Reunião de Apresentação', R2:'R2 · Apresentação ao líder', R3:'R3 · Pré-Work', R4:'R4 · Negociação e proposta' };
 function preWorkStatus(c) {   // Pré-Work vem da jornada (R3); só cai no campo antigo se a jornada não foi lançada
+  if (jrCanal(c) === 'FinSave') return '';   // a FinSave não tem Pré-Work
   var E = jornadaEstado(c);
   if (E.status.R3 === 'aprovado') return 'validado';
   if (E.status.R3 === 'solicitado' || E.status.R3 === 'decisao') return 'em_pre_work';
@@ -1518,7 +1519,43 @@ function jrDias(a, b) {   // dias corridos entre duas datas YYYY-MM-DD (null se 
   var n = Math.round((new Date(String(b).slice(0,10)+'T12:00:00') - new Date(String(a).slice(0,10)+'T12:00:00')) / 864e5);
   return isNaN(n) ? null : n;
 }
+/* Canal da jornada: candidatos com Praça = FinSave seguem R1→R3 (sem Pré-Work); os demais (Future) seguem R1→R4.
+   FinSave não tem colunas próprias: R1 e R2 usam as colunas r1_ e r2_; a R3 (Negociação e proposta) grava nas colunas r4_ (proposta enviada, resposta, motivo). */
+function jrCanal(d) { return (d && String(d.praca || '').trim() === 'FinSave') ? 'FinSave' : 'Future'; }
+var JR_MARCOS_FS = ['R1','R2','R3'];
+function jornadaEstadoFS(d, hoje) {
+  hoje = hoje || new Date().toISOString().slice(0,10);
+  var S = {}, v = function(k){ return (d && d[k]) ? d[k] : null; };
+  S.R1 = v('r1_resultado') === 'reprovado' ? 'reprovado' : v('r1_resultado') === 'aprovado' ? 'aprovado'
+       : v('r1_realizada') ? 'decisao' : v('r1_agendada') ? 'agendada' : 'nao_agendada';
+  S.R2 = S.R1 !== 'aprovado' ? 'bloqueada'
+       : v('r2_resultado') === 'reprovado' ? 'reprovado' : v('r2_resultado') === 'aprovado' ? 'aprovado'
+       : v('r2_realizada') ? 'decisao' : v('r2_agendada') ? 'agendada' : 'nao_agendada';
+  S.R3 = S.R2 !== 'aprovado' ? 'bloqueada'
+       : v('r4_resultado') === 'recusada' ? 'reprovado' : v('r4_resultado') === 'aceita' ? 'aprovado'
+       : v('r4_proposta_enviada') ? 'enviada' : 'nao_enviada';
+  var reprovadoEm = JR_MARCOS_FS.filter(function(m){ return S[m] === 'reprovado'; })[0] || null;
+  var concluida = S.R3 === 'aprovado';
+  var atual = reprovadoEm ? null : concluida ? null : (JR_MARCOS_FS.filter(function(m){ return S[m] !== 'aprovado'; })[0] || null);
+  var bola = '', desde = null, acao = '';
+  if (!reprovadoEm && !concluida && atual) {
+    var M = {
+      R1: { nao_agendada:['Hunter / Expansão','Agendar a R1', v('data_entrada')], agendada:['Hunter / Expansão','Realizar a R1', v('r1_agendada')], decisao:['Expansão','Registrar o resultado da R1', v('r1_realizada')] },
+      R2: { nao_agendada:['Expansão','Agendar a apresentação ao líder', v('r1_realizada')], agendada:['Líder','Realizar a R2', v('r2_agendada')], decisao:['Líder','Aprovar ou reprovar na R2', v('r2_realizada')] },
+      R3: { nao_enviada:['Expansão','Enviar a proposta', v('r2_realizada')], enviada:['Candidato','Responder a proposta', v('r4_proposta_enviada')] }
+    };
+    var x = (M[atual] || {})[S[atual]];
+    if (x) { bola = x[0]; acao = x[1]; desde = x[2]; }
+  }
+  var etapa = reprovadoEm ? 'Declinou' : concluida ? 'Contratação' : S.R2 === 'aprovado' ? 'Negociação' : S.R1 === 'aprovado' ? 'Qualificação' : 'Prospecção';
+  var T = { r1_r2: jrDias(v('r1_realizada'), v('r2_realizada')), r2_proposta: jrDias(v('r2_realizada'), v('r4_proposta_enviada')), proposta_contratacao: jrDias(v('r4_proposta_enviada'), v('data_contratacao')) };
+  var motivo = reprovadoEm ? (v((reprovadoEm === 'R3' ? 'r4' : reprovadoEm.toLowerCase()) + '_motivo') || '') : '';
+  var iniciada = !!(v('r1_agendada') || v('r1_realizada') || v('r1_resultado'));
+  return { canal:'FinSave', marcos:JR_MARCOS_FS, status:S, atual:atual, reprovadoEm:reprovadoEm, concluida:concluida, bola:bola, acao:acao, desde:desde,
+           diasNaBola: desde ? jrDias(desde, hoje) : null, etapa:etapa, tempos:T, motivo:motivo, iniciada:iniciada };
+}
 function jornadaEstado(d, hoje) {
+  if (jrCanal(d) === 'FinSave') return jornadaEstadoFS(d, hoje);
   hoje = hoje || new Date().toISOString().slice(0,10);
   var S = {}, v = function(k){ return (d && d[k]) ? d[k] : null; };
   // status de cada marco
@@ -1563,7 +1600,7 @@ function jornadaEstado(d, hoje) {
   };
   var motivo = reprovadoEm ? (v(reprovadoEm.toLowerCase()+'_motivo') || '') : '';
   var iniciada = !!(v('r1_agendada') || v('r1_realizada') || v('r1_resultado'));
-  return { status:S, atual:atual, reprovadoEm:reprovadoEm, concluida:concluida, bola:bola, acao:acao, desde:desde,
+  return { canal:'Future', marcos:JR_MARCOS, status:S, atual:atual, reprovadoEm:reprovadoEm, concluida:concluida, bola:bola, acao:acao, desde:desde,
            diasNaBola: desde ? jrDias(desde, hoje) : null, etapa:etapa, tempos:T, motivo:motivo, iniciada:iniciada };
 }
 
@@ -1580,14 +1617,20 @@ function jrLer() {    // lê o formulário → objeto com os nomes de coluna (va
   Object.keys(JR_IDS).forEach(function(k){ var el = document.getElementById(JR_IDS[k]); d[k] = el && el.value ? el.value : null; });
   d.data_entrada = g('m-data-ent') || null;
   d.data_contratacao = g('m-data-contratacao') || null;
+  d.praca = g('m-praca') || null;   // só para o cálculo do canal (não vai para o banco)
   return d;
 }
-function jrPayload() { var d = jrLer(); delete d.data_entrada; delete d.data_contratacao; return d; }
+function jrPayload() { var d = jrLer(); delete d.data_entrada; delete d.data_contratacao; delete d.praca; return d; }
+function jrAtiva() { return g('m-vaga') === 'Future' || g('m-praca') === 'FinSave'; }   // a jornada vale para Future e para candidatos da FinSave
+function jrAplicarCanal() {
+  var sec = document.getElementById('sec-jornada'); if (sec) sec.style.display = jrAtiva() ? '' : 'none';
+  jrRender();
+}
 function jrPreencher(r) {
   _jrAuto = null;
   var TXT = { r1_resultado:1, r2_resultado:1, r3_resultado:1, r4_resultado:1, r1_motivo:1, r2_motivo:1, r3_motivo:1, r4_motivo:1 };
   Object.keys(JR_IDS).forEach(function(k) { var el = document.getElementById(JR_IDS[k]); if (!el) return; var v = (r && r[k]) ? r[k] : ''; el.value = TXT[k] ? v : String(v).slice(0,10); });
-  jrRender();
+  jrAplicarCanal();
 }
 function jrLimpar() { jrPreencher(null); }
 
@@ -1597,10 +1640,16 @@ var JR_ROT = {
 };
 function jrFmt(s) { if (!s) return ''; var p = String(s).slice(0,10).split('-'); return p[2] + '/' + p[1]; }
 function jrRender() {
-  var d = jrLer(), E = jornadaEstado(d);
-  var trava = { R2:'Libera quando a R1 for aprovada.', R3:'Libera quando a R2 for aprovada pelo líder.', R4:'Libera quando o Pré-Work (R3) for aprovado.' };
-  JR_MARCOS.forEach(function(m) {
-    var st = E.status[m], box = document.getElementById('jr-m-' + m), chip = document.getElementById('jr-chip-' + m), lock = document.getElementById('jr-lock-' + m);
+  var d = jrLer(), E = jornadaEstado(d), fs = E.canal === 'FinSave';
+  // tela → marco lógico (na FinSave a R3 usa o bloco de "Negociação e proposta" e o bloco do Pré-Work some)
+  var dom = fs ? { R1:'R1', R2:'R2', R4:'R3' } : { R1:'R1', R2:'R2', R3:'R3', R4:'R4' };
+  var trava = fs ? { R2:'Libera quando a R1 for aprovada.', R4:'Libera quando a R2 for aprovada pelo líder.' }
+                 : { R2:'Libera quando a R1 for aprovada.', R3:'Libera quando a R2 for aprovada pelo líder.', R4:'Libera quando o Pré-Work (R3) for aprovado.' };
+  var box3 = document.getElementById('jr-m-R3'); if (box3) box3.style.display = fs ? 'none' : '';
+  var lbl = document.getElementById('jr-sec-lbl'); if (lbl) lbl.textContent = fs ? 'Jornada do candidato — R1 a R3 (FinSave)' : 'Jornada do candidato — R1 a R4 (Future)';
+  var b4 = document.getElementById('jr-badge-R4'); if (b4) b4.textContent = fs ? 'R3' : 'R4';
+  Object.keys(dom).forEach(function(m) {
+    var st = E.status[dom[m]], box = document.getElementById('jr-m-' + m), chip = document.getElementById('jr-chip-' + m), lock = document.getElementById('jr-lock-' + m);
     var rot = JR_ROT[st] || [st, ''];
     var txt = rot[0], cls = rot[1];
     if (m === 'R4' && st === 'aprovado') txt = '✔ Proposta aceita';
@@ -1615,13 +1664,13 @@ function jrRender() {
     if (mot) mot.style.display = (st === 'reprovado') ? '' : 'none';
   });
   // resumo
-  var passos = JR_MARCOS.map(function(m, i) {
+  var passos = E.marcos.map(function(m, i) {
     var st = E.status[m], c = st === 'aprovado' ? 'ok' : st === 'reprovado' ? 'no' : (E.atual === m ? 'now' : '');
-    return '<span class="jr-step ' + c + '">' + m + (st === 'aprovado' ? ' ✔' : st === 'reprovado' ? ' ✖' : '') + '</span>' + (i < 3 ? '<span class="jr-sep">›</span>' : '');
+    return '<span class="jr-step ' + c + '">' + m + (st === 'aprovado' ? ' ✔' : st === 'reprovado' ? ' ✖' : '') + '</span>' + (i < E.marcos.length - 1 ? '<span class="jr-sep">›</span>' : '');
   }).join('');
   var linha;
   if (E.reprovadoEm) linha = '<b>Encerrada na ' + E.reprovadoEm + '</b>' + (E.motivo ? ' — ' + esc(E.motivo) : '');
-  else if (E.concluida) linha = '<b>Proposta aceita.</b> Próximo passo: registrar a contratação (valores da proposta, perfil e coparticipação).';
+  else if (E.concluida) linha = '<b>Proposta aceita.</b> Próximo passo: registrar a contratação (valores da proposta, curva, lock-up, multa e coparticipação).';
   else if (!E.iniciada) linha = 'Jornada ainda não iniciada. Informe a data da <b>R1</b> (agendada ou realizada).';
   else {
     var qd = '';
@@ -1629,8 +1678,9 @@ function jrRender() {
     linha = '<span class="jr-bola">Com quem está a bola: <b>' + esc(E.bola) + '</b> — ' + esc(E.acao) + qd + '</span>';
   }
   var T = E.tempos, fm = function(n) { return n === null ? null : n + ' d'; };
-  var tempos = [['R1 → R2', fm(T.r1_r2)], ['R2 → Pré-Work entregue', fm(T.r2_prework)], ['Pré-Work → proposta', fm(T.prework_proposta)], ['Proposta → contratação', fm(T.proposta_contratacao)]]
-    .filter(function(x) { return x[1]; }).map(function(x) { return '<span class="jr-tempo">' + x[0] + ': <b>' + x[1] + '</b></span>'; }).join('');
+  var lt = fs ? [['R1 → R2', fm(T.r1_r2)], ['R2 → proposta enviada', fm(T.r2_proposta)], ['Proposta → contratação', fm(T.proposta_contratacao)]]
+              : [['R1 → R2', fm(T.r1_r2)], ['R2 → Pré-Work entregue', fm(T.r2_prework)], ['Pré-Work → proposta', fm(T.prework_proposta)], ['Proposta → contratação', fm(T.proposta_contratacao)]];
+  var tempos = lt.filter(function(x) { return x[1]; }).map(function(x) { return '<span class="jr-tempo">' + x[0] + ': <b>' + x[1] + '</b></span>'; }).join('');
   var el = document.getElementById('jr-resumo');
   if (el) el.innerHTML = '<div class="jr-steps">' + passos + '</div><div>' + linha + '</div>' + (tempos ? '<div class="jr-tempos">' + tempos + '</div>' : '')
     + '<div class="jr-etapa">Etapa do funil sustentada pela jornada: <b>' + E.etapa + '</b> · a etapa do card acompanha a jornada ao avançar.</div>';
@@ -1643,7 +1693,7 @@ function jrChange(soTexto) {
 // Faz a etapa do funil acompanhar a jornada (R1 aprovada → Qualificação; R3 aprovada → Negociação; reprovou/recusou → Declinou; proposta aceita → Contratação).
 // Nunca rebaixa um card sozinho, exceto desfazer algo que a própria jornada tinha colocado neste cadastro.
 function jrSyncEtapa() {
-  if (g('m-vaga') !== 'Future') return;
+  if (!jrAtiva()) return;
   var E = jornadaEstado(jrLer());
   if (!E.iniciada) return;
   var sel = document.getElementById('m-etapa'); if (!sel) return;
@@ -1656,9 +1706,10 @@ function jrSyncEtapa() {
   sel.value = alvo; _jrAuto = alvo;
   toggleEtapaDatas(alvo, true); toggleMotivoDeclinio(alvo); toggleMotivoDeclinioFinSave(alvo);
   if (alvo === 'Declinou') {
-    var mt = document.getElementById('m-motivo-declinio');
-    if (mt) mt.value = (E.reprovadoEm === 'R4') ? 'Desistência' : 'Blue3 Reprovou';
-    var dd = document.getElementById('m-data-declinio'), dk = E.reprovadoEm ? ({R1:'r1_realizada',R2:'r2_realizada',R3:'r3_entregue',R4:'r4_proposta_enviada'})[E.reprovadoEm] : null;
+    var fsC = E.canal === 'FinSave';
+    var mt = document.getElementById(fsC ? 'm-motivo-declinio-finsave' : 'm-motivo-declinio');
+    if (mt) mt.value = fsC ? (E.reprovadoEm === 'R3' ? 'Desistência' : 'FinSave Declinou') : ((E.reprovadoEm === 'R4') ? 'Desistência' : 'Blue3 Reprovou');
+    var dd = document.getElementById('m-data-declinio'), dk = E.reprovadoEm ? (fsC ? {R1:'r1_realizada',R2:'r2_realizada',R3:'r4_proposta_enviada'} : {R1:'r1_realizada',R2:'r2_realizada',R3:'r3_entregue',R4:'r4_proposta_enviada'})[E.reprovadoEm] : null;
     if (dd && dk && jrLer()[dk]) dd.value = jrLer()[dk];
   }
   if (typeof atualizarObrigatorios === 'function') atualizarObrigatorios();
@@ -1667,35 +1718,50 @@ function jrSyncEtapa() {
 /* Regras de preenchimento da jornada (só Future) */
 var JR_ORD_ETAPAS = ['Prospecção','Qualificação','Negociação','Contratação','Trabalhando'];
 function faltasJornada(d) {
-  var F = [], hoje = new Date().toISOString().slice(0,10), E = jornadaEstado(d, hoje);
+  var F = [], hoje = new Date().toISOString().slice(0,10), E = jornadaEstado(d, hoje), fs = E.canal === 'FinSave';
   var add = function(id, t) { F.push({id:id, t:t}); };
-  [['1','R1','r1_realizada','r1_resultado','r1_motivo','reprovado'],['2','R2','r2_realizada','r2_resultado','r2_motivo','reprovado'],['3','R3','r3_entregue','r3_resultado','r3_motivo','reprovado'],['4','R4','r4_proposta_enviada','r4_resultado','r4_motivo','recusada']].forEach(function(x) {
-    var n = x[0], nome = x[1], dt = x[2], res = x[3], mot = x[4], neg = x[5], dtId = JR_IDS[dt];
-    if (d[res] && !d[dt]) add(dtId, nome + (nome === 'R3' ? ': informe a data de entrega do Pré-Work' : nome === 'R4' ? ': informe a data de envio da proposta' : ': informe a data em que a reunião foi realizada'));
-    if (d[res] === neg && !(d[mot] || '').trim()) add(JR_IDS[mot], nome + ': informe o motivo da ' + (nome === 'R4' ? 'recusa' : 'reprovação'));
+  var defs = [['1','R1','r1_realizada','r1_resultado','r1_motivo','reprovado'],['2','R2','r2_realizada','r2_resultado','r2_motivo','reprovado']];
+  if (!fs) defs.push(['3','R3','r3_entregue','r3_resultado','r3_motivo','reprovado']);
+  defs.push(['4', fs ? 'R3' : 'R4','r4_proposta_enviada','r4_resultado','r4_motivo','recusada']);
+  defs.forEach(function(x) {
+    var nome = x[1], dt = x[2], res = x[3], mot = x[4], neg = x[5], dtId = JR_IDS[dt];
+    if (d[res] && !d[dt]) add(dtId, nome + (dt === 'r3_entregue' ? ': informe a data de entrega do Pré-Work' : dt === 'r4_proposta_enviada' ? ': informe a data de envio da proposta' : ': informe a data em que a reunião foi realizada'));
+    if (d[res] === neg && !(d[mot] || '').trim()) add(JR_IDS[mot], nome + ': informe o motivo da ' + (neg === 'recusada' ? 'recusa' : 'reprovação'));
   });
-  ['r1_realizada','r2_realizada','r3_entregue','r4_proposta_enviada'].forEach(function(k) { if (d[k] && d[k] > hoje) add(JR_IDS[k], 'Data "' + k.toUpperCase().slice(0,2) + ' realizada/entregue" não pode ser no futuro'); });
+  (fs ? ['r1_realizada','r2_realizada','r4_proposta_enviada'] : ['r1_realizada','r2_realizada','r3_entregue','r4_proposta_enviada']).forEach(function(k) {
+    if (d[k] && d[k] > hoje) add(JR_IDS[k], 'Data "' + (k === 'r4_proposta_enviada' && fs ? 'R3 enviada' : k.toUpperCase().slice(0,2) + ' realizada/entregue') + '" não pode ser no futuro');
+  });
   if (d.r2_realizada && d.r1_realizada && d.r2_realizada < d.r1_realizada) add('jr-r2-re', 'R2 realizada antes da R1');
-  if (d.r3_solicitado && d.r2_realizada && d.r3_solicitado < d.r2_realizada) add('jr-r3-sol', 'Pré-Work solicitado antes da R2');
-  if (d.r3_entregue && d.r3_solicitado && d.r3_entregue < d.r3_solicitado) add('jr-r3-ent', 'Pré-Work entregue antes de ser solicitado');
-  if (d.r4_proposta_enviada && d.r3_entregue && d.r4_proposta_enviada < d.r3_entregue) add('jr-r4-env', 'Proposta enviada antes da entrega do Pré-Work');
+  if (fs) {
+    if (d.r4_proposta_enviada && d.r2_realizada && d.r4_proposta_enviada < d.r2_realizada) add('jr-r4-env', 'Proposta enviada antes da R2');
+  } else {
+    if (d.r3_solicitado && d.r2_realizada && d.r3_solicitado < d.r2_realizada) add('jr-r3-sol', 'Pré-Work solicitado antes da R2');
+    if (d.r3_entregue && d.r3_solicitado && d.r3_entregue < d.r3_solicitado) add('jr-r3-ent', 'Pré-Work entregue antes de ser solicitado');
+    if (d.r4_proposta_enviada && d.r3_entregue && d.r4_proposta_enviada < d.r3_entregue) add('jr-r4-env', 'Proposta enviada antes da entrega do Pré-Work');
+  }
   // dados em marco ainda bloqueado
   var tem = function(m) { return Object.keys(d).some(function(k) { return k.indexOf('r' + m + '_') === 0 && d[k]; }); };
-  [[2,'R1','jr-r1-res'],[3,'R2','jr-r2-res'],[4,'R3','jr-r3-res']].forEach(function(x) { var m = x[0]; if (E.status['R' + m] === 'bloqueada' && tem(m)) add(x[2], 'R' + m + ' tem dados, mas a ' + x[1] + ' ainda não foi aprovada'); });
+  (fs ? [[2,'R1','jr-r1-res','R2'],[4,'R2','jr-r2-res','R3']] : [[2,'R1','jr-r1-res','R2'],[3,'R2','jr-r2-res','R3'],[4,'R3','jr-r3-res','R4']]).forEach(function(x) {
+    var m = x[0], marco = fs ? (m === 4 ? 'R3' : 'R' + m) : 'R' + m;
+    if (E.status[marco] === 'bloqueada' && tem(m)) add(x[2], x[3] + ' tem dados, mas a ' + x[1] + ' ainda não foi aprovada');
+  });
   return F;
 }
 // O card só avança de etapa se a jornada sustentar (Qualificação ← R1 aprovada · Negociação ← R3 aprovada · Contratação/Trabalhando ← proposta aceita)
 function faltasEtapaJornada(d, etapa, etapaAnterior) {
-  if (!d || d.vaga !== 'Future') return [];
+  if (!d || (d.vaga !== 'Future' && jrCanal(d) !== 'FinSave')) return [];
   var it = JR_ORD_ETAPAS.indexOf(etapa), ia = JR_ORD_ETAPAS.indexOf(etapaAnterior);
   if (it < 1 || it <= ia) return [];
-  var E = jornadaEstado(d), need = etapa === 'Qualificação' ? ['R1'] : etapa === 'Negociação' ? ['R1','R2','R3'] : ['R1','R2','R3','R4'];
-  var ids = { R1:'jr-r1-res', R2:'jr-r2-res', R3:'jr-r3-res', R4:'jr-r4-res' }, txt = { R1:'R1 aprovada', R2:'R2 aprovada pelo líder', R3:'Pré-Work (R3) aprovado', R4:'Proposta (R4) aceita' };
+  var E = jornadaEstado(d), fs = E.canal === 'FinSave';
+  var need = fs ? (etapa === 'Qualificação' ? ['R1'] : etapa === 'Negociação' ? ['R1','R2'] : ['R1','R2','R3'])
+                : (etapa === 'Qualificação' ? ['R1'] : etapa === 'Negociação' ? ['R1','R2','R3'] : ['R1','R2','R3','R4']);
+  var ids = fs ? { R1:'jr-r1-res', R2:'jr-r2-res', R3:'jr-r4-res' } : { R1:'jr-r1-res', R2:'jr-r2-res', R3:'jr-r3-res', R4:'jr-r4-res' };
+  var txt = fs ? { R1:'R1 aprovada', R2:'R2 aprovada pelo líder', R3:'Proposta (R3) aceita' } : { R1:'R1 aprovada', R2:'R2 aprovada pelo líder', R3:'Pré-Work (R3) aprovado', R4:'Proposta (R4) aceita' };
   var falta = need.filter(function(m) { return E.status[m] !== 'aprovado'; })[0];
   return falta ? [{ id: ids[falta], t: 'Para ir para ' + etapa + ', a jornada precisa ter: ' + txt[falta] }] : [];
 }
 function jrRegistroDe(r) {   // registro do banco → mesmo formato de jrLer (para a validação do arrastar)
-  var d = { vaga: r.vaga, data_entrada: r.data_entrada, data_contratacao: r.data_contratacao };
+  var d = { vaga: r.vaga, praca: r.praca, data_entrada: r.data_entrada, data_contratacao: r.data_contratacao };
   Object.keys(JR_IDS).forEach(function(k) { d[k] = r[k] || null; });
   return d;
 }
@@ -2020,18 +2086,19 @@ function salvarCandidato() {
     onb_xp_encaminhar:      gc('m-onb-xp-encaminhar'),
     atualizado_em: new Date().toISOString()
   };
-  if (vaga === 'Future') Object.assign(payload, jrPayload());
+  var _jrOn = (vaga === 'Future' || g('m-praca') === 'FinSave');
+  if (_jrOn) Object.assign(payload, jrPayload());
   var _falt = faltasFuture(payload, payload.etapa);
   var _candAnt = _idAtual ? _todos.find(function(x){ return x.id === _idAtual; }) : null;
   _falt = mesclarFaltas(_falt, faltasTelCpf(payload, payload.etapa, _candAnt ? _candAnt.etapa : ''));
-  if (vaga === 'Future') {
+  if (_jrOn) {
     var _dj = Object.assign({ vaga: vaga }, jrLer());
     _falt = _falt.concat(faltasJornada(jrLer()), faltasEtapaJornada(_dj, payload.etapa, _candAnt ? _candAnt.etapa : 'Prospecção'));
   }
   if (_falt.length) {
     marcarErros(_falt);
     var _acao = payload.etapa === 'Declinou' ? 'declinar este candidato' : (['Contratação','Trabalhando','Desligado'].indexOf(payload.etapa) >= 0 ? 'registrar a contratação deste candidato' : 'salvar este candidato');
-    alert('Não é possível ' + _acao + (vaga === 'Future' ? ' do Future' : '') + ' com o cadastro incompleto ou inconsistente.\n\nCorrija:\n• ' + _falt.map(function(f){return f.t;}).join('\n• '));
+    alert('Não é possível ' + _acao + (g('m-praca') === 'FinSave' ? ' da FinSave' : vaga === 'Future' ? ' do Future' : '') + ' com o cadastro incompleto ou inconsistente.\n\nCorrija:\n• ' + _falt.map(function(f){return f.t;}).join('\n• '));
     irParaCampo(_falt[0].id);
     return;
   }
